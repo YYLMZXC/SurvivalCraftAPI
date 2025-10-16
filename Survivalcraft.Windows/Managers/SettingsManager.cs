@@ -86,7 +86,20 @@ namespace Game {
         public static bool ShowLogoInScreenshots { get; set; }
 
         public static ScreenshotSize ScreenshotSize { get; set; }
+#if IOS
+        private static Point2 m_screenshotSizeCustom;
+        public static Point2 ScreenshotSizeCustom {
+            get { return m_screenshotSizeCustom; }
+            set {
+                int max = Math.Min(Display.MaxTextureSize, 16384);
+                int width = MathUtils.Clamp(value.X, 120, max);
+                int height = MathUtils.Clamp(value.Y, 120, max);
+                value = new Point2(width, height);
+            }
+        }
 
+
+#else
         public static Point2 ScreenshotSizeCustom {
             get;
             set {
@@ -96,6 +109,7 @@ namespace Game {
                 field = new Point2(width, height);
             }
         }
+#endif
 
         public static WindowMode WindowMode {
             get => m_windowMode;

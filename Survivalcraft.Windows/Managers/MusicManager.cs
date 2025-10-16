@@ -157,7 +157,7 @@ namespace Game {
                     );
                     m_sound.Play();
                 }
-                catch {
+                catch (Exception e){
                     Log.Warning("Error playing music \"{0}\".", name);
                 }
             }

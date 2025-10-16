@@ -49,7 +49,7 @@ namespace Engine.Input {
         static State[] m_states = [new(), new(), new(), new()];
 
         internal static void Initialize() {
-#if !ANDROID
+#if !ANDROID && !IOS
             m_gamepads = Window.m_inputContext.Gamepads;
 #endif
         }
@@ -175,6 +175,9 @@ namespace Engine.Input {
             if (m_deviceToIndex.Remove(deviceId, out int value)) {
                 m_states[value].IsConnected = false;
             }
+        }
+#elif IOS
+            //todo
         }
 #else
             for (int padIndex = 0; padIndex < 4; padIndex++) {

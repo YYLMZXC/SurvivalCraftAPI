@@ -101,10 +101,14 @@ namespace Engine.Graphics {
         public static void Initialize() {
             GL = GL.GetApi(Window.m_view);
 #if DEBUG
+#if IOS
+
+#else
             unsafe {
                 GL.DebugMessageCallback(DebugMessageDelegate, IntPtr.Zero.ToPointer());
                 GL.Enable(EnableCap.DebugOutput);
             }
+#endif
 #endif
             int[] bits = new int[6];
             for (int i = 0; i < 6; i++) {
@@ -702,7 +706,7 @@ namespace Engine.Graphics {
             if (color.HasValue) {
                 all |= ClearBufferMask.ColorBufferBit;
                 ClearColor(color.Value);
-                ColorMask(15);
+                ColorMask(0xF);
             }
             if (depth.HasValue) {
                 all |= ClearBufferMask.DepthBufferBit;
@@ -715,7 +719,7 @@ namespace Engine.Graphics {
                 all |= ClearBufferMask.StencilBufferBit;
                 ClearStencil(stencil.Value);
             }
-            if (all != 0) {
+            if (all != ClearBufferMask.None) {
                 ApplyRenderTarget(renderTarget);
                 if (Disable(EnableCap.ScissorTest)) {
                     m_rasterizerState = null;
@@ -958,7 +962,7 @@ namespace Engine.Graphics {
         public static InternalFormat TranslateDepthFormat(DepthFormat depthFormat) {
             return depthFormat switch {
                 DepthFormat.Depth16 => InternalFormat.DepthComponent16,
-#if ANDROID
+#if ANDROID || IOS
                 DepthFormat.Depth24Stencil8 => GL_OES_packed_depth_stencil ? InternalFormat.Depth24Stencil8 : InternalFormat.DepthComponent16,
 #else
                 DepthFormat.Depth24Stencil8 => InternalFormat.Depth24Stencil8,

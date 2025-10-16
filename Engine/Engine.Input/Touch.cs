@@ -3,6 +3,11 @@ using System.Collections.Concurrent;
 using Android.Views;
 
 #endif
+#if IOS
+using Foundation;
+using System.Collections.Concurrent;
+using UIKit;
+#endif
 
 namespace Engine.Input {
     public static class Touch {
@@ -57,6 +62,47 @@ namespace Engine.Input {
                     ); break;
             }
 #pragma warning restore CA1416
+        }
+
+#endif
+#if IOS
+        public static void HandleTouchEventDown(UIView uIView, UIEvent uIEvent) {
+            var touches = uIEvent.AllTouches;
+            foreach (UITouch cc in touches) {
+                var point = cc.LocationInView(uIView);
+                int x = (int)point.X;
+                int y = (int)point.Y;
+                int processId = cc.GetHashCode();
+                Vector2 vector = new Vector2(x, y);
+                ProcessTouchPressed(processId, vector);
+            }
+        }
+
+        public static void HandleTouchEventMove(UIView uIView, UIEvent uIEvent) {
+            var touches = uIEvent.AllTouches;
+            foreach (UITouch cc in touches) {
+                var point = cc.LocationInView(uIView);
+                int x = (int)point.X;
+                int y = (int)point.Y;
+                int processId = cc.GetHashCode();
+                Vector2 vector = new Vector2(x, y);
+
+                ProcessTouchMoved(processId, vector);
+
+            }
+        }
+
+        public static void HandleTouchEventUp(UIView uIView, UIEvent uIEvent) {
+            var touches = uIEvent.AllTouches;
+            foreach (UITouch cc in touches) {
+                var point = cc.LocationInView(uIView);
+                int x = (int)point.X;
+                int y = (int)point.Y;
+                int processId = cc.GetHashCode();
+                Vector2 vector = new Vector2(x, y);
+
+                ProcessTouchReleased(processId, vector);
+            }
         }
 
 #endif

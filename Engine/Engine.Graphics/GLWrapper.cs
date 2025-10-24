@@ -100,15 +100,16 @@ namespace Engine.Graphics {
 
         public static void Initialize() {
             GL = GL.GetApi(Window.m_view);
-#if DEBUG
 #if IOS
-
+            m_mainFramebuffer = GL.GetInteger((GLEnum)GetPName.DrawFramebufferBinding);
 #else
+            m_mainFramebuffer = 0;
+#endif
+#if DEBUG && !IOS
             unsafe {
                 GL.DebugMessageCallback(DebugMessageDelegate, IntPtr.Zero.ToPointer());
                 GL.Enable(EnableCap.DebugOutput);
             }
-#endif
 #endif
             int[] bits = new int[6];
             for (int i = 0; i < 6; i++) {
@@ -683,7 +684,7 @@ namespace Engine.Graphics {
                                 TextureParameterName.TextureWrapT,
                                 (int)TranslateTextureAddressMode(samplerState.AddressModeV)
                             );
-#if !ANDROID
+#if !ANDROID && !IOS
                             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinLod, samplerState.MinLod);
                             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLod, samplerState.MaxLod);
 #endif

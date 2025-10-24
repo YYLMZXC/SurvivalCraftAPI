@@ -77,8 +77,6 @@ namespace Engine.Input {
             }
             MouseWheelMovement = (int)MathUtils.Round(m_queuedMouseWheelMovement) * 120;
             m_queuedMouseWheelMovement = 0f;
-#elif IOS
-            //todo IOS鼠标支持
 #else
             if (Window.IsActive) {
                 Point2 position = new((int)m_mouse.Position.X, (int)m_mouse.Position.Y);
@@ -143,8 +141,6 @@ namespace Engine.Input {
             };
         }
 #pragma warning restore CA1416
-#elif IOS
-        //todo
 #else
         static void MouseDownHandler(IMouse mouse, Silk.NET.Input.MouseButton button) {
             MouseButton mouseButton = TranslateMouseButton(button);
@@ -226,10 +222,7 @@ namespace Engine.Input {
             }
             if (!IsMouseVisible) {
                 MousePosition = null;
-#if ANDROID || IOS
-
-#else
-
+#if !ANDROID
                 m_mouse.Cursor.CursorMode = Window.IsActive ? CursorMode.Disabled : CursorMode.Normal;
             }
             else {

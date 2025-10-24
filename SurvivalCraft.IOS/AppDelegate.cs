@@ -1,4 +1,5 @@
 using Foundation;
+using GLKit;
 using UIKit;
 
 namespace SurvivalCraft.IOS {
@@ -14,7 +15,6 @@ namespace SurvivalCraft.IOS {
         public override bool FinishedLaunching(UIApplication application, NSDictionary launchOptions) {
             Window = new UIWindow();
             Window.RootViewController = new GameViewController();
-
             Window.MakeKeyAndVisible();
 
             return true;

@@ -41,8 +41,6 @@ namespace Engine {
 
 #if ANDROID
         public static EngineActivity Activity => EngineActivity.m_activity;
-#elif IOS
-        public static IWindow m_window;
 #else
         public static IWindow m_gameWindow;
 
@@ -61,10 +59,8 @@ namespace Engine {
 
         public static Point2 ScreenSize {
             get {
-#if ANDROID
+#if ANDROID || IOS
                 return new Point2(m_view.Size.X, m_view.Size.Y);
-#elif IOS
-                return new Point2(m_view.FramebufferSize.X, m_view.FramebufferSize.Y);
 #else
                 IMonitor monitor = m_gameWindow?.Monitor;
                 if (monitor == null) {
@@ -180,7 +176,7 @@ namespace Engine {
         public static Point2 Size {
             get {
                 VerifyWindowOpened();
-                return new Point2(m_view.Size.X, m_view.Size.Y);
+                return new Point2(m_view.FramebufferSize.X, m_view.FramebufferSize.Y);
             }
             // ReSharper disable ValueParameterNotUsed
             set
@@ -326,6 +322,8 @@ namespace Engine {
             Silk.NET.Windowing.Window.TryAdd(WindowingLibrary);
 #if DIRECT3D11
             GraphicsAPI api = GraphicsAPI.None;
+#elif IOS
+            GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 0));
 #elif DEBUG
             GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Debug, new APIVersion(3, 2));
 #elif ANDROID
@@ -350,15 +348,8 @@ namespace Engine {
             Activity.Destroyed += DestroyedHandler;
             Activity.NewIntent += NewIntentHandler;
 #elif IOS
-            api = new(ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Debug, new APIVersion(3, 0));
             ViewOptions options = ViewOptions.Default with { API = api };
-            if (Silk.NET.Windowing.Window.IsViewOnly)
-                m_view = Silk.NET.Windowing.Window.GetView(options);
-            else
-                m_view = Silk.NET.Windowing.Window.Create(WindowOptions.Default);
-
-
-
+            m_view = Silk.NET.Windowing.Window.GetView(options);
 #else
             Point2 screenSize = ScreenSize;
             if (screenSize.X == 0
@@ -379,7 +370,6 @@ namespace Engine {
             m_view.ShouldSwapAutomatically = false;
             m_view.Load += LoadHandler;
             try {
-
                 m_view.Run(); //会阻塞，不要放置在前边
             }
 #if !ANDROID && !IOS
@@ -399,13 +389,6 @@ namespace Engine {
                 else {
                     Log.Error($"Unhandled exception.\n{e}");
                 }
-            }
-#endif
-
-#if IOS
-            catch (Exception e) {
-
-                Console.WriteLine(e.ToString());
             }
 #endif
             finally {
@@ -463,8 +446,8 @@ namespace Engine {
         }
 
         static void ResizeHandler(Vector2D<int> _) {
-#if ANDROID
-            if (m_state != 0) {
+#if ANDROID || IOS
+            if (m_state != State.Uncreated) {
                 Display.Resize();
                 Resized?.Invoke();
             }
@@ -482,11 +465,8 @@ namespace Engine {
             if (!m_closing) {
 #if DIRECT3D11
                 DXWrapper.Present(m_swapInterval ?? 1);
-#elif IOS
-                
-                m_view.GLContext?.SwapBuffers();
 #else
-                m_view.GLContext?.SwapBuffers();
+                m_view.SwapBuffers(); ;
 #endif
             }
             else {
@@ -583,10 +563,6 @@ namespace Engine {
                 InputWindowExtensions.TryAdd(InputLibrary);
                 m_inputContext = m_view.CreateInput();
 
-#endif
-#if IOS
-                InputWindowExtensions.ShouldLoadFirstPartyPlatforms(false);
-                InputWindowExtensions.TryAdd(WindowingLibrary);
 #endif
                 Dispatcher.Initialize();
                 Display.Initialize();

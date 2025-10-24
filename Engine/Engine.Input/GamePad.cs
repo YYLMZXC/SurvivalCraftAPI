@@ -176,9 +176,6 @@ namespace Engine.Input {
                 m_states[value].IsConnected = false;
             }
         }
-#elif IOS
-            //todo
-        }
 #else
             for (int padIndex = 0; padIndex < 4; padIndex++) {
                 if (padIndex >= m_gamepads.Count) {

@@ -185,7 +185,6 @@ namespace Engine.Graphics {
                         DrawElementsType.UnsignedInt,
                         (gCHandle2.AddrOfPinnedObject() + 4 * startIndex).ToPointer()
                     );
-                    GLWrapper.GL.Flush();
                 }
                 finally {
                     gCHandle.Free();

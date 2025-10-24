@@ -324,13 +324,8 @@ namespace Game {
             AddLoadAction(
                 delegate { //读取所有的ModEntity的JavaScript
                     JsInterface.Initiate();
-                    ModsManager.ModListAllDo(modEntity => {
-                        modEntity.LoadJs(); 
-                    });
-#if IOS
-#else
+                    ModsManager.ModListAllDo(modEntity => { modEntity.LoadJs(); });
                     JsInterface.RegisterEvent();
-#endif
                 }
             );
             AddLoadAction(

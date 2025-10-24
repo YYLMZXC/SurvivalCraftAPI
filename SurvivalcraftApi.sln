@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.0.11012.119
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36616.10 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EntitySystem", "EntitySystem\EntitySystem.csproj", "{4CC1004A-3B04-4129-8FFA-B2FEFEF6644C}"
 EndProject
@@ -14,8 +14,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Survivalcraft.Linux", "Survivalcraft.Linux\Survivalcraft.Linux.csproj", "{C53377C7-29AE-4073-A2BB-C6AB71BEF3B9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SurvivalCraft.IOS", "SurvivalCraft.IOS\SurvivalCraft.IOS.csproj", "{56D61B55-0A07-45EA-906A-B8AB129AFE33}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameTest", "GameTest\GameTest.csproj", "{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -64,15 +62,6 @@ Global
 		{56D61B55-0A07-45EA-906A-B8AB129AFE33}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56D61B55-0A07-45EA-906A-B8AB129AFE33}.Release|Any CPU.Build.0 = Release|Any CPU
 		{56D61B55-0A07-45EA-906A-B8AB129AFE33}.Release|Any CPU.Deploy.0 = Release|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Direct3D11|Any CPU.ActiveCfg = Release|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Direct3D11|Any CPU.Build.0 = Release|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Direct3D11|Any CPU.Deploy.0 = Release|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Release|Any CPU.Build.0 = Release|Any CPU
-		{63E554E5-7E1A-4DC8-AB19-D8E6BC4DC857}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

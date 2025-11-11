@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Silk.NET.OpenGLES;
+using System.Diagnostics;
 #if DEBUG &&!IOS
 using System.Runtime.InteropServices;
 #endif
@@ -9,6 +9,8 @@ namespace Engine.Graphics {
         public static GL GL;
 
         public static int m_mainFramebuffer;
+
+        public static int m_mainDepthbuffer;
 
         public static int m_mainColorbuffer;
 
@@ -102,6 +104,8 @@ namespace Engine.Graphics {
             GL = GL.GetApi(Window.m_view);
 #if IOS
             m_mainFramebuffer = GL.GetInteger((GLEnum)GetPName.DrawFramebufferBinding);
+            m_mainDepthbuffer = GL.GetInteger((GLEnum)GetPName.RenderbufferBinding);
+            m_mainColorbuffer = GL.GetInteger(GLEnum.ColorAttachment0);
 #else
             m_mainFramebuffer = 0;
 #endif
@@ -561,7 +565,16 @@ namespace Engine.Graphics {
         }
 
         public static void ApplyRenderTarget(RenderTarget2D renderTarget) {
-            BindFramebuffer(renderTarget?.m_frameBuffer ?? m_mainFramebuffer);
+            if (renderTarget != null) {
+                BindFramebuffer(renderTarget.m_frameBuffer);
+                if (renderTarget.m_depthBuffer != 0) {
+                    GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, (uint)renderTarget.m_depthBuffer);
+                }
+            }
+            else {
+                BindFramebuffer(m_mainFramebuffer);
+                GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, (uint)m_mainDepthbuffer);
+            }
         }
 
         public static unsafe void ApplyShaderAndBuffers(Shader shader,
@@ -569,6 +582,15 @@ namespace Engine.Graphics {
             IntPtr vertexOffset,
             int arrayBuffer,
             int? elementArrayBuffer) {
+
+#if IOS && DEBUG
+            string log = GL.GetProgramInfoLog((uint)shader.m_program);
+            if(!string.IsNullOrEmpty(log)) Console.WriteLine("Program Link Error: " + log);
+            log = GL.GetShaderInfoLog((uint)shader.m_program);
+            if (!string.IsNullOrEmpty(log))  Console.WriteLine("Shader Compile Error: " + log);
+#endif
+
+
             shader.PrepareForDrawing();
             BindBuffer(BufferTargetARB.ArrayBuffer, arrayBuffer);
             if (elementArrayBuffer.HasValue) {
@@ -971,23 +993,17 @@ namespace Engine.Graphics {
                 _ => throw new InvalidOperationException("Unsupported DepthFormat.")
             };
         }
-#if DEBUG &&!IOS
-        static readonly DebugProc DebugMessageDelegate = (_,
-            type,
-            _,
-            _,
-            length,
-            pMessage,
-            _) => {
+#if DEBUG && !IOS
+        public static void DebugMessageDelegate (GLEnum source, GLEnum type, int id, GLEnum severity, int length, nint message, nint userParam) {
             if (type == GLEnum.DebugTypeOther) {
                 return;
             }
-            string message = Marshal.PtrToStringAnsi(pMessage, length);
-            Console.WriteLine($"[{type.ToString().Substring(9)}] {message}");
+            string messageText = Marshal.PtrToStringAnsi(message, length);
+            Console.WriteLine($"[{type.ToString().Substring(9)}] {messageText}");
             if (type == GLEnum.DebugTypeError) {
                 Debugger.Break();
             }
-        };
+        }
 #endif
         [Conditional("DEBUG")]
         public static void CheckGLError() { }

@@ -16,12 +16,13 @@ using Monitor = Silk.NET.Windowing.Monitor;
 using System.Runtime.InteropServices;
 #endif
 #endif
-using System.Diagnostics;
 using Engine.Audio;
 using Engine.Graphics;
 using Engine.Input;
 using Silk.NET.Maths;
+using Silk.NET.OpenGLES;
 using Silk.NET.Windowing;
+using System.Diagnostics;
 using Environment = System.Environment;
 
 namespace Engine {
@@ -317,6 +318,8 @@ namespace Engine {
                     Environment.Exit(1);
                 }
             };
+            Silk.NET.Windowing.Window.ShouldLoadFirstPartyPlatforms(false);
+            Silk.NET.Windowing.Window.TryAdd(WindowingLibrary);
 #if DIRECT3D11
             GraphicsAPI api = GraphicsAPI.None;
 #elif IOS
@@ -371,7 +374,7 @@ namespace Engine {
             }
 #if !ANDROID && !IOS
             catch (GlfwException e) {
-                if (e.ErrorCode == ErrorCode.VersionUnavailable) {
+                if (e.ErrorCode == Silk.NET.GLFW.ErrorCode.VersionUnavailable) {
                     const string str =
                         "Your graphics card driver does not support the graphics API used by the current program. Please try updating your graphics card driver or using the compatible patch.\n你的显卡驱动不支持当前程序使用的图形API，请尝试更新显卡驱动，或使用兼容补丁。";
                     Log.Error($"str\n{e}");
@@ -453,12 +456,13 @@ namespace Engine {
             Resized?.Invoke();
 #endif
         }
-
+        public static bool Debu;
         static void RenderFrameHandler(double lastRenderDelta) {
             m_lastRenderDelta = (float)lastRenderDelta;
             BeforeFrameAll();
             Frame?.Invoke();
             AfterFrameAll();
+
             if (!m_closing) {
 #if DIRECT3D11
                 DXWrapper.Present(m_swapInterval ?? 1);
@@ -469,7 +473,6 @@ namespace Engine {
             else {
 #if ANDROID
                 Activity.Finish();
-#elif IOS
 #else
                 m_gameWindow.Close();
 #endif

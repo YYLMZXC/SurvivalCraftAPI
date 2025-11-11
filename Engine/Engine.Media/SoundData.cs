@@ -37,11 +37,9 @@ namespace Engine.Media {
         }
 
         public static SoundFileFormat DetermineFileFormat(Stream stream) {
-#if !IOS
             if (Flac.IsFlacStream(stream)) {
                 return SoundFileFormat.Flac;
             }
-#endif
             if (Wav.IsWavStream(stream)) {
                 return SoundFileFormat.Wav;
             }
@@ -51,9 +49,7 @@ namespace Engine.Media {
 
         public static StreamingSource Stream(Stream stream, SoundFileFormat format) {
             switch (format) {
-#if !IOS
                 case SoundFileFormat.Flac: return Flac.Stream(stream);
-#endif
                 case SoundFileFormat.Wav: return Wav.Stream(stream);
                 case SoundFileFormat.Ogg: return Ogg.Stream(stream);
                 case SoundFileFormat.Mp3: return Mp3.Stream(stream);
@@ -81,11 +77,9 @@ namespace Engine.Media {
 
         public static SoundData Load(Stream stream, SoundFileFormat format) {
             switch (format) {
-#if !IOS
-                case SoundFileFormat.Flac: return Flac.Load(stream);
-#endif
                 case SoundFileFormat.Wav: return Wav.Load(stream);
                 case SoundFileFormat.Ogg: return Ogg.Load(stream);
+                case SoundFileFormat.Flac: return Flac.Load(stream);
                 case SoundFileFormat.Mp3: return Mp3.Load(stream);
                 default: throw new InvalidOperationException("Unsupported sound file format.");
             }

@@ -1,3 +1,4 @@
+#if !IOS
 using NAudio.Flac;
 
 namespace Engine.Media {
@@ -103,3 +104,4 @@ namespace Engine.Media {
         }
     }
 }
+#endif

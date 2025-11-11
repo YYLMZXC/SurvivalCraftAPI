@@ -8,7 +8,7 @@ namespace Engine {
 
         static Log() {
             m_lock = new object();
-            m_logSinks = [];
+            m_logSinks = new ();
             AddLogSink(new ConsoleLogSink());
             MinimumLogType = LogType.Information;
         }

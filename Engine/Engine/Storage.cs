@@ -257,14 +257,7 @@ namespace Engine {
             if (Path.DirectorySeparatorChar != '\\') {
                 path = path.Replace('\\', Path.DirectorySeparatorChar);
             }
-            if (path.StartsWith("app:")) {
-                if (failIfApp) {
-                    throw new InvalidOperationException($"Access denied to \"{path}\".");
-                }
-                isApp = true;
-                return NSBundle.MainBundle.PathForResource(path.Substring(4).TrimStart(Path.DirectorySeparatorChar),null);
-            }
-            if (path.StartsWith("data:")) {
+            if (path.StartsWith("app:") || path.StartsWith("data:")) {
                 isApp = false;
                 return Path.Combine(
                     System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments),

@@ -4,8 +4,6 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>SurvivalCraft.IOS</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.survivalcraft.api</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
@@ -41,5 +39,7 @@
 	<string>Assets.xcassets/AppIcon.appiconset</string>
 	<key>UIRequiresFullScreen</key>
 	<true/>
+	<key>CFBundleIdentifier</key>
+	<string>com.survivalcraft.api.y251026</string>
 </dict>
 </plist>

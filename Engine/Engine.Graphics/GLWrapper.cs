@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Silk.NET.OpenGLES;
-#if DEBUG
+#if DEBUG &&!IOS
 using System.Runtime.InteropServices;
 #endif
 
@@ -971,7 +971,7 @@ namespace Engine.Graphics {
                 _ => throw new InvalidOperationException("Unsupported DepthFormat.")
             };
         }
-#if DEBUG
+#if DEBUG &&!IOS
         static readonly DebugProc DebugMessageDelegate = (_,
             type,
             _,

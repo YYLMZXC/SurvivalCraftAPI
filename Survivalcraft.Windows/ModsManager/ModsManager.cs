@@ -37,18 +37,15 @@ public static class ModsManager {
 
     [Obsolete("使用ApiVersionString")] public const ApiVersionEnum ApiVersion = ApiVersionEnum.Version180;
 
+#if !ANDROID
+    public static string ExternalPath => "app:";
+    public static string DocPath = "app:/doc";
+    public static string WorldsDirectoryName = $"{DocPath}/Worlds";
+#endif
 #if ANDROID
     public static string ExternalPath => EngineActivity.BasePath;
     public static string DocPath = EngineActivity.BasePath;
     public static string WorldsDirectoryName = $"{ExternalPath}/Worlds";
-#elif IOS
-    public static string ExternalPath => "data:";
-    public static string DocPath = "data:/doc";
-    public static string WorldsDirectoryName = $"{DocPath}/Worlds";
-#else
-    public static string ExternalPath => "app:";
-    public static string DocPath = "app:/doc";
-    public static string WorldsDirectoryName = $"{DocPath}/Worlds";
 #endif
     public static string ProcessModListPath = $"{ExternalPath}/ProcessModLists";
 
@@ -639,7 +636,7 @@ public static class ModsManager {
         }
     }
 
-    public static Dictionary<string, string> ModifiedElement = new Dictionary<string, string>();
+    public static Dictionary<string, string> ModifiedElement = new();
 
     static int collisionsToHandle;
 

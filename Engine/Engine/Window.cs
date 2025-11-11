@@ -3,9 +3,6 @@
 using Android.Content;
 using Android.OS;
 #elif IOS
-using OpenGLES;
-using Silk.NET.OpenGLES;
-using Silk.NET.Input;
 #else
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -41,6 +38,8 @@ namespace Engine {
 
 #if ANDROID
         public static EngineActivity Activity => EngineActivity.m_activity;
+#elif IOS
+        public static IWindow m_gameWindow;
 #else
         public static IWindow m_gameWindow;
 
@@ -318,8 +317,6 @@ namespace Engine {
                     Environment.Exit(1);
                 }
             };
-            Silk.NET.Windowing.Window.ShouldLoadFirstPartyPlatforms(false);
-            Silk.NET.Windowing.Window.TryAdd(WindowingLibrary);
 #if DIRECT3D11
             GraphicsAPI api = GraphicsAPI.None;
 #elif IOS
@@ -393,7 +390,7 @@ namespace Engine {
 #endif
             finally {
 #if !DIRECT3D11
-                GLWrapper.GL.Dispose();
+                GLWrapper.GL?.Dispose();
 #endif
                 m_view?.Dispose();
             }

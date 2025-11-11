@@ -1,3 +1,4 @@
+#if !IOS
 using System.Net;
 using System.Xml.Linq;
 
@@ -21,6 +22,7 @@ namespace Game {
             m_passwordLabel = Children.Find<LabelWidget>("RemoteControlDialog.PasswordLabel");
             m_passwordButton = Children.Find<ButtonWidget>("RemoteControlDialog.PasswordButton");
             m_closeButton = Children.Find<ButtonWidget>("RemoteControlDialog.CloseButton");
+
             m_statusLabel.Text = LanguageControl.Get("ContentWidgets", "RemoteControlDialog", JsInterface.httpListener.IsListening ? "4" : "5");
             m_addressLabel.Text = $"http://{IPAddress.Loopback}:{JsInterface.httpPort}/";
             m_passwordLabel.Text = JsInterface.httpPassword;
@@ -81,3 +83,10 @@ namespace Game {
         }
     }
 }
+#else
+namespace Game {
+    public class RemoteControlDialog : Dialog {
+
+    }
+}
+#endif

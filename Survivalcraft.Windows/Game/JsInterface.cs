@@ -1,3 +1,4 @@
+#if !IOS
 using System.Diagnostics;
 using System.Net;
 using System.Text;
@@ -316,3 +317,4 @@ namespace Game {
         }
     }
 }
+#endif

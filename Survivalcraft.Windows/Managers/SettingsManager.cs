@@ -270,7 +270,7 @@ namespace Game {
         public static ValuesDictionary KeyboardMappingSettings { get; set; }
         public static ValuesDictionary CameraManageSettings { get; set; }
 
-        static readonly Lock m_saveLock = new();
+        static readonly object m_saveLock = new();
 
         public static void Initialize() {
             {
@@ -513,9 +513,6 @@ namespace Game {
         }
 
         public static void SaveSettings() {
-            if (!m_saveLock.TryEnter(0)) {
-                return;
-            }
             try {
                 try {
                     ModsManager.SaveConfigs();
@@ -561,7 +558,6 @@ namespace Game {
                 ExceptionManager.ReportExceptionToUser(str, e);
             }
             finally {
-                m_saveLock.Exit();
             }
         }
     }

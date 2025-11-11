@@ -1,3 +1,4 @@
+#if !IOS
 using Engine;
 using GameEntitySystem;
 using Jint;
@@ -91,3 +92,4 @@ namespace Game {
         }
     }
 }
+#endif

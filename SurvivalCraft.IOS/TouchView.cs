@@ -1,55 +1,68 @@
 using CoreGraphics;
 using Engine;
 using Foundation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UIKit;
 
 namespace SurvivalCraft.IOS {
-    class TouchView : UIKit.UIView {
+    class TouchView : UIView {
         private UIView parent;
         private float pixelScale;
+        Dictionary<UITouch, int> idMap = [];
+        private int globalId;
         public TouchView(UIView parentView) {
             parent = parentView;
             Bounds = new CGRect(0, 0, Engine.Window.Size.X, Engine.Window.Size.Y);
             pixelScale = (float)Bounds.Width / (float)parent.Bounds.Width;
+            MultipleTouchEnabled = true;
+            UserInteractionEnabled = true;
+            //禁止多个视图同时接收触摸
+            ExclusiveTouch = false;
+            globalId = 0;
         }
         public override void TouchesBegan(NSSet touches, UIEvent? evt) {
-            base.TouchesBegan(touches, evt);
-            foreach (UITouch cc in touches) {
+            foreach (UITouch cc in touches.Cast<UITouch>()) {                
                 var point = cc.LocationInView(parent);
                 int x = (int)(point.X * pixelScale);
                 int y = (int)(point.Y * pixelScale);
-                int processId = cc.GetHashCode();
                 Vector2 vector = new Vector2(x, y);
-                Engine.Input.Touch.ProcessTouchPressed(processId, vector);
+                idMap.Add(cc,++globalId);
+                Engine.Input.Touch.ProcessTouchPressed(globalId, vector);
+                //Console.WriteLine("[" + touches.GetHashCode() + "]touch start id:: " + globalId);
             }
         }
         public override void TouchesMoved(NSSet touches, UIEvent? evt) {
-            base.TouchesMoved(touches, evt);
-            foreach (UITouch cc in touches) {
+            foreach (UITouch cc in touches.Cast<UITouch>()) {
                 var point = cc.LocationInView(parent);
                 int x = (int)(point.X * pixelScale);
                 int y = (int)(point.Y * pixelScale);
-                int processId = cc.GetHashCode();
                 Vector2 vector = new Vector2(x, y);
-                Engine.Input.Touch.ProcessTouchMoved(processId, vector);
+                if (idMap.TryGetValue(cc, out int id)) {
+                    Engine.Input.Touch.ProcessTouchMoved(id, vector);
+                    //Console.WriteLine("[" + touches.GetHashCode() + "]touch move id:: " + id);
+                }
+                //else
+                //    Console.WriteLine("Unknown touch move id::"+cc.GetHashCode());
             }
         }
         public override void TouchesEnded(NSSet touches, UIEvent? evt) {
-            base.TouchesEnded(touches, evt);
-            float scale = Engine.Window.Size.X / (float)Bounds.Width;
-            foreach (UITouch cc in touches) {
+            foreach (UITouch cc in touches.Cast<UITouch>()) {
                 var point = cc.LocationInView(parent);
                 int x = (int)(point.X * pixelScale);
                 int y = (int)(point.Y * pixelScale);
                 int processId = cc.GetHashCode();
                 Vector2 vector = new Vector2(x, y);
-                Engine.Input.Touch.ProcessTouchReleased(processId, vector);
+                if(idMap.TryGetValue(cc,out int id)) {
+                    Engine.Input.Touch.ProcessTouchReleased(id, vector);
+                    //Console.WriteLine("[" + touches.GetHashCode() + "]touch end id:: " + id);
+                    idMap.Remove(cc);
+                }
+                //else
+                //    Console.WriteLine("Unknown touch move id::" + cc.GetHashCode());
             }
+        }
+
+        public override void TouchesCancelled(NSSet touches, UIEvent? evt) {
+            Engine.Input.Touch.Clear();
         }
     }
 }

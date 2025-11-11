@@ -2,8 +2,14 @@
 
 ## 介绍
 
-ios跳转[README_IOS]
-生存战争插件版是基于 Candy Rufus Game 开发的 [生存战争 Survivalcraft](https://kaalus.wordpress.com/) 二次开发的支持加载模组的版本
+[iOS 开发指南](README_IOS.md)
+生存战争插件版是基于 Candy Rufus Game 开发的 [生存战争 Survivalcraft](https://kaalus.wordpress.com/) 二次开发的支持加载模组的版本，现已支持 Windows、Android、Linux 和 iOS 多平台。
+
+### 多平台支持
+- **Windows**：完整功能支持，开发调试首选平台
+- **Android**：移动设备上的最佳体验，支持触摸操作
+- **Linux**：开源系统用户的选择，支持键盘鼠标操作
+- **iOS**：苹果设备用户的解决方案，提供与 Android 版本相似的游戏体验（需要自行编译签名）
 
 ## 用户下载和使用说明
 
@@ -27,6 +33,11 @@ ios跳转[README_IOS]
 如果使用兼容补丁后仍然弹窗，建议为您的电脑购买并装上五年内发布的显卡
 
 如果弹窗提示`GLFW 窗口平台无法使用。请安装 Microsoft Visual C++ Redistributable，点击"确定"来打开下载页面。`，请按提示完成下载和安装。或者[点击此处](https://learn.microsoft.com/zh-cn/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version)打开下载页面
+
+### iOS 系统看这里
+> 需要 iOS 11.0 或更高版本的设备
+
+由于苹果App Store政策限制，本项目不提供预编译的iOS安装包。开发者需要自行编译并使用自己的Apple Developer账号进行签名安装。详细的开发和构建指南请参考 [iOS 开发指南](README_IOS.md)
 
 ### Linux 系统看这里
 > 需要 x64 架构 CPU，最低系统版本详见 [此处](https://github.com/dotnet/core/blob/main/release-notes/9.0/supported-os.md#linux)，显卡驱动需要支持 OpenGL ES 3.2 图形 API
@@ -96,9 +107,10 @@ ios跳转[README_IOS]
     > 还没有 Git？[官网下载](https://git-scm.com/downloads)
 
 2. 进入此仓库，使用 [Visual Studio](https://visualstudio.microsoft.com/) 或 [Rider](https://www.jetbrains.com/zh-cn/rider/) 打开`SurvivalcraftApi`目录中的`SurvivalCraftApi.sln`
-3. 如果只是在 Windows 系统上进行调试，请右键卸载`Survivalcraft.Android`和`Survivalcraft.Linux`两个项目，之后在`Survivalcraft.Windows`项目上右键，点击`构建所选项目`即可
+3. 如果只是在 Windows 系统上进行调试，请右键卸载`Survivalcraft.Android`、`Survivalcraft.Linux`和`SurvivalCraft.IOS`项目，之后在`Survivalcraft.Windows`项目上右键，点击`构建所选项目`即可
 4. 如果需要生成 Android 系统上的`APK`安装包，请在`Survivalcraft.Android`项目上右键，点击`加载项目`，再点击`归档以用于发布`，之后按提示操作
-5. 以上过程中，如果报错未安装相应功能，请按提示完成安装
+5. 如果需要构建 iOS 版本，请确保先构建 Windows 平台版本，然后按照 [iOS 开发指南](README_IOS.md) 中的详细步骤进行操作，需要配置 Mac 构建机、Xcode、Apple Developer 账号等
+6. 以上过程中，如果报错未安装相应功能，请按提示完成安装
 
 ## 感谢
 

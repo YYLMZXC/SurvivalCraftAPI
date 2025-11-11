@@ -2,6 +2,7 @@
 
 ## 介绍
 
+ios跳转[README_IOS]
 生存战争插件版是基于 Candy Rufus Game 开发的 [生存战争 Survivalcraft](https://kaalus.wordpress.com/) 二次开发的支持加载模组的版本
 
 ## 用户下载和使用说明

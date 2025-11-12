@@ -114,6 +114,16 @@ ls -l ~/Library/MobileDevice/
 2. 选择 Debug 配置和 iPhone Simulator 或 iOS Device 平台
 3. 点击构建按钮或按 F5 运行
 
+
+生成ipa
+1选择
+设置 `Survivalcraft.Windows` 为启动项目
+   - 选择 Release 配置和 x86/x64 平台
+   - 构建解决方案
+
+然后改回SurvivalCraft.IOS生成
+然后存档
+
 ## 常见问题
 
 ### 1. 构建失败，提示缺少描述文件

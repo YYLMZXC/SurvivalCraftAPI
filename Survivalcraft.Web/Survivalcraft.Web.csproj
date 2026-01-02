@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>Game</RootNamespace>
+        <AssemblyName>Survivalcraft</AssemblyName>
+        <TargetFramework>net10.0</TargetFramework>
+        <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+        <ApplicationVersion>2.4.0.0</ApplicationVersion>
+        <AssemblyVersion>2.4.0.0</AssemblyVersion>
+        <FileVersion>2.4.0.0</FileVersion>
+        <LangVersion>preview</LangVersion>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Nullable>disable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <OutputType>Exe</OutputType>
+        <IsAotCompatible>true</IsAotCompatible>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s</EmccFlags>
+        <WasmMainJSPath>main.js</WasmMainJSPath>
+    </PropertyGroup>
+    <PropertyGroup>
+        <PublishTrimmed>true</PublishTrimmed>
+        <WasmBuildNative>true</WasmBuildNative>
+        <RunAOTCompilation>true</RunAOTCompilation>
+        <!-- Disable SIMD support as it's prerelease only on Safari -->
+        <WasmEnableSIMD>false</WasmEnableSIMD>
+        <!-- Normal,JustInterp,Full,FullInterp,Hybrid,LLVMOnly,LLVMOnlyInterp -->
+        <!-- <AOTMode>LLVMOnly</AOTMode> -->
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <DefineConstants>DEBUG;WEB</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <DebugType>none</DebugType>
+        <DefineConstants>TRACE;WEB</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <NativeFileReference Include="Native/libEGL.c" ScanForPInvokes="true" />
+        <NativeFileReference Include="Native/openal32.c" ScanForPInvokes="true" />
+        <NativeFileReference Include="Native/emscripten.c" ScanForPInvokes="true" />
+        <WasmExtraFilesToDeploy Include="index.html" />
+        <WasmExtraFilesToDeploy Include="main.js" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)Assets\**" TargetPath="Assets/%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+</Project>

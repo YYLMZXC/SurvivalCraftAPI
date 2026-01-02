@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Survivalcraft.Android", "Su
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Survivalcraft.Linux", "Survivalcraft.Linux\Survivalcraft.Linux.csproj", "{C53377C7-29AE-4073-A2BB-C6AB71BEF3B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SurvivalCraft.IOS", "SurvivalCraft.IOS\SurvivalCraft.IOS.csproj", "{A486B307-55FA-C2C1-B3AB-3A05986E14AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SurvivalCraft.IOS", "SurvivalCraft.IOS\SurvivalCraft.IOS.csproj", "{A486B307-55FA-C2C1-B3AB-3A05986E14AA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Survivalcraft.Web", "Survivalcraft.Web\Survivalcraft.Web.csproj", "{DE978286-6F07-4AB6-A31B-E87BA7DDAFD1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{A486B307-55FA-C2C1-B3AB-3A05986E14AA}.IOS|Any CPU.ActiveCfg = IOS|Any CPU
 		{A486B307-55FA-C2C1-B3AB-3A05986E14AA}.IOS|Any CPU.Build.0 = IOS|Any CPU
 		{A486B307-55FA-C2C1-B3AB-3A05986E14AA}.IOS|Any CPU.Deploy.0 = IOS|Any CPU
+		{DE978286-6F07-4AB6-A31B-E87BA7DDAFD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE978286-6F07-4AB6-A31B-E87BA7DDAFD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE978286-6F07-4AB6-A31B-E87BA7DDAFD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE978286-6F07-4AB6-A31B-E87BA7DDAFD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -36,6 +36,7 @@
         <AndroidUseInterpreter>false</AndroidUseInterpreter>
         <EnableLLVM>true</EnableLLVM>
         <RunAOTCompilation>false</RunAOTCompilation>
+        <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <DefineConstants>DEBUG</DefineConstants>

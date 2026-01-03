@@ -2,7 +2,7 @@
     <PropertyGroup>
         <AssemblyName>Engine</AssemblyName>
         <RootNamespace>Engine</RootNamespace>
-        <TargetFramework>net10.0-ios</TargetFramework>
+        <TargetFramework>net9.0-ios</TargetFramework>
         <NeutralLanguage>zh-CN</NeutralLanguage>
         <LangVersion>preview</LangVersion>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

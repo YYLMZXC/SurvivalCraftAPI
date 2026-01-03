@@ -4,9 +4,7 @@ using Android.Content;
 using Android.OS;
 using Android.Views;
 using Org.Libsdl.App;
-#elif IOS
-
-#else
+#elif !IOS
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -25,10 +23,8 @@ using Engine.Graphics;
 using Engine.Input;
 using Silk.NET.Core.Contexts;
 using Silk.NET.Maths;
-using Silk.NET.OpenGLES;
 using Silk.NET.Windowing;
 using Display = Engine.Graphics.Display;
-using System.Diagnostics;
 using Environment = System.Environment;
 
 namespace Engine {
@@ -434,7 +430,7 @@ namespace Engine {
             }
 #if !ANDROID && !IOS
             catch (GlfwException e) {
-                if (e.ErrorCode == Silk.NET.GLFW.ErrorCode.VersionUnavailable) {
+                if (e.ErrorCode == ErrorCode.VersionUnavailable) {
                     const string str =
                         "Your graphics card driver does not support the graphics API used by the current program. Please try updating your graphics card driver or using the compatible patch.\n你的显卡驱动不支持当前程序使用的图形API，请尝试更新显卡驱动，或使用兼容补丁。";
                     Log.Error($"str\n{e}");
@@ -542,7 +538,7 @@ namespace Engine {
 #if DIRECT3D11
                 DXWrapper.Present(m_swapInterval ?? 1);
 #else
-                m_view.SwapBuffers(); ;
+                m_view.SwapBuffers();
 #endif
             }
             else {
@@ -645,7 +641,7 @@ namespace Engine {
 #else
                 using (Stream iconStream = typeof(Window).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.icon.png")) {
                     if (iconStream != null) {
-                        Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(Image.DefaultImageSharpDecoderOptions, iconStream);
+                        Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(Media.Image.DefaultImageSharpDecoderOptions, iconStream);
                         byte[] pixelBytes = new byte[image.Width * image.Height * Unsafe.SizeOf<Rgba32>()];
                         image.CopyPixelDataTo(pixelBytes);
                         m_gameWindow.SetWindowIcon([new RawImage(image.Width, image.Height, pixelBytes)]);

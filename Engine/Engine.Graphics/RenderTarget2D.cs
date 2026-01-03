@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using Engine.Media;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Image = Engine.Media.Image;
 
 namespace Engine.Graphics {
     public class RenderTarget2D : Texture2D {

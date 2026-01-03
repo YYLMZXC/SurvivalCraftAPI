@@ -5,8 +5,10 @@ using Android.OS;
 #elif IOS
 using Foundation;
 #else
-using System.Reflection;
+#if WINDOWS
 using System.Diagnostics;
+#endif
+using System.Reflection;
 using NativeFileDialogCore;
 #endif
 using System.Text;
@@ -270,12 +272,12 @@ namespace Engine {
 #else
         public static string GetAppDirectory(bool failIfApp) => failIfApp
             ? throw new InvalidOperationException("Access denied.")
-            : Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            : Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location);
 
         public static string GetDataDirectory(bool writeAccess) {
             string text = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                Assembly.GetEntryAssembly().GetName().Name
+                Assembly.GetEntryAssembly()!.GetName()!.Name!
             );
             if (writeAccess) {
                 lock (m_dataDirectoryCreationLock) {

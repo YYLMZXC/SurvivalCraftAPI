@@ -4,12 +4,8 @@ using Android.App;
 using Android.OS;
 using Android.Views;
 #pragma warning disable CA1416
-#elif IOS
-
-#else
-using Silk.NET.GLFW;
+#elif !IOS
 using Silk.NET.Input;
-using Silk.NET.Windowing.Glfw;
 #endif
 
 namespace Engine.Input {

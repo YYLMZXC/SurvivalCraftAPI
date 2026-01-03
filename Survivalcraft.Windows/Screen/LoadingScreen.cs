@@ -327,13 +327,15 @@ namespace Game {
 #endif
                 }
             );
-            //AddLoadAction(
-            //    delegate { //读取所有的ModEntity的JavaScript
-            //        JsInterface.Initiate();
-            //        ModsManager.ModListAllDo(modEntity => { modEntity.LoadJs(); });
-            //        JsInterface.RegisterEvent();
-            //    }
-            //);
+#if !IOS
+            AddLoadAction(
+                delegate { //读取所有的ModEntity的JavaScript
+                    JsInterface.Initiate();
+                    ModsManager.ModListAllDo(modEntity => { modEntity.LoadJs(); });
+                    JsInterface.RegisterEvent();
+                }
+            );
+#endif
             AddLoadAction(
                 delegate {
                     Info(LanguageControl.Get(fName, "1"));

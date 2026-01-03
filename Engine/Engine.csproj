@@ -43,6 +43,12 @@
         <MtouchLink>None</MtouchLink>
         <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'Angle'">
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <DebugType>none</DebugType>
+        <DefineConstants>TRACE;RELEASE;ANGLE</DefineConstants>
+        <Optimize>true</Optimize>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
         <SupportedOSPlatformVersion>23.0</SupportedOSPlatformVersion>
     </PropertyGroup>
@@ -75,6 +81,7 @@
         <PackageReference Include="Tomlyn" Version="0.19.0" />
         <PackageReference Include="Xamarin.AndroidX.Core" Version="1.17.0" Condition="'$(TargetFramework)' == 'net10.0-android'" />
         <PackageReference Include="NativeFileDialogCore" Version="1.0.3" Condition="'$(TargetFramework)' != 'net10.0-android'" />
+        <PackageReference Include="Silk.NET.OpenGLES.ANGLE.Native" Version="2024.3.20" Condition="'$(Configuration)' == 'Angle'" />
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)' == 'Direct3D11'">
         <PackageReference Include="SharpDX" Version="4.2.0" />
@@ -86,6 +93,7 @@
     <ItemGroup>
         <Compile Remove="Engine.Graphics\DXWrapper.cs" Condition="'$(Configuration)' != 'Direct3D11'" />
         <Compile Remove="Engine.Graphics\GLWrapper.cs" Condition="'$(Configuration)' == 'Direct3D11'" />
+        <Compile Remove="Engine.Graphics\EGL.cs" Condition="'$(Configuration)' != 'Angle'" />
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)' == 'IOS'">
         <Reference Include="Bass.Net" HintPath="Bass.Net.dll" />

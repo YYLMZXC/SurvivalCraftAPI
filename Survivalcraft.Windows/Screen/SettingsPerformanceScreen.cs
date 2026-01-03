@@ -81,7 +81,7 @@ namespace Game {
             m_lowFPSToTimeDecelerationSlider.MaxValue = 20f;
             m_lowFPSToTimeDecelerationSlider.Value = SettingsManager.LowFPSToTimeDeceleration;
             m_animatedTextureRefreshLimitSlider = Children.Find<SliderWidget>("AnimatedTextureRefreshLimitSlider");
-#if ANDROID
+#if ANDROID || ANGLE
             m_framerateLimitSlider.MinValue = 1;
 #endif
         }

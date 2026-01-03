@@ -282,8 +282,10 @@ namespace Engine {
                 }
                 value = Math.Clamp(value, 0, 4);
                 if (value != PresentationInterval) {
+#if ANGLE
+                    Egl.SwapInterval(GLWrapper.m_eglDisplay, value);
+#elif !IOS
                     //IOS不支持下面的设置
-#if !IOS
                     m_view.GLContext?.SwapInterval(value);
 #endif
                     m_swapInterval = value;
@@ -381,7 +383,8 @@ namespace Engine {
 #elif IOS
             GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 0));
 #elif DEBUG
-            GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Debug, new APIVersion(3, 2));
+            GraphicsAPI api = GraphicsAPI.None;
+            //GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Debug, new APIVersion(3, 2));
 #elif ANDROID
             Activity.GetGlEsVersion(out int major, out int minor);
             GraphicsAPI api = new(ContextAPI.OpenGLES, new APIVersion(major, minor));
@@ -537,8 +540,11 @@ namespace Engine {
             if (!m_closing) {
 #if DIRECT3D11
                 DXWrapper.Present(m_swapInterval ?? 1);
+#elif ANGLE
+                Egl.SwapBuffers(GLWrapper.m_eglDisplay, GLWrapper.m_eglSurface);
 #else
                 m_view.SwapBuffers();
+
 #endif
             }
             else {

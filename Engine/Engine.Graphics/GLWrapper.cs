@@ -7,6 +7,11 @@ using System.Runtime.InteropServices;
 namespace Engine.Graphics {
     public static class GLWrapper {
         public static GL GL;
+#if ANGLE
+        public static IntPtr m_eglDisplay;
+        public static IntPtr m_eglSurface;
+        public static IntPtr m_eglContext;
+#endif
 
         public static int m_mainFramebuffer;
 
@@ -60,7 +65,58 @@ namespace Engine.Graphics {
         public static int GL_MAX_TEXTURE_SIZE;
 
         public static void Initialize() {
+#if ANGLE
+            IntPtr hwnd = Window.Handle;
+            if (hwnd == IntPtr.Zero) {
+                throw new Exception("Failed to get window handle");
+            }
+            m_eglDisplay = Egl.GetDisplay(IntPtr.Zero);
+            if (m_eglDisplay == IntPtr.Zero) {
+                throw new Exception("eglGetDisplay failed");
+            }
+            if (!Egl.Initialize(m_eglDisplay, out _, out _)) {
+                throw new Exception("eglInitialize failed");
+            }
+            int[] configAttribs = [
+                Egl.RedSize,
+                8,
+                Egl.GreenSize,
+                8,
+                Egl.BlueSize,
+                8,
+                Egl.AlphaSize,
+                8,
+                Egl.DepthSize,
+                24,
+                Egl.StencilSize,
+                8,
+                Egl.SurfaceType,
+                Egl.WindowBit,
+                Egl.RenderableType,
+                Egl.OpenglEs3Bit,
+                Egl.None
+            ];
+            IntPtr[] configs = new IntPtr[1];
+            if (!Egl.ChooseConfig(m_eglDisplay, configAttribs, configs, 1, out int numConfigs)) {
+                throw new Exception("eglChooseConfig failed");
+            }
+            IntPtr config = configs[0];
+            m_eglSurface = Egl.CreateWindowSurface(m_eglDisplay, config, hwnd, [Egl.None]);
+            if (m_eglSurface == IntPtr.Zero) {
+                throw new Exception("eglCreateWindowSurface failed");
+            }
+            int[] contextAttribs = [Egl.ContextClientVersion, 3, Egl.None];
+            m_eglContext = Egl.CreateContext(m_eglDisplay, config, IntPtr.Zero, contextAttribs);
+            if (m_eglContext == IntPtr.Zero) {
+                throw new Exception("eglCreateContext failed");
+            }
+            if (!Egl.MakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext)) {
+                throw new Exception("eglMakeCurrent failed");
+            }
+            GL = GL.GetApi(Egl.GetProcAddress);
+#else
             GL = GL.GetApi(Window.m_view);
+#endif
 #if IOS
             m_mainFramebuffer = GL.GetInteger((GLEnum)GetPName.DrawFramebufferBinding);
             m_mainDepthbuffer = GL.GetInteger((GLEnum)GetPName.RenderbufferBinding);

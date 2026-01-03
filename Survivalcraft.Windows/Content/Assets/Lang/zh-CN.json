@@ -1281,7 +1281,7 @@
   "ModDisableReason": {
     "Unknown": "未知",
     "Manually": "玩家手动禁用",
-    "NoModInfo": "模组缺少modinfo.json文件",
+    "NoModInfo": "模组缺少modinfo.json文件，或者该文件损坏",
     "DependencyError": "依赖项错误，详见日志",
     "Duplicated": "存在重复的模组",
     "InvalidPackageName": "模组的包名包含英文分号\";\""

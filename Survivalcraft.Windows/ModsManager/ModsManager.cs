@@ -471,7 +471,7 @@ public static class ModsManager {
                     Stream keepOpenStream = GetDecipherStream(stream);
                     ModEntity modEntity = new(ks, ZipArchive.Open(keepOpenStream, true));
                     if (modEntity.modInfo == null) {
-                        LoadingScreen.Warning($"The modinfo.json is missing from [{modEntity.ModFilePath}], and this mod will be disabled.");
+                        LoadingScreen.Warning($"The modinfo.json is missing or broken from [{modEntity.ModFilePath}], and this mod will be disabled.");
                     }
                     else if (modEntity.modInfo.PackageName == "survivalcraft"
                         || modEntity.modInfo.PackageName == "fastdebug") {

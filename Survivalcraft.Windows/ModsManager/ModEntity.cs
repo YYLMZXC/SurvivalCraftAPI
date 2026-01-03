@@ -166,7 +166,15 @@ namespace Game {
             if (GetFile("icon.webp", LoadIcon)) {
                 GetFile("icon.png", LoadIcon);
             }
-            GetFile("modinfo.json", stream => { modInfo = ModsManager.DeserializeJson(ModsManager.StreamToString(stream)); });
+            GetFile("modinfo.json",
+                stream => {
+                    try {
+                        modInfo = ModsManager.DeserializeJson(ModsManager.StreamToString(stream));
+                    }
+                    catch (Exception e) {
+                        Log.Error($"Deserialize modinfo.json from [{Storage.GetFileName(ModFilePath)}] failed: {e}");
+                    }
+                });
             if (modInfo == null) {
                 IsDisabled = true;
                 DisableReason = ModDisableReason.NoModInfo;

@@ -1279,7 +1279,7 @@
   "ModDisableReason": {
     "Unknown": "Unknown",
     "Manually": "Manually",
-    "NoModInfo": "No modinfo.json file in this mod",
+    "NoModInfo": "No modinfo.json file in this mod, or it is broken.",
     "DependencyError": "Dependency Error. Check game log.",
     "Duplicated": "The mod is duplicated.",
     "InvalidPackageName": "The package name of this mod contains \";\""

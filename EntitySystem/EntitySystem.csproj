@@ -16,20 +16,32 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
         <TargetFrameworks>net10.0;net10.0-windows;net10.0-android</TargetFrameworks>
         <DefineConstants>DEBUG</DefineConstants>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <TargetFrameworks>net10.0;net10.0-windows;net10.0-android</TargetFrameworks>
         <DebugType>none</DebugType>
         <DefineConstants>TRACE</DefineConstants>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Direct3D11' ">
+    <PropertyGroup Condition="'$(Configuration)' == 'Direct3D11'">
         <TargetFramework>net10.0-windows</TargetFramework>
         <DebugType>none</DebugType>
         <DefineConstants>TRACE;RELEASE;DIRECT3D11</DefineConstants>
         <Optimize>true</Optimize>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'IOS'">
+        <TargetFramework>net9.0-ios</TargetFramework>
+        <DebugType>none</DebugType>
+        <DefineConstants>TRACE;RELEASE;IOS;MOBILE</DefineConstants>
+        <Optimize>true</Optimize>
+        <IsTrimmable>true</IsTrimmable>
+        <MtouchLink>None</MtouchLink>
+        <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android' or '$(TargetFramework)' == 'net9.0-ios'">
+        <DefineConstants>$(DefineConstants);MOBILE</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Engine\Engine.csproj" />

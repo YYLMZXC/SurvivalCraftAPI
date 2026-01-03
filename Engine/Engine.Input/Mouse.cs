@@ -63,7 +63,7 @@ namespace Engine.Input {
         public static event Action<MouseButtonEvent> MouseUp;
 
         public static void SetMousePosition(int x, int y) {
-#if !ANDROID && !IOS
+#if !MOBILE
             m_mouse.Position = new System.Numerics.Vector2(x, y);
 #endif
         }
@@ -316,7 +316,7 @@ namespace Engine.Input {
             }
             if (!IsMouseVisible) {
                 MousePosition = null;
-#if !ANDROID && !IOS
+#if !MOBILE
                 m_mouse.Cursor.CursorMode = Window.IsActive ? CursorMode.Raw : CursorMode.Normal;
             }
             else {

@@ -64,7 +64,7 @@ namespace Engine {
 
         public static Point2 ScreenSize {
             get {
-#if ANDROID || IOS
+#if MOBILE
                 return new Point2(m_view.Size.X, m_view.Size.Y);
 #else
                 IMonitor monitor = m_gameWindow?.Monitor;
@@ -113,7 +113,7 @@ namespace Engine {
 
         public static WindowMode WindowMode {
             get {
-#if ANDROID || IOS
+#if MOBILE
                 return WindowMode.Fullscreen;
 #else
                 VerifyWindowOpened();
@@ -125,7 +125,7 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if ANDROID || IOS
+#if MOBILE
 #else
                 if (!IsWindowOpened()) {
                     return;
@@ -162,7 +162,7 @@ namespace Engine {
         public static Point2 Position {
             get {
                 VerifyWindowOpened();
-#if ANDROID || IOS
+#if MOBILE
                 return Point2.Zero;
 #else
                 return new Point2(m_gameWindow.Position.X, m_gameWindow.Position.Y);
@@ -172,7 +172,7 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if ANDROID || IOS
+#if MOBILE
 #else
                 if (!IsWindowOpened()) {
                     return;
@@ -191,7 +191,7 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if ANDROID || IOS
+#if MOBILE
 #else
                 if (!IsWindowOpened()) {
                     return;
@@ -217,7 +217,7 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if !ANDROID && !IOS
+#if !MOBILE
                 if (!IsWindowOpened()) {
                     return;
                 }
@@ -236,7 +236,7 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if !ANDROID && !IOS
+#if !MOBILE
                 if (!IsWindowOpened()) {
                     return;
                 }
@@ -248,7 +248,7 @@ namespace Engine {
 
         public static string Title {
             get {
-#if ANDROID || IOS
+#if MOBILE
                 return string.Empty;
 #else
                 VerifyWindowOpened();
@@ -259,7 +259,7 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if !ANDROID && !IOS
+#if !MOBILE
                 if (!IsWindowOpened()) {
                     return;
                 }
@@ -339,7 +339,7 @@ namespace Engine {
 
         public static event Action LowMemory;
 
-#if ANDROID || IOS
+#if MOBILE
         public const string WindowingLibrary = "Silk.NET.Windowing.Sdl";
 #else
         public const string WindowingLibrary = "Silk.NET.Windowing.Glfw";
@@ -428,7 +428,7 @@ namespace Engine {
             try {
                 m_view.Run(); //会阻塞，不要放置在前边
             }
-#if !ANDROID && !IOS
+#if !MOBILE
             catch (GlfwException e) {
                 if (e.ErrorCode == ErrorCode.VersionUnavailable) {
                     const string str =
@@ -508,7 +508,7 @@ namespace Engine {
         }
 
         static void ResizeHandler(Vector2D<int> _) {
-#if ANDROID || IOS
+#if MOBILE
             if (m_state != State.Uncreated) {
                 Display.Resize();
                 Resized?.Invoke();

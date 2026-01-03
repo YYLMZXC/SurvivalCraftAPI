@@ -666,7 +666,7 @@ namespace Engine.Graphics {
                                 TextureParameterName.TextureWrapT,
                                 (int)TranslateTextureAddressMode(samplerState.AddressModeV)
                             );
-#if !ANDROID && !IOS
+#if !MOBILE
                             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinLod, samplerState.MinLod);
                             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLod, samplerState.MaxLod);
 #endif
@@ -953,7 +953,7 @@ namespace Engine.Graphics {
         public static InternalFormat TranslateDepthFormat(DepthFormat depthFormat) {
             return depthFormat switch {
                 DepthFormat.Depth16 => InternalFormat.DepthComponent16,
-#if ANDROID || IOS
+#if MOBILE
                 DepthFormat.Depth24Stencil8 => GL_OES_packed_depth_stencil ? InternalFormat.Depth24Stencil8 : InternalFormat.DepthComponent16,
 #else
                 DepthFormat.Depth24Stencil8 => InternalFormat.Depth24Stencil8,

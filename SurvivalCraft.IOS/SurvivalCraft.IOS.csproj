@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
         <AssemblyName>Survivalcraft</AssemblyName>
         <RootNamespace>Game</RootNamespace>
         <TargetFramework>net9.0-ios</TargetFramework>
@@ -15,12 +16,9 @@
         <IsTrimmable>true</IsTrimmable>
         <ApplicationId>com.survivalcraft.api</ApplicationId>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <MtouchLink>None</MtouchLink>
-        <EnableHotReload>false</EnableHotReload>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PropertyGroup Condition="'$(Configuration)' == 'IOS'">
         <DebugType>none</DebugType>
+        <DefineConstants>TRACE;RELEASE;IOS;MOBILE</DefineConstants>
         <MtouchLink>None</MtouchLink>
         <MtouchUseLlvm>false</MtouchUseLlvm>
     </PropertyGroup>
@@ -39,8 +37,8 @@
         </None>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Engine.IOS\Engine.IOS.csproj" />
-        <ProjectReference Include="..\EntitySystem.IOS\EntitySystem.IOS.csproj" />
+        <ProjectReference Include="..\Engine\Engine.csproj" />
+        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Reference Include="Bass.Net">

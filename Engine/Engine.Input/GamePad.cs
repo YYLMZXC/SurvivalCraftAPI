@@ -74,7 +74,7 @@ namespace Engine.Input {
         static State[] m_states = [new(), new(), new(), new()];
 
         internal static void Initialize() {
-#if !ANDROID && !IOS
+#if !MOBILE
             m_gamepads = Window.m_inputContext.Gamepads;
 #endif
         }

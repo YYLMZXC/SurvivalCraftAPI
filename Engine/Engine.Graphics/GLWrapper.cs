@@ -1,6 +1,6 @@
 using Silk.NET.OpenGLES;
 using System.Diagnostics;
-#if DEBUG &&!IOS
+#if DEBUG && !IOS
 using System.Runtime.InteropServices;
 #endif
 

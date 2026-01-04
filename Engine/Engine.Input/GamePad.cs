@@ -62,9 +62,7 @@ namespace Engine.Input {
 
         const float TRIGGER_DOWN_THRESHOLD = 0.5f;
         const float TRIGGER_UP_THRESHOLD = 0.4f;
-#elif IOS
-
-#else
+#elif !IOS
         public static IReadOnlyList<IGamepad> m_gamepads;
 #endif
         public static double m_buttonFirstRepeatTime = 0.2;

@@ -30,9 +30,7 @@ namespace Engine.Input {
         static float m_queuedMouseWheelMovement;
 
         static bool m_pointerCaptureRequested;
-#elif IOS
-
-#else
+#elif !IOS
         public static IMouse m_mouse;
 
 #endif
@@ -73,9 +71,7 @@ namespace Engine.Input {
             if (Build.VERSION.SdkInt >= (BuildVersionCodes)26) {
                 Window.m_surface.SetOnCapturedPointerListener(new OnCapturedPointerListener());
             }
-#elif IOS
-
-#else
+#elif !IOS
             m_mouse = Window.m_inputContext.Mice[0];
             m_mouse.MouseDown += MouseDownHandler;
             m_mouse.MouseUp += MouseUpHandler;
@@ -94,6 +90,7 @@ namespace Engine.Input {
                     if (Build.VERSION.SdkInt >= (BuildVersionCodes)26) {
                         Window.m_surface?.ReleasePointerCapture();
                     }
+                    Clear();
                 }
                 MouseMovement = Point2.Zero;
                 m_lastMousePosition = null;
@@ -127,8 +124,7 @@ namespace Engine.Input {
                     Thread.Yield();
                 }
             }
-#elif IOS
-#else
+#elif !IOS
             if (Window.IsActive) {
                 Point2 position = new((int)m_mouse.Position.X, (int)m_mouse.Position.Y);
                 ProcessMouseMove(position);
@@ -219,11 +215,7 @@ namespace Engine.Input {
                 return true;
             }
         }
-#elif IOS
-
-
-
-#else
+#elif !IOS
         static void MouseDownHandler(IMouse mouse, Silk.NET.Input.MouseButton button) {
             MouseButton mouseButton = TranslateMouseButton(button);
             if (mouseButton != (MouseButton)(-1)) {
@@ -383,9 +375,7 @@ namespace Engine.Input {
             if (Build.VERSION.SdkInt >= (BuildVersionCodes)24) {
                 Window.m_surface?.PointerIcon = PointerIcon.GetSystemIcon(Application.Context, TranslateCursorType(cursorType));
             }
-#elif IOS
-
-#else
+#elif !IOS
             m_mouse.Cursor.StandardCursor = TranslateCursorType(cursorType);
 #endif
         }

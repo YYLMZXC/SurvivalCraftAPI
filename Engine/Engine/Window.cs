@@ -641,9 +641,7 @@ namespace Engine {
                     && viewGroup.GetChildAt(0) is SDLSurface surface) {
                     m_surface = surface;
                 }
-#elif IOS
-
-#else
+#elif !IOS
                 using (Stream iconStream = typeof(Window).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.icon.png")) {
                     if (iconStream != null) {
                         Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(Media.Image.DefaultImageSharpDecoderOptions, iconStream);

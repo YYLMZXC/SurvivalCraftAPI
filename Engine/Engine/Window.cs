@@ -378,13 +378,12 @@ namespace Engine {
             };
             Silk.NET.Windowing.Window.ShouldLoadFirstPartyPlatforms(false);
             Silk.NET.Windowing.Window.TryAdd(WindowingLibrary);
-#if DIRECT3D11
+#if DIRECT3D11 || ANGLE
             GraphicsAPI api = GraphicsAPI.None;
 #elif IOS
             GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 0));
 #elif DEBUG
-            GraphicsAPI api = GraphicsAPI.None;
-            //GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Debug, new APIVersion(3, 2));
+            GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Debug, new APIVersion(3, 2));
 #elif ANDROID
             Activity.GetGlEsVersion(out int major, out int minor);
             GraphicsAPI api = new(ContextAPI.OpenGLES, new APIVersion(major, minor));

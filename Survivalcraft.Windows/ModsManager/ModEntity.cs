@@ -347,7 +347,7 @@ namespace Game {
         }
 
         public virtual void LoadJs() {
-#if !IOS
+#if !IOS && !BROWSER
             bool flag = true;
             GetFiles(
                 ".js",

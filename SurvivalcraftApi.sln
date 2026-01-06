@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Survivalcraft.Linux", "Surv
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SurvivalCraft.IOS", "SurvivalCraft.IOS\SurvivalCraft.IOS.csproj", "{A486B307-55FA-C2C1-B3AB-3A05986E14AA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Survivalcraft.Web", "Survivalcraft.Web\Survivalcraft.Web.csproj", "{DE978286-6F07-4AB6-A31B-E87BA7DDAFD1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Survivalcraft.Browser", "Survivalcraft.Browser\Survivalcraft.Browser.csproj", "{DE978286-6F07-4AB6-A31B-E87BA7DDAFD1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

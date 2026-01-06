@@ -38,8 +38,8 @@
         </None>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Engine\Engine.csproj" />
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" />
+        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net9.0-ios" />
+        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net9.0-ios" />
     </ItemGroup>
     <ItemGroup>
         <Reference Include="Bass.Net">

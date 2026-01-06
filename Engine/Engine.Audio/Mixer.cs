@@ -25,6 +25,10 @@ namespace Engine.Audio {
         }
 
         internal static unsafe void Initialize() {
+#if BROWSER
+            //TODO
+            return;
+#endif
 #if !MOBILE
             //直接加载
             string fullPath = Path.GetDirectoryName(

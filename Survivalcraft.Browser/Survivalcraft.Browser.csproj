@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
         <RootNamespace>Game</RootNamespace>
         <AssemblyName>Survivalcraft</AssemblyName>
         <TargetFramework>net10.0</TargetFramework>
@@ -28,12 +29,19 @@
         <!-- <AOTMode>LLVMOnly</AOTMode> -->
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <DefineConstants>DEBUG;WEB</DefineConstants>
+        <DefineConstants>DEBUG;BROWSER</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <DebugType>none</DebugType>
-        <DefineConstants>TRACE;WEB</DefineConstants>
+        <DefineConstants>TRACE;BROWSER</DefineConstants>
     </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0" AdditionalProperties="DefineConstants=$(DefineConstants);BROWSER" />
+        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net10.0" AdditionalProperties="DefineConstants=$(DefineConstants);BROWSER" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="NuGet.Versioning" Version="7.0.1" />
+    </ItemGroup>
     <ItemGroup>
         <NativeFileReference Include="Native/libEGL.c" ScanForPInvokes="true" />
         <NativeFileReference Include="Native/openal32.c" ScanForPInvokes="true" />
@@ -41,5 +49,8 @@
         <WasmExtraFilesToDeploy Include="index.html" />
         <WasmExtraFilesToDeploy Include="main.js" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)Assets\**" TargetPath="Assets/%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs"/>
     </ItemGroup>
 </Project>

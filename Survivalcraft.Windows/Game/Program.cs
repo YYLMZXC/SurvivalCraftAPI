@@ -8,12 +8,17 @@ using ImeSharp;
 using System.Security.Cryptography;
 using System.Text;
 using System.Reflection;
+#elif BROWSER
+using System.Runtime.Versioning;
 #endif
 #endif
 using System.Globalization;
 using Engine;
 using Engine.Graphics;
 
+#if BROWSER
+[assembly: SupportedOSPlatform("browser")]
+#endif
 namespace Game {
     public static class Program {
         public static double m_frameBeginTime;
@@ -34,9 +39,13 @@ namespace Game {
 #endif
 
 #if !ANDROID
+#if BROWSER
+        public static async Task Main(string[] args) {
+#else
         // ReSharper disable UnusedMember.Local
         static void Main(string[] args) {
-            // ReSharper restore UnusedMember.Local
+        // ReSharper restore UnusedMember.Local
+#endif
 #if WINDOWS
             if (args != null
                 && args.Length > 0) {
@@ -102,6 +111,9 @@ namespace Game {
                 InputMethod.Enabled = false;
             };
 #endif
+#if BROWSER
+            Engine.Browser.BrowserInterop.Initialize();
+#endif
             EntryPoint();
 #if WINDOWS
             m_mutex.ReleaseMutex();
@@ -119,11 +131,15 @@ namespace Game {
             //    new Option<string>(["-l", "--language"], "")
             //];
         }
-#endif
+#endif // !ANDROID
 
         [STAThread]
         public static void EntryPoint() {
+#if BROWSER
+            SystemLanguage = Engine.Browser.BrowserInterop.GetLanguage();
+#else
             SystemLanguage = CultureInfo.CurrentUICulture.Name;
+#endif
             if (string.IsNullOrEmpty(SystemLanguage)) {
                 SystemLanguage = RegionInfo.CurrentRegion.DisplayName != "United States" ? "zh-CN" : "en-US";
             }
@@ -136,11 +152,13 @@ namespace Game {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             string title = $"Survivalcraft {ModsManager.ShortGameVersion} - API {ModsManager.APIVersionString}";
+#if !BROWSER
             Log.RemoveAllLogSinks();
             Log.AddLogSink(new GameLogSink());
 #if DEBUG
             Log.AddLogSink(new ConsoleLogSink());
             title = $"[DEBUG]{title}";
+#endif
 #endif
             Window.UnhandledException += delegate(UnhandledExceptionInfo e) {
                 ExceptionManager.ReportExceptionToUser("Unhandled exception.", e.Exception);
@@ -208,7 +226,7 @@ namespace Game {
                     MusicManager.Update();
                     ScreensManager.Update();
                     DialogsManager.Update();
-#if !IOS
+#if !IOS && !BROWSER
                     JsInterface.Update();
 #endif
                 }
@@ -270,7 +288,7 @@ namespace Game {
 #pragma warning disable CA1416
             Intent intent = new Intent(Window.Activity, Window.Activity.Class);
             Window.Activity.StartActivity(intent);
-#else
+#elif !BROWSER
             Process current = Process.GetCurrentProcess();
             Process.Start(new ProcessStartInfo
             {

@@ -1,4 +1,4 @@
-#if !IOS
+#if !IOS && !BROWSER
 using Engine;
 using GameEntitySystem;
 using Jint;

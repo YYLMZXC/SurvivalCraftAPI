@@ -1,4 +1,4 @@
-#if !IOS
+#if !IOS && !BROWSER
 using System.Diagnostics;
 using System.Net;
 using System.Text;

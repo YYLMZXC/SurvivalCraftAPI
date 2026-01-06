@@ -4,7 +4,7 @@ using Android.App;
 using Android.OS;
 using Android.Views;
 #pragma warning disable CA1416
-#elif !IOS
+#elif !IOS && !BROWSER
 using Silk.NET.Input;
 #endif
 
@@ -30,7 +30,7 @@ namespace Engine.Input {
         static float m_queuedMouseWheelMovement;
 
         static bool m_pointerCaptureRequested;
-#elif !IOS
+#elif !IOS && !BROWSER
         public static IMouse m_mouse;
 
 #endif
@@ -61,7 +61,7 @@ namespace Engine.Input {
         public static event Action<MouseButtonEvent> MouseUp;
 
         public static void SetMousePosition(int x, int y) {
-#if !MOBILE
+#if !MOBILE && !BROWSER
             m_mouse.Position = new System.Numerics.Vector2(x, y);
 #endif
         }
@@ -71,7 +71,7 @@ namespace Engine.Input {
             if (Build.VERSION.SdkInt >= (BuildVersionCodes)26) {
                 Window.m_surface.SetOnCapturedPointerListener(new OnCapturedPointerListener());
             }
-#elif !IOS
+#elif !IOS && !BROWSER
             m_mouse = Window.m_inputContext.Mice[0];
             m_mouse.MouseDown += MouseDownHandler;
             m_mouse.MouseUp += MouseUpHandler;
@@ -124,7 +124,7 @@ namespace Engine.Input {
                     Thread.Yield();
                 }
             }
-#elif !IOS
+#elif !IOS && !BROWSER
             if (Window.IsActive) {
                 Point2 position = new((int)m_mouse.Position.X, (int)m_mouse.Position.Y);
                 ProcessMouseMove(position);
@@ -215,7 +215,7 @@ namespace Engine.Input {
                 return true;
             }
         }
-#elif !IOS
+#elif !IOS && !BROWSER
         static void MouseDownHandler(IMouse mouse, Silk.NET.Input.MouseButton button) {
             MouseButton mouseButton = TranslateMouseButton(button);
             if (mouseButton != (MouseButton)(-1)) {
@@ -308,7 +308,7 @@ namespace Engine.Input {
             }
             if (!IsMouseVisible) {
                 MousePosition = null;
-#if !MOBILE
+#if !MOBILE && !BROWSER
                 m_mouse.Cursor.CursorMode = Window.IsActive ? CursorMode.Raw : CursorMode.Normal;
             }
             else {
@@ -375,7 +375,7 @@ namespace Engine.Input {
             if (Build.VERSION.SdkInt >= (BuildVersionCodes)24) {
                 Window.m_surface?.PointerIcon = PointerIcon.GetSystemIcon(Application.Context, TranslateCursorType(cursorType));
             }
-#elif !IOS
+#elif !IOS && !BROWSER
             m_mouse.Cursor.StandardCursor = TranslateCursorType(cursorType);
 #endif
         }

@@ -327,7 +327,7 @@ namespace Game {
 #endif
                 }
             );
-#if !IOS
+#if !IOS && !BROWSER
             AddLoadAction(
                 delegate { //读取所有的ModEntity的JavaScript
                     JsInterface.Initiate();

@@ -62,7 +62,7 @@ namespace Engine.Input {
 
         const float TRIGGER_DOWN_THRESHOLD = 0.5f;
         const float TRIGGER_UP_THRESHOLD = 0.4f;
-#elif !IOS
+#elif !IOS && !BROWSER
         public static IReadOnlyList<IGamepad> m_gamepads;
 #endif
         public static double m_buttonFirstRepeatTime = 0.2;
@@ -72,7 +72,7 @@ namespace Engine.Input {
         static State[] m_states = [new(), new(), new(), new()];
 
         internal static void Initialize() {
-#if !MOBILE
+#if !MOBILE && !BROWSER
             m_gamepads = Window.m_inputContext.Gamepads;
 #endif
         }
@@ -248,7 +248,7 @@ namespace Engine.Input {
                 m_states[value].IsConnected = false;
             }
         }
-#elif IOS
+#elif IOS || BROWSER
         internal static void BeforeFrame() {}
 #else
         internal static void BeforeFrame() {

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 namespace Engine.Graphics {
     public static class GLWrapper {
         public static GL GL;
-#if ANGLE
+#if ANGLE || BROWSER
         public static IntPtr m_eglDisplay;
         public static IntPtr m_eglSurface;
         public static IntPtr m_eglContext;
@@ -65,11 +65,13 @@ namespace Engine.Graphics {
         public static int GL_MAX_TEXTURE_SIZE;
 
         public static void Initialize() {
+#if ANGLE || BROWSER
 #if ANGLE
             IntPtr hwnd = Window.Handle;
             if (hwnd == IntPtr.Zero) {
                 throw new Exception("Failed to get window handle");
             }
+#endif
             m_eglDisplay = Egl.GetDisplay(IntPtr.Zero);
             if (m_eglDisplay == IntPtr.Zero) {
                 throw new Exception("eglGetDisplay failed");
@@ -101,7 +103,11 @@ namespace Engine.Graphics {
                 throw new Exception("eglChooseConfig failed");
             }
             IntPtr config = configs[0];
+#if ANGLE
             m_eglSurface = Egl.CreateWindowSurface(m_eglDisplay, config, hwnd, [Egl.None]);
+#else
+            m_eglSurface = Egl.CreateWindowSurface(m_eglDisplay, config, IntPtr.Zero, [Egl.None]);
+#endif
             if (m_eglSurface == IntPtr.Zero) {
                 throw new Exception("eglCreateWindowSurface failed");
             }
@@ -124,7 +130,7 @@ namespace Engine.Graphics {
 #else
             m_mainFramebuffer = 0;
 #endif
-#if DEBUG && !IOS
+#if DEBUG && !IOS && !BROWSER
             unsafe {
                 GL.DebugMessageCallback(DebugMessageDelegate, IntPtr.Zero.ToPointer());
                 GL.Enable(EnableCap.DebugOutput);
@@ -722,7 +728,7 @@ namespace Engine.Graphics {
                                 TextureParameterName.TextureWrapT,
                                 (int)TranslateTextureAddressMode(samplerState.AddressModeV)
                             );
-#if !MOBILE
+#if !MOBILE && !BROWSER
                             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinLod, samplerState.MinLod);
                             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMaxLod, samplerState.MaxLod);
 #endif

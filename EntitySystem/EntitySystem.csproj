@@ -47,6 +47,17 @@
         <DefineConstants>TRACE;RELEASE;ANGLE</DefineConstants>
         <Optimize>true</Optimize>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'Browser'">
+        <TargetFramework>net10.0</TargetFramework>
+        <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+        <DefineConstants>DEBUG;BROWSER</DefineConstants>
+        <IsAotCompatible>true</IsAotCompatible>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <PublishTrimmed>true</PublishTrimmed>
+        <WasmBuildNative>true</WasmBuildNative>
+        <RunAOTCompilation>true</RunAOTCompilation>
+        <WasmEnableSIMD>false</WasmEnableSIMD>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android' or '$(TargetFramework)' == 'net9.0-ios'">
         <DefineConstants>$(DefineConstants);MOBILE</DefineConstants>
     </PropertyGroup>

@@ -49,6 +49,18 @@
         <DefineConstants>TRACE;RELEASE;ANGLE</DefineConstants>
         <Optimize>true</Optimize>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'Browser'">
+        <TargetFramework>net10.0</TargetFramework>
+        <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+        <DefineConstants>DEBUG;BROWSER</DefineConstants>
+        <IsAotCompatible>true</IsAotCompatible>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s</EmccFlags>
+        <PublishTrimmed>true</PublishTrimmed>
+        <WasmBuildNative>true</WasmBuildNative>
+        <RunAOTCompilation>true</RunAOTCompilation>
+        <WasmEnableSIMD>false</WasmEnableSIMD>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
         <SupportedOSPlatformVersion>23.0</SupportedOSPlatformVersion>
     </PropertyGroup>
@@ -70,7 +82,7 @@
         <PackageReference Include="NLayer.NAudioSupport" Version="1.4.0" /><!--MP3 support-->
         <PackageReference Include="NAudio.Flac.Unknown.Mod" Version="1.0.4" PrivateAssets="all" Condition="'$(Configuration)' != 'IOS'" /><!--Source: https://github.com/XiaofengdiZhu/NAudio.Flac/ -->
         <PackageReference Include="NAudio.Core" Version="2.2.1" /><!--Resolve reference confliction between NLayer.NAudioSupport and NAudio.Flac.Unknown.Mod-->
-        <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" Condition="!$(DefineConstants.Contains('BROWSER'))"/>
+        <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" Condition="'$(Configuration)' != 'Browser'"/>
         <PackageReference Include="Silk.NET.OpenGLES" Version="2.22.0" Condition="'$(Configuration)' != 'Direct3D11'" />
         <PackageReference Include="Silk.NET.OpenAL" Version="2.22.0" />
         <PackageReference Include="Silk.NET.Input" Version="2.22.0" Condition="'$(TargetFramework)' != 'net10.0-android'" />
@@ -92,15 +104,10 @@
     <ItemGroup>
         <Compile Remove="Engine.Graphics\DXWrapper.cs" Condition="'$(Configuration)' != 'Direct3D11'" />
         <Compile Remove="Engine.Graphics\GLWrapper.cs" Condition="'$(Configuration)' == 'Direct3D11'" />
-        <Compile Remove="Engine.Graphics\EGL.cs" Condition="'$(Configuration)' != 'Angle' and !$(DefineConstants.Contains('BROWSER'))" />
+        <Compile Remove="Engine.Graphics\EGL.cs" Condition="'$(Configuration)' != 'Angle' and '$(Configuration)' != 'Browser'" />
+        <Compile Remove="Engine.Browser\**\*.cs" Condition="'$(Configuration)' != 'Browser'" />
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)' == 'IOS'">
         <Reference Include="Bass.Net" HintPath="Bass.Net.dll" />
     </ItemGroup>
-    <ItemGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
-        <Compile Remove="Engine\Window.cs" />
-    </ItemGroup>
-    <!--<ItemGroup Condition="'$(RuntimeIdentifier)' != 'browser-wasm'">
-        <Compile Remove="Engine.Browser\**\*.cs" />
-    </ItemGroup>-->
 </Project>

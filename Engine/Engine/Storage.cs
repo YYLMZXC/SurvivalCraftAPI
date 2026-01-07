@@ -8,9 +8,11 @@ using Foundation;
 #if WINDOWS
 using System.Diagnostics;
 #endif
-using System.Reflection;
+#if !BROWSER
 using NativeFileDialogCore;
 #endif
+using System.Reflection;
+#endif // !ANDROID
 using System.Text;
 
 namespace Engine {
@@ -413,7 +415,7 @@ namespace Engine {
             }
 #if ANDROID
             return await Window.Activity.ChooseFileAsync(title);
-#elif  IOS
+#elif  IOS || BROWSER
             throw new Exception("Unsupported Operation");
 
 #else

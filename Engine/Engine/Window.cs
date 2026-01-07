@@ -720,6 +720,9 @@ namespace Engine {
 #endif
                 Dispatcher.Initialize();
                 Display.Initialize();
+#if BROWSER
+                BrowserInterop.Initialize();
+#endif
                 Keyboard.Initialize();
                 Mouse.Initialize();
                 Touch.Initialize();

@@ -111,9 +111,6 @@ namespace Game {
                 InputMethod.Enabled = false;
             };
 #endif
-#if BROWSER
-            Engine.Browser.BrowserInterop.Initialize();
-#endif
             EntryPoint();
 #if WINDOWS
             m_mutex.ReleaseMutex();

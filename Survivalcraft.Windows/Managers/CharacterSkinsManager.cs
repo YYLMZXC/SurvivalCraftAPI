@@ -1,5 +1,6 @@
 using Engine;
 using Engine.Graphics;
+using Engine.Media;
 using TemplatesDatabase;
 
 namespace Game {

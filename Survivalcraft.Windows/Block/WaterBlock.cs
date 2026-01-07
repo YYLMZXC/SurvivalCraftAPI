@@ -1,3 +1,4 @@
+using Engine;
 namespace Game {
     public class WaterBlock : FluidBlock {
         public static int Index = 18;

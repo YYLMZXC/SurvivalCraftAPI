@@ -1,6 +1,7 @@
 using Engine;
 using Engine.Graphics;
 using SixLabors.ImageSharp;
+using Image = Engine.Media.Image;
 
 namespace Game {
     public static class BlocksTexturesManager {

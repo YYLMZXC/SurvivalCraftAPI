@@ -1,5 +1,8 @@
 using Silk.NET.OpenGLES;
 using System.Diagnostics;
+#if BROWSER
+using Engine.Browser;
+#endif
 #if DEBUG && !IOS
 using System.Runtime.InteropServices;
 #endif
@@ -119,6 +122,9 @@ namespace Engine.Graphics {
             if (!Egl.MakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext)) {
                 throw new Exception("eglMakeCurrent failed");
             }
+#if BROWSER
+            TrampolineFuncs.ApplyWorkaroundFixingInvocations();
+#endif
             GL = GL.GetApi(Egl.GetProcAddress);
 #else
             GL = GL.GetApi(Window.m_view);

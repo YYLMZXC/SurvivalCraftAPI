@@ -323,9 +323,11 @@ namespace Engine.Graphics {
         public static void AfterFrame() { }
 
         public static void Resize() {
-            BackbufferSize = new Point2(Window.Size.X, Window.Size.Y);
-            Viewport = new Viewport(0, 0, Window.Size.X, Window.Size.Y);
-            ScissorRectangle = new Rectangle(0, 0, Window.Size.X, Window.Size.Y);
+            Point2 size = Window.Size;
+            Console.WriteLine($"Display.Resize {size.X}x{size.Y}");
+            BackbufferSize = new Point2(size.X, size.Y);
+            Viewport = new Viewport(0, 0, size.X, size.Y);
+            ScissorRectangle = new Rectangle(0, 0, size.X, size.Y);
 #if DIRECT3D11
             DXWrapper.ResizeSwapChainIfNeeded();
 #endif

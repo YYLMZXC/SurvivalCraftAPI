@@ -83,5 +83,7 @@ namespace Engine {
                 return ptr;
             }
         }
+
+        public static implicit operator Vector2(Point2 p) => new(p.X, p.Y);
     }
 }

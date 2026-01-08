@@ -36,14 +36,16 @@ namespace Engine.Browser {
         [JSExport]
         public static void OnMouseUp(bool shift, bool ctrl, bool alt, int button) { }
 
-        public static event Action<Point2> CanvasResize;
+        public static event Action<Point2> CanvasResizeCallback;
 
         public static Point2 CanvasSize {
             get => field;
             private set {
                 if (field != value) {
+                    Console.WriteLine($"CanvasSize: old {field.X},{field.Y}; new {value.X},{value.Y}; event count: {CanvasResizeCallback?.GetInvocationList().Length}");//输出：CanvasSize: old 0,0; new 3295,1853; event count:
+                    Console.WriteLine("CanvasSize " + typeof(BrowserInterop).Assembly.FullName);
                     field = value;
-                    CanvasResize?.Invoke(value);
+                    CanvasResizeCallback?.Invoke(value);
                 }
             }
         }

@@ -39,13 +39,13 @@ namespace Game {
 #endif
 
 #if !ANDROID
+        // ReSharper disable UnusedMember.Local
 #if BROWSER
         public static async Task Main(string[] args) {
 #else
-        // ReSharper disable UnusedMember.Local
         static void Main(string[] args) {
-        // ReSharper restore UnusedMember.Local
 #endif
+        // ReSharper restore UnusedMember.Local
 #if WINDOWS
             if (args != null
                 && args.Length > 0) {

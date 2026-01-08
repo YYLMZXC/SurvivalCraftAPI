@@ -678,7 +678,8 @@ namespace Engine {
 
         static void SubscribeToEvents() {
 #if BROWSER
-            BrowserInterop.CanvasResize += _ => ResizeHandler(default);
+            BrowserInterop.CanvasResizeCallback += _ => ResizeHandler(default);
+            ResizeHandler(default);
             unsafe {
                 Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&BrowserRenderFrameHandler, nint.Zero);
             }

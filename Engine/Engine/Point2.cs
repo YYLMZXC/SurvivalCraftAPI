@@ -85,5 +85,17 @@ namespace Engine {
         }
 
         public static implicit operator Vector2(Point2 p) => new(p.X, p.Y);
+
+        public static Point2 Round(Vector2 v) => new((int)MathF.Round(v.X), (int)MathF.Round(v.Y));
+
+        public static Point2 Round(float x, float y) => new((int)MathF.Round(x), (int)MathF.Round(y));
+
+        public static Point2 Ceiling(Vector2 v) => new((int)MathF.Ceiling(v.X), (int)MathF.Ceiling(v.Y));
+
+        public static Point2 Ceiling(float x, float y) => new((int)MathF.Ceiling(x), (int)MathF.Ceiling(y));
+
+        public static Point2 Floor(Vector2 v) => new((int)MathF.Floor(v.X), (int)MathF.Floor(v.Y));
+
+        public static Point2 Floor(float x, float y) => new((int)MathF.Floor(x), (int)MathF.Floor(y));
     }
 }

@@ -53,27 +53,23 @@ setModuleImports("main.js", {
         }
 
         let mouseMove = (e) => {
-            let x = e.offsetX;
-            let y = e.offsetY;
-            interop.OnMouseMove(x, y);
+            let devicePixelRatio = window.devicePixelRatio || 1.0;
+            interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
         }
 
         let mouseDown = (e) => {
-            let shift = e.shiftKey;
-            let ctrl = e.ctrlKey;
-            let alt = e.altKey;
-            let button = e.button;
-
-            interop.OnMouseDown(shift, ctrl, alt, button);
+            let devicePixelRatio = window.devicePixelRatio || 1.0;
+            interop.OnMouseDown(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
         }
 
         let mouseUp = (e) => {
-            let shift = e.shiftKey;
-            let ctrl = e.ctrlKey;
-            let alt = e.altKey;
-            let button = e.button;
+            let devicePixelRatio = window.devicePixelRatio || 1.0;
+            interop.OnMouseUp(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+        }
 
-            interop.OnMouseUp(shift, ctrl, alt, button);
+        let mouseWheel = (e) => {
+            e.preventDefault();
+            interop.OnMouseWheel(-e.deltaY);
         }
 
         let shouldIgnore = (e) => {
@@ -130,6 +126,7 @@ setModuleImports("main.js", {
         canvas.addEventListener("mousemove", mouseMove, false);
         canvas.addEventListener("mousedown", mouseDown, false);
         canvas.addEventListener("mouseup", mouseUp, false);
+        canvas.addEventListener("wheel", mouseWheel, false);
         canvas.addEventListener("touchstart", touchStart, false);
         canvas.addEventListener("touchmove", touchMove, false);
         canvas.addEventListener("touchend", touchEnd, false);

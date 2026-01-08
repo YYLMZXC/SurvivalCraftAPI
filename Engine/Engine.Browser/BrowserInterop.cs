@@ -1,5 +1,6 @@
 #pragma warning disable CA1416
 using System.Runtime.InteropServices.JavaScript;
+using Engine.Input;
 
 namespace Engine.Browser {
     public static partial class BrowserInterop {
@@ -28,13 +29,16 @@ namespace Engine.Browser {
         public static void OnKeyUp(bool shift, bool ctrl, bool alt, int code) { }
 
         [JSExport]
-        public static void OnMouseMove(float x, float y) { }
+        public static void OnMouseMove(float x, float y) => Mouse.MouseMoveHandler(x, y);
 
         [JSExport]
-        public static void OnMouseDown(bool shift, bool ctrl, bool alt, int button) { }
+        public static void OnMouseDown(int button, float x, float y) => Mouse.MouseDownHandler(button, x, y);
 
         [JSExport]
-        public static void OnMouseUp(bool shift, bool ctrl, bool alt, int button) { }
+        public static void OnMouseUp(int button, float x, float y) => Mouse.MouseUpHandler(button, x, y);
+
+        [JSExport]
+        public static void OnMouseWheel(float value) => Mouse.MouseWheelHandler(value);
 
         public static event Action<Point2> CanvasResizeCallback;
 

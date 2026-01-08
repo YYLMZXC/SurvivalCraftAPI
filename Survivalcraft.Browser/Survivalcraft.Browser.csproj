@@ -15,7 +15,7 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <OutputType>Exe</OutputType>
         <IsAotCompatible>true</IsAotCompatible>
-        <InvariantGlobalization>true</InvariantGlobalization>
+        <InvariantGlobalization>false</InvariantGlobalization>
         <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s</EmccFlags>
         <WasmMainJSPath>main.js</WasmMainJSPath>
     </PropertyGroup>
@@ -42,9 +42,15 @@
         <NativeFileReference Include="Native/libEGL.c" ScanForPInvokes="true" />
         <NativeFileReference Include="Native/openal32.c" ScanForPInvokes="true" />
         <NativeFileReference Include="Native/emscripten.c" ScanForPInvokes="true" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="..\Survivalcraft.Windows\Content.zip" Link="Content.zip" />
+    </ItemGroup>
+    <ItemGroup>
         <WasmExtraFilesToDeploy Include="index.html" />
         <WasmExtraFilesToDeploy Include="main.js" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)Assets\**" TargetPath="Assets/%(RecursiveDir)%(Filename)%(Extension)" />
+        <!--<WasmExtraFilesToDeploy Include="..\Survivalcraft.Windows\Content.zip" TargetPath="Content.zip" />-->
     </ItemGroup>
     <ItemGroup>
         <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs"/>

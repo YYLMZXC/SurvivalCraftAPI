@@ -39,7 +39,9 @@ namespace Engine {
         }
 
         static State m_state;
-#if !BROWSER
+#if BROWSER
+        public static string HostedHref;
+#else
         public static IView m_view;
 #endif
 

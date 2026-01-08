@@ -138,7 +138,7 @@ setModuleImports("main.js", {
 
         canvas.tabIndex = 1000;
 
-        interop.SetRootUri(window.location.toString());
+        interop.SetHostedHref(window.location.href);
     },
     getTitle: () => globalThis.document.title,
     setTitle: (title) => globalThis.document.title = title,

@@ -55,8 +55,9 @@ namespace Engine.Browser {
         }
 
         [JSExport]
-        public static void SetRootUri(string uri) {
+        public static void SetHostedHref(string href) {
             //Test.BaseAddress = new Uri(uri);
+            Window.HostedHref = href;
         }
 
         [JSExport]

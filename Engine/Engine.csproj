@@ -54,7 +54,7 @@
         <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
         <DefineConstants>DEBUG;BROWSER</DefineConstants>
         <IsAotCompatible>true</IsAotCompatible>
-        <InvariantGlobalization>true</InvariantGlobalization>
+        <InvariantGlobalization>false</InvariantGlobalization>
         <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s</EmccFlags>
         <PublishTrimmed>true</PublishTrimmed>
         <WasmBuildNative>true</WasmBuildNative>

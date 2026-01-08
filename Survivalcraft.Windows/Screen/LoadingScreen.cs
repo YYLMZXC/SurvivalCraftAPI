@@ -112,7 +112,9 @@ namespace Game {
             Canvas.AddChildren(busyBar);
             AddChildren(Canvas);
             m_isContentLoaded = true;
+#if !BROWSER
             Task.Run(() => { _ = ContentManager.Get<Image>("Fonts/Pericles", ".webp"); });
+#endif
         }
 
         //日志已经附带状态，不需要添加状态字符串

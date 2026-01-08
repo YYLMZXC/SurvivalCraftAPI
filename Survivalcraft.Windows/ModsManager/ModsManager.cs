@@ -393,6 +393,9 @@ public static class ModsManager {
         ModLoaders.Clear();
         SurvivalCraftModEntity = new SurvivalCraftModEntity();
         ModListAll.Add(SurvivalCraftModEntity);
+#if BROWSER
+        return;
+#endif
         if (SettingsManager.SafeMode) {
             return;
         }

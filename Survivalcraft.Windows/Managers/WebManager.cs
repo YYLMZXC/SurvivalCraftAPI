@@ -31,24 +31,18 @@ namespace Game {
             }
 
             protected override async Task SerializeToStreamAsync(Stream targetStream, TransportContext context) {
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[8192];
                 long written = 0L;
+                m_progress.Total = m_sourceStream.Length;
                 while (true) {
-                    m_progress.Total = m_sourceStream.Length;
-                    m_progress.Completed = written;
-                    if (m_progress.CancellationToken.IsCancellationRequested) {
+                    int read = await m_sourceStream.ReadAsync(buffer, 0, buffer.Length, m_progress.CancellationToken);
+                    if (read <= 0) {
                         break;
                     }
-                    int read = m_sourceStream.Read(buffer, 0, buffer.Length);
-                    if (read > 0) {
-                        await targetStream.WriteAsync(buffer, 0, read, m_progress.CancellationToken);
-                        written += read;
-                    }
-                    if (read <= 0) {
-                        return;
-                    }
+                    await targetStream.WriteAsync(buffer.AsMemory(0, read), m_progress.CancellationToken);
+                    written += read;
+                    m_progress.Completed = written;
                 }
-                throw new OperationCanceledException("Operation cancelled.");
             }
         }
 #if WINDOWS
@@ -75,7 +69,7 @@ namespace Game {
 #elif LINUX
                 return NetworkInterface.GetIsNetworkAvailable();
 #else
-				return true;
+                return true;
 #endif
             }
             catch (Exception e) {
@@ -123,27 +117,21 @@ namespace Game {
                                 progress.CancellationToken
                             );
                             await VerifyResponse(responseMessage);
-                            long? contentLength = responseMessage.Content.Headers.ContentLength;
-#if !ANDROID
-                            progress.Total = contentLength ?? 0;
-#else
-                            progress.Total = contentLength.GetValueOrDefault();
-#endif
-                            using Stream responseStream = await responseMessage.Content.ReadAsStreamAsync();
+                            progress.Total = responseMessage.Content.Headers.ContentLength ?? 0;
+                            await using Stream responseStream = await responseMessage.Content.ReadAsStreamAsync();
                             targetStream = new MemoryStream();
                             try {
                                 long written = 0L;
-                                byte[] buffer = new byte[1024];
-                                int num;
-                                do {
-                                    num = await responseStream.ReadAsync(buffer, progress.CancellationToken);
-                                    if (num > 0) {
-                                        targetStream.Write(buffer, 0, num);
-                                        written += num;
-                                        progress.Completed = written;
+                                byte[] buffer = new byte[8192];
+                                while (true) {
+                                    int read = await responseStream.ReadAsync(buffer, progress.CancellationToken);
+                                    if (read == 0) {
+                                        break;
                                     }
+                                    await targetStream.WriteAsync(buffer.AsMemory(0, read), progress.CancellationToken);
+                                    written += read;
+                                    progress.Completed = written;
                                 }
-                                while (num > 0);
                                 if (success != null) {
                                     Dispatcher.Dispatch(
                                         delegate {
@@ -204,6 +192,77 @@ namespace Game {
                 progress,
                 success,
                 failure
+            );
+        }
+
+        public static async Task<byte[]> GetAsync(string address,
+            Dictionary<string, string> parameters = null,
+            Dictionary<string, string> headers = null,
+            CancellableProgress progress = null) {
+            progress ??= new CancellableProgress();
+            Uri requestUri = parameters != null && parameters.Count > 0
+                ? new Uri($"{address}?{UrlParametersToString(parameters)}")
+                : new Uri(address);
+            if (!IsInternetConnectionAvailable()) {
+                throw new InvalidOperationException("Internet connection is unavailable.");
+            }
+            using HttpClient client = new();
+            client.DefaultRequestHeaders.Referrer = new Uri(address);
+            if (headers != null) {
+                foreach (KeyValuePair<string, string> header in headers) {
+                    client.DefaultRequestHeaders.Add(header.Key, header.Value);
+                }
+            }
+            using HttpResponseMessage responseMessage = await client.GetAsync(
+                    requestUri,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    progress.CancellationToken
+                );
+            await VerifyResponse(responseMessage);
+            progress.Total = responseMessage.Content.Headers.ContentLength ?? 0;
+            await using Stream responseStream = await responseMessage.Content.ReadAsStreamAsync();
+            using MemoryStream targetStream = new();
+            long written = 0L;
+            byte[] buffer = new byte[8192];
+            while (true) {
+                int read = await responseStream.ReadAsync(buffer.AsMemory(0, buffer.Length), progress.CancellationToken);
+                if (read <= 0) {
+                    break;
+                }
+                await targetStream.WriteAsync(buffer.AsMemory(0, read), progress.CancellationToken);
+                written += read;
+                progress.Completed = written;
+            }
+            return targetStream.ToArray();
+        }
+
+        public static async Task<byte[]> PutAsync(string address,
+            Dictionary<string, string> parameters,
+            Dictionary<string, string> headers,
+            Stream data,
+            CancellableProgress progress = null) {
+            return await PutOrPostAAsync(
+                false,
+                address,
+                parameters,
+                headers,
+                data,
+                progress
+            );
+        }
+
+        public static async Task<byte[]> PostAsync(string address,
+            Dictionary<string, string> parameters,
+            Dictionary<string, string> headers,
+            Stream data,
+            CancellableProgress progress = null) {
+            return await PutOrPostAAsync(
+                true,
+                address,
+                parameters,
+                headers,
+                data,
+                progress
             );
         }
 
@@ -302,6 +361,52 @@ namespace Game {
                     }
                 }
             );
+        }
+
+        public static async Task<byte[]> PutOrPostAAsync(bool isPost,
+            string address,
+            Dictionary<string, string> parameters,
+            Dictionary<string, string> headers,
+            Stream data,
+            CancellableProgress progress) {
+            Uri requestUri = parameters != null && parameters.Count > 0
+                ? new Uri($"{address}?{UrlParametersToString(parameters)}")
+                : new Uri(address);
+            if (!IsInternetConnectionAvailable()) {
+                throw new InvalidOperationException("Internet connection is unavailable.");
+            }
+            using HttpClient client = new();
+            Dictionary<string, string> dictionary = new();
+            if (headers != null) {
+                foreach (KeyValuePair<string, string> header in headers) {
+                    if (!client.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value)) {
+                        dictionary.Add(header.Key, header.Value);
+                    }
+                }
+            }
+#if !ANDROID
+            ProgressHttpContent httpContent = new(data, progress);
+#else
+            HttpContent httpContent = progress != null ? new ProgressHttpContent(data, progress) : new StreamContent(data);
+#endif
+            foreach (KeyValuePair<string, string> item in dictionary) {
+                httpContent.Headers.Add(item.Key, item.Value);
+            }
+#if !ANDROID
+            HttpResponseMessage responseMessage = isPost
+                ? await client.PostAsync(requestUri, httpContent, progress.CancellationToken)
+                : await client.PutAsync(requestUri, httpContent, progress.CancellationToken);
+#else
+            HttpResponseMessage responseMessage = isPost ?
+                progress == null
+                    ? await client.PostAsync(requestUri, httpContent)
+                    : await client.PostAsync(requestUri, httpContent, progress.CancellationToken) :
+                progress == null ? await client.PutAsync(requestUri, httpContent) :
+                    await client.PutAsync(requestUri, httpContent, progress.CancellationToken);
+#endif
+            await VerifyResponse(responseMessage);
+            byte[] responseData = await responseMessage.Content.ReadAsByteArrayAsync();
+            return responseData;
         }
 
         public static async Task VerifyResponse(HttpResponseMessage message) {

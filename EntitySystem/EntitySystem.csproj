@@ -52,7 +52,7 @@
         <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
         <DefineConstants>DEBUG;BROWSER</DefineConstants>
         <IsAotCompatible>true</IsAotCompatible>
-        <InvariantGlobalization>true</InvariantGlobalization>
+        <InvariantGlobalization>false</InvariantGlobalization>
         <PublishTrimmed>true</PublishTrimmed>
         <WasmBuildNative>true</WasmBuildNative>
         <RunAOTCompilation>true</RunAOTCompilation>

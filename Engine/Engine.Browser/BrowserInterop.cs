@@ -22,6 +22,9 @@ namespace Engine.Browser {
         [JSImport("reload", "main.js")]
         public static partial void Reload();
 
+        [JSImport("setDocumentLang", "main.js")]
+        public static partial void SetDocumentLang(string lang);
+
         [JSExport]
         public static void OnKeyDown(bool shift, bool ctrl, bool alt, bool repeat, int code) { }
 

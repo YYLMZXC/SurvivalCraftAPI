@@ -65,6 +65,9 @@ namespace Game {
             ModsManager.SetConfig("Language", languageType);
             CurrentLanguageName = languageType;
             CurrentLanguageCultureInfo = cultureInfo;
+#if BROWSER
+            Engine.Browser.BrowserInterop.SetDocumentLang(languageType);
+#endif
         }
 
         public static void loadJson(Stream stream) {

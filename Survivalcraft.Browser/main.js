@@ -11,18 +11,17 @@ dotnet.instance.Module["canvas"] = canvas;
 
 setModuleImports("main.js", {
     initialize: () => {
-
-        let checkCanvasResize = (dispatch) => {
-            let devicePixelRatio = window.devicePixelRatio || 1.0;
-            let displayWidth = canvas.clientWidth * devicePixelRatio;
-            let displayHeight = canvas.clientHeight * devicePixelRatio;
+        const checkCanvasResize = (dispatch) => {
+            const devicePixelRatio = window.devicePixelRatio || 1.0;
+            const rect = canvas.getBoundingClientRect();
+            const displayWidth = rect.width * devicePixelRatio;
+            const displayHeight = rect.height * devicePixelRatio;
 
             if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
                 canvas.width = displayWidth;
                 canvas.height = displayHeight;
                 dispatch = true;
             }
-
             if (dispatch) interop.OnCanvasResize(displayWidth, displayHeight, devicePixelRatio);
         }
 
@@ -31,7 +30,7 @@ setModuleImports("main.js", {
             requestAnimationFrame(checkCanvasResizeFrame);
         }
 
-        let keyDown = (e) => {
+        const keyDown = (e) => {
             e.stopPropagation();
             let shift = e.shiftKey;
             let ctrl = e.ctrlKey;
@@ -42,7 +41,7 @@ setModuleImports("main.js", {
             interop.OnKeyDown(shift, ctrl, alt, repeat, code);
         }
 
-        let keyUp = (e) => {
+        const keyUp = (e) => {
             e.stopPropagation();
             let shift = e.shiftKey;
             let ctrl = e.ctrlKey;
@@ -52,32 +51,32 @@ setModuleImports("main.js", {
             interop.OnKeyUp(shift, ctrl, alt, code);
         }
 
-        let mouseMove = (e) => {
-            let devicePixelRatio = window.devicePixelRatio || 1.0;
+        const mouseMove = (e) => {
+            const devicePixelRatio = window.devicePixelRatio || 1.0;
             interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
         }
 
-        let mouseDown = (e) => {
-            let devicePixelRatio = window.devicePixelRatio || 1.0;
+        const mouseDown = (e) => {
+            const devicePixelRatio = window.devicePixelRatio || 1.0;
             interop.OnMouseDown(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
         }
 
-        let mouseUp = (e) => {
-            let devicePixelRatio = window.devicePixelRatio || 1.0;
+        const mouseUp = (e) => {
+            const devicePixelRatio = window.devicePixelRatio || 1.0;
             interop.OnMouseUp(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
         }
 
-        let mouseWheel = (e) => {
+        const mouseWheel = (e) => {
             e.preventDefault();
             interop.OnMouseWheel(-e.deltaY);
         }
 
-        let shouldIgnore = (e) => {
+        const shouldIgnore = (e) => {
             e.preventDefault();
             return e.touches.length > 1 || e.type === "touchend" && e.touches.length > 0;
         }
 
-        let touchStart = (e) => {
+        const touchStart = (e) => {
             if (shouldIgnore(e)) return;
 
             let shift = e.shiftKey;
@@ -93,7 +92,7 @@ setModuleImports("main.js", {
             interop.OnMouseDown(shift, ctrl, alt, button);
         }
 
-        let touchMove = (e) => {
+        const touchMove = (e) => {
             if (shouldIgnore(e)) return;
 
             let touch = e.changedTouches[0];
@@ -104,7 +103,7 @@ setModuleImports("main.js", {
             interop.OnMouseMove(x, y);
         }
 
-        let touchEnd = (e) => {
+        const touchEnd = (e) => {
             if (shouldIgnore(e)) return;
 
             let shift = e.shiftKey;
@@ -142,5 +141,6 @@ setModuleImports("main.js", {
     getLanguage: () => globalThis.navigator.language,
     close: () => globalThis.close(),
     reload: () => globalThis.location.reload(),
+    setDocumentLang : (lang) => globalThis.document.documentElement.lang = lang
 });
 await runMain(config.mainAssemblyName);

@@ -59,7 +59,8 @@
         <PublishTrimmed>true</PublishTrimmed>
         <WasmBuildNative>true</WasmBuildNative>
         <RunAOTCompilation>true</RunAOTCompilation>
-        <WasmEnableSIMD>false</WasmEnableSIMD>
+        <WasmEnableThreads>false</WasmEnableThreads>
+        <WasmEnableSIMD>true</WasmEnableSIMD>
     </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
         <SupportedOSPlatformVersion>23.0</SupportedOSPlatformVersion>

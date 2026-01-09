@@ -1,15 +1,21 @@
 using System.Runtime.InteropServices;
+using Engine.Browser;
 using Engine.Media;
 using Silk.NET.OpenAL;
 
 namespace Engine.Audio {
     public class StreamingSound : BaseSound {
+#if BROWSER
+        bool m_initialized;
+        uint[] m_buffers;
+        readonly List<uint> m_freeBuffers = new();
+        byte[] m_streamBuffer;
+#else
         Task m_task;
-
         ManualResetEvent m_stopTaskEvent = new(false);
+#endif
 
         bool m_noMoreData;
-
         public readonly float m_bufferDuration;
 
         public StreamingSource StreamingSource { get; set; }
@@ -62,6 +68,9 @@ namespace Engine.Audio {
             IsLooped = isLooped;
             DisposeOnStop = disposeOnStop;
             m_bufferDuration = Math.Clamp(bufferDuration, 0.01f, 10f);
+#if BROWSER
+            Window.Frame += UpdateStreaming;
+#else
             if (m_source == 0) {
                 return;
             }
@@ -75,6 +84,7 @@ namespace Engine.Audio {
                     }
                 }
             );
+#endif
         }
 
         internal override void InternalPlay(Vector3 direction) {
@@ -98,13 +108,36 @@ namespace Engine.Audio {
                 Mixer.AL.SourceStop((uint)m_source);
                 Mixer.CheckALError();
                 StreamingSource.Position = 0L;
+#if BROWSER
+                m_noMoreData = false;
+#else
                 lock (m_lock) {
                     m_noMoreData = false;
                 }
+#endif
             }
         }
 
         internal override void InternalDispose() {
+#if BROWSER
+            if (m_source != 0) {
+                uint source = (uint)m_source;
+                Mixer.AL.SourceStop(source);
+                Mixer.AL.SetSourceProperty(source, SourceInteger.Buffer, 0);
+                Mixer.CheckALError();
+            }
+            if (m_buffers != null) {
+                foreach (uint b in m_buffers) {
+                    if (b != 0) {
+                        uint buffer = b;
+                        Mixer.AL.DeleteBuffer(buffer);
+                        Mixer.CheckALError();
+                    }
+                }
+                m_buffers = null;
+                m_freeBuffers.Clear();
+            }
+#else
             if (m_stopTaskEvent != null
                 && m_task != null) {
                 m_stopTaskEvent.Set();
@@ -113,6 +146,7 @@ namespace Engine.Audio {
                 m_stopTaskEvent.Dispose();
                 m_stopTaskEvent = null;
             }
+#endif
             if (StreamingSource != null) {
                 StreamingSource.Dispose();
                 StreamingSource = null;
@@ -120,6 +154,93 @@ namespace Engine.Audio {
             base.InternalDispose();
         }
 
+#if BROWSER
+        void InitializeStreaming() {
+            if (m_initialized || m_source == 0) {
+                return;
+            }
+            m_buffers = new uint[3];
+            int samplesPerBuffer = (int)(SamplingFrequency * m_bufferDuration / m_buffers.Length);
+            m_streamBuffer = new byte[2 * ChannelsCount * samplesPerBuffer];
+            try {
+                for (int i = 0; i < m_buffers.Length; i++) {
+                    uint buffer = Mixer.AL.GenBuffer();
+                    Mixer.CheckALError();
+                    m_buffers[i] = buffer;
+                    m_freeBuffers.Add(buffer);
+                }
+
+                m_initialized = true;
+            }
+            catch (Exception ex) {
+                Log.Error(ex);
+            }
+        }
+
+        /// <summary>
+        /// Call this ONCE PER FRAME while the sound exists.
+        /// </summary>
+        public void UpdateStreaming() {
+            if (m_source == 0) {
+                return;
+            }
+            InitializeStreaming();
+            uint source = (uint)m_source;
+            try {
+                // Unqueue processed buffers
+                Mixer.AL.GetSourceProperty(source, GetSourceInteger.BuffersProcessed, out int processed);
+                Mixer.CheckALError();
+                for (int i = 0; i < processed; i++) {
+                    unsafe {
+                        uint buffer;
+                        Mixer.AL.SourceQueueBuffers(source, 1, &buffer);
+                        Mixer.CheckALError();
+                        m_freeBuffers.Add(buffer);
+                    }
+                }
+                // Queue new data
+                while (m_freeBuffers.Count > 0
+                    && !m_noMoreData
+                    && State == SoundState.Playing) {
+                    int bytesRead = ReadStreamingSource(m_streamBuffer, m_streamBuffer.Length);
+                    m_noMoreData = bytesRead < m_streamBuffer.Length;
+                    if (bytesRead <= 0) {
+                        break;
+                    }
+                    uint buffer = m_freeBuffers[^1];
+                    m_freeBuffers.RemoveAt(m_freeBuffers.Count - 1);
+                    GCHandle handle = GCHandle.Alloc(m_streamBuffer, GCHandleType.Pinned);
+                    unsafe {
+                        Mixer.AL.BufferData(buffer, ChannelsCount == 1 ? BufferFormat.Mono16 : BufferFormat.Stereo16, handle.AddrOfPinnedObject().ToPointer(), bytesRead, SamplingFrequency);
+                    }
+                    Mixer.CheckALError();
+                    handle.Free();
+                    unsafe {
+                        Mixer.AL.SourceQueueBuffers(source, 1, &buffer);
+                    }
+                    Mixer.CheckALError();
+                }
+                // Ensure playback continues
+                Mixer.AL.GetSourceProperty(source, GetSourceInteger.SourceState, out int state);
+                Mixer.CheckALError();
+                if (state != (int)SourceState.Playing
+                    && State == SoundState.Playing) {
+                    Mixer.AL.SourcePlay(source);
+                    Mixer.CheckALError();
+                }
+                // End of stream
+                if (m_noMoreData && state == (int)SourceState.Stopped) {
+                    Stop();
+                    Window.Frame -= UpdateStreaming;
+                }
+            }
+            catch (Exception ex) {
+                Log.Error(ex);
+                Stop();
+                Window.Frame -= UpdateStreaming;
+            }
+        }
+#else
         unsafe void StreamingThreadFunction() {
             uint[] array = new uint[3];
             List<uint> list = new();
@@ -192,5 +313,6 @@ namespace Engine.Audio {
                 }
             }
         }
+#endif
     }
 }

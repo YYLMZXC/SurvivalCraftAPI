@@ -37,6 +37,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NuGet.Versioning" Version="7.0.1" />
+        <PackageReference Include="NAudio.Flac.Unknown.Mod" Version="1.0.4" />
     </ItemGroup>
     <ItemGroup>
         <NativeFileReference Include="Native/libEGL.c" ScanForPInvokes="true" />

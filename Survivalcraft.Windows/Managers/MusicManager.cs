@@ -59,9 +59,6 @@ namespace Game {
         }
 
         public static void ChangeMenuMusic() {
-#if BROWSER
-            return;
-#endif
             float startPercentage = IsPlaying ? m_random.Float(0f, 0.75f) : 0f;
             string ContentMusicPath = string.Empty;
             ModsManager.HookAction(
@@ -88,9 +85,6 @@ namespace Game {
         }
 
         public static void Update() {
-#if BROWSER
-            return;
-#endif
             if (m_fadeSound != null) {
                 m_fadeSound.Volume = MathUtils.Min(m_fadeSound.Volume - m_fadeSpeed * Volume * Time.FrameDuration, Volume);
                 if (m_fadeSound.Volume <= 0f) {
@@ -123,9 +117,6 @@ namespace Game {
         }
 
         public static void Initialize() {
-#if ANDROID
-            Window.Activity.Paused += delegate { StopMusic(); };
-#endif
             Window.Closed += delegate {
                 try {
                     Utilities.Dispose(ref m_sound);
@@ -138,9 +129,6 @@ namespace Game {
         }
 
         public static void PlayMusic(string name, float startPercentage) {
-#if BROWSER
-            return;
-#endif
             if (string.IsNullOrEmpty(name)) {
                 StopMusic();
             }
@@ -167,7 +155,7 @@ namespace Game {
                     m_sound.Play();
                 }
                 catch {
-                    Log.Warning("Error playing music \"{0}\".", name);
+                    Log.Warning($"Error playing music \"{name}\".");
                 }
             }
         }

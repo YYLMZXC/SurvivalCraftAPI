@@ -10,7 +10,9 @@ namespace Engine.Input {
     public static class GamePad {
         class State {
             // ReSharper disable MemberHidesStaticFromOuterClass
+#pragma warning disable CS0649
             public bool IsConnected;
+#pragma warning restore CS0649
             // ReSharper restore MemberHidesStaticFromOuterClass
 
             public Vector2[] Sticks = new Vector2[2];

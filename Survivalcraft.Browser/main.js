@@ -141,6 +141,7 @@ setModuleImports("main.js", {
     getLanguage: () => globalThis.navigator.language,
     close: () => globalThis.close(),
     reload: () => globalThis.location.reload(),
-    setDocumentLang : (lang) => globalThis.document.documentElement.lang = lang
+    setDocumentLang : (lang) => globalThis.document.documentElement.lang = lang,
+    openUrlInNewTab: (url) => globalThis.open(url)
 });
 await runMain(config.mainAssemblyName);

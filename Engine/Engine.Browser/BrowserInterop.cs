@@ -25,6 +25,9 @@ namespace Engine.Browser {
         [JSImport("setDocumentLang", "main.js")]
         public static partial void SetDocumentLang(string lang);
 
+        [JSImport("openUrlInNewTab", "main.js")]
+        public static partial void OpenUrlInNewTab(string url);
+
         [JSExport]
         public static void OnKeyDown(bool shift, bool ctrl, bool alt, bool repeat, int code) { }
 

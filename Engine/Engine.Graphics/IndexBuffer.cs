@@ -48,7 +48,7 @@ namespace Engine.Graphics {
             DeleteBuffer();
         }
 
-        public void SetData<T>(T[] source, int sourceStartIndex, int sourceCount, int targetStartIndex = 0) where T : struct {
+        public void SetData<T>(T[] source, int sourceStartIndex, int sourceCount, int targetStartIndex = 0) where T : unmanaged {
             VerifyParametersSetData(source, sourceStartIndex, sourceCount, targetStartIndex);
             GCHandle gCHandle = GCHandle.Alloc(source, GCHandleType.Pinned);
             try {
@@ -130,7 +130,7 @@ namespace Engine.Graphics {
             IndicesCount = indicesCount;
         }
 
-        void VerifyParametersSetData<T>(T[] source, int sourceStartIndex, int sourceCount, int targetStartIndex = 0) where T : struct {
+        void VerifyParametersSetData<T>(T[] source, int sourceStartIndex, int sourceCount, int targetStartIndex = 0) where T : unmanaged {
             VerifyNotDisposed();
             int num = Utilities.SizeOf<T>();
             int size = IndexFormat.GetSize();

@@ -27,7 +27,7 @@ namespace Game {
 
         public static ExternalContentType ExtensionToType(string extension) {
             extension = extension.ToLower();
-            foreach (ExternalContentType value in Enum.GetValues(typeof(ExternalContentType))) {
+            foreach (ExternalContentType value in Enum.GetValues<ExternalContentType>()) {
                 if (GetEntryTypeExtensions(value).FirstOrDefault(e => e == extension) != null) {
                     return value;
                 }

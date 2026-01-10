@@ -6,21 +6,21 @@ namespace Engine {
             (b, a) = (a, b);
         }
 
-        public static int SizeOf<T>() => Marshal.SizeOf(typeof(T));
+        public static int SizeOf<T>() where T : unmanaged => Marshal.SizeOf<T>();
 
-        public static T PtrToStructure<T>(IntPtr ptr) => (T)Marshal.PtrToStructure(ptr, typeof(T));
+        public static unsafe T PtrToStructure<T>(void* ptr) where T : unmanaged => *(T*)ptr;
 
-        public static T ArrayToStructure<T>(Array array) {
+        public static unsafe T ArrayToStructure<T>(Array array) where T : unmanaged {
             GCHandle gCHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
             try {
-                return PtrToStructure<T>(gCHandle.AddrOfPinnedObject());
+                return PtrToStructure<T>(gCHandle.AddrOfPinnedObject().ToPointer());
             }
             finally {
                 gCHandle.Free();
             }
         }
 
-        public static byte[] StructureToArray<T>(T structure) {
+        public static byte[] StructureToArray<T>(T structure) where T : unmanaged {
             byte[] array = new byte[SizeOf<T>()];
             GCHandle gCHandle = GCHandle.Alloc(structure, GCHandleType.Pinned);
             try {

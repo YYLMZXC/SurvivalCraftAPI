@@ -32,11 +32,11 @@ namespace Engine.Input {
 
         public static double m_keyNextRepeatTime = 0.04;
 
-        static bool[] m_keysDownArray = new bool[Enum.GetValues(typeof(Key)).Length];
+        static bool[] m_keysDownArray = new bool[Enum.GetValues<Key>().Length];
 
-        static bool[] m_keysDownOnceArray = new bool[Enum.GetValues(typeof(Key)).Length];
+        static bool[] m_keysDownOnceArray = new bool[Enum.GetValues<Key>().Length];
 
-        static double[] m_keysDownRepeatArray = new double[Enum.GetValues(typeof(Key)).Length];
+        static double[] m_keysDownRepeatArray = new double[Enum.GetValues<Key>().Length];
 
         static Key? m_lastKey;
 

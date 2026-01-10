@@ -54,7 +54,9 @@ namespace Game {
                 AllocConsole();
                 Window.Closed += () => FreeConsole();
 #endif
+#pragma warning disable CA1416
                 Console.Title = "Logs of Survivalcraft API";
+#pragma warning restore CA1416
                 Engine.Log.RemoveAllLogSinks();
                 Engine.Log.AddLogSink(new ConsoleLogSink());
                 errorOfInstantiation = $"Error creating GameLogSink, and a console window for viewing logs is created. Reason: {ex.Message}";

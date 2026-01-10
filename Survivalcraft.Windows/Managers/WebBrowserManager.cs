@@ -12,6 +12,8 @@ namespace Game {
             try {
 #if ANDROID
                 Window.Activity.OpenLink(url);
+#elif BROWSER
+                Engine.Browser.BrowserInterop.OpenUrlInNewTab(url);
 #else
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 #endif

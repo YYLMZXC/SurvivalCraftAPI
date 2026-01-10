@@ -308,11 +308,11 @@ namespace Engine.Input {
 #endif
 
         static Mouse() {
-            m_mouseButtonsDownArray = new bool[Enum.GetValues(typeof(MouseButton)).Length];
-            m_mouseButtonsDownFrameArray = new int[Enum.GetValues(typeof(MouseButton)).Length];
-            m_mouseButtonsDelayedUpArray = new bool[Enum.GetValues(typeof(MouseButton)).Length];
-            m_mouseButtonsDownOnceArray = new bool[Enum.GetValues(typeof(MouseButton)).Length];
-            m_mouseButtonsUpOnceArray = new bool[Enum.GetValues(typeof(MouseButton)).Length];
+            m_mouseButtonsDownArray = new bool[Enum.GetValues<MouseButton>().Length];
+            m_mouseButtonsDownFrameArray = new int[Enum.GetValues<MouseButton>().Length];
+            m_mouseButtonsDelayedUpArray = new bool[Enum.GetValues<MouseButton>().Length];
+            m_mouseButtonsDownOnceArray = new bool[Enum.GetValues<MouseButton>().Length];
+            m_mouseButtonsUpOnceArray = new bool[Enum.GetValues<MouseButton>().Length];
             IsMouseVisible = true;
         }
 

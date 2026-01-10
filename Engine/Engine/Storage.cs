@@ -274,8 +274,9 @@ namespace Engine {
 #else
         public static string GetAppDirectory(bool failIfApp) => failIfApp
             ? throw new InvalidOperationException("Access denied.")
+#pragma warning disable IL3000
             : Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location);
-
+#pragma warning restore IL3000
         public static string GetDataDirectory(bool writeAccess) {
             string text = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

@@ -16,8 +16,9 @@ namespace Engine {
         /// <summary>
         ///     获取 EXE 或 dll 所在路径(包含文件自身路径)
         /// </summary>
+#pragma warning disable IL3000
         public static string GetExecutablePath() => Assembly.GetExecutingAssembly().Location;
-
+#pragma warning restore IL3000
         /// <summary>
         ///     获取运行入口路径(用命令行或者其他程序调用时调用者目录)
         /// </summary>

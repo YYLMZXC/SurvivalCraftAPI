@@ -263,7 +263,7 @@ namespace Game {
         public override string GetDisplayName(SubsystemTerrain subsystemTerrain, int value) {
             int arrowType = (int)GetArrowType(Terrain.ExtractData(value));
             if (arrowType < 0
-                || arrowType >= Enum.GetValues(typeof(ArrowType)).Length) {
+                || arrowType >= Enum.GetValues<ArrowType>().Length) {
                 return string.Empty;
             }
             return LanguageControl.Get("ArrowBlock", arrowType);

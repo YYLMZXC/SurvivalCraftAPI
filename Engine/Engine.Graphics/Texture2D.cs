@@ -107,7 +107,7 @@ namespace Engine.Graphics {
             DeleteTexture();
         }
 
-        public virtual void SetData<T>(int mipLevel, T[] source, int sourceStartIndex = 0) where T : struct {
+        public virtual void SetData<T>(int mipLevel, T[] source, int sourceStartIndex = 0) where T : unmanaged {
             VerifyParametersSetData(mipLevel, source, sourceStartIndex);
             GCHandle gCHandle = GCHandle.Alloc(source, GCHandleType.Pinned);
             try {
@@ -369,7 +369,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public virtual void VerifyParametersSetData<T>(int mipLevel, T[] source, int sourceStartIndex = 0) where T : struct {
+        public virtual void VerifyParametersSetData<T>(int mipLevel, T[] source, int sourceStartIndex = 0) where T : unmanaged {
             VerifyNotDisposed();
             int num = Utilities.SizeOf<T>();
             int size = ColorFormat.GetSize();

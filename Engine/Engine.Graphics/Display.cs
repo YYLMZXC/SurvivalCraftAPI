@@ -100,7 +100,7 @@ namespace Engine.Graphics {
             VertexDeclaration vertexDeclaration,
             T[] vertexData,
             int startVertex,
-            int verticesCount) where T : struct {
+            int verticesCount) where T : unmanaged {
             VerifyParametersDrawUser(primitiveType, shader, vertexDeclaration, vertexData, startVertex, verticesCount);
 #if DIRECT3D11
             int num = DXWrapper.AppendUserVertices(vertexData, vertexDeclaration.VertexStride, startVertex, verticesCount);
@@ -144,7 +144,7 @@ namespace Engine.Graphics {
             int verticesCount,
             int[] indexData,
             int startIndex,
-            int indicesCount) where T : struct {
+            int indicesCount) where T : unmanaged {
             VerifyParametersDrawUserIndexed(
                 primitiveType,
                 shader,
@@ -350,7 +350,7 @@ namespace Engine.Graphics {
             VertexDeclaration vertexDeclaration,
             T[] vertexData,
             int startVertex,
-            int verticesCount) where T : struct {
+            int verticesCount) where T : unmanaged {
             int num = Utilities.SizeOf<T>();
             ArgumentNullException.ThrowIfNull(shader);
             ArgumentNullException.ThrowIfNull(vertexDeclaration);
@@ -376,7 +376,7 @@ namespace Engine.Graphics {
             int verticesCount,
             int[] indexData,
             int startIndex,
-            int indicesCount) where T : struct {
+            int indicesCount) where T : unmanaged {
             int num = Utilities.SizeOf<T>();
             ArgumentNullException.ThrowIfNull(shader);
             ArgumentNullException.ThrowIfNull(vertexDeclaration);

@@ -69,6 +69,7 @@ namespace Engine.Audio {
             DisposeOnStop = disposeOnStop;
             m_bufferDuration = Math.Clamp(bufferDuration, 0.01f, 10f);
 #if BROWSER
+            //TODO: 改为不使用 Window.Frame
             Window.Frame += UpdateStreaming;
 #else
             if (m_source == 0) {

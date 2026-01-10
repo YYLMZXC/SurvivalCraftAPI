@@ -53,7 +53,7 @@ namespace Engine.Graphics {
             DeleteRenderTarget();
         }
 
-        public void GetData<T>(T[] target, int targetStartIndex, Rectangle sourceRectangle) where T : struct {
+        public void GetData<T>(T[] target, int targetStartIndex, Rectangle sourceRectangle) where T : unmanaged {
             VerifyParametersGetData(target, targetStartIndex, sourceRectangle);
             GCHandle gCHandle = GCHandle.Alloc(target, GCHandleType.Pinned);
             try {
@@ -310,7 +310,7 @@ namespace Engine.Graphics {
             DepthFormat = depthFormat;
         }
 
-        void VerifyParametersGetData<T>(T[] target, int targetStartIndex, Rectangle sourceRectangle) where T : struct {
+        void VerifyParametersGetData<T>(T[] target, int targetStartIndex, Rectangle sourceRectangle) where T : unmanaged {
             VerifyNotDisposed();
             int size = ColorFormat.GetSize();
             int num = Utilities.SizeOf<T>();

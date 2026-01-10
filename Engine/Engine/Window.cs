@@ -57,9 +57,9 @@ namespace Engine {
 
         static bool m_closing;
         static bool m_restarting;
-
+#pragma warning disable CS0169
         static int? m_swapInterval;
-
+#pragma warning restore CS0169
         public static string m_titlePrefix = string.Empty;
 
         public static string m_titleSuffix = string.Empty;

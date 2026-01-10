@@ -98,7 +98,7 @@ namespace Engine.Serialization {
             Write(value.M44);
         }
 
-        public virtual void WriteStruct<T>(T structure) where T : struct {
+        public virtual void WriteStruct<T>(T structure) where T : unmanaged {
             byte[] array = Utilities.StructureToArray(structure);
             Write(array, 0, array.Length);
         }

@@ -107,6 +107,9 @@
         <Compile Remove="Engine.Graphics\GLWrapper.cs" Condition="'$(Configuration)' == 'Direct3D11'" />
         <Compile Remove="Engine.Graphics\EGL.cs" Condition="'$(Configuration)' != 'Angle' and '$(Configuration)' != 'Browser'" />
         <Compile Remove="Engine.Browser\**\*.cs" Condition="'$(Configuration)' != 'Browser'" />
+        <Compile Remove="Engine.Serialization\*Archive.cs" Condition="'$(Configuration)' == 'Browser'" />
+        <Compile Remove="Engine.Serialization\*Serializer.cs" Condition="'$(Configuration)' == 'Browser'" />
+        <Compile Remove="Engine.Serialization\ISerializable.cs" Condition="'$(Configuration)' == 'Browser'" />
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)' == 'IOS'">
         <Reference Include="Bass.Net" HintPath="Bass.Net.dll" />

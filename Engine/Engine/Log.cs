@@ -103,7 +103,9 @@ namespace Engine {
         public static void Error(Exception e) {
             Write(LogType.Error, $"{e.Message}↓");
             if (e is NullReferenceException e_null) {
+                #pragma warning disable IL2026
                 Write(LogType.Error, $"NullReferenceException: {e_null.TargetSite?.DeclaringType?.Name}.{e_null.TargetSite?.Name} is null");
+                #pragma warning restore IL2026
             }
             Write(LogType.Error, e.ToString());
         }

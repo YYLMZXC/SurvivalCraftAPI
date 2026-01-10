@@ -448,7 +448,7 @@ namespace Game {
             }
         }
 
-        public static T[] GetVertexData<T>(VertexBuffer vertexBuffer) {
+        public static T[] GetVertexData<T>(VertexBuffer vertexBuffer) where T : unmanaged {
             if (vertexBuffer.Tag is not byte[] array) {
                 throw new InvalidOperationException("VertexBuffer does not contain source data in Tag.");
             }
@@ -466,7 +466,7 @@ namespace Game {
             }
         }
 
-        public static T[] GetIndexData<T>(IndexBuffer indexBuffer) {
+        public static T[] GetIndexData<T>(IndexBuffer indexBuffer) where T : unmanaged {
             if (indexBuffer.Tag is not byte[] array) {
                 throw new InvalidOperationException("IndexBuffer does not contain source data in Tag.");
             }

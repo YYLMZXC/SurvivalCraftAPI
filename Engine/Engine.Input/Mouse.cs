@@ -130,7 +130,7 @@ namespace Engine.Input {
                     Thread.Yield();
                 }
             }
-#elif !IOS && !BROWSER
+#elif !IOS
             if (Window.IsActive) {
                 Point2 position = new((int)m_mouse.Position.X, (int)m_mouse.Position.Y);
                 ProcessMouseMove(position);
@@ -177,9 +177,9 @@ namespace Engine.Input {
                 }
                 case MotionEventActions.HoverMove: MousePosition = Point2.Round(e.GetX(), e.GetY()); break;
                 case MotionEventActions.ButtonPress:
-                    EnqueueMouseButtonEvent(new MouseButtonInfo(TranslateMouseButton(e.ActionButton), true, Point2.Round(e.GetX(), e.GetY()))); break;
+                    EnqueueMouseButtonEvent(TranslateMouseButton(e.ActionButton), true, Point2.Round(e.GetX(), e.GetY())); break;
                 case MotionEventActions.ButtonRelease:
-                    EnqueueMouseButtonEvent(new MouseButtonInfo(TranslateMouseButton(e.ActionButton), false, Point2.Round(e.GetX(), e.GetY()))); break;
+                    EnqueueMouseButtonEvent(TranslateMouseButton(e.ActionButton), false, Point2.Round(e.GetX(), e.GetY())); break;
                 case MotionEventActions.PointerIdShift: {
                     for (int num2 = e.HistorySize - 1; num2 >= 0; num2--) {
                         m_queuedMouseWheelMovement += MathUtils.Sign(e.GetHistoricalAxisValue(Axis.Vscroll, num2));
@@ -235,7 +235,8 @@ namespace Engine.Input {
             EnqueueMouseButtonEvent(TranslateMouseButton(button), false, Point2.Round(x, y));
         }
 
-        internal static void MouseMoveHandler(float x, float y) {
+        internal static void MouseMoveHandler(float x, float y, float deltaX, float deltaY) {
+            m_queuedMouseMovement += new Vector2(deltaX, deltaY);
             MousePosition = Point2.Round(x, y);
         }
 

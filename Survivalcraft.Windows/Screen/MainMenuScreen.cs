@@ -166,8 +166,7 @@ namespace Game {
                     );
                 }
             }
-            if ((Input.Back && !Keyboard.BackButtonQuitsApp)
-                || Input.IsKeyDownOnce(Key.Escape)) {
+            if ((Input.Back || Input.IsKeyDownOnce(Key.Escape)) && !Keyboard.BackButtonQuitsApp) {
                 if (MarketplaceManager.IsTrialMode) {
                     ScreensManager.SwitchScreen("Nag");
                 }

@@ -32,28 +32,17 @@ setModuleImports("main.js", {
 
         const keyDown = (e) => {
             e.stopPropagation();
-            let shift = e.shiftKey;
-            let ctrl = e.ctrlKey;
-            let alt = e.altKey;
-            let repeat = e.repeat;
-            let code = e.keyCode;
-
-            interop.OnKeyDown(shift, ctrl, alt, repeat, code);
+            interop.OnKeyDown(e.code);
         }
 
         const keyUp = (e) => {
             e.stopPropagation();
-            let shift = e.shiftKey;
-            let ctrl = e.ctrlKey;
-            let alt = e.altKey;
-            let code = e.keyCode;
-
-            interop.OnKeyUp(shift, ctrl, alt, code);
+            interop.OnKeyUp(e.code);
         }
 
         const mouseMove = (e) => {
             const devicePixelRatio = window.devicePixelRatio || 1.0;
-            interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+            interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio, e.movementX, e.movementY);
         }
 
         const mouseDown = (e) => {

@@ -29,13 +29,13 @@ namespace Engine.Browser {
         public static partial void OpenUrlInNewTab(string url);
 
         [JSExport]
-        public static void OnKeyDown(bool shift, bool ctrl, bool alt, bool repeat, int code) { }
+        public static void OnKeyDown(string code) => Keyboard.KeyDownHandler(code);
 
         [JSExport]
-        public static void OnKeyUp(bool shift, bool ctrl, bool alt, int code) { }
+        public static void OnKeyUp(string code) => Keyboard.KeyUpHandler(code);
 
         [JSExport]
-        public static void OnMouseMove(float x, float y) => Mouse.MouseMoveHandler(x, y);
+        public static void OnMouseMove(float x, float y, float deltaX, float deltaY) => Mouse.MouseMoveHandler(x, y, deltaX, deltaY);
 
         [JSExport]
         public static void OnMouseDown(int button, float x, float y) => Mouse.MouseDownHandler(button, x, y);
@@ -61,18 +61,9 @@ namespace Engine.Browser {
         }
 
         [JSExport]
-        public static void OnCanvasResize(float width, float height, float devicePixelRatio) {
-            //Test.CanvasResized((int)width, (int)height);
-            CanvasSize = new Point2((int)width, (int)height);
-        }
+        public static void OnCanvasResize(float width, float height, float devicePixelRatio) => CanvasSize = new Point2((int)width, (int)height);
 
         [JSExport]
-        public static void SetHostedHref(string href) {
-            //Test.BaseAddress = new Uri(uri);
-            Window.HostedHref = href;
-        }
-
-        [JSExport]
-        public static void AddLocale(string locale) { }
+        public static void SetHostedHref(string href) => Window.HostedHref = href;
     }
 }

@@ -70,7 +70,11 @@ namespace Game {
 
         public static string GetRecentLog(int bytesCount) {
             if (m_stream == null) {
+#if BROWSER
+                return LanguageControl.Get(fName, "2");
+#else
                 return LanguageControl.Get(fName, "1");
+#endif
             }
             lock (m_stream) {
                 try {

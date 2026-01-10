@@ -129,7 +129,7 @@ namespace Game {
                 DialogsManager.HideDialog(m_busyDialog);
             }
             if (m_changeOrderButton.IsClicked) {
-                List<Order> items = EnumUtils.GetEnumValues(typeof(Order)).Cast<Order>().ToList();
+                List<Order> items = EnumUtils.GetEnumValues<Order>().Cast<Order>().ToList();
                 DialogsManager.ShowDialog(
                     null,
                     new ListSelectionDialog(
@@ -146,9 +146,8 @@ namespace Game {
             }
             if (m_changeFilterButton.IsClicked) {
                 List<object> list = [string.Empty];
-                foreach (OriginalExternalContentType item in from OriginalExternalContentType t in EnumUtils.GetEnumValues(
-                        typeof(OriginalExternalContentType)
-                    )
+                foreach (OriginalExternalContentType item in from OriginalExternalContentType t in EnumUtils
+                        .GetEnumValues<OriginalExternalContentType>()
                     where IsEntryTypeDownloadSupported(t)
                     select t) {
                     list.Add(item);

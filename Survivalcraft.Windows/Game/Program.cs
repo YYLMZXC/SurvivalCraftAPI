@@ -41,6 +41,32 @@ namespace Game {
 #if !ANDROID
         // ReSharper disable UnusedMember.Local
 #if BROWSER
+        public static async Task Main2(string[] args) {
+            Display.Initialize();
+            Engine.Browser.BrowserInterop.Initialize();
+            Engine.Browser.BrowserInterop.CanvasResizeCallback += size => {
+                Console.WriteLine("Main " + size);//没看到这个输出
+                Display.Resize();//会设置Display.BackbufferSize为size
+            };
+            Console.WriteLine("Main " + typeof(Engine.Browser.BrowserInterop).Assembly.FullName);
+            unsafe
+            {
+                Engine.Browser.Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&Frame, nint.Zero);
+            }
+            await Task.Delay(Timeout.Infinite);
+        }
+        [System.Runtime.InteropServices.UnmanagedCallersOnly]
+        public static int Frame(double time, nint userData)
+        {
+            Display.Clear(Color.White);
+            PrimitivesRenderer2D primitivesRenderer2D = new PrimitivesRenderer2D();
+            FlatBatch2D flatBatch2D = primitivesRenderer2D.FlatBatch();
+            Point2 size = Display.BackbufferSize;
+            Console.WriteLine(size);//一直输出0,0
+            flatBatch2D.QueueLine(Vector2.Zero, size, 0f, Color.Black);
+            primitivesRenderer2D.Flush();
+            return 1;
+        }
         public static async Task Main(string[] args) {
 #else
         static void Main(string[] args) {

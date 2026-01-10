@@ -393,9 +393,7 @@ public static class ModsManager {
         ModLoaders.Clear();
         SurvivalCraftModEntity = new SurvivalCraftModEntity();
         ModListAll.Add(SurvivalCraftModEntity);
-#if BROWSER
-        return;
-#endif
+#if !BROWSER
         if (SettingsManager.SafeMode) {
             return;
         }
@@ -452,6 +450,7 @@ public static class ModsManager {
                 throw;
             }
         };
+#endif
     }
 
     public static void AddException(Exception e, bool AllowContinue_ = false) {
@@ -510,8 +509,22 @@ public static class ModsManager {
         return bytes;
     }
 
+    [Obsolete("Use GetSha256 instead.")]
     public static string GetMd5(string input) {
+#if BROWSER
+        throw new NotSupportedException("MD5 is not supported on browser. Use GetSha256 instead.");
+#else
         byte[] data = MD5.HashData(Encoding.Default.GetBytes(input));
+        StringBuilder sBuilder = new();
+        for (int i = 0; i < data.Length; i++) {
+            sBuilder.Append(data[i].ToString("x2"));
+        }
+        return sBuilder.ToString();
+#endif
+    }
+
+    public static string GetSha256(string input) {
+        byte[] data = SHA256.HashData(Encoding.Default.GetBytes(input));
         StringBuilder sBuilder = new();
         for (int i = 0; i < data.Length; i++) {
             sBuilder.Append(data[i].ToString("x2"));

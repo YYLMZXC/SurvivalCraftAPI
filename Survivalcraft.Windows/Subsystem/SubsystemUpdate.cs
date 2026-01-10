@@ -122,7 +122,9 @@ namespace Game {
                 ModsManager.HookAction(
                     "SubsystemUpdate",
                     loader => {
+#pragma warning disable CS0618
                         loader.SubsystemUpdate(dt);
+#pragma warning restore CS0618
                         loader.SubsystemUpdate(this, dt);
                         return false;
                     }

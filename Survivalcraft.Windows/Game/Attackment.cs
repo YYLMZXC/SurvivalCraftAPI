@@ -239,6 +239,7 @@ namespace Game {
                 modloader => {
                     bool reclalculate = false;
                     float stunTimeSet = StunTimeSet ?? -1f;
+#pragma warning disable CS0618
                     modloader.AttackPowerParameter(
                         Target.FindComponent<ComponentBody>(),
                         Attacker?.FindComponent<ComponentCreature>(),
@@ -248,6 +249,7 @@ namespace Game {
                         ref stunTimeSet,
                         ref reclalculate
                     );
+#pragma warning restore CS0618
                     if (stunTimeSet >= 0f) {
                         StunTimeSet = stunTimeSet;
                     }

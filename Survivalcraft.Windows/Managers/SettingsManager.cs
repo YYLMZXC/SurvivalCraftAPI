@@ -86,8 +86,9 @@ namespace Game {
         public static bool ShowLogoInScreenshots { get; set; }
 
         public static ScreenshotSize ScreenshotSize { get; set; }
-
+#pragma warning disable CS0649
         private static Point2 m_screenshotSizeCustom;
+#pragma warning restore CS0649
 
         public static Point2 ScreenshotSizeCustom {
             get { return m_screenshotSizeCustom; }
@@ -99,7 +100,7 @@ namespace Game {
             }
         }
         public static int[] ScreenshotSizeCustomWidths = [
-    80,
+            80,
             160,
             320,
             480,
@@ -117,7 +118,7 @@ namespace Game {
             10240,
             12288,
             15360
-];
+        ];
         private static int m_screenshotSizeCustomWidthIndex;
 
         public static int ScreenshotSizeCustomWidthIndex {

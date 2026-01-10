@@ -793,7 +793,9 @@ namespace Game {
                 ? Entity.FindComponent<ComponentCreativeInventory>()
                 : Entity.FindComponent<ComponentInventory>();
             AttackPower = valuesDictionary.GetValue<float>("AttackPower");
+#pragma warning disable CS0618
             HitInterval = valuesDictionary.GetValue<float>("HitInterval");
+#pragma warning restore CS0618
             AutoInteractRate = valuesDictionary.GetValue<float>("AutoInteractRate");
             if (string.CompareOrdinal(m_subsystemGameInfo.WorldSettings.OriginalSerializationVersion, "2.4") < 0
                 || m_subsystemGameInfo.WorldSettings.GameMode == GameMode.Harmless

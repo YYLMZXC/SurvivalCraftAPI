@@ -100,7 +100,9 @@ namespace Game {
             allocateData.Allocated = true;
             allocateData.Index = Index;
             //修改方块的Index静态字段值
+#pragma warning disable IL2072
             FieldInfo fieldInfo = block.GetType().GetRuntimeFields().FirstOrDefault(p => p.Name == "Index" && p.IsPublic && p.IsStatic);
+#pragma warning restore IL2072
             if (fieldInfo != null
                 && fieldInfo.FieldType == typeof(int)
                 && !fieldInfo.IsLiteral) {
@@ -123,7 +125,9 @@ namespace Game {
 
         public static void ResetBlocks() {
             for (int i = 0; i < m_blocks.Length; i++) {
+#pragma warning disable IL2072
                 m_blocks[i] = Activator.CreateInstance(m_blocks[i].GetType()) as Block;
+#pragma warning restore IL2072
                 if (!(m_blocks[i] is AirBlock)) {
                     m_blocks[i].BlockIndex = i;
                 }
@@ -277,11 +281,13 @@ namespace Game {
             foreach (ModEntity entity in ModsManager.ModList) {
                 for (int i = 0; i < entity.BlockTypes.Count; i++) {
                     Type type = entity.BlockTypes[i];
+#pragma warning disable IL2072
                     Block block = (Block)Activator.CreateInstance(type);
                     if (block == null) {
                         continue;
                     }
                     FieldInfo fieldInfo = type.GetRuntimeFields().FirstOrDefault(p => p.Name == "Index" && p.IsPublic && p.IsStatic);
+#pragma warning restore IL2072
                     if (fieldInfo != null
                         && fieldInfo.FieldType == typeof(int)) {
                         int staticIndex = (int)fieldInfo.GetValue(null)!;
@@ -990,7 +996,9 @@ namespace Game {
                     continue;
                 }
                 Dictionary<string, FieldInfo> dictionary2 = new();
+#pragma warning disable IL2072
                 foreach (FieldInfo runtimeField in block.GetType().GetRuntimeFields()) {
+#pragma warning disable IL2072
                     if (runtimeField.IsPublic
                         && !runtimeField.IsStatic) {
                         dictionary2.Add(runtimeField.Name, runtimeField);

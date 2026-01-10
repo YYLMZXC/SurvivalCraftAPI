@@ -27,7 +27,9 @@ namespace Game {
             m_vitalStatsButton = Children.Find<ButtonWidget>("VitalStatsButton");
             m_sleepButton = Children.Find<ButtonWidget>("SleepButton");
             m_innerClothingModelWidget = Children.Find<PlayerModelWidget>("InnerClothingModel");
+#pragma warning disable CS0618
             m_outerClothingModelWidget = Children.Find<PlayerModelWidget>("OuterClothingModel");
+#pragma warning restore CS0618
             for (int i = 0; i < 4; i++) {
                 InventorySlotWidget inventorySlotWidget = new();
                 float y = float.PositiveInfinity;

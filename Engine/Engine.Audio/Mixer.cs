@@ -41,13 +41,15 @@ namespace Engine.Audio {
 #endif
             m_audioContext = ALContext.GetApi();
             AL = AL.GetApi();
-            Device* device = m_audioContext.OpenDevice("");
-            if (device == null) {
-                Log.Error("Could not create audio device");
-                return;
+            unsafe {
+                Device* device = m_audioContext.OpenDevice("");
+                if (device == null) {
+                    Log.Error("Could not create audio device");
+                    return;
+                }
+                Context* c = m_audioContext.CreateContext(device, null);
+                m_audioContext.MakeContextCurrent(c);
             }
-            Context* c = m_audioContext.CreateContext(device, null);
-            m_audioContext.MakeContextCurrent(c);
             if (!CheckALErrorFull()) {
                 m_isInitialized = true;
             }

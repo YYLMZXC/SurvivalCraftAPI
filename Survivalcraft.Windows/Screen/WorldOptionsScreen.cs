@@ -260,7 +260,7 @@ namespace Game {
         public override void Update() {
             if (m_terrainGenerationButton.IsClicked
                 && !m_isExistingWorld) {
-                IList<int> enumValues = EnumUtils.GetEnumValues(typeof(TerrainGenerationMode));
+                IList<int> enumValues = EnumUtils.GetEnumValues<TerrainGenerationMode>();
                 DialogsManager.ShowDialog(
                     null,
                     new ListSelectionDialog(
@@ -468,7 +468,7 @@ namespace Game {
                 m_descriptionLabel.Text = StringsManager.GetString($"FriendlyFire.{m_worldSettings.IsFriendlyFireEnabled}");
             }
             if (m_environmentBehaviorButton.IsClicked) {
-                IList<int> enumValues2 = EnumUtils.GetEnumValues(typeof(EnvironmentBehaviorMode));
+                IList<int> enumValues2 = EnumUtils.GetEnumValues<EnvironmentBehaviorMode>();
                 m_worldSettings.EnvironmentBehaviorMode =
                     (EnvironmentBehaviorMode)((enumValues2.IndexOf((int)m_worldSettings.EnvironmentBehaviorMode) + 1) % enumValues2.Count);
                 m_descriptionLabel.Text = StringsManager.GetString($"EnvironmentBehaviorMode.{m_worldSettings.EnvironmentBehaviorMode}.Description");
@@ -478,7 +478,7 @@ namespace Game {
                     null,
                     new ListSelectionDialog(
                         LanguageControl.Get(fName, "7"),
-                        EnumUtils.GetEnumValues(typeof(TimeOfDayMode)),
+                        EnumUtils.GetEnumValues<TimeOfDayMode>(),
                         56f,
                         e => LanguageControl.Get("TimeOfDayMode", ((TimeOfDayMode)e).ToString()),
                         e => {

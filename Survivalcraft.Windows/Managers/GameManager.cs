@@ -46,7 +46,9 @@ namespace Game {
                 ModsManager.HookAction(
                     "ProjectXmlLoad",
                     loader => {
+#pragma warning disable CS0618
                         loader.ProjectXmlLoad(projectNode);
+#pragma warning restore CS0618
                         loader.ProjectXmlLoad(projectNode, worldInfo, gamesWidget);
                         return false;
                     }

@@ -67,11 +67,11 @@ namespace Game {
         public override void Update() {
             if (m_moveControlModeButton.IsClicked) {
                 SettingsManager.MoveControlMode = (MoveControlMode)((int)(SettingsManager.MoveControlMode + 1)
-                    % EnumUtils.GetEnumValues(typeof(MoveControlMode)).Count);
+                    % EnumUtils.GetEnumValues<MoveControlMode>().Count);
             }
             if (m_lookControlModeButton.IsClicked) {
                 SettingsManager.LookControlMode = (LookControlMode)((int)(SettingsManager.LookControlMode + 1)
-                    % EnumUtils.GetEnumValues(typeof(LookControlMode)).Count);
+                    % EnumUtils.GetEnumValues<LookControlMode>().Count);
             }
             if (m_leftHandedLayoutButton.IsClicked) {
                 SettingsManager.LeftHandedLayout = !SettingsManager.LeftHandedLayout;

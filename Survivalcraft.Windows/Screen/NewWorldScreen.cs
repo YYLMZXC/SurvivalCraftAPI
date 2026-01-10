@@ -86,7 +86,7 @@ namespace Game {
                 );
             }
             if (m_startingPositionButton.IsClicked) {
-                IList<int> enumValues2 = EnumUtils.GetEnumValues(typeof(StartingPositionMode));
+                IList<int> enumValues2 = EnumUtils.GetEnumValues<StartingPositionMode>();
                 m_worldSettings.StartingPositionMode = (StartingPositionMode)((enumValues2.IndexOf((int)m_worldSettings.StartingPositionMode) + 1)
                     % enumValues2.Count);
             }

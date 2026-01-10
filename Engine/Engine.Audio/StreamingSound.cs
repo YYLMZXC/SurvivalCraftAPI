@@ -1,7 +1,9 @@
 using System.Runtime.InteropServices;
-using Engine.Browser;
 using Engine.Media;
 using Silk.NET.OpenAL;
+#if BROWSER
+using Engine.Browser;
+#endif
 
 namespace Engine.Audio {
     public class StreamingSound : BaseSound {

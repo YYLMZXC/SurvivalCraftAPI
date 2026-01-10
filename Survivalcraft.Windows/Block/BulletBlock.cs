@@ -61,7 +61,7 @@ namespace Game {
         }
 
         public override IEnumerable<int> GetCreativeValues() {
-            foreach (int enumValue in EnumUtils.GetEnumValues(typeof(BulletType))) {
+            foreach (int enumValue in EnumUtils.GetEnumValues<BulletType>()) {
                 yield return Terrain.MakeBlockValue(BlockIndex, 0, SetBulletType(0, (BulletType)enumValue));
             }
         }

@@ -55,7 +55,7 @@ namespace Game {
 
         public List<SpawnChunk> m_spawnChunks = [];
 
-        public static SpawnLocationType[] m_spawnLocations = EnumUtils.GetEnumValues(typeof(SpawnLocationType)).Cast<SpawnLocationType>().ToArray();
+        public static SpawnLocationType[] m_spawnLocations = EnumUtils.GetEnumValues<SpawnLocationType>().Cast<SpawnLocationType>().ToArray();
 
         public static int m_totalLimit = 26;
 

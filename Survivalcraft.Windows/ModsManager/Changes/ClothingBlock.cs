@@ -35,7 +35,9 @@ namespace Game {
                 if (!string.IsNullOrEmpty(className)) {
                     try {
                         Type type = TypeCache.FindType(className, false, true);
+#pragma warning disable IL2072
                         clothingData = (ClothingData)Activator.CreateInstance(type, item);
+#pragma warning restore IL2072
                         if (clothingData == null) {
                             throw new Exception("ClothingData is not assignable to Game.ClothingData.");
                         }

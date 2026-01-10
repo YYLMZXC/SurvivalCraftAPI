@@ -307,7 +307,9 @@ namespace Game {
                     if (!filename.StartsWith("Assets/")) {
                         string fileNameWithoutDirectory = Storage.GetFileName(filename);
                         if (!InvalidDllNames.Contains(fileNameWithoutDirectory)) {
+#pragma warning disable IL2026
                             assemblies.Add(Assembly.Load(ModsManager.StreamToBytes(stream)));
+#pragma warning restore IL2026
                         }
                     }
                 }
@@ -317,12 +319,16 @@ namespace Game {
 
         public virtual void HandleAssembly(Assembly assembly) {
             List<Type> blockTypes = new();
+#pragma warning disable IL2026
             Type[] types = assembly.GetTypes();
+#pragma warning restore IL2026
             for (int i = 0; i < types.Length; i++) {
                 Type type = types[i];
                 if (type.IsSubclassOf(typeof(ModLoader))
                     && !type.IsAbstract) {
+#pragma warning disable IL2062
                     if (Activator.CreateInstance(types[i]) is ModLoader modLoader) {
+#pragma warning disable IL2062
                         modLoader.Entity = this;
                         Loader = modLoader;
                         modLoader.__ModInitialize();
@@ -331,7 +337,9 @@ namespace Game {
                 }
                 if (type.IsSubclassOf(typeof(IContentReader.IContentReader))
                     && !type.IsAbstract
+#pragma warning disable IL2062
                     && Activator.CreateInstance(type) is IContentReader.IContentReader reader) {
+#pragma warning restore IL2062
                     ContentManager.ReaderList.TryAdd(reader.Type, reader);
                 }
                 if (type.IsSubclassOf(typeof(Block))

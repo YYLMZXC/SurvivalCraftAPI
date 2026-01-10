@@ -65,11 +65,15 @@ namespace Game {
         public override Assembly[] GetAssemblies() => [typeof(BlocksManager).Assembly];
 
         public override void HandleAssembly(Assembly assembly) {
+#pragma warning disable IL2026
             Type[] types = assembly.GetTypes();
+#pragma warning restore IL2026
             foreach (Type type in types) {
                 if (type.IsSubclassOf(typeof(ModLoader))
                     && !type.IsAbstract) {
+#pragma warning disable IL2072
                     if (Activator.CreateInstance(type) is not ModLoader modLoader) {
+#pragma warning restore IL2072
                         continue;
                     }
                     modLoader.Entity = this;
@@ -79,7 +83,9 @@ namespace Game {
                 }
                 else if (type.IsSubclassOf(typeof(Block))
                     && !type.IsAbstract) {
+#pragma warning disable IL2072
                     FieldInfo fieldInfo = type.GetRuntimeFields().FirstOrDefault(p => p.Name == "Index" && p.IsPublic && p.IsStatic);
+#pragma warning restore IL2072
                     if (fieldInfo == null
                         || fieldInfo.FieldType != typeof(int)) {
                         ModsManager.AddException(

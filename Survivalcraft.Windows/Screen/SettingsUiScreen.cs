@@ -83,7 +83,7 @@ namespace Game {
 
         public override void Update() {
             if (m_windowModeButton.IsClicked) {
-                SettingsManager.WindowMode = (WindowMode)((int)(SettingsManager.WindowMode + 1) % EnumUtils.GetEnumValues(typeof(WindowMode)).Count);
+                SettingsManager.WindowMode = (WindowMode)((int)(SettingsManager.WindowMode + 1) % EnumUtils.GetEnumValues<WindowMode>().Count);
             }
             if (m_uiScaleSlider.SlidingCompleted) {
                 SettingsManager.UIScale = m_uiScaleSlider.Value;
@@ -124,7 +124,7 @@ namespace Game {
             }
             if (m_screenshotSizeButton.IsClicked) {
                 SettingsManager.ScreenshotSize = (ScreenshotSize)((int)(SettingsManager.ScreenshotSize + 1)
-                    % EnumUtils.GetEnumValues(typeof(ScreenshotSize)).Count);
+                    % EnumUtils.GetEnumValues<ScreenshotSize>().Count);
                 if (SettingsManager.ScreenshotSize == ScreenshotSize.Custom) {
                     m_screenshotSizeCustomWidthSliderContainer.IsVisible = true;
                     m_screenshotSizeCustomAspectRatioSliderContainer.IsVisible = true;
@@ -145,11 +145,11 @@ namespace Game {
             }
             if (m_communityContentModeButton.IsClicked) {
                 SettingsManager.CommunityContentMode = (CommunityContentMode)((int)(SettingsManager.CommunityContentMode + 1)
-                    % EnumUtils.GetEnumValues(typeof(CommunityContentMode)).Count);
+                    % EnumUtils.GetEnumValues<CommunityContentMode>().Count);
             }
             if (m_originalCommunityContentModeButton.IsClicked) {
                 SettingsManager.OriginalCommunityContentMode = (CommunityContentMode)((int)(SettingsManager.OriginalCommunityContentMode + 1)
-                    % EnumUtils.GetEnumValues(typeof(CommunityContentMode)).Count);
+                    % EnumUtils.GetEnumValues<CommunityContentMode>().Count);
             }
             m_windowModeButton.Text = LanguageControl.Get("WindowMode", SettingsManager.WindowMode.ToString());
             m_languageButton.Text = LanguageControl.Get("Language", "Name");

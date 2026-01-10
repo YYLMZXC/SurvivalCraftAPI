@@ -77,7 +77,8 @@ namespace Game {
             }
             try {
                 JsonDocument document = await OnlineJsonReader.GetJsonFromUrlAsync(m_releasesURL);
-                Releases = JsonSerializer.Deserialize<List<ReleaseInfo>>(document.RootElement.GetRawText());
+                //Releases = JsonSerializer.Deserialize<List<ReleaseInfo>>(document.RootElement.GetRawText());
+                Releases = JsonSerializer.Deserialize(document.RootElement.GetRawText(), GiteeReleaseInfoJsonContext.Default.ListReleaseInfo);
                 Releases.Sort(m_versionComparer);
                 PopulateReleasesList();
             }

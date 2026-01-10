@@ -171,17 +171,16 @@ namespace Game {
                             if (newChild.Value == null) {
                                 continue;
                             }
-                            JsonNode oldChild = oldObject[newChild.Key];
-                            if (oldChild == null) {
-                                oldObject.Add(newChild.Key, newChild.Value.DeepClone());
+                            if (oldObject.TryGetPropertyValue(newChild.Key, out JsonNode oldChild)) {
+                                MergeJsonNode(oldChild, newChild.Value);
                             }
                             else {
-                                MergeJsonNode(oldChild, newChild.Value);
+                                oldObject.Add(newChild.Key, newChild.Value.DeepClone());
                             }
                         }
                     }
                     else {
-                        oldNode.ReplaceWith(newNode.DeepClone());
+                        ReplaceJsonNode(oldNode, newNode.DeepClone());
                     }
                     break;
                 }
@@ -204,7 +203,7 @@ namespace Game {
                         }
                     }
                     else {
-                        oldNode.ReplaceWith(newNode.DeepClone());
+                        ReplaceJsonNode(oldNode, newNode.DeepClone());
                     }
                     break;
                 }
@@ -212,9 +211,18 @@ namespace Game {
                 case JsonValueKind.Number:
                 case JsonValueKind.True:
                 case JsonValueKind.False: {
-                    oldNode.ReplaceWith(newNode.DeepClone());
+                    ReplaceJsonNode(oldNode, newNode.DeepClone());
                     break;
                 }
+            }
+        }
+
+        public static void ReplaceJsonNode(JsonNode oldNode, JsonNode newNode) {
+            switch (oldNode.Parent) {
+                case JsonObject parentObject:
+                    parentObject[oldNode.GetPropertyName()] = newNode;
+                    return;
+                case JsonArray parentArray: parentArray[oldNode.GetElementIndex()] = newNode; break;
             }
         }
 
@@ -360,7 +368,9 @@ namespace Game {
             Dictionary<string, object> objs = [];
             foreach (KeyValuePair<string, Screen> c in ScreensManager.m_screens) {
                 Type type = c.Value.GetType();
+#pragma warning disable IL2072
                 object obj = Activator.CreateInstance(type);
+#pragma warning restore IL2072
                 objs.Add(c.Key, obj);
             }
             foreach (KeyValuePair<string, object> c in objs) {

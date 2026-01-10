@@ -217,7 +217,9 @@ namespace Game {
                                     );
                                     Log.Error(separator);
                                     Log.Error($"Error assembly: {asm.FullName}");
+#pragma warning disable IL2026
                                     Log.Error($"Dependencies:\n{string.Join("\n", asm.GetReferencedAssemblies().Select(x => x.FullName))}");
+#pragma warning restore IL2026
                                     Log.Error(separator);
                                     Log.Error(e);
                                     isLoadSucceed = false;

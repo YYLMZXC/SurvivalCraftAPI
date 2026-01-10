@@ -154,7 +154,7 @@ namespace Game {
 
         public override void Initialize() {
             Model model = ContentManager.Get<Model>("Models/Arrows");
-            foreach (int enumValue in EnumUtils.GetEnumValues(typeof(ArrowType))) {
+            foreach (int enumValue in EnumUtils.GetEnumValues<ArrowType>()) {
                 if (enumValue > 15) {
                     throw new InvalidOperationException("Too many arrow types.");
                 }

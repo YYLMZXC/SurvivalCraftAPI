@@ -9,7 +9,7 @@ namespace Game {
         public static int[] m_treeLeavesByType;
 
         static PlantsManager() {
-            m_treeBrushesByType = new List<TerrainBrush>[EnumUtils.GetEnumValues(typeof(TreeType)).Max() + 1];
+            m_treeBrushesByType = new List<TerrainBrush>[EnumUtils.GetEnumValues<TreeType>().Max() + 1];
             m_treeTrunksByType = [9, 10, 11, 11, 255, 262];
             m_treeLeavesByType = [
                 Terrain.MakeBlockValue(12, 0, DeciduousLeavesBlock.SetSeason(0, Season.Spring)),

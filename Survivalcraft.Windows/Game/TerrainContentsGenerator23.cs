@@ -353,7 +353,9 @@ namespace Game {
             ModsManager.HookAction(
                 "TerrainContentsGenerator23Initialize",
                 loader => {
+#pragma warning disable CS0618
                     loader.TerrainContentsGenerator23Initialize(this, subsystemTerrain);
+#pragma warning restore CS0618
                     return false;
                 }
             );

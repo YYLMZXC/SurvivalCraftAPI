@@ -1,7 +1,12 @@
-using Silk.NET.OpenAL;
 #if BROWSER
 using AL = Engine.Browser.AL;
 using ALContext = Engine.Browser.ALContext;
+using GetSourceInteger = Engine.Browser.AL.GetSourceInteger;
+using SourceState = Engine.Browser.AL.SourceState;
+using ListenerFloat = Engine.Browser.AL.ListenerFloat;
+using AudioError = Engine.Browser.AL.AudioError;
+#else
+using Silk.NET.OpenAL;
 #endif
 
 namespace Engine.Audio {

@@ -27,6 +27,8 @@ function checkAndRequestPointerLock(){
     }
 }
 
+let connectedGamepadCount = 0;
+
 setModuleImports("main.js", {
     initialize: () => {
         const checkCanvasResize = (dispatch) => {
@@ -43,9 +45,9 @@ setModuleImports("main.js", {
             if (dispatch) interop.OnCanvasResize(displayWidth, displayHeight, devicePixelRatio);
         }
 
-        function checkCanvasResizeFrame() {
+        function frame() {
             checkCanvasResize(false);
-            requestAnimationFrame(checkCanvasResizeFrame);
+            requestAnimationFrame(frame);
         }
 
         const keyDown = (e) => {
@@ -62,7 +64,6 @@ setModuleImports("main.js", {
         const mouseMove = (e) => {
             const devicePixelRatio = window.devicePixelRatio || 1.0;
             interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio, e.movementX, e.movementY);
-            checkAndRequestPointerLock();
         }
 
         const mouseDown = (e) => {
@@ -79,6 +80,22 @@ setModuleImports("main.js", {
         const mouseWheel = (e) => {
             e.preventDefault();
             interop.OnMouseWheel(-e.deltaY);
+        }
+
+        const gamepadConnected = (e) => {
+            let gamepad = e.gamepad;
+            if (gamepad !== null) {
+                connectedGamepadCount++;
+                interop.OnGamepadConnected(gamepad.index, gamepad.id, gamepad.buttons.length - 2, gamepad.axes.length / 2, 2);
+            }
+        }
+
+        const gamepadDisconnected = (e) => {
+            let gamepad = e.gamepad;
+            if (gamepad !== null) {
+                connectedGamepadCount--;
+                interop.OnGamepadDisconnected(gamepad.index);
+            }
         }
 
         const shouldIgnore = (e) => {
@@ -130,7 +147,7 @@ setModuleImports("main.js", {
         }
 
         const pointerLockChange = () => {
-            if (document.pointerLockElement !== canvas) {
+            if (needPointerLock && document.pointerLockElement !== canvas) {
                 interop.OnKeyDown("Escape");
                 interop.OnKeyUp("Escape");
             }
@@ -143,12 +160,14 @@ setModuleImports("main.js", {
         canvas.addEventListener("mousedown", mouseDown, false);
         canvas.addEventListener("mouseup", mouseUp, false);
         canvas.addEventListener("wheel", mouseWheel, false);
+        globalThis.addEventListener("gamepadconnected", gamepadConnected, false);
+        globalThis.addEventListener("gamepaddisconnected", gamepadDisconnected, false);
         canvas.addEventListener("touchstart", touchStart, false);
         canvas.addEventListener("touchmove", touchMove, false);
         canvas.addEventListener("touchend", touchEnd, false);
         document.addEventListener("pointerlockchange", pointerLockChange, false);
         checkCanvasResize(true);
-        checkCanvasResizeFrame();
+        frame();
 
         canvas.tabIndex = 1000;
 
@@ -164,6 +183,27 @@ setModuleImports("main.js", {
     setNeedPointerLock: (need) => {
         needPointerLock = need;
         checkAndRequestPointerLock();
+    },
+    getGamepadStates: () => {
+        if (connectedGamepadCount === 0) {
+            return null;
+        }
+        const gamepads = globalThis.navigator.getGamepads();
+        const result = [];
+        for (let i = 0; i < gamepads.length; i++) {
+            let gamepad = gamepads[i];
+            if (gamepad === null || !gamepad.connected || gamepad.mapping !== "standard") {
+                continue;
+            }
+            result.push(gamepad.index);
+            for (let j = 0; j < gamepad.buttons.length; j++) {//17
+                result.push(gamepad.buttons[j].value);
+            }
+            for (let j = 0; j < gamepad.axes.length; j ++) {//4
+                result.push(gamepad.axes[j]);
+            }
+        }
+        return result;
     }
 });
 await runMain(config.mainAssemblyName);

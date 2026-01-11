@@ -1,6 +1,10 @@
 using System.Runtime.InteropServices;
 using Engine.Media;
+#if BROWSER
+using BufferFormat = Engine.Browser.AL.BufferFormat;
+#else
 using Silk.NET.OpenAL;
+#endif
 
 namespace Engine.Audio {
     public class SoundBuffer : IDisposable {

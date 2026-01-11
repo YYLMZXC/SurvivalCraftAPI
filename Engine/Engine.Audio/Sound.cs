@@ -1,5 +1,11 @@
 using Engine.Media;
+#if BROWSER
+using SourceInteger = Engine.Browser.AL.SourceInteger;
+using SourceBoolean = Engine.Browser.AL.SourceBoolean;
+using SourceVector3 = Engine.Browser.AL.SourceVector3;
+#else
 using Silk.NET.OpenAL;
+#endif
 
 namespace Engine.Audio {
     public class Sound : BaseSound {

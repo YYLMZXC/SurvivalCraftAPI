@@ -1,4 +1,10 @@
+#if BROWSER
+using DistanceModelEnum = Engine.Browser.AL.DistanceModelEnum;
+using SourceFloat = Engine.Browser.AL.SourceFloat;
+using SourceVector3 = Engine.Browser.AL.SourceVector3;
+#else
 using Silk.NET.OpenAL;
+#endif
 
 namespace Engine.Audio {
     public abstract class BaseSound : IDisposable {
@@ -132,7 +138,7 @@ namespace Engine.Audio {
             uint source = Mixer.AL.GenSource();
             m_source = (int)source;
             Mixer.CheckALError();
-            Mixer.AL.DistanceModel(DistanceModel.None);
+            Mixer.AL.DistanceModel(DistanceModelEnum.None);
             Mixer.CheckALError();
         }
 

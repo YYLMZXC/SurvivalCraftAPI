@@ -21,12 +21,14 @@ using Monitor = Silk.NET.Windowing.Monitor;
 using System.Runtime.InteropServices;
 #endif
 #endif
+#if !BROWSER
+using Silk.NET.Windowing;
+#endif
 using Engine.Audio;
 using Engine.Graphics;
 using Engine.Input;
 using Silk.NET.Core.Contexts;
 using Silk.NET.Maths;
-using Silk.NET.Windowing;
 using Display = Engine.Graphics.Display;
 using Environment = System.Environment;
 
@@ -410,6 +412,7 @@ namespace Engine {
             GraphicsAPI api = GraphicsAPI.None;
 #elif IOS
             GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 0));
+#elif BROWSER
 #elif DEBUG
             GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Debug, new APIVersion(3, 2));
 #elif ANDROID

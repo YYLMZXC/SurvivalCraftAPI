@@ -31,6 +31,9 @@ namespace Engine.Browser {
         [JSImport("setNeedPointerLock", "main.js")]
         public static partial void SetNeedPointerLock(bool need);
 
+        [JSImport("getGamepadStates", "main.js")]
+        public static partial double[] GetGamepadStates();
+
         [JSExport]
         public static void OnKeyDown(string code) => Keyboard.KeyDownHandler(code);
 
@@ -48,6 +51,12 @@ namespace Engine.Browser {
 
         [JSExport]
         public static void OnMouseWheel(float value) => Mouse.MouseWheelHandler(value);
+
+        [JSExport]
+        public static void OnGamepadConnected(int index, string name) => GamePad.GamepadConnectedHandler(index, name);
+
+        [JSExport]
+        public static void OnGamepadDisconnected(int index) => GamePad.GamepadDisconnectedHandler(index);
 
         public static event Action<Point2> CanvasResizeCallback;
 

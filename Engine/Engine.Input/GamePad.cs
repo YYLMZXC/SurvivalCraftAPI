@@ -3,6 +3,8 @@
 using System.Collections.Concurrent;
 using Android.Views;
 using Axis = Android.Views.Axis;
+#elif BROWSER
+using Engine.Browser;
 #else
 using Silk.NET.Input;
 #endif
@@ -64,7 +66,7 @@ namespace Engine.Input {
 
         const float TRIGGER_DOWN_THRESHOLD = 0.5f;
         const float TRIGGER_UP_THRESHOLD = 0.4f;
-#elif !IOS && !BROWSER
+#elif !MOBILE && !BROWSER
         public static IReadOnlyList<IGamepad> m_gamepads;
 #endif
         public static double m_buttonFirstRepeatTime = 0.2;
@@ -250,7 +252,43 @@ namespace Engine.Input {
                 m_states[value].IsConnected = false;
             }
         }
-#elif IOS || BROWSER
+#elif BROWSER
+        internal static void BeforeFrame() {
+            double[] browserStates = BrowserInterop.GetGamepadStates();
+            if (browserStates == null
+                || browserStates.Length <= 0
+                || browserStates.Length % 22 != 0) {
+                return;
+            }
+            for (int i = 0; i < browserStates.Length; i += 22) {
+                int index = (int)browserStates[i];
+                if (index < 0
+                    || index >= m_states.Length) {
+                    continue;
+                }
+                State state = m_states[index];
+                bool[] buttons = state.Buttons;
+                buttons[0] = browserStates[i + 1] > 0;
+                buttons[1] = browserStates[i + 2] > 0;
+                buttons[2] = browserStates[i + 3] > 0;
+                buttons[3] = browserStates[i + 4] > 0;
+                buttons[4] = browserStates[i + 9] > 0;
+                buttons[5] = browserStates[i + 10] > 0;
+                buttons[6] = browserStates[i + 11] > 0;
+                buttons[7] = browserStates[i + 12] > 0;
+                buttons[8] = browserStates[i + 5] > 0;
+                buttons[9] = browserStates[i + 6] > 0;
+                buttons[10] = browserStates[i + 15] > 0;
+                buttons[11] = browserStates[i + 13] > 0;
+                buttons[12] = browserStates[i + 16] > 0;
+                buttons[13] = browserStates[i + 14] > 0;
+                state.Triggers[0] = (float)browserStates[i + 7];
+                state.Triggers[1] = (float)browserStates[i + 8];
+                state.Sticks[0] = new Vector2((float)browserStates[i + 18], -(float)browserStates[i + 19]);
+                state.Sticks[1] = new Vector2((float)browserStates[i + 20], -(float)browserStates[i + 21]);
+            }
+        }
+#elif IOS
         internal static void BeforeFrame() {}
 #else
         internal static void BeforeFrame() {
@@ -483,5 +521,20 @@ namespace Engine.Input {
 
         public static float ApplyDeadZone(float value, float deadZone) =>
             MathF.Sign(value) * MathF.Max(MathF.Abs(value) - deadZone, 0f) / (1f - deadZone);
+#if BROWSER
+        public static void GamepadConnectedHandler(int index, string name) {
+            if (index < 0 || index >= m_states.Length) {
+                return;
+            }
+            m_states[index].IsConnected = true;
+        }
+
+        public static void GamepadDisconnectedHandler(int index) {
+            if (index < 0 || index >= m_states.Length) {
+                return;
+            }
+            m_states[index].IsConnected = false;
+        }
+#endif
     }
 }

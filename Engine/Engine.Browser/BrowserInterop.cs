@@ -28,6 +28,9 @@ namespace Engine.Browser {
         [JSImport("openUrlInNewTab", "main.js")]
         public static partial void OpenUrlInNewTab(string url);
 
+        [JSImport("setNeedPointerLock", "main.js")]
+        public static partial void SetNeedPointerLock(bool need);
+
         [JSExport]
         public static void OnKeyDown(string code) => Keyboard.KeyDownHandler(code);
 

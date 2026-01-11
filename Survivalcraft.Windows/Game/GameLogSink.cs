@@ -89,7 +89,11 @@ namespace Game {
 
         public static List<string> GetRecentLogLines(int bytesCount) {
             if (m_stream == null) {
+#if BROWSER
+                return [errorOfInstantiation, LanguageControl.Get(fName, "2")];
+#else
                 return [errorOfInstantiation, LanguageControl.Get(fName, "1")];
+#endif
             }
             lock (m_stream) {
                 try {

@@ -6,8 +6,26 @@ const config = getConfig();
 const engineExports = await getAssemblyExports("Engine.dll");
 const interop = engineExports.Engine.Browser.BrowserInterop;
 
-let canvas = globalThis.document.getElementById("canvas");
+let document = globalThis.document;
+let canvas = document.getElementById("canvas");
 dotnet.instance.Module["canvas"] = canvas;
+
+let needPointerLock = false;
+function checkAndRequestPointerLock(){
+    if (needPointerLock) {
+        if (document.pointerLockElement !== canvas) {
+            return canvas.requestPointerLock({ unadjustedMovement: true }).catch(error => {
+                if (error?.name === "NotSupportedError") {
+                    // 有些平台可能不支持未调整的移动，尝试重新请求常规指针锁定。
+                    return canvas.requestPointerLock();
+                }
+            });
+        }
+    }
+    else if (document.pointerLockElement === canvas) {
+        document.exitPointerLock();
+    }
+}
 
 setModuleImports("main.js", {
     initialize: () => {
@@ -33,6 +51,7 @@ setModuleImports("main.js", {
         const keyDown = (e) => {
             e.stopPropagation();
             interop.OnKeyDown(e.code);
+            checkAndRequestPointerLock();
         }
 
         const keyUp = (e) => {
@@ -43,11 +62,13 @@ setModuleImports("main.js", {
         const mouseMove = (e) => {
             const devicePixelRatio = window.devicePixelRatio || 1.0;
             interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio, e.movementX, e.movementY);
+            checkAndRequestPointerLock();
         }
 
         const mouseDown = (e) => {
             const devicePixelRatio = window.devicePixelRatio || 1.0;
             interop.OnMouseDown(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+            checkAndRequestPointerLock();
         }
 
         const mouseUp = (e) => {
@@ -108,7 +129,14 @@ setModuleImports("main.js", {
             interop.OnMouseUp(shift, ctrl, alt, button);
         }
 
-        //canvas.addEventListener("contextmenu", (e) => e.preventDefault(), false);
+        const pointerLockChange = () => {
+            if (document.pointerLockElement !== canvas) {
+                interop.OnKeyDown("Escape");
+                interop.OnKeyUp("Escape");
+            }
+        }
+
+        canvas.addEventListener("contextmenu", (e) => e.preventDefault(), false);
         canvas.addEventListener("keydown", keyDown, false);
         canvas.addEventListener("keyup", keyUp, false);
         canvas.addEventListener("mousemove", mouseMove, false);
@@ -118,6 +146,7 @@ setModuleImports("main.js", {
         canvas.addEventListener("touchstart", touchStart, false);
         canvas.addEventListener("touchmove", touchMove, false);
         canvas.addEventListener("touchend", touchEnd, false);
+        document.addEventListener("pointerlockchange", pointerLockChange, false);
         checkCanvasResize(true);
         checkCanvasResizeFrame();
 
@@ -125,12 +154,16 @@ setModuleImports("main.js", {
 
         interop.SetHostedHref(window.location.href);
     },
-    getTitle: () => globalThis.document.title,
-    setTitle: (title) => globalThis.document.title = title,
+    getTitle: () => document.title,
+    setTitle: (title) => document.title = title,
     getLanguage: () => globalThis.navigator.language,
     close: () => globalThis.close(),
     reload: () => globalThis.location.reload(),
-    setDocumentLang : (lang) => globalThis.document.documentElement.lang = lang,
-    openUrlInNewTab: (url) => globalThis.open(url)
+    setDocumentLang : (lang) => document.documentElement.lang = lang,
+    openUrlInNewTab: (url) => globalThis.open(url),
+    setNeedPointerLock: (need) => {
+        needPointerLock = need;
+        checkAndRequestPointerLock();
+    }
 });
 await runMain(config.mainAssemblyName);

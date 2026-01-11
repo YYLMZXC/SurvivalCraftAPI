@@ -6,6 +6,7 @@ using Android.Views;
 #pragma warning disable CA1416
 #elif BROWSER
 using System.Collections.Concurrent;
+using Engine.Browser;
 #elif !IOS
 using Silk.NET.Input;
 #endif
@@ -93,6 +94,8 @@ namespace Engine.Input {
                     if (Build.VERSION.SdkInt >= (BuildVersionCodes)26) {
                         Window.m_surface?.ReleasePointerCapture();
                     }
+#elif BROWSER
+                    BrowserInterop.SetNeedPointerLock(false);
 #endif
                     Clear();
                 }
@@ -106,6 +109,8 @@ namespace Engine.Input {
                     if (Build.VERSION.SdkInt >= (BuildVersionCodes)26) {
                         Window.m_surface?.RequestPointerCapture();
                     }
+#elif BROWSER
+                    BrowserInterop.SetNeedPointerLock(true);
 #endif
                 }
                 if (m_lastMousePosition.HasValue) {

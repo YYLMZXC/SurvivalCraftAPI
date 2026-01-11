@@ -459,7 +459,19 @@ namespace Engine {
             );
             if (result.IsOk
                 && !string.IsNullOrEmpty(result.Path)) {
-                return ( File.Open(result.Path, FileMode.Open, mode == OpenFileMode.Read ? FileAccess.Read : FileAccess.ReadWrite, FileShare.Read), GetFileName(result.Path));
+                try {
+                    Stream stream = File.Open(
+                        result.Path,
+                        FileMode.Open,
+                        mode == OpenFileMode.Read ? FileAccess.Read : FileAccess.ReadWrite,
+                        FileShare.Read
+                    );
+                    return (stream, GetFileName(result.Path));
+                }
+                catch (Exception e) {
+                    Log.Error($"Choose file failed. File path: \"{result.Path}\". Reason: {e.Message}");
+                    return (null, result.Path);
+                }
             }
             return (null, null);
 #endif

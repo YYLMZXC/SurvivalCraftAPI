@@ -85,9 +85,24 @@ namespace Game {
 #else
                             (Stream stream, string fileName) = await Storage.ChooseFile(LanguageControl.Get(fName, "3"));
 #endif
+                            if (stream == null) {
+                                Dispatcher.Dispatch(() => {
+                                        DialogsManager.ShowDialog(
+                                            null,
+                                            new MessageDialog(
+                                                LanguageControl.Error,
+                                                string.Format(LanguageControl.Get(fName, "6"), fileName),
+                                                LanguageControl.Ok,
+                                                null,
+                                                null
+                                            )
+                                        );
+                                    }
+                                );
+                                return;
+                            }
                             await using (stream) {
-                                if (fileName != null
-                                    && stream != null) {
+                                if (fileName != null) {
                                     ExternalContentType type = ExternalContentManager.ExtensionToType(Storage.GetExtension(fileName));
                                     ExternalContentManager.ImportExternalContentSync(stream, type, fileName);
                                     Dispatcher.Dispatch(() => {

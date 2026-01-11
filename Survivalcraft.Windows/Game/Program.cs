@@ -84,13 +84,7 @@ namespace Game {
                             using (FileStream fileStream = File.OpenRead(path)) {
                                 string fileName = Storage.GetFileName(path);
                                 try {
-                                    switch (type) {
-                                        case ExternalContentType.World: WorldsManager.ImportWorld(fileStream); break;
-                                        case ExternalContentType.BlocksTexture: BlocksTexturesManager.ImportBlocksTexture(fileName, fileStream); break;
-                                        case ExternalContentType.CharacterSkin: CharacterSkinsManager.ImportCharacterSkin(fileName, fileStream); break;
-                                        case ExternalContentType.FurniturePack: FurniturePacksManager.ImportFurniturePack(fileName, fileStream); break;
-                                        case ExternalContentType.Mod: ModsManager.ImportMod(fileName, fileStream); break;
-                                    }
+                                    ExternalContentManager.ImportExternalContentSync(fileStream, type, fileName);
                                     Window.MessageBox(IntPtr.Zero, $"Successfully imported {fileName}.\n导入 {fileName} 成功", "Success 成功", 0x40u);
                                 }
                                 catch (Exception e) {
@@ -171,7 +165,8 @@ namespace Game {
             Window.HandleUri += HandleUriHandler;
             Window.Deactivated += DeactivatedHandler;
             Window.Frame += FrameHandler;
-            Window.ToRestart += Restart;
+            Window.ToRestart += ToRestartHandler;
+            Window.FileDropped += FileDropHandler;
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             string title = $"Survivalcraft {ModsManager.ShortGameVersion} - API {ModsManager.APIVersionString}";
@@ -306,7 +301,7 @@ namespace Game {
 #endif
         }
 
-        public static void Restart() {
+        public static void ToRestartHandler() {
 #if ANDROID
 #pragma warning disable CA1416
             Intent intent = new Intent(Window.Activity, Window.Activity.Class);
@@ -319,6 +314,17 @@ namespace Game {
                 Arguments = $"--wait {current.Id}",
                 UseShellExecute = false
             });
+#endif
+        }
+
+        public static void FileDropHandler(List<(Stream stream, string fileName)> files) {
+            if (ScreensManager.CurrentScreen is LoadingScreen) {
+                return;
+            }
+#if BROWSER
+            ExternalContentManager.ImportExternalContentsSync(files, true);
+#else
+            _ = ExternalContentManager.ImportExternalContentsAsync(files, true);
 #endif
         }
     }

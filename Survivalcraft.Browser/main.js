@@ -1,5 +1,5 @@
 import { dotnet } from './_framework/dotnet.js'
-globalThis.dotnet = dotnet;
+
 const { setModuleImports, getAssemblyExports, getConfig, runMain } = await dotnet.withDiagnosticTracing(false).withApplicationArgumentsFromQuery().create();
 
 const config = getConfig();
@@ -128,6 +128,15 @@ setModuleImports("main.js", {
             }
         }
 
+        const drop = async (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                const buffer = await file.arrayBuffer();
+                interop.OnDrop(new Uint8Array(buffer), file.name);
+            }
+        }
+
         canvas.addEventListener("contextmenu", (e) => e.preventDefault(), false);
         canvas.addEventListener("keydown", keyDown, false);
         canvas.addEventListener("keyup", keyUp, false);
@@ -138,6 +147,8 @@ setModuleImports("main.js", {
         globalThis.addEventListener("gamepadconnected", gamepadConnected, false);
         globalThis.addEventListener("gamepaddisconnected", gamepadDisconnected, false);
         document.addEventListener("pointerlockchange", pointerLockChange, false);
+        canvas.addEventListener("drop", drop, false);
+        canvas.addEventListener("dragover", e => e.preventDefault(), false);
         checkCanvasResize(true);
         frame();
 

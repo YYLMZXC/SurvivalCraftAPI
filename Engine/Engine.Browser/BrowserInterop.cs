@@ -83,6 +83,13 @@ namespace Engine.Browser {
         public static void OnCanvasResize(float width, float height, float devicePixelRatio) => CanvasSize = new Point2((int)width, (int)height);
 
         [JSExport]
+        public static void OnDrop(byte[] data, string fileName) {
+            Stream stream = new MemoryStream(data);
+            stream.Position = 0;
+            Window.FileDropHandler(stream, fileName);
+        }
+
+        [JSExport]
         public static void SetHostedHref(string href) => Window.HostedHref = href;
     }
 }

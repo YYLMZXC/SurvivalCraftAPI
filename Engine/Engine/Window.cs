@@ -371,6 +371,8 @@ namespace Engine {
 
         public static event Action LowMemory;
 
+        public static event Action<List<(Stream stream, string fileName)>> FileDropped;
+
 #if MOBILE
         public const string WindowingLibrary = "Silk.NET.Windowing.Sdl";
 #elif !BROWSER
@@ -557,7 +559,23 @@ namespace Engine {
             Resized?.Invoke();
 #endif
         }
-
+#if BROWSER
+        internal static void FileDropHandler(Stream stream, string fileName) => FileDropped?.Invoke([(stream, fileName)]);
+#elif !MOBILE
+        static void FileDropHandler(string[] paths) {
+            List<(Stream stream, string fileName)> results = new(paths.Length);
+            foreach (string path in paths) {
+                try {
+                    Stream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    results.Add((stream, Storage.GetFileName(path)));
+                }
+                catch (Exception e) {
+                    Log.Error($"{e}");
+                }
+            }
+            FileDropped?.Invoke(results);
+        }
+#endif
         public static void DisplayCutoutInsetsChangedHandler(Vector4 insets, bool hasWideNotch) {
             if (HasWideNotch == hasWideNotch && DisplayCutoutInsets == insets) {
                 return;
@@ -691,6 +709,9 @@ namespace Engine {
             m_view.Closing += ClosedHandler;
             m_view.Resize += ResizeHandler;
             m_view.Render += RenderFrameHandler;
+#if !MOBILE && !BROWSER
+            m_gameWindow.FileDrop += FileDropHandler;
+#endif
 #endif
         }
 
@@ -700,6 +721,9 @@ namespace Engine {
             m_view.Closing -= ClosedHandler;
             m_view.Resize -= ResizeHandler;
             m_view.Render -= RenderFrameHandler;
+#if !MOBILE
+            m_gameWindow.FileDrop -= FileDropHandler;
+#endif
 #endif
         }
 

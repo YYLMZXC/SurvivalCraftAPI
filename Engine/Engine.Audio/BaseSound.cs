@@ -4,6 +4,7 @@ using SourceFloat = Engine.Browser.AL.SourceFloat;
 using SourceVector3 = Engine.Browser.AL.SourceVector3;
 #else
 using Silk.NET.OpenAL;
+using DistanceModelEnum = Silk.NET.OpenAL.DistanceModel;
 #endif
 
 namespace Engine.Audio {

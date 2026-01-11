@@ -41,16 +41,25 @@ namespace Engine.Browser {
         public static void OnKeyUp(string code) => Keyboard.KeyUpHandler(code);
 
         [JSExport]
-        public static void OnMouseMove(float x, float y, float deltaX, float deltaY) => Mouse.MouseMoveHandler(x, y, deltaX, deltaY);
+        public static void OnMouseDown(int button, float x, float y) => Mouse.MouseDownHandler(button, x, y);
 
         [JSExport]
-        public static void OnMouseDown(int button, float x, float y) => Mouse.MouseDownHandler(button, x, y);
+        public static void OnMouseMove(float x, float y, float deltaX, float deltaY) => Mouse.MouseMoveHandler(x, y, deltaX, deltaY);
 
         [JSExport]
         public static void OnMouseUp(int button, float x, float y) => Mouse.MouseUpHandler(button, x, y);
 
         [JSExport]
         public static void OnMouseWheel(float value) => Mouse.MouseWheelHandler(value);
+
+        [JSExport]
+        public static void OnTouchDown(int pointerId, float x, float y) => Touch.TouchDownHandler(pointerId, x, y);
+
+        [JSExport]
+        public static void OnTouchMove(int pointerId, float x, float y) => Touch.TouchMoveHandler(pointerId, x, y);
+
+        [JSExport]
+        public static void OnTouchUp(int pointerId, float x, float y) => Touch.TouchUpHandler(pointerId, x, y);
 
         [JSExport]
         public static void OnGamepadConnected(int index, string name) => GamePad.GamepadConnectedHandler(index, name);
@@ -64,8 +73,6 @@ namespace Engine.Browser {
             get => field;
             private set {
                 if (field != value) {
-                    Console.WriteLine($"CanvasSize: old {field.X},{field.Y}; new {value.X},{value.Y}; event count: {CanvasResizeCallback?.GetInvocationList().Length}");//输出：CanvasSize: old 0,0; new 3295,1853; event count:
-                    Console.WriteLine("CanvasSize " + typeof(BrowserInterop).Assembly.FullName);
                     field = value;
                     CanvasResizeCallback?.Invoke(value);
                 }

@@ -83,6 +83,9 @@ namespace Game {
             m_animatedTextureRefreshLimitSlider = Children.Find<SliderWidget>("AnimatedTextureRefreshLimitSlider");
 #if ANDROID || ANGLE
             m_framerateLimitSlider.MinValue = 1;
+#elif BROWSER
+            m_framerateLimitSlider.MinValue = 1;
+            m_framerateLimitSlider.MaxValue = 1;
 #endif
         }
 

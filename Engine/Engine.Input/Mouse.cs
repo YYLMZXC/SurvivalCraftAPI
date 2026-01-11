@@ -166,9 +166,7 @@ namespace Engine.Input {
 #endif
         }
 #if ANDROID || BROWSER
-        public static void EnqueueMouseButtonEvent(MouseButton button, bool press, Point2 position) {
-            m_cachedMouseButtonEvents.Enqueue(new MouseButtonInfo(button, press, position));
-        }
+        public static void EnqueueMouseButtonEvent(MouseButton button, bool press, Point2 position) => m_cachedMouseButtonEvents.Enqueue(new MouseButtonInfo(button, press, position));
 #endif
 #if ANDROID
         internal static void HandleMotionEvent(MotionEvent e) {

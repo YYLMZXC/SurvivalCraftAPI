@@ -324,7 +324,6 @@ namespace Engine.Graphics {
 
         public static void Resize() {
             Point2 size = Window.Size;
-            Console.WriteLine($"Display.Resize {size.X}x{size.Y}");
             BackbufferSize = new Point2(size.X, size.Y);
             Viewport = new Viewport(0, 0, size.X, size.Y);
             ScissorRectangle = new Rectangle(0, 0, size.X, size.Y);

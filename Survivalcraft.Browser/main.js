@@ -61,20 +61,43 @@ setModuleImports("main.js", {
             interop.OnKeyUp(e.code);
         }
 
-        const mouseMove = (e) => {
+        const pointerDown = (e) => {
             const devicePixelRatio = window.devicePixelRatio || 1.0;
-            interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio, e.movementX, e.movementY);
+            switch (e.pointerType) {
+                case "mouse":
+                case "pen":
+                    interop.OnMouseDown(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+                    checkAndRequestPointerLock();
+                    break;
+                case "touch":
+                    interop.OnTouchDown(e.pointerId, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+                    break;
+            }
         }
 
-        const mouseDown = (e) => {
+        const pointerMove = (e) => {
             const devicePixelRatio = window.devicePixelRatio || 1.0;
-            interop.OnMouseDown(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
-            checkAndRequestPointerLock();
+            switch (e.pointerType) {
+                case "mouse":
+                case "pen":
+                    interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio, e.movementX, e.movementY);
+                    break;
+                case "touch":
+                    interop.OnTouchMove(e.pointerId, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+                    break
+            }
         }
 
-        const mouseUp = (e) => {
-            const devicePixelRatio = window.devicePixelRatio || 1.0;
-            interop.OnMouseUp(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+        const pointerUp = (e) => {
+            switch (e.pointerType) {
+                case "mouse":
+                case "pen":
+                    interop.OnMouseUp(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+                    break;
+                case "touch":
+                    interop.OnTouchUp(e.pointerId, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+                    break;
+            }
         }
 
         const mouseWheel = (e) => {
@@ -98,54 +121,6 @@ setModuleImports("main.js", {
             }
         }
 
-        const shouldIgnore = (e) => {
-            e.preventDefault();
-            return e.touches.length > 1 || e.type === "touchend" && e.touches.length > 0;
-        }
-
-        const touchStart = (e) => {
-            if (shouldIgnore(e)) return;
-
-            let shift = e.shiftKey;
-            let ctrl = e.ctrlKey;
-            let alt = e.altKey;
-            let button = 0;
-            let touch = e.changedTouches[0];
-            let bcr = e.target.getBoundingClientRect();
-            let x = touch.clientX - bcr.x;
-            let y = touch.clientY - bcr.y;
-
-            interop.OnMouseMove(x, y);
-            interop.OnMouseDown(shift, ctrl, alt, button);
-        }
-
-        const touchMove = (e) => {
-            if (shouldIgnore(e)) return;
-
-            let touch = e.changedTouches[0];
-            let bcr = e.target.getBoundingClientRect();
-            let x = touch.clientX - bcr.x;
-            let y = touch.clientY - bcr.y;
-
-            interop.OnMouseMove(x, y);
-        }
-
-        const touchEnd = (e) => {
-            if (shouldIgnore(e)) return;
-
-            let shift = e.shiftKey;
-            let ctrl = e.ctrlKey;
-            let alt = e.altKey;
-            let button = 0;
-            let touch = e.changedTouches[0];
-            let bcr = e.target.getBoundingClientRect();
-            let x = touch.clientX - bcr.x;
-            let y = touch.clientY - bcr.y;
-
-            interop.OnMouseMove(x, y);
-            interop.OnMouseUp(shift, ctrl, alt, button);
-        }
-
         const pointerLockChange = () => {
             if (needPointerLock && document.pointerLockElement !== canvas) {
                 interop.OnKeyDown("Escape");
@@ -156,15 +131,12 @@ setModuleImports("main.js", {
         canvas.addEventListener("contextmenu", (e) => e.preventDefault(), false);
         canvas.addEventListener("keydown", keyDown, false);
         canvas.addEventListener("keyup", keyUp, false);
-        canvas.addEventListener("mousemove", mouseMove, false);
-        canvas.addEventListener("mousedown", mouseDown, false);
-        canvas.addEventListener("mouseup", mouseUp, false);
+        canvas.addEventListener("pointerdown", pointerDown, false);
+        canvas.addEventListener("pointermove", pointerMove, false);
+        canvas.addEventListener("pointerup", pointerUp, false);
         canvas.addEventListener("wheel", mouseWheel, false);
         globalThis.addEventListener("gamepadconnected", gamepadConnected, false);
         globalThis.addEventListener("gamepaddisconnected", gamepadDisconnected, false);
-        canvas.addEventListener("touchstart", touchStart, false);
-        canvas.addEventListener("touchmove", touchMove, false);
-        canvas.addEventListener("touchend", touchEnd, false);
         document.addEventListener("pointerlockchange", pointerLockChange, false);
         checkCanvasResize(true);
         frame();

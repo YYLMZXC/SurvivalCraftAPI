@@ -83,22 +83,31 @@ namespace Game {
                             ];
                             (Stream stream, string fileName) = await Storage.ChooseFile(LanguageControl.Get(fName, "3"), filters);
 #else
-                            (Stream stream, string fileName) = await Storage.ChooseFile(LanguageControl.Get(fName, "3"));
+                            KeyValuePair<string, string[]>[] filters = [
+                                new(LanguageControl.Get(fName, "ExtensionName", ".scworld"), [".scworld"]),
+                                new(LanguageControl.Get(fName, "ExtensionName", ".scbtex"), [".scbtex", ".png", ".webp", ".astc", ".astcsrgb"]),
+                                new(LanguageControl.Get(fName, "ExtensionName", ".scskin"), [".scskin"]),
+                                new(LanguageControl.Get(fName, "ExtensionName", ".scfpack"), [".scfpack"]),
+                                new(LanguageControl.Get(fName, "ExtensionName", ".scmod"), [".scmod"])
+                            ];
+                            (Stream stream, string fileName) = await Storage.ChooseFile(LanguageControl.Get(fName, "3"), filters);
 #endif
                             if (stream == null) {
-                                Dispatcher.Dispatch(() => {
-                                        DialogsManager.ShowDialog(
-                                            null,
-                                            new MessageDialog(
-                                                LanguageControl.Error,
-                                                string.Format(LanguageControl.Get(fName, "6"), fileName),
-                                                LanguageControl.Ok,
+                                if (!string.IsNullOrEmpty(fileName)) {
+                                    Dispatcher.Dispatch(() => {
+                                            DialogsManager.ShowDialog(
                                                 null,
-                                                null
-                                            )
-                                        );
-                                    }
-                                );
+                                                new MessageDialog(
+                                                    LanguageControl.Error,
+                                                    string.Format(LanguageControl.Get(fName, "6"), fileName),
+                                                    LanguageControl.Ok,
+                                                    null,
+                                                    null
+                                                )
+                                            );
+                                        }
+                                    );
+                                }
                                 return;
                             }
                             await using (stream) {
@@ -122,6 +131,7 @@ namespace Game {
                             }
                         }
                         catch (Exception e) {
+                            Log.Error(e);
                             Dispatcher.Dispatch(() => {
                                     DialogsManager.ShowDialog(
                                         null,

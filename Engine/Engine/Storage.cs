@@ -8,7 +8,10 @@ using Foundation;
 #if WINDOWS
 using System.Diagnostics;
 #endif
-#if !BROWSER
+#if BROWSER
+using Engine.Browser;
+using System.Runtime.InteropServices.JavaScript;
+#else
 using NativeFileDialogCore;
 #endif
 using System.Reflection;
@@ -416,9 +419,32 @@ namespace Engine {
             }
 #if ANDROID
             return await Window.Activity.ChooseFileAsync(title);
-#elif  IOS || BROWSER
+#elif  IOS
             throw new Exception("Unsupported Operation");
-
+#elif BROWSER
+            List<string> descAndExtArray = [];
+            List<int> extCounts = [];
+            if (filters != null) {
+                foreach (KeyValuePair<string, string[]> filter in filters) {
+                    descAndExtArray.Add(filter.Key);
+                    extCounts.Add(filter.Value.Length);
+                    string[] extensions = filter.Value;
+                    foreach (string extension in extensions) {
+                        descAndExtArray.Add(extension);
+                    }
+                }
+            }
+            JSObject file = await BrowserInterop.ShowOpenFilePicker(descAndExtArray.ToArray(), extCounts.ToArray());
+            string fileName = BrowserInterop.GetFileName(file);
+            if (string.IsNullOrEmpty(fileName)) {
+                return (null, null);
+            }
+            JSObject bytes = await BrowserInterop.GetFileBytes(file);
+            file.Dispose();
+            Stream stream = new MemoryStream(BrowserInterop.JSObject2ByteArray(bytes));
+            bytes.Dispose();
+            stream.Position = 0;
+            return (stream, fileName);
 #else
             string filtersString = null;
             if (filters != null) {

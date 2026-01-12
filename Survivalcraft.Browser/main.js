@@ -187,6 +187,43 @@ setModuleImports("main.js", {
             }
         }
         return result;
-    }
+    },
+    showOpenFilePicker: async (descAndExtArray, extCounts) => {
+        let types = [];
+        let index = 0;
+        for (let i = 0; i < extCounts.length; i++) {
+            const desc = descAndExtArray[index++];
+            const count = extCounts[i];
+            let extensions = [];
+            for (let j = 0; j < count; j++) {
+                extensions.push(descAndExtArray[index++]);
+            }
+            types.push({
+                description: desc,
+                accept: {
+                    "*/*": extensions
+                }
+            });
+        }
+        let fileHandles = await globalThis.showOpenFilePicker({
+            types: types,
+            excludeAcceptAllOption: true,
+            multiple: false
+        });
+        if (fileHandles.length > 0) {
+            const fileHandle = fileHandles[0];
+            return fileHandle.getFile();
+        }
+        return null;
+    },
+    getFileName: (file) => file?.name ?? "",
+    getFileBytes: async (file) => {
+        if(file === null) {
+            return [];
+        }
+        const buffer = await file.arrayBuffer();
+        return new Uint8Array(buffer);
+    },
+    returnSelf: value => value
 });
 await runMain(config.mainAssemblyName);

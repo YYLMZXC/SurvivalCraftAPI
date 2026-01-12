@@ -55,6 +55,9 @@ namespace Game {
                 DialogsManager.ShowDialog(null, new ViewGameLogDialog());
             }
             if (m_openGameLogButton.IsClicked) {
+#if BROWSER
+                DialogsManager.ShowDialog(null, new MessageDialog(LanguageControl.Warning, LanguageControl.Get(fName, "5"), LanguageControl.Ok, null, null));
+#else
                 m_descriptionLabel.Text = LanguageControl.Get(fName, "1");
                 string path = Storage.CombinePaths(ModsManager.LogPath, "Game.log");
                 if (Storage.FileExists(path)) {
@@ -69,17 +72,21 @@ namespace Game {
                         DialogsManager.ShowDialog(null, new MessageDialog(LanguageControl.Error, e.Message, LanguageControl.Ok, null, null));
                     }
                 }
+#endif
             }
             if (m_shareGameLogButton.IsClicked) {
                 m_descriptionLabel.Text = LanguageControl.Get(fName, "1");
                 string path = Storage.CombinePaths(ModsManager.LogPath, "Game.log");
                 if (Storage.FileExists(path)) {
-                    try {
-                        Storage.ShareFile(path, LanguageControl.GetContentWidgets("SettingsCompatibilityScreen", "15"), "text/plain");
-                    }
-                    catch (Exception e) {
-                        DialogsManager.ShowDialog(null, new MessageDialog(LanguageControl.Error, e.Message, LanguageControl.Ok, null, null));
-                    }
+                    Task.Run(async () => {
+                            try {
+                                await Storage.ShareFile(path, LanguageControl.GetContentWidgets("SettingsCompatibilityScreen", "15"), "text/plain");
+                            }
+                            catch (Exception e) {
+                                Dispatcher.Dispatch(() => DialogsManager.ShowDialog(null, new MessageDialog(LanguageControl.Error, e.Message, LanguageControl.Ok, null, null)));
+                            }
+                        }
+                    );
                 }
             }
             if (m_reportButton.IsClicked) {

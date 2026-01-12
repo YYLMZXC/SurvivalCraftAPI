@@ -188,7 +188,7 @@ setModuleImports("main.js", {
         }
         return result;
     },
-    showOpenFilePicker: async (descAndExtArray, extCounts) => {
+    showOpenFilePicker: async (descAndExtArray, extCounts, defaultPath) => {
         let types = [];
         let index = 0;
         for (let i = 0; i < extCounts.length; i++) {
@@ -205,11 +205,21 @@ setModuleImports("main.js", {
                 }
             });
         }
-        let fileHandles = await globalThis.showOpenFilePicker({
-            types: types,
-            excludeAcceptAllOption: true,
-            multiple: false
-        });
+        let fileHandles;
+        if (types.length === 0) {
+            fileHandles = await globalThis.showOpenFilePicker({
+                multiple: false,
+                startIn: defaultPath
+            });
+        }
+        else {
+            fileHandles = await globalThis.showOpenFilePicker({
+                types: types,
+                excludeAcceptAllOption: true,
+                multiple: false,
+                startIn: defaultPath
+            });
+        }
         if (fileHandles.length > 0) {
             const fileHandle = fileHandles[0];
             return fileHandle.getFile();
@@ -224,6 +234,32 @@ setModuleImports("main.js", {
         const buffer = await file.arrayBuffer();
         return new Uint8Array(buffer);
     },
-    returnSelf: value => value
+    returnSelf: value => value,
+    showSaveFilePicker: async (fileName, mimeType) => {
+        if (mimeType === null) {
+            return await globalThis.showSaveFilePicker({
+                suggestedName: fileName
+            });
+        }
+        return await globalThis.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [
+                {
+                    description: "",
+                    accept: {
+                        [mimeType]: []
+                    }
+                }
+            ]
+        });
+    },
+    saveBytesToFileHandle: async (fileHandle, bytes) => {
+        if (fileHandle === null || bytes === null || bytes.length === 0) {
+            return;
+        }
+        const writable = await fileHandle.createWritable();
+        await writable.write(bytes);
+        await writable.close();
+    }
 });
 await runMain(config.mainAssemblyName);

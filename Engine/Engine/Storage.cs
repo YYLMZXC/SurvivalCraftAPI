@@ -11,6 +11,7 @@ using System.Diagnostics;
 #if BROWSER
 using Engine.Browser;
 using System.Runtime.InteropServices.JavaScript;
+#pragma warning disable CA1416
 #else
 using NativeFileDialogCore;
 #endif
@@ -317,7 +318,11 @@ namespace Engine {
             }
             else {
                 if (!path.StartsWith("system:")) {
+#if BROWSER
+                    return path;
+#else
                     throw new InvalidOperationException("Invalid path.");
+#endif
                 }
                 text = string.Empty;
                 path = path.Substring(7);
@@ -325,13 +330,9 @@ namespace Engine {
             return !string.IsNullOrEmpty(text) ? Path.Combine(text, path) : path;
         }
 #endif
-        public static void MoveDirectory(string path, string newPath) {
-            Directory.Move(ProcessPath(path, true, false), ProcessPath(newPath, true, false));
-        }
+        public static void MoveDirectory(string path, string newPath) => Directory.Move(ProcessPath(path, true, false), ProcessPath(newPath, true, false));
 
-        public static void DeleteDirectoryRecursive(string path) {
-            Directory.Delete(ProcessPath(path, true, false));
-        }
+        public static void DeleteDirectoryRecursive(string path) => Directory.Delete(ProcessPath(path, true, false));
 
         public static DirectoryInfo GetDirectoryInfo(string path) => new(ProcessPath(path, true, false));
 
@@ -382,19 +383,26 @@ namespace Engine {
 
         /*
          * <Summary>
-         *  分享文件，当前版本仅支持安卓
+         *  分享文件，当前版本仅支持安卓、浏览器，浏览器上的形式为下载
          * </Summary>
          * <Param name="path">文件路径</Param>
-         * <Param name="chooserTitle">应用选择器标题，留空时使用文件名</Param>
+         * <Param name="chooserTitle">（浏览器无效）应用选择器标题，留空时使用文件名</Param>
          * <Param name="mimeType">MIME 类型，留空时自动根据文件后缀推断</Param>
          */
-        public static void ShareFile(string path, string chooserTitle = null, string mimeType = null) {
+        public static async Task ShareFile(string path, string chooserTitle = null, string mimeType = null) {
             if (!FileExists(path)) {
                 throw new FileNotFoundException($"Share {path} failed, because it is not exists.");
             }
-            path = ProcessPath(path, false, false);
 #if ANDROID
+            path = ProcessPath(path, false, false);
             Window.Activity.ShareFile(path, chooserTitle, mimeType);
+#elif BROWSER
+            Console.WriteLine(path);
+            JSObject fileHandle = await BrowserInterop.ShowSaveFilePicker(Storage.GetFileName(path), mimeType);
+            Stream stream = OpenFile(path, OpenFileMode.Read);
+            byte[] bytes = new byte[stream.Length];
+            _ = await stream.ReadAsync(bytes);
+            await BrowserInterop.SaveBytesToFileHandle(fileHandle, bytes);
 #endif
         }
 
@@ -404,8 +412,8 @@ namespace Engine {
          * </Summary>
          * <Param name="title">文件选择器的标题</Param>
          * <Param name="filters">（安卓无效）过滤器列表。键为名称，例如“图片”；值为通配符列表，例如["*.png", "*.jpg"]</Param>
-         * <Param name="defaultPath">（安卓无效）默认路径</Param>
-         * <Param name="mode">（安卓永远只读）文件打开模式</Param>
+         * <Param name="defaultPath">（安卓无效）默认路径。其中浏览器只支持"desktop"、"documents"、"downloads"、"music"、"pictures" 或 "videos"</Param>
+         * <Param name="mode">（安卓、浏览器只读）文件打开模式</Param>
          */
 #pragma warning disable CS1998
         public static async Task<(Stream, string)> ChooseFile(string title = null,
@@ -434,7 +442,7 @@ namespace Engine {
                     }
                 }
             }
-            JSObject file = await BrowserInterop.ShowOpenFilePicker(descAndExtArray.ToArray(), extCounts.ToArray());
+            JSObject file = await BrowserInterop.ShowOpenFilePicker(descAndExtArray.ToArray(), extCounts.ToArray(), defaultPath);
             string fileName = BrowserInterop.GetFileName(file);
             if (string.IsNullOrEmpty(fileName)) {
                 return (null, null);

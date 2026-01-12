@@ -357,7 +357,7 @@ namespace Game {
                                                             Cleanup();
                                                             DialogsManager.HideDialog(busyDialog);
                                                             if (provider.IsLocalProvider) {
-#if ANDROID
+#if ANDROID || BROWSER
                                                                 DialogsManager.ShowDialog(
                                                                     null,
                                                                     new MessageDialog(
@@ -370,21 +370,24 @@ namespace Game {
                                                                         LanguageControl.Get(fName, "17"),
                                                                         button => {
                                                                             if (button == MessageDialogButton.Button1) {
-                                                                                try {
-                                                                                    Storage.ShareFile(link);
-                                                                                }
-                                                                                catch (Exception e) {
-                                                                                    DialogsManager.ShowDialog(
-                                                                                        null,
-                                                                                        new MessageDialog(
-                                                                                            LanguageControl.Error,
-                                                                                            e.Message,
-                                                                                            LanguageControl.Ok,
-                                                                                            null,
-                                                                                            null
-                                                                                        )
-                                                                                    );
-                                                                                }
+                                                                                Task.Run(async () => {
+                                                                                    try {
+                                                                                        await Storage.ShareFile(link);
+                                                                                    }
+                                                                                    catch (Exception e) {
+                                                                                        Dispatcher.Dispatch(() => DialogsManager.ShowDialog(
+                                                                                                null,
+                                                                                                new MessageDialog(
+                                                                                                    LanguageControl.Error,
+                                                                                                    e.Message,
+                                                                                                    LanguageControl.Ok,
+                                                                                                    null,
+                                                                                                    null
+                                                                                                )
+                                                                                            )
+                                                                                        );
+                                                                                    }
+                                                                                });
                                                                             }
                                                                         }
                                                                     )

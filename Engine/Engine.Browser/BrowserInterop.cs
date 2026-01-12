@@ -35,7 +35,7 @@ namespace Engine.Browser {
         public static partial double[] GetGamepadStates();
 
         [JSImport("showOpenFilePicker", "main.js")]
-        public static partial Task<JSObject> ShowOpenFilePicker(string[] descAndExtArray, int[] extCounts);
+        public static partial Task<JSObject> ShowOpenFilePicker(string[] descAndExtArray, int[] extCounts, string defaultPath);
 
         [JSImport("getFileName", "main.js")]
         public static partial string GetFileName(JSObject file);
@@ -45,6 +45,12 @@ namespace Engine.Browser {
 
         [JSImport("returnSelf", "main.js")]
         public static partial byte[] JSObject2ByteArray(JSObject obj);
+
+        [JSImport("showSaveFilePicker", "main.js")]
+        public static partial Task<JSObject> ShowSaveFilePicker(string fileName, string mimeType);
+
+        [JSImport("saveBytesToFileHandle", "main.js")]
+        public static partial Task SaveBytesToFileHandle(JSObject fileHandle, byte[] bytes);
 
         [JSExport]
         public static void OnKeyDown(string code) => Keyboard.KeyDownHandler(code);

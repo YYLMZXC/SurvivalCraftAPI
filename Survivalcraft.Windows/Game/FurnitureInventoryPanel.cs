@@ -363,7 +363,7 @@ namespace Game {
                 );
                 DialogsManager.ShowDialog(
                     m_componentPlayer.GuiWidget,
-#if ANDROID
+#if ANDROID || BROWSER
                     new MessageDialog(
                         LanguageControl.Get(fName, 21),
                         string.Format(LanguageControl.Get(fName, 22), displayName),
@@ -371,12 +371,18 @@ namespace Game {
                         LanguageControl.Get(fName, "30"),
                         button => {
                             if (button == MessageDialogButton.Button1) {
-                                try {
-                                    Storage.ShareFile(FurniturePacksManager.GetFileName($"{displayName}.scfpack"));
-                                }
-                                catch (Exception e) {
-                                    DialogsManager.ShowDialog(null, new MessageDialog(LanguageControl.Error, e.Message, LanguageControl.Ok, null, null));
-                                }
+                                Task.Run(async () => {
+                                    try {
+                                        await Storage.ShareFile(FurniturePacksManager.GetFileName($"{displayName}.scfpack"));
+                                    }
+                                    catch (Exception e) {
+                                        Dispatcher.Dispatch(() => DialogsManager.ShowDialog(
+                                                null,
+                                                new MessageDialog(LanguageControl.Error, e.Message, LanguageControl.Ok, null, null)
+                                            )
+                                        );
+                                    }
+                                });
                             }
                         }
                     )

@@ -1182,7 +1182,8 @@
     "1": "Please attach log file when you are reporting any bug.",
     "2": "After enabling file association, you can open associated files with API to import them.",
     "3": "After enabling safe mode, API will stop loading any mod.",
-    "4": "Restart game to take effect "
+    "4": "Restart game to take effect ",
+    "5": "Please open Console in the browser DevTools manually."
   },
   "JsInterface": {
     "1": "There is already a script running.",

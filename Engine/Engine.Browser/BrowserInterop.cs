@@ -53,7 +53,7 @@ namespace Engine.Browser {
         public static partial Task SaveBytesToFileHandle(JSObject fileHandle, byte[] bytes);
 
         [JSExport]
-        public static void OnKeyDown(string code) => Keyboard.KeyDownHandler(code);
+        public static void OnKeyDown(string code, string key) => Keyboard.KeyDownHandler(code, key);
 
         [JSExport]
         public static void OnKeyUp(string code) => Keyboard.KeyUpHandler(code);

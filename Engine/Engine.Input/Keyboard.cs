@@ -42,8 +42,6 @@ namespace Engine.Input {
 
         static Key? m_lastKey;
 
-        public static string LastString;
-
         static char? m_lastChar;
 
         public static Key? LastKey => m_lastKey;
@@ -226,7 +224,7 @@ namespace Engine.Input {
             EnqueueMouseButtonEvent(TranslateKey(keyEvent.KeyCode), keyEvent.Action == KeyEventActions.Down, keyEvent.UnicodeChar);
         }
 #elif BROWSER
-        internal static void KeyDownHandler(string keyCode) => EnqueueMouseButtonEvent(TranslateKey(keyCode), true, null);
+        internal static void KeyDownHandler(string keyCode, string key) => EnqueueMouseButtonEvent(TranslateKey(keyCode), true, key.Length == 1 ? key[0] : null);
 
         internal static void KeyUpHandler(string keyCode) => EnqueueMouseButtonEvent(TranslateKey(keyCode), false, null);
 #else
@@ -258,7 +256,6 @@ namespace Engine.Input {
         static void KeyPressHandler(IKeyboard keyboard, char c) {
             KeyboardInput.Chars.Add(c);
             ProcessCharacterEntered(c);
-            LastString += c;
         }
 #endif
 #if ANDROID

@@ -52,7 +52,8 @@ setModuleImports("main.js", {
 
         const keyDown = (e) => {
             e.stopPropagation();
-            interop.OnKeyDown(e.code);
+            console.log("keyDown: " + e.code + " " + e.key);
+            interop.OnKeyDown(e.code, e.key);
             checkAndRequestPointerLock();
         }
 
@@ -62,6 +63,7 @@ setModuleImports("main.js", {
         }
 
         const pointerDown = (e) => {
+            canvas.focus();
             const devicePixelRatio = window.devicePixelRatio || 1.0;
             switch (e.pointerType) {
                 case "mouse":

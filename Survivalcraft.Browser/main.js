@@ -52,7 +52,6 @@ setModuleImports("main.js", {
 
         const keyDown = (e) => {
             e.stopPropagation();
-            console.log("keyDown: " + e.code + " " + e.key);
             interop.OnKeyDown(e.code, e.key);
             checkAndRequestPointerLock();
         }
@@ -207,21 +206,15 @@ setModuleImports("main.js", {
                 }
             });
         }
-        let fileHandles;
-        if (types.length === 0) {
-            fileHandles = await globalThis.showOpenFilePicker({
-                multiple: false,
-                startIn: defaultPath
-            });
+        let pickerOption = { multiple: false };
+        if (types.length > 0) {
+            pickerOption.types = types;
+            pickerOption.excludeAcceptAllOption = true;
         }
-        else {
-            fileHandles = await globalThis.showOpenFilePicker({
-                types: types,
-                excludeAcceptAllOption: true,
-                multiple: false,
-                startIn: defaultPath
-            });
+        if (defaultPath) {
+            pickerOption.startIn = defaultPath;
         }
+        let fileHandles = await globalThis.showOpenFilePicker(pickerOption);
         if (fileHandles.length > 0) {
             const fileHandle = fileHandles[0];
             return fileHandle.getFile();

@@ -4,6 +4,7 @@ using Engine.Input;
 
 namespace Engine.Browser {
     public static partial class BrowserInterop {
+        //main.js should be in the final project with <OutputType>Exe</OutputType>
         [JSImport("initialize", "main.js")]
         public static partial void Initialize();
 
@@ -53,37 +54,37 @@ namespace Engine.Browser {
         public static partial Task SaveBytesToFileHandle(JSObject fileHandle, byte[] bytes);
 
         [JSExport]
-        public static void OnKeyDown(string code, string key) => Keyboard.KeyDownHandler(code, key);
+        public static async Task OnKeyDown(string code, string key) => Keyboard.KeyDownHandler(code, key);
 
         [JSExport]
-        public static void OnKeyUp(string code) => Keyboard.KeyUpHandler(code);
+        public static async Task OnKeyUp(string code) => Keyboard.KeyUpHandler(code);
 
         [JSExport]
-        public static void OnMouseDown(int button, float x, float y) => Mouse.MouseDownHandler(button, x, y);
+        public static async Task OnMouseDown(int button, float x, float y) => Mouse.MouseDownHandler(button, x, y);
 
         [JSExport]
-        public static void OnMouseMove(float x, float y, float deltaX, float deltaY) => Mouse.MouseMoveHandler(x, y, deltaX, deltaY);
+        public static async Task OnMouseMove(float x, float y, float deltaX, float deltaY) => Mouse.MouseMoveHandler(x, y, deltaX, deltaY);
 
         [JSExport]
-        public static void OnMouseUp(int button, float x, float y) => Mouse.MouseUpHandler(button, x, y);
+        public static async Task OnMouseUp(int button, float x, float y) => Mouse.MouseUpHandler(button, x, y);
 
         [JSExport]
-        public static void OnMouseWheel(float value) => Mouse.MouseWheelHandler(value);
+        public static async Task OnMouseWheel(float value) => Mouse.MouseWheelHandler(value);
 
         [JSExport]
-        public static void OnTouchDown(int pointerId, float x, float y) => Touch.TouchDownHandler(pointerId, x, y);
+        public static async Task OnTouchDown(int pointerId, float x, float y) => Touch.TouchDownHandler(pointerId, x, y);
 
         [JSExport]
-        public static void OnTouchMove(int pointerId, float x, float y) => Touch.TouchMoveHandler(pointerId, x, y);
+        public static async Task OnTouchMove(int pointerId, float x, float y) => Touch.TouchMoveHandler(pointerId, x, y);
 
         [JSExport]
-        public static void OnTouchUp(int pointerId, float x, float y) => Touch.TouchUpHandler(pointerId, x, y);
+        public static async Task OnTouchUp(int pointerId, float x, float y) => Touch.TouchUpHandler(pointerId, x, y);
 
         [JSExport]
-        public static void OnGamepadConnected(int index, string name) => GamePad.GamepadConnectedHandler(index, name);
+        public static async Task OnGamepadConnected(int index, string name) => GamePad.GamepadConnectedHandler(index, name);
 
         [JSExport]
-        public static void OnGamepadDisconnected(int index) => GamePad.GamepadDisconnectedHandler(index);
+        public static async Task OnGamepadDisconnected(int index) => GamePad.GamepadDisconnectedHandler(index);
 
         public static event Action<Point2> CanvasResizeCallback;
 
@@ -98,16 +99,16 @@ namespace Engine.Browser {
         }
 
         [JSExport]
-        public static void OnCanvasResize(float width, float height, float devicePixelRatio) => CanvasSize = new Point2((int)width, (int)height);
+        public static async Task OnCanvasResize(float width, float height, float devicePixelRatio) => CanvasSize = new Point2((int)width, (int)height);
 
         [JSExport]
-        public static void OnDrop(byte[] data, string fileName) {
+        public static async Task OnDrop(byte[] data, string fileName) {
             Stream stream = new MemoryStream(data);
             stream.Position = 0;
             Window.FileDropHandler(stream, fileName);
         }
 
         [JSExport]
-        public static void SetHostedHref(string href) => Window.HostedHref = href;
+        public static async Task SetHostedHref(string href) => Window.HostedHref = href;
     }
 }

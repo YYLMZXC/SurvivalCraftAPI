@@ -10,9 +10,11 @@ using System.Text;
 using System.Reflection;
 #elif BROWSER
 using System.Runtime.Versioning;
+using Engine.Browser;
 #endif
 #endif
 using System.Globalization;
+using System.Runtime.InteropServices.JavaScript;
 using Engine;
 using Engine.Graphics;
 
@@ -41,19 +43,16 @@ namespace Game {
 #if !ANDROID
         // ReSharper disable UnusedMember.Local
 #if BROWSER
-        public static async Task Main2(string[] args) {
+        public static async Task Main(string[] args) {
             Display.Initialize();
-            Engine.Browser.BrowserInterop.Initialize();
-            Engine.Browser.BrowserInterop.CanvasResizeCallback += size => {
-                Console.WriteLine("Main " + size);//没看到这个输出
-                Display.Resize();//会设置Display.BackbufferSize为size
+            BrowserInterop.Initialize();
+            BrowserInterop.CanvasResizeCallback += size => {
+                Display.Resize();
             };
-            Console.WriteLine("Main " + typeof(Engine.Browser.BrowserInterop).Assembly.FullName);
-            unsafe
-            {
-                Engine.Browser.Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&Frame, nint.Zero);
+            Display.Resize();
+            unsafe {
+                Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&Frame, nint.Zero);
             }
-            await Task.Delay(Timeout.Infinite);
         }
         [System.Runtime.InteropServices.UnmanagedCallersOnly]
         public static int Frame(double time, nint userData)
@@ -62,12 +61,11 @@ namespace Game {
             PrimitivesRenderer2D primitivesRenderer2D = new PrimitivesRenderer2D();
             FlatBatch2D flatBatch2D = primitivesRenderer2D.FlatBatch();
             Point2 size = Display.BackbufferSize;
-            Console.WriteLine(size);//一直输出0,0
             flatBatch2D.QueueLine(Vector2.Zero, size, 0f, Color.Black);
             primitivesRenderer2D.Flush();
             return 1;
         }
-        public static async Task Main(string[] args) {
+        public static async Task Main2(string[] args) {
 #else
         static void Main(string[] args) {
 #endif
@@ -153,7 +151,7 @@ namespace Game {
         [STAThread]
         public static void EntryPoint() {
 #if BROWSER
-            SystemLanguage = Engine.Browser.BrowserInterop.GetLanguage();
+            SystemLanguage = BrowserInterop.GetLanguage();
 #else
             SystemLanguage = CultureInfo.CurrentUICulture.Name;
 #endif

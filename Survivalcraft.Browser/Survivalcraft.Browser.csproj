@@ -23,7 +23,7 @@
         <PublishTrimmed>true</PublishTrimmed>
         <WasmBuildNative>true</WasmBuildNative>
         <RunAOTCompilation>true</RunAOTCompilation>
-        <WasmEnableThreads>false</WasmEnableThreads><!--TODO-->
+        <WasmEnableThreads>true</WasmEnableThreads><!--TODO-->
         <WasmEnableSIMD>true</WasmEnableSIMD>
         <!-- Normal,JustInterp,Full,FullInterp,Hybrid,LLVMOnly,LLVMOnlyInterp -->
         <!-- <AOTMode>LLVMOnly</AOTMode> -->

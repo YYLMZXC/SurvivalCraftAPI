@@ -420,12 +420,7 @@ namespace Game {
                 ObjectsShadowsEnabled = true;
                 PresentationInterval = 1;
                 m_soundsVolume = 1.0f;
-#if BROWSER
-                //TODO
-                m_musicVolume = 0.0f;
-#else
                 m_musicVolume = 0.2f;
-#endif
                 m_brightness = 0.8f;
                 ShowGuiInScreenshots = false;
                 ShowLogoInScreenshots = true;

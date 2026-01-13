@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Engine.Media;
 #if BROWSER
+using System.Collections.Concurrent;
 using Engine.Browser;
 using SourceInteger = Engine.Browser.AL.SourceInteger;
 using GetSourceInteger = Engine.Browser.AL.GetSourceInteger;
@@ -18,6 +19,26 @@ namespace Engine.Audio {
         uint[] m_buffers;
         readonly List<uint> m_freeBuffers = new();
         byte[] m_streamBuffer;
+
+        static readonly ConcurrentDictionary<StreamingSound, bool> toUpdate = new();
+
+        public static void AfterFrame() {
+            HashSet<StreamingSound> toRemove = new();
+            foreach (StreamingSound streamingSound in toUpdate.Keys) {
+                if (streamingSound.State == SoundState.Playing) {
+                    streamingSound.UpdateStreaming();
+                    if (streamingSound.State != SoundState.Playing) {
+                        toRemove.Add(streamingSound);
+                    }
+                }
+                else {
+                    toRemove.Add(streamingSound);
+                }
+            }
+            foreach (StreamingSound streamingSound in toRemove) {
+                toUpdate.TryRemove(streamingSound, out _);
+            }
+        }
 #else
         Task m_task;
         ManualResetEvent m_stopTaskEvent = new(false);
@@ -76,10 +97,7 @@ namespace Engine.Audio {
             IsLooped = isLooped;
             DisposeOnStop = disposeOnStop;
             m_bufferDuration = Math.Clamp(bufferDuration, 0.01f, 10f);
-#if BROWSER
-            //TODO: 改为不使用 Window.Frame
-            Window.Frame += UpdateStreaming;
-#else
+#if !BROWSER
             if (m_source == 0) {
                 return;
             }
@@ -98,6 +116,7 @@ namespace Engine.Audio {
 
         internal override void InternalPlay(Vector3 direction) {
             if (m_source != 0) {
+                toUpdate.TryAdd(this, false);
                 uint source = (uint)m_source;
                 Mixer.AL.SetSourceProperty(source, SourceVector3.Position, direction.X, direction.Y, direction.Z);
                 Mixer.AL.SourcePlay(source);
@@ -202,7 +221,7 @@ namespace Engine.Audio {
                 for (int i = 0; i < processed; i++) {
                     unsafe {
                         uint buffer;
-                        Mixer.AL.SourceQueueBuffers(source, 1, &buffer);
+                        Mixer.AL.SourceUnqueueBuffers(source, 1, &buffer);
                         Mixer.CheckALError();
                         m_freeBuffers.Add(buffer);
                     }
@@ -240,13 +259,11 @@ namespace Engine.Audio {
                 // End of stream
                 if (m_noMoreData && state == (int)SourceState.Stopped) {
                     Stop();
-                    Window.Frame -= UpdateStreaming;
                 }
             }
             catch (Exception ex) {
                 Log.Error(ex);
                 Stop();
-                Window.Frame -= UpdateStreaming;
             }
         }
 #else

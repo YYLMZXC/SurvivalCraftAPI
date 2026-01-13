@@ -82,7 +82,11 @@ namespace Engine.Audio {
             m_soundsToStop.Clear();
         }
 
-        internal static void AfterFrame() { }
+        internal static void AfterFrame() {
+            #if BROWSER
+            StreamingSound.AfterFrame();
+            #endif
+        }
 
         internal static void InternalSetMasterVolume(float volume) {
             if (m_isInitialized) {

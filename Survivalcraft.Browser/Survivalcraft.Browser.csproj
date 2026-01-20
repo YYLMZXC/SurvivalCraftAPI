@@ -16,7 +16,7 @@
         <OutputType>Exe</OutputType>
         <IsAotCompatible>true</IsAotCompatible>
         <InvariantGlobalization>false</InvariantGlobalization>
-        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s</EmccFlags>
+        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s USE_PTHREADS=1 -s OFFSCREENCANVAS_SUPPORT=1 -s OFFSCREENCANVASES_TO_PTHREAD=#canvas -s OFFSCREEN_FRAMEBUFFER=1</EmccFlags>
         <WasmMainJSPath>main.js</WasmMainJSPath>
     </PropertyGroup>
     <PropertyGroup>

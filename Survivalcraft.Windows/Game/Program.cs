@@ -43,7 +43,8 @@ namespace Game {
 #if !ANDROID
         // ReSharper disable UnusedMember.Local
 #if BROWSER
-        public static async Task Main(string[] args) {
+        public static async Task Main2(string[] args) {
+            Console.WriteLine("Display.Initialize()");
             Display.Initialize();
             BrowserInterop.Initialize();
             BrowserInterop.CanvasResizeCallback += size => {
@@ -65,7 +66,7 @@ namespace Game {
             primitivesRenderer2D.Flush();
             return 1;
         }
-        public static async Task Main2(string[] args) {
+        public static async Task Main(string[] args) {
 #else
         static void Main(string[] args) {
 #endif

@@ -1,14 +1,14 @@
-import { dotnet } from './_framework/dotnet.js'
+import createDotnetRuntime from './_framework/dotnet.js'
 
-const { setModuleImports, getAssemblyExports, getConfig, runMain } = await dotnet.withDiagnosticTracing(false).withApplicationArgumentsFromQuery().create();
-
-const config = getConfig();
-const engineExports = await getAssemblyExports("Engine.dll");
+const document = globalThis.document;
+const canvas = document.getElementById("canvas");
+const runtime = await createDotnetRuntime({
+    // 目前只找到这种方式来设置worker中的Module.canvas
+    canvas: canvas
+});
+globalThis.dotnetRuntime = runtime;
+const engineExports = await runtime.getAssemblyExports("Engine.dll");
 const interop = engineExports.Engine.Browser.BrowserInterop;
-
-let document = globalThis.document;
-let canvas = document.getElementById("canvas");
-dotnet.instance.Module["canvas"] = canvas;
 
 let needPointerLock = false;
 function checkAndRequestPointerLock(){
@@ -29,26 +29,35 @@ function checkAndRequestPointerLock(){
 
 let connectedGamepadCount = 0;
 
-setModuleImports("main.js", {
+runtime.setModuleImports("main.js", {
     initialize: () => {
-        const checkCanvasResize = (dispatch) => {
+        const observer = new ResizeObserver(entries => {
+            const entry = entries[0];
             const devicePixelRatio = window.devicePixelRatio || 1.0;
-            const rect = canvas.getBoundingClientRect();
-            const displayWidth = rect.width * devicePixelRatio;
-            const displayHeight = rect.height * devicePixelRatio;
-
-            if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-                canvas.width = displayWidth;
-                canvas.height = displayHeight;
-                dispatch = true;
+            // 注意：这里我们测量的是 DOM 元素的显示尺寸
+            let displayWidth, displayHeight;
+            if (entry.devicePixelContentBoxSize) {
+                // 如果浏览器支持直接获取物理像素尺寸
+                displayWidth = entry.devicePixelContentBoxSize[0].inlineSize;
+                displayHeight = entry.devicePixelContentBoxSize[0].blockSize;
+            } else {
+                // 降级方案
+                const rect = canvas.getBoundingClientRect();
+                displayWidth = Math.round(rect.width * devicePixelRatio);
+                displayHeight = Math.round(rect.height * devicePixelRatio);
             }
-            if (dispatch) interop.OnCanvasResize(displayWidth, displayHeight, devicePixelRatio);
-        }
+            const runningWorkers = runtime.Module.PThread?.runningWorkers;
+            if (runningWorkers && runningWorkers.length > 0) {
+                runningWorkers[0].postMessage({
+                    cmd: 'resize_canvas',
+                    width: displayWidth,
+                    height: displayHeight
+                });
+            }
+            interop.OnCanvasResize(displayWidth, displayHeight, devicePixelRatio);
+        });
 
-        function frame() {
-            checkCanvasResize(false);
-            requestAnimationFrame(frame);
-        }
+        observer.observe(canvas);
 
         const keyDown = (e) => {
             e.stopPropagation();
@@ -150,8 +159,6 @@ setModuleImports("main.js", {
         document.addEventListener("pointerlockchange", pointerLockChange, false);
         canvas.addEventListener("drop", drop, false);
         canvas.addEventListener("dragover", e => e.preventDefault(), false);
-        checkCanvasResize(true);
-        frame();
 
         canvas.tabIndex = 1000;
 
@@ -257,4 +264,4 @@ setModuleImports("main.js", {
         await writable.close();
     }
 });
-await runMain(config.mainAssemblyName);
+await runtime.runMain(runtime.getConfig().mainAssemblyName);

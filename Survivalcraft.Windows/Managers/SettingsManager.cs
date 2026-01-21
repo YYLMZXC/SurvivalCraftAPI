@@ -273,14 +273,7 @@ namespace Game {
 
         public static CommunityContentMode OriginalCommunityContentMode { get; set; }
 
-#if BROWSER
-        public static bool MultithreadedTerrainUpdate {
-            get => false;
-            set { }
-        }
-#else
         public static bool MultithreadedTerrainUpdate { get; set; }
-#endif
 
         public static int IsolatedStorageMigrationCounter { get; set; }
 

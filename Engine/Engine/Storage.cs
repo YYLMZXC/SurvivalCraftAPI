@@ -442,7 +442,16 @@ namespace Engine {
                     }
                 }
             }
-            JSObject file = await BrowserInterop.ShowOpenFilePicker(descAndExtArray.ToArray(), extCounts.ToArray(), defaultPath);
+            JSObject file = null;
+            try {
+                file = await BrowserInterop.ShowOpenFilePicker(descAndExtArray.ToArray(), extCounts.ToArray(), defaultPath);
+            }
+            catch {
+                // ignore
+            }
+            if (file == null) {
+                return (null, null);
+            }
             string fileName = BrowserInterop.GetFileName(file);
             if (string.IsNullOrEmpty(fileName)) {
                 return (null, null);

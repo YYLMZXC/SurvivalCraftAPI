@@ -61,8 +61,8 @@ runtime.setModuleImports("main.js", {
 
         const keyDown = (e) => {
             e.stopPropagation();
-            interop.OnKeyDown(e.code, e.key);
             checkAndRequestPointerLock();
+            interop.OnKeyDown(e.code, e.key);
         }
 
         const keyUp = (e) => {
@@ -76,8 +76,8 @@ runtime.setModuleImports("main.js", {
             switch (e.pointerType) {
                 case "mouse":
                 case "pen":
-                    interop.OnMouseDown(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
                     checkAndRequestPointerLock();
+                    interop.OnMouseDown(e.button, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
                     break;
                 case "touch":
                     interop.OnTouchDown(e.pointerId, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
@@ -133,8 +133,8 @@ runtime.setModuleImports("main.js", {
 
         const pointerLockChange = () => {
             if (needPointerLock && document.pointerLockElement !== canvas) {
-                interop.OnKeyDown("Escape");
-                interop.OnKeyUp("Escape");
+                interop.OnKeyDown("Escape", "Escape");
+                interop.OnKeyUp("Escape", "Escape");
             }
         }
 

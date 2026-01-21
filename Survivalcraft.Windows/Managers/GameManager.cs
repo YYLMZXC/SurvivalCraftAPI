@@ -121,14 +121,10 @@ namespace Game {
                 m_saveCompleted.WaitOne();
                 m_saveCompleted.Reset();
                 SubsystemGameInfo subsystemGameInfo = m_project.FindSubsystem<SubsystemGameInfo>(true);
-#if BROWSER
-                InternalSaveProject(projectData, subsystemGameInfo.DirectoryName, showErrorDialog);
-#else
                 Task.Run(() => InternalSaveProject(projectData, subsystemGameInfo.DirectoryName, showErrorDialog));
                 if (waitForCompletion) {
                     m_saveCompleted.WaitOne();
                 }
-#endif
                 Log.Verbose(string.Format(LanguageControl.Get(fName, "4"), Math.Round((Time.RealTime - realTime) * 1000.0)));
             }
         }

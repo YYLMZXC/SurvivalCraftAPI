@@ -3,11 +3,7 @@ using GameEntitySystem;
 using TemplatesDatabase;
 
 namespace Game {
-#if BROWSER
-    public class SubsystemPathfinding : Subsystem, IUpdateable {
-#else
     public class SubsystemPathfinding : Subsystem {
-#endif
         public class Request {
             public Vector3 Start;
 
@@ -232,9 +228,7 @@ namespace Game {
             m_astar.OpenStorage = new Storage();
             m_astar.ClosedStorage = new Storage();
             m_astar.World = world;
-#if !BROWSER
             Task.Run(ThreadFunction);
-#endif
         }
 
         public override void Dispose() {
@@ -244,21 +238,6 @@ namespace Game {
                 Monitor.Pulse(m_requests);
             }
         }
-#if BROWSER
-        public UpdateOrder UpdateOrder => UpdateOrder.Default;
-
-        public void Update(float dt) {
-            double startTime = Time.RealTime;
-            while (Time.RealTime - startTime < 0.005) {
-                if (m_requests.TryDequeue(out Request request)) {
-                    ProcessRequest(request);
-                }
-                else {
-                    break;
-                }
-            }
-        }
-#else
         public void ThreadFunction() {
             while (true) {
                 Request request;
@@ -275,7 +254,6 @@ namespace Game {
                 Task.Delay(250).Wait();
             }
         }
-#endif
 
 
         public void ProcessRequest(Request request) {

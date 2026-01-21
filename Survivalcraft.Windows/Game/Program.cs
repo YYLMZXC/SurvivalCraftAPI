@@ -320,11 +320,7 @@ namespace Game {
             if (ScreensManager.CurrentScreen is LoadingScreen) {
                 return;
             }
-#if BROWSER
-            ExternalContentManager.ImportExternalContentsSync(files, true);
-#else
             _ = ExternalContentManager.ImportExternalContentsAsync(files, true);
-#endif
         }
     }
 }

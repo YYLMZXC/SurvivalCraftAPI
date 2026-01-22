@@ -640,7 +640,7 @@ namespace Game {
                                 return false;
                             }
                             if (mode == RaycastMode.Digging) {
-                                return !block.IsDiggingTransparent;
+                                return !block.GetIsDiggingTransparent(value);
                             }
                             if (mode == RaycastMode.Interaction) {
                                 if (block.IsPlacementTransparent_(value)) {

@@ -307,6 +307,23 @@ namespace Game {
                             return false;
                         }
                     );
+                    ModsManager.HookAction(
+                        "OnMinerPlace",
+                        modLoader => {
+                            modLoader.OnMinerPlace(
+                                this,
+                                raycastResult,
+                                num2,
+                                num3,
+                                num4,
+                                value,
+                                placementData,
+                                out bool Placed
+                            );
+                            placed |= Placed;
+                            return false;
+                        }
+                    );
                     if (placed) {
                         return true;
                     }

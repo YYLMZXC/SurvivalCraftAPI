@@ -161,12 +161,36 @@ namespace Game {
         /// <param name="value"></param>
         /// <param name="placed"></param>
         /// <returns></returns>
+        [Obsolete("该方法已过时，请使用OnMinerPlace重载")]
         public virtual void OnMinerPlace(ComponentMiner miner,
             TerrainRaycastResult raycastResult,
             int x,
             int y,
             int z,
             int value,
+            out bool placed) {
+            placed = false;
+        }
+
+        /// <summary>
+        ///     当人物放置时执行，若Placed为true则不执行原放置操作
+        /// </summary>
+        /// <param name="miner"></param>
+        /// <param name="raycastResult"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <param name="value"></param>
+        /// <param name="placementData"></param>
+        /// <param name="placed"></param>
+        /// <returns></returns>
+        public virtual void OnMinerPlace(ComponentMiner miner,
+            TerrainRaycastResult raycastResult,
+            int x,
+            int y,
+            int z,
+            int value,
+            BlockPlacementData placementData,
             out bool placed) {
             placed = false;
         }

@@ -16,14 +16,14 @@
         <OutputType>Exe</OutputType>
         <IsAotCompatible>true</IsAotCompatible>
         <InvariantGlobalization>false</InvariantGlobalization>
-        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s USE_PTHREADS=1 -s OFFSCREENCANVAS_SUPPORT=1 -s OFFSCREENCANVASES_TO_PTHREAD=#canvas -s OFFSCREEN_FRAMEBUFFER=1</EmccFlags>
+        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s USE_PTHREADS=1 -s OFFSCREENCANVAS_SUPPORT=1 -s OFFSCREENCANVASES_TO_PTHREAD=#canvas -s OFFSCREEN_FRAMEBUFFER=1 -lopfs.js -s WASMFS -s FORCE_FILESYSTEM</EmccFlags>
         <WasmMainJSPath>wwwroot\main.js</WasmMainJSPath>
     </PropertyGroup>
     <PropertyGroup>
         <PublishTrimmed>true</PublishTrimmed>
         <WasmBuildNative>true</WasmBuildNative>
         <RunAOTCompilation>true</RunAOTCompilation>
-        <WasmEnableThreads>true</WasmEnableThreads><!--TODO-->
+        <WasmEnableThreads>true</WasmEnableThreads>
         <WasmEnableSIMD>true</WasmEnableSIMD>
         <!-- Normal,JustInterp,Full,FullInterp,Hybrid,LLVMOnly,LLVMOnlyInterp -->
         <!-- <AOTMode>LLVMOnly</AOTMode> -->
@@ -43,6 +43,7 @@
         <NativeFileReference Include="Native/libEGL.c" ScanForPInvokes="true" />
         <NativeFileReference Include="Native/openal32.c" ScanForPInvokes="true" />
         <NativeFileReference Include="Native/emscripten.c" ScanForPInvokes="true" />
+        <NativeFileReference Include="Native/wasmfsHelper.c" ScanForPInvokes="true" />
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="..\Survivalcraft.Windows\Content.zip" Link="Content.zip" />

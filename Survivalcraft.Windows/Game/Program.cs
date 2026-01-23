@@ -14,7 +14,6 @@ using Engine.Browser;
 #endif
 #endif
 using System.Globalization;
-using System.Runtime.InteropServices.JavaScript;
 using Engine;
 using Engine.Graphics;
 
@@ -160,6 +159,7 @@ namespace Game {
                 SystemLanguage = RegionInfo.CurrentRegion.DisplayName != "United States" ? "zh-CN" : "en-US";
             }
             //预加载
+            Storage.Initialize();
             VersionsManager.Initialize();
             Window.HandleUri += HandleUriHandler;
             Window.Deactivated += DeactivatedHandler;

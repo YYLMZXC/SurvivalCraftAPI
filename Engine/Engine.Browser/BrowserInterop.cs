@@ -109,6 +109,9 @@ namespace Engine.Browser {
         }
 
         [JSExport]
+        public static async Task OnVisibilityChange(bool visible) => Window.FocusedChangedHandler(visible);
+
+        [JSExport]
         public static async Task SetHostedHref(string href) => Window.HostedHref = href;
     }
 }

@@ -350,7 +350,7 @@ function updateMemoryViews() {
  Module["HEAPU64"] = HEAPU64 = new BigUint64Array(b);
 }
 
-var INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 55377920;
+var INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 55443456;
 
 if (ENVIRONMENT_IS_PTHREAD) {
  wasmMemory = Module["wasmMemory"];
@@ -402,10 +402,6 @@ function preRun() {
 function initRuntime() {
  runtimeInitialized = true;
  if (ENVIRONMENT_IS_PTHREAD) return;
- if (!Module["noFSInit"] && !FS.init.initialized) FS.init();
- FS.ignorePermissions = false;
- TTY.init();
- SOCKFS.root = FS.mount(SOCKFS, {}, null);
  callRuntimeCallbacks(__ATINIT__);
 }
 
@@ -413,8 +409,6 @@ function exitRuntime() {
  if (ENVIRONMENT_IS_PTHREAD) return;
  ___funcs_on_exit();
  callRuntimeCallbacks(__ATEXIT__);
- FS.quit();
- TTY.shutdown();
  PThread.terminateAllThreads();
  runtimeExited = true;
 }
@@ -1169,3561 +1163,20 @@ var ___pthread_create_js = (pthread_ptr, attr, startRoutine, arg) => {
  return spawnThread(threadParams);
 };
 
-var PATH = {
- isAbs: path => path.charAt(0) === "/",
- splitPath: filename => {
-  var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
-  return splitPathRe.exec(filename).slice(1);
- },
- normalizeArray: (parts, allowAboveRoot) => {
-  var up = 0;
-  for (var i = parts.length - 1; i >= 0; i--) {
-   var last = parts[i];
-   if (last === ".") {
-    parts.splice(i, 1);
-   } else if (last === "..") {
-    parts.splice(i, 1);
-    up++;
-   } else if (up) {
-    parts.splice(i, 1);
-    up--;
-   }
-  }
-  if (allowAboveRoot) {
-   for (;up; up--) {
-    parts.unshift("..");
-   }
-  }
-  return parts;
- },
- normalize: path => {
-  var isAbsolute = PATH.isAbs(path), trailingSlash = path.substr(-1) === "/";
-  path = PATH.normalizeArray(path.split("/").filter(p => !!p), !isAbsolute).join("/");
-  if (!path && !isAbsolute) {
-   path = ".";
-  }
-  if (path && trailingSlash) {
-   path += "/";
-  }
-  return (isAbsolute ? "/" : "") + path;
- },
- dirname: path => {
-  var result = PATH.splitPath(path), root = result[0], dir = result[1];
-  if (!root && !dir) {
-   return ".";
-  }
-  if (dir) {
-   dir = dir.substr(0, dir.length - 1);
-  }
-  return root + dir;
- },
- basename: path => {
-  if (path === "/") return "/";
-  path = PATH.normalize(path);
-  path = path.replace(/\/$/, "");
-  var lastSlash = path.lastIndexOf("/");
-  if (lastSlash === -1) return path;
-  return path.substr(lastSlash + 1);
- },
- join: (...paths) => PATH.normalize(paths.join("/")),
- join2: (l, r) => PATH.normalize(l + "/" + r)
-};
-
-var initRandomFill = () => {
- if (typeof crypto == "object" && typeof crypto["getRandomValues"] == "function") {
-  return view => (view.set(crypto.getRandomValues(new Uint8Array(view.byteLength))), 
-  view);
- } else if (ENVIRONMENT_IS_NODE) {
-  try {
-   var crypto_module = require("crypto");
-   var randomFillSync = crypto_module["randomFillSync"];
-   if (randomFillSync) {
-    return view => crypto_module["randomFillSync"](view);
-   }
-   var randomBytes = crypto_module["randomBytes"];
-   return view => (view.set(randomBytes(view.byteLength)),  view);
-  } catch (e) {}
- }
- abort("initRandomDevice");
-};
-
-var randomFill = view => (randomFill = initRandomFill())(view);
-
-var PATH_FS = {
- resolve: (...args) => {
-  var resolvedPath = "", resolvedAbsolute = false;
-  for (var i = args.length - 1; i >= -1 && !resolvedAbsolute; i--) {
-   var path = (i >= 0) ? args[i] : FS.cwd();
-   if (typeof path != "string") {
-    throw new TypeError("Arguments to path.resolve must be strings");
-   } else if (!path) {
-    return "";
-   }
-   resolvedPath = path + "/" + resolvedPath;
-   resolvedAbsolute = PATH.isAbs(path);
-  }
-  resolvedPath = PATH.normalizeArray(resolvedPath.split("/").filter(p => !!p), !resolvedAbsolute).join("/");
-  return ((resolvedAbsolute ? "/" : "") + resolvedPath) || ".";
- },
- relative: (from, to) => {
-  from = PATH_FS.resolve(from).substr(1);
-  to = PATH_FS.resolve(to).substr(1);
-  function trim(arr) {
-   var start = 0;
-   for (;start < arr.length; start++) {
-    if (arr[start] !== "") break;
-   }
-   var end = arr.length - 1;
-   for (;end >= 0; end--) {
-    if (arr[end] !== "") break;
-   }
-   if (start > end) return [];
-   return arr.slice(start, end - start + 1);
-  }
-  var fromParts = trim(from.split("/"));
-  var toParts = trim(to.split("/"));
-  var length = Math.min(fromParts.length, toParts.length);
-  var samePartsLength = length;
-  for (var i = 0; i < length; i++) {
-   if (fromParts[i] !== toParts[i]) {
-    samePartsLength = i;
-    break;
-   }
-  }
-  var outputParts = [];
-  for (var i = samePartsLength; i < fromParts.length; i++) {
-   outputParts.push("..");
-  }
-  outputParts = outputParts.concat(toParts.slice(samePartsLength));
-  return outputParts.join("/");
- }
-};
-
-var FS_stdin_getChar_buffer = [];
-
-var lengthBytesUTF8 = str => {
- var len = 0;
- for (var i = 0; i < str.length; ++i) {
-  var c = str.charCodeAt(i);
-  if (c <= 127) {
-   len++;
-  } else if (c <= 2047) {
-   len += 2;
-  } else if (c >= 55296 && c <= 57343) {
-   len += 4;
-   ++i;
-  } else {
-   len += 3;
-  }
- }
- return len;
-};
-
-var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
- if (!(maxBytesToWrite > 0)) return 0;
- var startIdx = outIdx;
- var endIdx = outIdx + maxBytesToWrite - 1;
- for (var i = 0; i < str.length; ++i) {
-  var u = str.charCodeAt(i);
-  if (u >= 55296 && u <= 57343) {
-   var u1 = str.charCodeAt(++i);
-   u = 65536 + ((u & 1023) << 10) | (u1 & 1023);
-  }
-  if (u <= 127) {
-   if (outIdx >= endIdx) break;
-   heap[outIdx++] = u;
-  } else if (u <= 2047) {
-   if (outIdx + 1 >= endIdx) break;
-   heap[outIdx++] = 192 | (u >> 6);
-   heap[outIdx++] = 128 | (u & 63);
-  } else if (u <= 65535) {
-   if (outIdx + 2 >= endIdx) break;
-   heap[outIdx++] = 224 | (u >> 12);
-   heap[outIdx++] = 128 | ((u >> 6) & 63);
-   heap[outIdx++] = 128 | (u & 63);
-  } else {
-   if (outIdx + 3 >= endIdx) break;
-   heap[outIdx++] = 240 | (u >> 18);
-   heap[outIdx++] = 128 | ((u >> 12) & 63);
-   heap[outIdx++] = 128 | ((u >> 6) & 63);
-   heap[outIdx++] = 128 | (u & 63);
-  }
- }
- heap[outIdx] = 0;
- return outIdx - startIdx;
-};
-
-/** @type {function(string, boolean=, number=)} */ function intArrayFromString(stringy, dontAddNull, length) {
- var len = length > 0 ? length : lengthBytesUTF8(stringy) + 1;
- var u8array = new Array(len);
- var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
- if (dontAddNull) u8array.length = numBytesWritten;
- return u8array;
-}
-
-var FS_stdin_getChar = () => {
- if (!FS_stdin_getChar_buffer.length) {
-  var result = null;
-  if (ENVIRONMENT_IS_NODE) {
-   var BUFSIZE = 256;
-   var buf = Buffer.alloc(BUFSIZE);
-   var bytesRead = 0;
-   /** @suppress {missingProperties} */ var fd = process.stdin.fd;
-   try {
-    bytesRead = fs.readSync(fd, buf);
-   } catch (e) {
-    if (e.toString().includes("EOF")) bytesRead = 0; else throw e;
-   }
-   if (bytesRead > 0) {
-    result = buf.slice(0, bytesRead).toString("utf-8");
-   } else {
-    result = null;
-   }
-  } else if (typeof window != "undefined" && typeof window.prompt == "function") {
-   result = window.prompt("Input: ");
-   if (result !== null) {
-    result += "\n";
-   }
-  } else if (typeof readline == "function") {
-   result = readline();
-   if (result !== null) {
-    result += "\n";
-   }
-  }
-  if (!result) {
-   return null;
-  }
-  FS_stdin_getChar_buffer = intArrayFromString(result, true);
- }
- return FS_stdin_getChar_buffer.shift();
-};
-
-var TTY = {
- ttys: [],
- init() {},
- shutdown() {},
- register(dev, ops) {
-  TTY.ttys[dev] = {
-   input: [],
-   output: [],
-   ops: ops
-  };
-  FS.registerDevice(dev, TTY.stream_ops);
- },
- stream_ops: {
-  open(stream) {
-   var tty = TTY.ttys[stream.node.rdev];
-   if (!tty) {
-    throw new FS.ErrnoError(43);
-   }
-   stream.tty = tty;
-   stream.seekable = false;
-  },
-  close(stream) {
-   stream.tty.ops.fsync(stream.tty);
-  },
-  fsync(stream) {
-   stream.tty.ops.fsync(stream.tty);
-  },
-  read(stream, buffer, offset, length, pos) {
-   /* ignored */ if (!stream.tty || !stream.tty.ops.get_char) {
-    throw new FS.ErrnoError(60);
-   }
-   var bytesRead = 0;
-   for (var i = 0; i < length; i++) {
-    var result;
-    try {
-     result = stream.tty.ops.get_char(stream.tty);
-    } catch (e) {
-     throw new FS.ErrnoError(29);
-    }
-    if (result === undefined && bytesRead === 0) {
-     throw new FS.ErrnoError(6);
-    }
-    if (result === null || result === undefined) break;
-    bytesRead++;
-    buffer[offset + i] = result;
-   }
-   if (bytesRead) {
-    stream.node.timestamp = Date.now();
-   }
-   return bytesRead;
-  },
-  write(stream, buffer, offset, length, pos) {
-   if (!stream.tty || !stream.tty.ops.put_char) {
-    throw new FS.ErrnoError(60);
-   }
-   try {
-    for (var i = 0; i < length; i++) {
-     stream.tty.ops.put_char(stream.tty, buffer[offset + i]);
-    }
-   } catch (e) {
-    throw new FS.ErrnoError(29);
-   }
-   if (length) {
-    stream.node.timestamp = Date.now();
-   }
-   return i;
-  }
- },
- default_tty_ops: {
-  get_char(tty) {
-   return FS_stdin_getChar();
-  },
-  put_char(tty, val) {
-   if (val === null || val === 10) {
-    out(UTF8ArrayToString(tty.output, 0));
-    tty.output = [];
-   } else {
-    if (val != 0) tty.output.push(val);
-   }
-  },
-  fsync(tty) {
-   if (tty.output && tty.output.length > 0) {
-    out(UTF8ArrayToString(tty.output, 0));
-    tty.output = [];
-   }
-  },
-  ioctl_tcgets(tty) {
-   return {
-    c_iflag: 25856,
-    c_oflag: 5,
-    c_cflag: 191,
-    c_lflag: 35387,
-    c_cc: [ 3, 28, 127, 21, 4, 0, 1, 0, 17, 19, 26, 0, 18, 15, 23, 22, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-   };
-  },
-  ioctl_tcsets(tty, optional_actions, data) {
-   return 0;
-  },
-  ioctl_tiocgwinsz(tty) {
-   return [ 24, 80 ];
-  }
- },
- default_tty1_ops: {
-  put_char(tty, val) {
-   if (val === null || val === 10) {
-    err(UTF8ArrayToString(tty.output, 0));
-    tty.output = [];
-   } else {
-    if (val != 0) tty.output.push(val);
-   }
-  },
-  fsync(tty) {
-   if (tty.output && tty.output.length > 0) {
-    err(UTF8ArrayToString(tty.output, 0));
-    tty.output = [];
-   }
-  }
- }
-};
-
-var alignMemory = (size, alignment) => Math.ceil(size / alignment) * alignment;
-
-var mmapAlloc = size => {
- size = alignMemory(size, 65536);
- var ptr = _emscripten_builtin_memalign(65536, size);
- if (!ptr) return 0;
- return zeroMemory(ptr, size);
-};
-
-var MEMFS = {
- ops_table: null,
- mount(mount) {
-  return MEMFS.createNode(null, "/", 16384 | 511, /* 0777 */ 0);
- },
- createNode(parent, name, mode, dev) {
-  if (FS.isBlkdev(mode) || FS.isFIFO(mode)) {
-   throw new FS.ErrnoError(63);
-  }
-  MEMFS.ops_table ||= {
-   dir: {
-    node: {
-     getattr: MEMFS.node_ops.getattr,
-     setattr: MEMFS.node_ops.setattr,
-     lookup: MEMFS.node_ops.lookup,
-     mknod: MEMFS.node_ops.mknod,
-     rename: MEMFS.node_ops.rename,
-     unlink: MEMFS.node_ops.unlink,
-     rmdir: MEMFS.node_ops.rmdir,
-     readdir: MEMFS.node_ops.readdir,
-     symlink: MEMFS.node_ops.symlink
-    },
-    stream: {
-     llseek: MEMFS.stream_ops.llseek
-    }
-   },
-   file: {
-    node: {
-     getattr: MEMFS.node_ops.getattr,
-     setattr: MEMFS.node_ops.setattr
-    },
-    stream: {
-     llseek: MEMFS.stream_ops.llseek,
-     read: MEMFS.stream_ops.read,
-     write: MEMFS.stream_ops.write,
-     allocate: MEMFS.stream_ops.allocate,
-     mmap: MEMFS.stream_ops.mmap,
-     msync: MEMFS.stream_ops.msync
-    }
-   },
-   link: {
-    node: {
-     getattr: MEMFS.node_ops.getattr,
-     setattr: MEMFS.node_ops.setattr,
-     readlink: MEMFS.node_ops.readlink
-    },
-    stream: {}
-   },
-   chrdev: {
-    node: {
-     getattr: MEMFS.node_ops.getattr,
-     setattr: MEMFS.node_ops.setattr
-    },
-    stream: FS.chrdev_stream_ops
-   }
-  };
-  var node = FS.createNode(parent, name, mode, dev);
-  if (FS.isDir(node.mode)) {
-   node.node_ops = MEMFS.ops_table.dir.node;
-   node.stream_ops = MEMFS.ops_table.dir.stream;
-   node.contents = {};
-  } else if (FS.isFile(node.mode)) {
-   node.node_ops = MEMFS.ops_table.file.node;
-   node.stream_ops = MEMFS.ops_table.file.stream;
-   node.usedBytes = 0;
-   node.contents = null;
-  } else if (FS.isLink(node.mode)) {
-   node.node_ops = MEMFS.ops_table.link.node;
-   node.stream_ops = MEMFS.ops_table.link.stream;
-  } else if (FS.isChrdev(node.mode)) {
-   node.node_ops = MEMFS.ops_table.chrdev.node;
-   node.stream_ops = MEMFS.ops_table.chrdev.stream;
-  }
-  node.timestamp = Date.now();
-  if (parent) {
-   parent.contents[name] = node;
-   parent.timestamp = node.timestamp;
-  }
-  return node;
- },
- getFileDataAsTypedArray(node) {
-  if (!node.contents) return new Uint8Array(0);
-  if (node.contents.subarray) return node.contents.subarray(0, node.usedBytes);
-  return new Uint8Array(node.contents);
- },
- expandFileStorage(node, newCapacity) {
-  var prevCapacity = node.contents ? node.contents.length : 0;
-  if (prevCapacity >= newCapacity) return;
-  var CAPACITY_DOUBLING_MAX = 1024 * 1024;
-  newCapacity = Math.max(newCapacity, (prevCapacity * (prevCapacity < CAPACITY_DOUBLING_MAX ? 2 : 1.125)) >>> 0);
-  if (prevCapacity != 0) newCapacity = Math.max(newCapacity, 256);
-  var oldContents = node.contents;
-  node.contents = new Uint8Array(newCapacity);
-  if (node.usedBytes > 0) node.contents.set(oldContents.subarray(0, node.usedBytes), 0);
- },
- resizeFileStorage(node, newSize) {
-  if (node.usedBytes == newSize) return;
-  if (newSize == 0) {
-   node.contents = null;
-   node.usedBytes = 0;
-  } else {
-   var oldContents = node.contents;
-   node.contents = new Uint8Array(newSize);
-   if (oldContents) {
-    node.contents.set(oldContents.subarray(0, Math.min(newSize, node.usedBytes)));
-   }
-   node.usedBytes = newSize;
-  }
- },
- node_ops: {
-  getattr(node) {
-   var attr = {};
-   attr.dev = FS.isChrdev(node.mode) ? node.id : 1;
-   attr.ino = node.id;
-   attr.mode = node.mode;
-   attr.nlink = 1;
-   attr.uid = 0;
-   attr.gid = 0;
-   attr.rdev = node.rdev;
-   if (FS.isDir(node.mode)) {
-    attr.size = 4096;
-   } else if (FS.isFile(node.mode)) {
-    attr.size = node.usedBytes;
-   } else if (FS.isLink(node.mode)) {
-    attr.size = node.link.length;
-   } else {
-    attr.size = 0;
-   }
-   attr.atime = new Date(node.timestamp);
-   attr.mtime = new Date(node.timestamp);
-   attr.ctime = new Date(node.timestamp);
-   attr.blksize = 4096;
-   attr.blocks = Math.ceil(attr.size / attr.blksize);
-   return attr;
-  },
-  setattr(node, attr) {
-   if (attr.mode !== undefined) {
-    node.mode = attr.mode;
-   }
-   if (attr.timestamp !== undefined) {
-    node.timestamp = attr.timestamp;
-   }
-   if (attr.size !== undefined) {
-    MEMFS.resizeFileStorage(node, attr.size);
-   }
-  },
-  lookup(parent, name) {
-   throw FS.genericErrors[44];
-  },
-  mknod(parent, name, mode, dev) {
-   return MEMFS.createNode(parent, name, mode, dev);
-  },
-  rename(old_node, new_dir, new_name) {
-   if (FS.isDir(old_node.mode)) {
-    var new_node;
-    try {
-     new_node = FS.lookupNode(new_dir, new_name);
-    } catch (e) {}
-    if (new_node) {
-     for (var i in new_node.contents) {
-      throw new FS.ErrnoError(55);
-     }
-    }
-   }
-   delete old_node.parent.contents[old_node.name];
-   old_node.parent.timestamp = Date.now();
-   old_node.name = new_name;
-   new_dir.contents[new_name] = old_node;
-   new_dir.timestamp = old_node.parent.timestamp;
-   old_node.parent = new_dir;
-  },
-  unlink(parent, name) {
-   delete parent.contents[name];
-   parent.timestamp = Date.now();
-  },
-  rmdir(parent, name) {
-   var node = FS.lookupNode(parent, name);
-   for (var i in node.contents) {
-    throw new FS.ErrnoError(55);
-   }
-   delete parent.contents[name];
-   parent.timestamp = Date.now();
-  },
-  readdir(node) {
-   var entries = [ ".", ".." ];
-   for (var key of Object.keys(node.contents)) {
-    entries.push(key);
-   }
-   return entries;
-  },
-  symlink(parent, newname, oldpath) {
-   var node = MEMFS.createNode(parent, newname, 511 | /* 0777 */ 40960, 0);
-   node.link = oldpath;
-   return node;
-  },
-  readlink(node) {
-   if (!FS.isLink(node.mode)) {
-    throw new FS.ErrnoError(28);
-   }
-   return node.link;
-  }
- },
- stream_ops: {
-  read(stream, buffer, offset, length, position) {
-   var contents = stream.node.contents;
-   if (position >= stream.node.usedBytes) return 0;
-   var size = Math.min(stream.node.usedBytes - position, length);
-   if (size > 8 && contents.subarray) {
-    buffer.set(contents.subarray(position, position + size), offset);
-   } else {
-    for (var i = 0; i < size; i++) buffer[offset + i] = contents[position + i];
-   }
-   return size;
-  },
-  write(stream, buffer, offset, length, position, canOwn) {
-   if (buffer.buffer === GROWABLE_HEAP_I8().buffer) {
-    canOwn = false;
-   }
-   if (!length) return 0;
-   var node = stream.node;
-   node.timestamp = Date.now();
-   if (buffer.subarray && (!node.contents || node.contents.subarray)) {
-    if (canOwn) {
-     node.contents = buffer.subarray(offset, offset + length);
-     node.usedBytes = length;
-     return length;
-    } else if (node.usedBytes === 0 && position === 0) {
-     node.contents = buffer.slice(offset, offset + length);
-     node.usedBytes = length;
-     return length;
-    } else if (position + length <= node.usedBytes) {
-     node.contents.set(buffer.subarray(offset, offset + length), position);
-     return length;
-    }
-   }
-   MEMFS.expandFileStorage(node, position + length);
-   if (node.contents.subarray && buffer.subarray) {
-    node.contents.set(buffer.subarray(offset, offset + length), position);
-   } else {
-    for (var i = 0; i < length; i++) {
-     node.contents[position + i] = buffer[offset + i];
-    }
-   }
-   node.usedBytes = Math.max(node.usedBytes, position + length);
-   return length;
-  },
-  llseek(stream, offset, whence) {
-   var position = offset;
-   if (whence === 1) {
-    position += stream.position;
-   } else if (whence === 2) {
-    if (FS.isFile(stream.node.mode)) {
-     position += stream.node.usedBytes;
-    }
-   }
-   if (position < 0) {
-    throw new FS.ErrnoError(28);
-   }
-   return position;
-  },
-  allocate(stream, offset, length) {
-   MEMFS.expandFileStorage(stream.node, offset + length);
-   stream.node.usedBytes = Math.max(stream.node.usedBytes, offset + length);
-  },
-  mmap(stream, length, position, prot, flags) {
-   if (!FS.isFile(stream.node.mode)) {
-    throw new FS.ErrnoError(43);
-   }
-   var ptr;
-   var allocated;
-   var contents = stream.node.contents;
-   if (!(flags & 2) && contents.buffer === GROWABLE_HEAP_I8().buffer) {
-    allocated = false;
-    ptr = contents.byteOffset;
-   } else {
-    if (position > 0 || position + length < contents.length) {
-     if (contents.subarray) {
-      contents = contents.subarray(position, position + length);
-     } else {
-      contents = Array.prototype.slice.call(contents, position, position + length);
-     }
-    }
-    allocated = true;
-    ptr = mmapAlloc(length);
-    if (!ptr) {
-     throw new FS.ErrnoError(48);
-    }
-    GROWABLE_HEAP_I8().set(contents, ptr);
-   }
-   return {
-    ptr: ptr,
-    allocated: allocated
-   };
-  },
-  msync(stream, buffer, offset, length, mmapFlags) {
-   MEMFS.stream_ops.write(stream, buffer, 0, length, offset, false);
-   return 0;
-  }
- }
-};
-
-/** @param {boolean=} noRunDep */ var asyncLoad = (url, onload, onerror, noRunDep) => {
- var dep = !noRunDep ? getUniqueRunDependency(`al ${url}`) : "";
- readAsync(url, arrayBuffer => {
-  onload(new Uint8Array(arrayBuffer));
-  if (dep) removeRunDependency(dep);
- }, event => {
-  if (onerror) {
-   onerror();
-  } else {
-   throw `Loading data file "${url}" failed.`;
-  }
- });
- if (dep) addRunDependency(dep);
-};
-
-var FS_createDataFile = (parent, name, fileData, canRead, canWrite, canOwn) => {
- FS.createDataFile(parent, name, fileData, canRead, canWrite, canOwn);
-};
-
-var preloadPlugins = Module["preloadPlugins"] || [];
-
-var FS_handledByPreloadPlugin = (byteArray, fullname, finish, onerror) => {
- if (typeof Browser != "undefined") Browser.init();
- var handled = false;
- preloadPlugins.forEach(plugin => {
-  if (handled) return;
-  if (plugin["canHandle"](fullname)) {
-   plugin["handle"](byteArray, fullname, finish, onerror);
-   handled = true;
-  }
- });
- return handled;
-};
-
-var FS_createPreloadedFile = (parent, name, url, canRead, canWrite, onload, onerror, dontCreateFile, canOwn, preFinish) => {
- var fullname = name ? PATH_FS.resolve(PATH.join2(parent, name)) : parent;
- var dep = getUniqueRunDependency(`cp ${fullname}`);
- function processData(byteArray) {
-  function finish(byteArray) {
-   preFinish?.();
-   if (!dontCreateFile) {
-    FS_createDataFile(parent, name, byteArray, canRead, canWrite, canOwn);
-   }
-   onload?.();
-   removeRunDependency(dep);
-  }
-  if (FS_handledByPreloadPlugin(byteArray, fullname, finish, () => {
-   onerror?.();
-   removeRunDependency(dep);
-  })) {
-   return;
-  }
-  finish(byteArray);
- }
- addRunDependency(dep);
- if (typeof url == "string") {
-  asyncLoad(url, processData, onerror);
+var ___pthread_kill_js = (thread, signal) => {
+ if (signal === 33) {
+  if (!ENVIRONMENT_IS_PTHREAD) cancelThread(thread); else postMessage({
+   "cmd": "cancelThread",
+   "thread": thread
+  });
  } else {
-  processData(url);
- }
-};
-
-var FS_modeStringToFlags = str => {
- var flagModes = {
-  "r": 0,
-  "r+": 2,
-  "w": 512 | 64 | 1,
-  "w+": 512 | 64 | 2,
-  "a": 1024 | 64 | 1,
-  "a+": 1024 | 64 | 2
- };
- var flags = flagModes[str];
- if (typeof flags == "undefined") {
-  throw new Error(`Unknown file open mode: ${str}`);
- }
- return flags;
-};
-
-var FS_getMode = (canRead, canWrite) => {
- var mode = 0;
- if (canRead) mode |= 292 | 73;
- if (canWrite) mode |= 146;
- return mode;
-};
-
-var FS = {
- root: null,
- mounts: [],
- devices: {},
- streams: [],
- nextInode: 1,
- nameTable: null,
- currentPath: "/",
- initialized: false,
- ignorePermissions: true,
- ErrnoError: class {
-  constructor(errno) {
-   this.name = "ErrnoError";
-   this.errno = errno;
-  }
- },
- genericErrors: {},
- filesystems: null,
- syncFSRequests: 0,
- FSStream: class {
-  constructor() {
-   this.shared = {};
-  }
-  get object() {
-   return this.node;
-  }
-  set object(val) {
-   this.node = val;
-  }
-  get isRead() {
-   return (this.flags & 2097155) !== 1;
-  }
-  get isWrite() {
-   return (this.flags & 2097155) !== 0;
-  }
-  get isAppend() {
-   return (this.flags & 1024);
-  }
-  get flags() {
-   return this.shared.flags;
-  }
-  set flags(val) {
-   this.shared.flags = val;
-  }
-  get position() {
-   return this.shared.position;
-  }
-  set position(val) {
-   this.shared.position = val;
-  }
- },
- FSNode: class {
-  constructor(parent, name, mode, rdev) {
-   if (!parent) {
-    parent = this;
-   }
-   this.parent = parent;
-   this.mount = parent.mount;
-   this.mounted = null;
-   this.id = FS.nextInode++;
-   this.name = name;
-   this.mode = mode;
-   this.node_ops = {};
-   this.stream_ops = {};
-   this.rdev = rdev;
-   this.readMode = 292 | /*292*/ 73;
-   /*73*/ this.writeMode = 146;
-  }
-  get read() {
-   return (this.mode & this.readMode) === this.readMode;
-  }
-  set read(val) {
-   val ? this.mode |= this.readMode : this.mode &= ~this.readMode;
-  }
-  get write() {
-   return (this.mode & this.writeMode) === this.writeMode;
-  }
-  set write(val) {
-   val ? this.mode |= this.writeMode : this.mode &= ~this.writeMode;
-  }
-  get isFolder() {
-   return FS.isDir(this.mode);
-  }
-  get isDevice() {
-   return FS.isChrdev(this.mode);
-  }
- },
- lookupPath(path, opts = {}) {
-  path = PATH_FS.resolve(path);
-  if (!path) return {
-   path: "",
-   node: null
-  };
-  var defaults = {
-   follow_mount: true,
-   recurse_count: 0
-  };
-  opts = Object.assign(defaults, opts);
-  if (opts.recurse_count > 8) {
-   throw new FS.ErrnoError(32);
-  }
-  var parts = path.split("/").filter(p => !!p);
-  var current = FS.root;
-  var current_path = "/";
-  for (var i = 0; i < parts.length; i++) {
-   var islast = (i === parts.length - 1);
-   if (islast && opts.parent) {
-    break;
-   }
-   current = FS.lookupNode(current, parts[i]);
-   current_path = PATH.join2(current_path, parts[i]);
-   if (FS.isMountpoint(current)) {
-    if (!islast || (islast && opts.follow_mount)) {
-     current = current.mounted.root;
-    }
-   }
-   if (!islast || opts.follow) {
-    var count = 0;
-    while (FS.isLink(current.mode)) {
-     var link = FS.readlink(current_path);
-     current_path = PATH_FS.resolve(PATH.dirname(current_path), link);
-     var lookup = FS.lookupPath(current_path, {
-      recurse_count: opts.recurse_count + 1
-     });
-     current = lookup.node;
-     if (count++ > 40) {
-      throw new FS.ErrnoError(32);
-     }
-    }
-   }
-  }
-  return {
-   path: current_path,
-   node: current
-  };
- },
- getPath(node) {
-  var path;
-  while (true) {
-   if (FS.isRoot(node)) {
-    var mount = node.mount.mountpoint;
-    if (!path) return mount;
-    return mount[mount.length - 1] !== "/" ? `${mount}/${path}` : mount + path;
-   }
-   path = path ? `${node.name}/${path}` : node.name;
-   node = node.parent;
-  }
- },
- hashName(parentid, name) {
-  var hash = 0;
-  for (var i = 0; i < name.length; i++) {
-   hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
-  }
-  return ((parentid + hash) >>> 0) % FS.nameTable.length;
- },
- hashAddNode(node) {
-  var hash = FS.hashName(node.parent.id, node.name);
-  node.name_next = FS.nameTable[hash];
-  FS.nameTable[hash] = node;
- },
- hashRemoveNode(node) {
-  var hash = FS.hashName(node.parent.id, node.name);
-  if (FS.nameTable[hash] === node) {
-   FS.nameTable[hash] = node.name_next;
-  } else {
-   var current = FS.nameTable[hash];
-   while (current) {
-    if (current.name_next === node) {
-     current.name_next = node.name_next;
-     break;
-    }
-    current = current.name_next;
-   }
-  }
- },
- lookupNode(parent, name) {
-  var errCode = FS.mayLookup(parent);
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  var hash = FS.hashName(parent.id, name);
-  for (var node = FS.nameTable[hash]; node; node = node.name_next) {
-   var nodeName = node.name;
-   if (node.parent.id === parent.id && nodeName === name) {
-    return node;
-   }
-  }
-  return FS.lookup(parent, name);
- },
- createNode(parent, name, mode, rdev) {
-  var node = new FS.FSNode(parent, name, mode, rdev);
-  FS.hashAddNode(node);
-  return node;
- },
- destroyNode(node) {
-  FS.hashRemoveNode(node);
- },
- isRoot(node) {
-  return node === node.parent;
- },
- isMountpoint(node) {
-  return !!node.mounted;
- },
- isFile(mode) {
-  return (mode & 61440) === 32768;
- },
- isDir(mode) {
-  return (mode & 61440) === 16384;
- },
- isLink(mode) {
-  return (mode & 61440) === 40960;
- },
- isChrdev(mode) {
-  return (mode & 61440) === 8192;
- },
- isBlkdev(mode) {
-  return (mode & 61440) === 24576;
- },
- isFIFO(mode) {
-  return (mode & 61440) === 4096;
- },
- isSocket(mode) {
-  return (mode & 49152) === 49152;
- },
- flagsToPermissionString(flag) {
-  var perms = [ "r", "w", "rw" ][flag & 3];
-  if ((flag & 512)) {
-   perms += "w";
-  }
-  return perms;
- },
- nodePermissions(node, perms) {
-  if (FS.ignorePermissions) {
-   return 0;
-  }
-  if (perms.includes("r") && !(node.mode & 292)) {
-   return 2;
-  } else if (perms.includes("w") && !(node.mode & 146)) {
-   return 2;
-  } else if (perms.includes("x") && !(node.mode & 73)) {
-   return 2;
-  }
-  return 0;
- },
- mayLookup(dir) {
-  if (!FS.isDir(dir.mode)) return 54;
-  var errCode = FS.nodePermissions(dir, "x");
-  if (errCode) return errCode;
-  if (!dir.node_ops.lookup) return 2;
-  return 0;
- },
- mayCreate(dir, name) {
-  try {
-   var node = FS.lookupNode(dir, name);
-   return 20;
-  } catch (e) {}
-  return FS.nodePermissions(dir, "wx");
- },
- mayDelete(dir, name, isdir) {
-  var node;
-  try {
-   node = FS.lookupNode(dir, name);
-  } catch (e) {
-   return e.errno;
-  }
-  var errCode = FS.nodePermissions(dir, "wx");
-  if (errCode) {
-   return errCode;
-  }
-  if (isdir) {
-   if (!FS.isDir(node.mode)) {
-    return 54;
-   }
-   if (FS.isRoot(node) || FS.getPath(node) === FS.cwd()) {
-    return 10;
-   }
-  } else {
-   if (FS.isDir(node.mode)) {
-    return 31;
-   }
-  }
-  return 0;
- },
- mayOpen(node, flags) {
-  if (!node) {
-   return 44;
-  }
-  if (FS.isLink(node.mode)) {
-   return 32;
-  } else if (FS.isDir(node.mode)) {
-   if (FS.flagsToPermissionString(flags) !== "r" ||  (flags & 512)) {
-    return 31;
-   }
-  }
-  return FS.nodePermissions(node, FS.flagsToPermissionString(flags));
- },
- MAX_OPEN_FDS: 4096,
- nextfd() {
-  for (var fd = 0; fd <= FS.MAX_OPEN_FDS; fd++) {
-   if (!FS.streams[fd]) {
-    return fd;
-   }
-  }
-  throw new FS.ErrnoError(33);
- },
- getStreamChecked(fd) {
-  var stream = FS.getStream(fd);
-  if (!stream) {
-   throw new FS.ErrnoError(8);
-  }
-  return stream;
- },
- getStream: fd => FS.streams[fd],
- createStream(stream, fd = -1) {
-  stream = Object.assign(new FS.FSStream, stream);
-  if (fd == -1) {
-   fd = FS.nextfd();
-  }
-  stream.fd = fd;
-  FS.streams[fd] = stream;
-  return stream;
- },
- closeStream(fd) {
-  FS.streams[fd] = null;
- },
- dupStream(origStream, fd = -1) {
-  var stream = FS.createStream(origStream, fd);
-  stream.stream_ops?.dup?.(stream);
-  return stream;
- },
- chrdev_stream_ops: {
-  open(stream) {
-   var device = FS.getDevice(stream.node.rdev);
-   stream.stream_ops = device.stream_ops;
-   stream.stream_ops.open?.(stream);
-  },
-  llseek() {
-   throw new FS.ErrnoError(70);
-  }
- },
- major: dev => ((dev) >> 8),
- minor: dev => ((dev) & 255),
- makedev: (ma, mi) => ((ma) << 8 | (mi)),
- registerDevice(dev, ops) {
-  FS.devices[dev] = {
-   stream_ops: ops
-  };
- },
- getDevice: dev => FS.devices[dev],
- getMounts(mount) {
-  var mounts = [];
-  var check = [ mount ];
-  while (check.length) {
-   var m = check.pop();
-   mounts.push(m);
-   check.push(...m.mounts);
-  }
-  return mounts;
- },
- syncfs(populate, callback) {
-  if (typeof populate == "function") {
-   callback = populate;
-   populate = false;
-  }
-  FS.syncFSRequests++;
-  if (FS.syncFSRequests > 1) {
-   err(`warning: ${FS.syncFSRequests} FS.syncfs operations in flight at once, probably just doing extra work`);
-  }
-  var mounts = FS.getMounts(FS.root.mount);
-  var completed = 0;
-  function doCallback(errCode) {
-   FS.syncFSRequests--;
-   return callback(errCode);
-  }
-  function done(errCode) {
-   if (errCode) {
-    if (!done.errored) {
-     done.errored = true;
-     return doCallback(errCode);
-    }
-    return;
-   }
-   if (++completed >= mounts.length) {
-    doCallback(null);
-   }
-  }
-  mounts.forEach(mount => {
-   if (!mount.type.syncfs) {
-    return done(null);
-   }
-   mount.type.syncfs(mount, populate, done);
+  if (!ENVIRONMENT_IS_PTHREAD) killThread(thread); else postMessage({
+   "cmd": "killThread",
+   "thread": thread
   });
- },
- mount(type, opts, mountpoint) {
-  var root = mountpoint === "/";
-  var pseudo = !mountpoint;
-  var node;
-  if (root && FS.root) {
-   throw new FS.ErrnoError(10);
-  } else if (!root && !pseudo) {
-   var lookup = FS.lookupPath(mountpoint, {
-    follow_mount: false
-   });
-   mountpoint = lookup.path;
-   node = lookup.node;
-   if (FS.isMountpoint(node)) {
-    throw new FS.ErrnoError(10);
-   }
-   if (!FS.isDir(node.mode)) {
-    throw new FS.ErrnoError(54);
-   }
-  }
-  var mount = {
-   type: type,
-   opts: opts,
-   mountpoint: mountpoint,
-   mounts: []
-  };
-  var mountRoot = type.mount(mount);
-  mountRoot.mount = mount;
-  mount.root = mountRoot;
-  if (root) {
-   FS.root = mountRoot;
-  } else if (node) {
-   node.mounted = mount;
-   if (node.mount) {
-    node.mount.mounts.push(mount);
-   }
-  }
-  return mountRoot;
- },
- unmount(mountpoint) {
-  var lookup = FS.lookupPath(mountpoint, {
-   follow_mount: false
-  });
-  if (!FS.isMountpoint(lookup.node)) {
-   throw new FS.ErrnoError(28);
-  }
-  var node = lookup.node;
-  var mount = node.mounted;
-  var mounts = FS.getMounts(mount);
-  Object.keys(FS.nameTable).forEach(hash => {
-   var current = FS.nameTable[hash];
-   while (current) {
-    var next = current.name_next;
-    if (mounts.includes(current.mount)) {
-     FS.destroyNode(current);
-    }
-    current = next;
-   }
-  });
-  node.mounted = null;
-  var idx = node.mount.mounts.indexOf(mount);
-  node.mount.mounts.splice(idx, 1);
- },
- lookup(parent, name) {
-  return parent.node_ops.lookup(parent, name);
- },
- mknod(path, mode, dev) {
-  var lookup = FS.lookupPath(path, {
-   parent: true
-  });
-  var parent = lookup.node;
-  var name = PATH.basename(path);
-  if (!name || name === "." || name === "..") {
-   throw new FS.ErrnoError(28);
-  }
-  var errCode = FS.mayCreate(parent, name);
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  if (!parent.node_ops.mknod) {
-   throw new FS.ErrnoError(63);
-  }
-  return parent.node_ops.mknod(parent, name, mode, dev);
- },
- create(path, mode) {
-  mode = mode !== undefined ? mode : 438;
-  /* 0666 */ mode &= 4095;
-  mode |= 32768;
-  return FS.mknod(path, mode, 0);
- },
- mkdir(path, mode) {
-  mode = mode !== undefined ? mode : 511;
-  /* 0777 */ mode &= 511 | 512;
-  mode |= 16384;
-  return FS.mknod(path, mode, 0);
- },
- mkdirTree(path, mode) {
-  var dirs = path.split("/");
-  var d = "";
-  for (var i = 0; i < dirs.length; ++i) {
-   if (!dirs[i]) continue;
-   d += "/" + dirs[i];
-   try {
-    FS.mkdir(d, mode);
-   } catch (e) {
-    if (e.errno != 20) throw e;
-   }
-  }
- },
- mkdev(path, mode, dev) {
-  if (typeof dev == "undefined") {
-   dev = mode;
-   mode = 438;
-  }
-  mode |= 8192;
-  return FS.mknod(path, mode, dev);
- },
- symlink(oldpath, newpath) {
-  if (!PATH_FS.resolve(oldpath)) {
-   throw new FS.ErrnoError(44);
-  }
-  var lookup = FS.lookupPath(newpath, {
-   parent: true
-  });
-  var parent = lookup.node;
-  if (!parent) {
-   throw new FS.ErrnoError(44);
-  }
-  var newname = PATH.basename(newpath);
-  var errCode = FS.mayCreate(parent, newname);
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  if (!parent.node_ops.symlink) {
-   throw new FS.ErrnoError(63);
-  }
-  return parent.node_ops.symlink(parent, newname, oldpath);
- },
- rename(old_path, new_path) {
-  var old_dirname = PATH.dirname(old_path);
-  var new_dirname = PATH.dirname(new_path);
-  var old_name = PATH.basename(old_path);
-  var new_name = PATH.basename(new_path);
-  var lookup, old_dir, new_dir;
-  lookup = FS.lookupPath(old_path, {
-   parent: true
-  });
-  old_dir = lookup.node;
-  lookup = FS.lookupPath(new_path, {
-   parent: true
-  });
-  new_dir = lookup.node;
-  if (!old_dir || !new_dir) throw new FS.ErrnoError(44);
-  if (old_dir.mount !== new_dir.mount) {
-   throw new FS.ErrnoError(75);
-  }
-  var old_node = FS.lookupNode(old_dir, old_name);
-  var relative = PATH_FS.relative(old_path, new_dirname);
-  if (relative.charAt(0) !== ".") {
-   throw new FS.ErrnoError(28);
-  }
-  relative = PATH_FS.relative(new_path, old_dirname);
-  if (relative.charAt(0) !== ".") {
-   throw new FS.ErrnoError(55);
-  }
-  var new_node;
-  try {
-   new_node = FS.lookupNode(new_dir, new_name);
-  } catch (e) {}
-  if (old_node === new_node) {
-   return;
-  }
-  var isdir = FS.isDir(old_node.mode);
-  var errCode = FS.mayDelete(old_dir, old_name, isdir);
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  errCode = new_node ? FS.mayDelete(new_dir, new_name, isdir) : FS.mayCreate(new_dir, new_name);
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  if (!old_dir.node_ops.rename) {
-   throw new FS.ErrnoError(63);
-  }
-  if (FS.isMountpoint(old_node) || (new_node && FS.isMountpoint(new_node))) {
-   throw new FS.ErrnoError(10);
-  }
-  if (new_dir !== old_dir) {
-   errCode = FS.nodePermissions(old_dir, "w");
-   if (errCode) {
-    throw new FS.ErrnoError(errCode);
-   }
-  }
-  FS.hashRemoveNode(old_node);
-  try {
-   old_dir.node_ops.rename(old_node, new_dir, new_name);
-  } catch (e) {
-   throw e;
-  } finally {
-   FS.hashAddNode(old_node);
-  }
- },
- rmdir(path) {
-  var lookup = FS.lookupPath(path, {
-   parent: true
-  });
-  var parent = lookup.node;
-  var name = PATH.basename(path);
-  var node = FS.lookupNode(parent, name);
-  var errCode = FS.mayDelete(parent, name, true);
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  if (!parent.node_ops.rmdir) {
-   throw new FS.ErrnoError(63);
-  }
-  if (FS.isMountpoint(node)) {
-   throw new FS.ErrnoError(10);
-  }
-  parent.node_ops.rmdir(parent, name);
-  FS.destroyNode(node);
- },
- readdir(path) {
-  var lookup = FS.lookupPath(path, {
-   follow: true
-  });
-  var node = lookup.node;
-  if (!node.node_ops.readdir) {
-   throw new FS.ErrnoError(54);
-  }
-  return node.node_ops.readdir(node);
- },
- unlink(path) {
-  var lookup = FS.lookupPath(path, {
-   parent: true
-  });
-  var parent = lookup.node;
-  if (!parent) {
-   throw new FS.ErrnoError(44);
-  }
-  var name = PATH.basename(path);
-  var node = FS.lookupNode(parent, name);
-  var errCode = FS.mayDelete(parent, name, false);
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  if (!parent.node_ops.unlink) {
-   throw new FS.ErrnoError(63);
-  }
-  if (FS.isMountpoint(node)) {
-   throw new FS.ErrnoError(10);
-  }
-  parent.node_ops.unlink(parent, name);
-  FS.destroyNode(node);
- },
- readlink(path) {
-  var lookup = FS.lookupPath(path);
-  var link = lookup.node;
-  if (!link) {
-   throw new FS.ErrnoError(44);
-  }
-  if (!link.node_ops.readlink) {
-   throw new FS.ErrnoError(28);
-  }
-  return PATH_FS.resolve(FS.getPath(link.parent), link.node_ops.readlink(link));
- },
- stat(path, dontFollow) {
-  var lookup = FS.lookupPath(path, {
-   follow: !dontFollow
-  });
-  var node = lookup.node;
-  if (!node) {
-   throw new FS.ErrnoError(44);
-  }
-  if (!node.node_ops.getattr) {
-   throw new FS.ErrnoError(63);
-  }
-  return node.node_ops.getattr(node);
- },
- lstat(path) {
-  return FS.stat(path, true);
- },
- chmod(path, mode, dontFollow) {
-  var node;
-  if (typeof path == "string") {
-   var lookup = FS.lookupPath(path, {
-    follow: !dontFollow
-   });
-   node = lookup.node;
-  } else {
-   node = path;
-  }
-  if (!node.node_ops.setattr) {
-   throw new FS.ErrnoError(63);
-  }
-  node.node_ops.setattr(node, {
-   mode: (mode & 4095) | (node.mode & ~4095),
-   timestamp: Date.now()
-  });
- },
- lchmod(path, mode) {
-  FS.chmod(path, mode, true);
- },
- fchmod(fd, mode) {
-  var stream = FS.getStreamChecked(fd);
-  FS.chmod(stream.node, mode);
- },
- chown(path, uid, gid, dontFollow) {
-  var node;
-  if (typeof path == "string") {
-   var lookup = FS.lookupPath(path, {
-    follow: !dontFollow
-   });
-   node = lookup.node;
-  } else {
-   node = path;
-  }
-  if (!node.node_ops.setattr) {
-   throw new FS.ErrnoError(63);
-  }
-  node.node_ops.setattr(node, {
-   timestamp: Date.now()
-  });
- },
- lchown(path, uid, gid) {
-  FS.chown(path, uid, gid, true);
- },
- fchown(fd, uid, gid) {
-  var stream = FS.getStreamChecked(fd);
-  FS.chown(stream.node, uid, gid);
- },
- truncate(path, len) {
-  if (len < 0) {
-   throw new FS.ErrnoError(28);
-  }
-  var node;
-  if (typeof path == "string") {
-   var lookup = FS.lookupPath(path, {
-    follow: true
-   });
-   node = lookup.node;
-  } else {
-   node = path;
-  }
-  if (!node.node_ops.setattr) {
-   throw new FS.ErrnoError(63);
-  }
-  if (FS.isDir(node.mode)) {
-   throw new FS.ErrnoError(31);
-  }
-  if (!FS.isFile(node.mode)) {
-   throw new FS.ErrnoError(28);
-  }
-  var errCode = FS.nodePermissions(node, "w");
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  node.node_ops.setattr(node, {
-   size: len,
-   timestamp: Date.now()
-  });
- },
- ftruncate(fd, len) {
-  var stream = FS.getStreamChecked(fd);
-  if ((stream.flags & 2097155) === 0) {
-   throw new FS.ErrnoError(28);
-  }
-  FS.truncate(stream.node, len);
- },
- utime(path, atime, mtime) {
-  var lookup = FS.lookupPath(path, {
-   follow: true
-  });
-  var node = lookup.node;
-  node.node_ops.setattr(node, {
-   timestamp: Math.max(atime, mtime)
-  });
- },
- open(path, flags, mode) {
-  if (path === "") {
-   throw new FS.ErrnoError(44);
-  }
-  flags = typeof flags == "string" ? FS_modeStringToFlags(flags) : flags;
-  mode = typeof mode == "undefined" ? 438 : /* 0666 */ mode;
-  if ((flags & 64)) {
-   mode = (mode & 4095) | 32768;
-  } else {
-   mode = 0;
-  }
-  var node;
-  if (typeof path == "object") {
-   node = path;
-  } else {
-   path = PATH.normalize(path);
-   try {
-    var lookup = FS.lookupPath(path, {
-     follow: !(flags & 131072)
-    });
-    node = lookup.node;
-   } catch (e) {}
-  }
-  var created = false;
-  if ((flags & 64)) {
-   if (node) {
-    if ((flags & 128)) {
-     throw new FS.ErrnoError(20);
-    }
-   } else {
-    node = FS.mknod(path, mode, 0);
-    created = true;
-   }
-  }
-  if (!node) {
-   throw new FS.ErrnoError(44);
-  }
-  if (FS.isChrdev(node.mode)) {
-   flags &= ~512;
-  }
-  if ((flags & 65536) && !FS.isDir(node.mode)) {
-   throw new FS.ErrnoError(54);
-  }
-  if (!created) {
-   var errCode = FS.mayOpen(node, flags);
-   if (errCode) {
-    throw new FS.ErrnoError(errCode);
-   }
-  }
-  if ((flags & 512) && !created) {
-   FS.truncate(node, 0);
-  }
-  flags &= ~(128 | 512 | 131072);
-  var stream = FS.createStream({
-   node: node,
-   path: FS.getPath(node),
-   flags: flags,
-   seekable: true,
-   position: 0,
-   stream_ops: node.stream_ops,
-   ungotten: [],
-   error: false
-  });
-  if (stream.stream_ops.open) {
-   stream.stream_ops.open(stream);
-  }
-  if (Module["logReadFiles"] && !(flags & 1)) {
-   if (!FS.readFiles) FS.readFiles = {};
-   if (!(path in FS.readFiles)) {
-    FS.readFiles[path] = 1;
-   }
-  }
-  return stream;
- },
- close(stream) {
-  if (FS.isClosed(stream)) {
-   throw new FS.ErrnoError(8);
-  }
-  if (stream.getdents) stream.getdents = null;
-  try {
-   if (stream.stream_ops.close) {
-    stream.stream_ops.close(stream);
-   }
-  } catch (e) {
-   throw e;
-  } finally {
-   FS.closeStream(stream.fd);
-  }
-  stream.fd = null;
- },
- isClosed(stream) {
-  return stream.fd === null;
- },
- llseek(stream, offset, whence) {
-  if (FS.isClosed(stream)) {
-   throw new FS.ErrnoError(8);
-  }
-  if (!stream.seekable || !stream.stream_ops.llseek) {
-   throw new FS.ErrnoError(70);
-  }
-  if (whence != 0 && whence != 1 && whence != 2) {
-   throw new FS.ErrnoError(28);
-  }
-  stream.position = stream.stream_ops.llseek(stream, offset, whence);
-  stream.ungotten = [];
-  return stream.position;
- },
- read(stream, buffer, offset, length, position) {
-  if (length < 0 || position < 0) {
-   throw new FS.ErrnoError(28);
-  }
-  if (FS.isClosed(stream)) {
-   throw new FS.ErrnoError(8);
-  }
-  if ((stream.flags & 2097155) === 1) {
-   throw new FS.ErrnoError(8);
-  }
-  if (FS.isDir(stream.node.mode)) {
-   throw new FS.ErrnoError(31);
-  }
-  if (!stream.stream_ops.read) {
-   throw new FS.ErrnoError(28);
-  }
-  var seeking = typeof position != "undefined";
-  if (!seeking) {
-   position = stream.position;
-  } else if (!stream.seekable) {
-   throw new FS.ErrnoError(70);
-  }
-  var bytesRead = stream.stream_ops.read(stream, buffer, offset, length, position);
-  if (!seeking) stream.position += bytesRead;
-  return bytesRead;
- },
- write(stream, buffer, offset, length, position, canOwn) {
-  if (length < 0 || position < 0) {
-   throw new FS.ErrnoError(28);
-  }
-  if (FS.isClosed(stream)) {
-   throw new FS.ErrnoError(8);
-  }
-  if ((stream.flags & 2097155) === 0) {
-   throw new FS.ErrnoError(8);
-  }
-  if (FS.isDir(stream.node.mode)) {
-   throw new FS.ErrnoError(31);
-  }
-  if (!stream.stream_ops.write) {
-   throw new FS.ErrnoError(28);
-  }
-  if (stream.seekable && stream.flags & 1024) {
-   FS.llseek(stream, 0, 2);
-  }
-  var seeking = typeof position != "undefined";
-  if (!seeking) {
-   position = stream.position;
-  } else if (!stream.seekable) {
-   throw new FS.ErrnoError(70);
-  }
-  var bytesWritten = stream.stream_ops.write(stream, buffer, offset, length, position, canOwn);
-  if (!seeking) stream.position += bytesWritten;
-  return bytesWritten;
- },
- allocate(stream, offset, length) {
-  if (FS.isClosed(stream)) {
-   throw new FS.ErrnoError(8);
-  }
-  if (offset < 0 || length <= 0) {
-   throw new FS.ErrnoError(28);
-  }
-  if ((stream.flags & 2097155) === 0) {
-   throw new FS.ErrnoError(8);
-  }
-  if (!FS.isFile(stream.node.mode) && !FS.isDir(stream.node.mode)) {
-   throw new FS.ErrnoError(43);
-  }
-  if (!stream.stream_ops.allocate) {
-   throw new FS.ErrnoError(138);
-  }
-  stream.stream_ops.allocate(stream, offset, length);
- },
- mmap(stream, length, position, prot, flags) {
-  if ((prot & 2) !== 0 && (flags & 2) === 0 && (stream.flags & 2097155) !== 2) {
-   throw new FS.ErrnoError(2);
-  }
-  if ((stream.flags & 2097155) === 1) {
-   throw new FS.ErrnoError(2);
-  }
-  if (!stream.stream_ops.mmap) {
-   throw new FS.ErrnoError(43);
-  }
-  return stream.stream_ops.mmap(stream, length, position, prot, flags);
- },
- msync(stream, buffer, offset, length, mmapFlags) {
-  if (!stream.stream_ops.msync) {
-   return 0;
-  }
-  return stream.stream_ops.msync(stream, buffer, offset, length, mmapFlags);
- },
- ioctl(stream, cmd, arg) {
-  if (!stream.stream_ops.ioctl) {
-   throw new FS.ErrnoError(59);
-  }
-  return stream.stream_ops.ioctl(stream, cmd, arg);
- },
- readFile(path, opts = {}) {
-  opts.flags = opts.flags || 0;
-  opts.encoding = opts.encoding || "binary";
-  if (opts.encoding !== "utf8" && opts.encoding !== "binary") {
-   throw new Error(`Invalid encoding type "${opts.encoding}"`);
-  }
-  var ret;
-  var stream = FS.open(path, opts.flags);
-  var stat = FS.stat(path);
-  var length = stat.size;
-  var buf = new Uint8Array(length);
-  FS.read(stream, buf, 0, length, 0);
-  if (opts.encoding === "utf8") {
-   ret = UTF8ArrayToString(buf, 0);
-  } else if (opts.encoding === "binary") {
-   ret = buf;
-  }
-  FS.close(stream);
-  return ret;
- },
- writeFile(path, data, opts = {}) {
-  opts.flags = opts.flags || 577;
-  var stream = FS.open(path, opts.flags, opts.mode);
-  if (typeof data == "string") {
-   var buf = new Uint8Array(lengthBytesUTF8(data) + 1);
-   var actualNumBytes = stringToUTF8Array(data, buf, 0, buf.length);
-   FS.write(stream, buf, 0, actualNumBytes, undefined, opts.canOwn);
-  } else if (ArrayBuffer.isView(data)) {
-   FS.write(stream, data, 0, data.byteLength, undefined, opts.canOwn);
-  } else {
-   throw new Error("Unsupported data type");
-  }
-  FS.close(stream);
- },
- cwd: () => FS.currentPath,
- chdir(path) {
-  var lookup = FS.lookupPath(path, {
-   follow: true
-  });
-  if (lookup.node === null) {
-   throw new FS.ErrnoError(44);
-  }
-  if (!FS.isDir(lookup.node.mode)) {
-   throw new FS.ErrnoError(54);
-  }
-  var errCode = FS.nodePermissions(lookup.node, "x");
-  if (errCode) {
-   throw new FS.ErrnoError(errCode);
-  }
-  FS.currentPath = lookup.path;
- },
- createDefaultDirectories() {
-  FS.mkdir("/tmp");
-  FS.mkdir("/home");
-  FS.mkdir("/home/web_user");
- },
- createDefaultDevices() {
-  FS.mkdir("/dev");
-  FS.registerDevice(FS.makedev(1, 3), {
-   read: () => 0,
-   write: (stream, buffer, offset, length, pos) => length
-  });
-  FS.mkdev("/dev/null", FS.makedev(1, 3));
-  TTY.register(FS.makedev(5, 0), TTY.default_tty_ops);
-  TTY.register(FS.makedev(6, 0), TTY.default_tty1_ops);
-  FS.mkdev("/dev/tty", FS.makedev(5, 0));
-  FS.mkdev("/dev/tty1", FS.makedev(6, 0));
-  var randomBuffer = new Uint8Array(1024), randomLeft = 0;
-  var randomByte = () => {
-   if (randomLeft === 0) {
-    randomLeft = randomFill(randomBuffer).byteLength;
-   }
-   return randomBuffer[--randomLeft];
-  };
-  FS.createDevice("/dev", "random", randomByte);
-  FS.createDevice("/dev", "urandom", randomByte);
-  FS.mkdir("/dev/shm");
-  FS.mkdir("/dev/shm/tmp");
- },
- createSpecialDirectories() {
-  FS.mkdir("/proc");
-  var proc_self = FS.mkdir("/proc/self");
-  FS.mkdir("/proc/self/fd");
-  FS.mount({
-   mount() {
-    var node = FS.createNode(proc_self, "fd", 16384 | 511, /* 0777 */ 73);
-    node.node_ops = {
-     lookup(parent, name) {
-      var fd = +name;
-      var stream = FS.getStreamChecked(fd);
-      var ret = {
-       parent: null,
-       mount: {
-        mountpoint: "fake"
-       },
-       node_ops: {
-        readlink: () => stream.path
-       }
-      };
-      ret.parent = ret;
-      return ret;
-     }
-    };
-    return node;
-   }
-  }, {}, "/proc/self/fd");
- },
- createStandardStreams() {
-  if (Module["stdin"]) {
-   FS.createDevice("/dev", "stdin", Module["stdin"]);
-  } else {
-   FS.symlink("/dev/tty", "/dev/stdin");
-  }
-  if (Module["stdout"]) {
-   FS.createDevice("/dev", "stdout", null, Module["stdout"]);
-  } else {
-   FS.symlink("/dev/tty", "/dev/stdout");
-  }
-  if (Module["stderr"]) {
-   FS.createDevice("/dev", "stderr", null, Module["stderr"]);
-  } else {
-   FS.symlink("/dev/tty1", "/dev/stderr");
-  }
-  var stdin = FS.open("/dev/stdin", 0);
-  var stdout = FS.open("/dev/stdout", 1);
-  var stderr = FS.open("/dev/stderr", 1);
- },
- staticInit() {
-  [ 44 ].forEach(code => {
-   FS.genericErrors[code] = new FS.ErrnoError(code);
-   FS.genericErrors[code].stack = "<generic error, no stack>";
-  });
-  FS.nameTable = new Array(4096);
-  FS.mount(MEMFS, {}, "/");
-  FS.createDefaultDirectories();
-  FS.createDefaultDevices();
-  FS.createSpecialDirectories();
-  FS.filesystems = {
-   "MEMFS": MEMFS
-  };
- },
- init(input, output, error) {
-  FS.init.initialized = true;
-  Module["stdin"] = input || Module["stdin"];
-  Module["stdout"] = output || Module["stdout"];
-  Module["stderr"] = error || Module["stderr"];
-  FS.createStandardStreams();
- },
- quit() {
-  FS.init.initialized = false;
-  _fflush(0);
-  for (var i = 0; i < FS.streams.length; i++) {
-   var stream = FS.streams[i];
-   if (!stream) {
-    continue;
-   }
-   FS.close(stream);
-  }
- },
- findObject(path, dontResolveLastLink) {
-  var ret = FS.analyzePath(path, dontResolveLastLink);
-  if (!ret.exists) {
-   return null;
-  }
-  return ret.object;
- },
- analyzePath(path, dontResolveLastLink) {
-  try {
-   var lookup = FS.lookupPath(path, {
-    follow: !dontResolveLastLink
-   });
-   path = lookup.path;
-  } catch (e) {}
-  var ret = {
-   isRoot: false,
-   exists: false,
-   error: 0,
-   name: null,
-   path: null,
-   object: null,
-   parentExists: false,
-   parentPath: null,
-   parentObject: null
-  };
-  try {
-   var lookup = FS.lookupPath(path, {
-    parent: true
-   });
-   ret.parentExists = true;
-   ret.parentPath = lookup.path;
-   ret.parentObject = lookup.node;
-   ret.name = PATH.basename(path);
-   lookup = FS.lookupPath(path, {
-    follow: !dontResolveLastLink
-   });
-   ret.exists = true;
-   ret.path = lookup.path;
-   ret.object = lookup.node;
-   ret.name = lookup.node.name;
-   ret.isRoot = lookup.path === "/";
-  } catch (e) {
-   ret.error = e.errno;
-  }
-  return ret;
- },
- createPath(parent, path, canRead, canWrite) {
-  parent = typeof parent == "string" ? parent : FS.getPath(parent);
-  var parts = path.split("/").reverse();
-  while (parts.length) {
-   var part = parts.pop();
-   if (!part) continue;
-   var current = PATH.join2(parent, part);
-   try {
-    FS.mkdir(current);
-   } catch (e) {}
-   parent = current;
-  }
-  return current;
- },
- createFile(parent, name, properties, canRead, canWrite) {
-  var path = PATH.join2(typeof parent == "string" ? parent : FS.getPath(parent), name);
-  var mode = FS_getMode(canRead, canWrite);
-  return FS.create(path, mode);
- },
- createDataFile(parent, name, data, canRead, canWrite, canOwn) {
-  var path = name;
-  if (parent) {
-   parent = typeof parent == "string" ? parent : FS.getPath(parent);
-   path = name ? PATH.join2(parent, name) : parent;
-  }
-  var mode = FS_getMode(canRead, canWrite);
-  var node = FS.create(path, mode);
-  if (data) {
-   if (typeof data == "string") {
-    var arr = new Array(data.length);
-    for (var i = 0, len = data.length; i < len; ++i) arr[i] = data.charCodeAt(i);
-    data = arr;
-   }
-   FS.chmod(node, mode | 146);
-   var stream = FS.open(node, 577);
-   FS.write(stream, data, 0, data.length, 0, canOwn);
-   FS.close(stream);
-   FS.chmod(node, mode);
-  }
- },
- createDevice(parent, name, input, output) {
-  var path = PATH.join2(typeof parent == "string" ? parent : FS.getPath(parent), name);
-  var mode = FS_getMode(!!input, !!output);
-  if (!FS.createDevice.major) FS.createDevice.major = 64;
-  var dev = FS.makedev(FS.createDevice.major++, 0);
-  FS.registerDevice(dev, {
-   open(stream) {
-    stream.seekable = false;
-   },
-   close(stream) {
-    if (output?.buffer?.length) {
-     output(10);
-    }
-   },
-   read(stream, buffer, offset, length, pos) {
-    /* ignored */ var bytesRead = 0;
-    for (var i = 0; i < length; i++) {
-     var result;
-     try {
-      result = input();
-     } catch (e) {
-      throw new FS.ErrnoError(29);
-     }
-     if (result === undefined && bytesRead === 0) {
-      throw new FS.ErrnoError(6);
-     }
-     if (result === null || result === undefined) break;
-     bytesRead++;
-     buffer[offset + i] = result;
-    }
-    if (bytesRead) {
-     stream.node.timestamp = Date.now();
-    }
-    return bytesRead;
-   },
-   write(stream, buffer, offset, length, pos) {
-    for (var i = 0; i < length; i++) {
-     try {
-      output(buffer[offset + i]);
-     } catch (e) {
-      throw new FS.ErrnoError(29);
-     }
-    }
-    if (length) {
-     stream.node.timestamp = Date.now();
-    }
-    return i;
-   }
-  });
-  return FS.mkdev(path, mode, dev);
- },
- forceLoadFile(obj) {
-  if (obj.isDevice || obj.isFolder || obj.link || obj.contents) return true;
-  if (typeof XMLHttpRequest != "undefined") {
-   throw new Error("Lazy loading should have been performed (contents set) in createLazyFile, but it was not. Lazy loading only works in web workers. Use --embed-file or --preload-file in emcc on the main thread.");
-  } else if (read_) {
-   try {
-    obj.contents = intArrayFromString(read_(obj.url), true);
-    obj.usedBytes = obj.contents.length;
-   } catch (e) {
-    throw new FS.ErrnoError(29);
-   }
-  } else {
-   throw new Error("Cannot load without read() or XMLHttpRequest.");
-  }
- },
- createLazyFile(parent, name, url, canRead, canWrite) {
-  class LazyUint8Array {
-   constructor() {
-    this.lengthKnown = false;
-    this.chunks = [];
-   }
-   get(idx) {
-    if (idx > this.length - 1 || idx < 0) {
-     return undefined;
-    }
-    var chunkOffset = idx % this.chunkSize;
-    var chunkNum = (idx / this.chunkSize) | 0;
-    return this.getter(chunkNum)[chunkOffset];
-   }
-   setDataGetter(getter) {
-    this.getter = getter;
-   }
-   cacheLength() {
-    var xhr = new XMLHttpRequest;
-    xhr.open("HEAD", url, false);
-    xhr.send(null);
-    if (!(xhr.status >= 200 && xhr.status < 300 || xhr.status === 304)) throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
-    var datalength = Number(xhr.getResponseHeader("Content-length"));
-    var header;
-    var hasByteServing = (header = xhr.getResponseHeader("Accept-Ranges")) && header === "bytes";
-    var usesGzip = (header = xhr.getResponseHeader("Content-Encoding")) && header === "gzip";
-    var chunkSize = 1024 * 1024;
-    if (!hasByteServing) chunkSize = datalength;
-    var doXHR = (from, to) => {
-     if (from > to) throw new Error("invalid range (" + from + ", " + to + ") or no bytes requested!");
-     if (to > datalength - 1) throw new Error("only " + datalength + " bytes available! programmer error!");
-     var xhr = new XMLHttpRequest;
-     xhr.open("GET", url, false);
-     if (datalength !== chunkSize) xhr.setRequestHeader("Range", "bytes=" + from + "-" + to);
-     xhr.responseType = "arraybuffer";
-     if (xhr.overrideMimeType) {
-      xhr.overrideMimeType("text/plain; charset=x-user-defined");
-     }
-     xhr.send(null);
-     if (!(xhr.status >= 200 && xhr.status < 300 || xhr.status === 304)) throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
-     if (xhr.response !== undefined) {
-      return new Uint8Array(/** @type{Array<number>} */ (xhr.response || []));
-     }
-     return intArrayFromString(xhr.responseText || "", true);
-    };
-    var lazyArray = this;
-    lazyArray.setDataGetter(chunkNum => {
-     var start = chunkNum * chunkSize;
-     var end = (chunkNum + 1) * chunkSize - 1;
-     end = Math.min(end, datalength - 1);
-     if (typeof lazyArray.chunks[chunkNum] == "undefined") {
-      lazyArray.chunks[chunkNum] = doXHR(start, end);
-     }
-     if (typeof lazyArray.chunks[chunkNum] == "undefined") throw new Error("doXHR failed!");
-     return lazyArray.chunks[chunkNum];
-    });
-    if (usesGzip || !datalength) {
-     chunkSize = datalength = 1;
-     datalength = this.getter(0).length;
-     chunkSize = datalength;
-     out("LazyFiles on gzip forces download of the whole file when length is accessed");
-    }
-    this._length = datalength;
-    this._chunkSize = chunkSize;
-    this.lengthKnown = true;
-   }
-   get length() {
-    if (!this.lengthKnown) {
-     this.cacheLength();
-    }
-    return this._length;
-   }
-   get chunkSize() {
-    if (!this.lengthKnown) {
-     this.cacheLength();
-    }
-    return this._chunkSize;
-   }
-  }
-  if (typeof XMLHttpRequest != "undefined") {
-   if (!ENVIRONMENT_IS_WORKER) throw "Cannot do synchronous binary XHRs outside webworkers in modern browsers. Use --embed-file or --preload-file in emcc";
-   var lazyArray = new LazyUint8Array;
-   var properties = {
-    isDevice: false,
-    contents: lazyArray
-   };
-  } else {
-   var properties = {
-    isDevice: false,
-    url: url
-   };
-  }
-  var node = FS.createFile(parent, name, properties, canRead, canWrite);
-  if (properties.contents) {
-   node.contents = properties.contents;
-  } else if (properties.url) {
-   node.contents = null;
-   node.url = properties.url;
-  }
-  Object.defineProperties(node, {
-   usedBytes: {
-    get: function() {
-     return this.contents.length;
-    }
-   }
-  });
-  var stream_ops = {};
-  var keys = Object.keys(node.stream_ops);
-  keys.forEach(key => {
-   var fn = node.stream_ops[key];
-   stream_ops[key] = (...args) => {
-    FS.forceLoadFile(node);
-    return fn(...args);
-   };
-  });
-  function writeChunks(stream, buffer, offset, length, position) {
-   var contents = stream.node.contents;
-   if (position >= contents.length) return 0;
-   var size = Math.min(contents.length - position, length);
-   if (contents.slice) {
-    for (var i = 0; i < size; i++) {
-     buffer[offset + i] = contents[position + i];
-    }
-   } else {
-    for (var i = 0; i < size; i++) {
-     buffer[offset + i] = contents.get(position + i);
-    }
-   }
-   return size;
-  }
-  stream_ops.read = (stream, buffer, offset, length, position) => {
-   FS.forceLoadFile(node);
-   return writeChunks(stream, buffer, offset, length, position);
-  };
-  stream_ops.mmap = (stream, length, position, prot, flags) => {
-   FS.forceLoadFile(node);
-   var ptr = mmapAlloc(length);
-   if (!ptr) {
-    throw new FS.ErrnoError(48);
-   }
-   writeChunks(stream, GROWABLE_HEAP_I8(), ptr, length, position);
-   return {
-    ptr: ptr,
-    allocated: true
-   };
-  };
-  node.stream_ops = stream_ops;
-  return node;
- }
-};
-
-var SYSCALLS = {
- DEFAULT_POLLMASK: 5,
- calculateAt(dirfd, path, allowEmpty) {
-  if (PATH.isAbs(path)) {
-   return path;
-  }
-  var dir;
-  if (dirfd === -100) {
-   dir = FS.cwd();
-  } else {
-   var dirstream = SYSCALLS.getStreamFromFD(dirfd);
-   dir = dirstream.path;
-  }
-  if (path.length == 0) {
-   if (!allowEmpty) {
-    throw new FS.ErrnoError(44);
-   }
-   return dir;
-  }
-  return PATH.join2(dir, path);
- },
- doStat(func, path, buf) {
-  var stat = func(path);
-  GROWABLE_HEAP_I32()[((buf) >> 2)] = stat.dev;
-  GROWABLE_HEAP_I32()[(((buf) + (4)) >> 2)] = stat.mode;
-  GROWABLE_HEAP_U32()[(((buf) + (8)) >> 2)] = stat.nlink;
-  GROWABLE_HEAP_I32()[(((buf) + (12)) >> 2)] = stat.uid;
-  GROWABLE_HEAP_I32()[(((buf) + (16)) >> 2)] = stat.gid;
-  GROWABLE_HEAP_I32()[(((buf) + (20)) >> 2)] = stat.rdev;
-  HEAP64[(((buf) + (24)) >> 3)] = BigInt(stat.size);
-  GROWABLE_HEAP_I32()[(((buf) + (32)) >> 2)] = 4096;
-  GROWABLE_HEAP_I32()[(((buf) + (36)) >> 2)] = stat.blocks;
-  var atime = stat.atime.getTime();
-  var mtime = stat.mtime.getTime();
-  var ctime = stat.ctime.getTime();
-  HEAP64[(((buf) + (40)) >> 3)] = BigInt(Math.floor(atime / 1e3));
-  GROWABLE_HEAP_U32()[(((buf) + (48)) >> 2)] = (atime % 1e3) * 1e3;
-  HEAP64[(((buf) + (56)) >> 3)] = BigInt(Math.floor(mtime / 1e3));
-  GROWABLE_HEAP_U32()[(((buf) + (64)) >> 2)] = (mtime % 1e3) * 1e3;
-  HEAP64[(((buf) + (72)) >> 3)] = BigInt(Math.floor(ctime / 1e3));
-  GROWABLE_HEAP_U32()[(((buf) + (80)) >> 2)] = (ctime % 1e3) * 1e3;
-  HEAP64[(((buf) + (88)) >> 3)] = BigInt(stat.ino);
-  return 0;
- },
- doMsync(addr, stream, len, flags, offset) {
-  if (!FS.isFile(stream.node.mode)) {
-   throw new FS.ErrnoError(43);
-  }
-  if (flags & 2) {
-   return 0;
-  }
-  var buffer = GROWABLE_HEAP_U8().slice(addr, addr + len);
-  FS.msync(stream, buffer, offset, len, flags);
- },
- varargs: undefined,
- get() {
-  var ret = GROWABLE_HEAP_I32()[((+SYSCALLS.varargs) >> 2)];
-  SYSCALLS.varargs += 4;
-  return ret;
- },
- getp() {
-  return SYSCALLS.get();
- },
- getStr(ptr) {
-  var ret = UTF8ToString(ptr);
-  return ret;
- },
- getStreamFromFD(fd) {
-  var stream = FS.getStreamChecked(fd);
-  return stream;
- }
-};
-
-function ___syscall_chdir(path) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(3, 0, 1, path);
- try {
-  path = SYSCALLS.getStr(path);
-  FS.chdir(path);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_chmod(path, mode) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(4, 0, 1, path, mode);
- try {
-  path = SYSCALLS.getStr(path);
-  FS.chmod(path, mode);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-var SOCKFS = {
- mount(mount) {
-  Module["websocket"] = (Module["websocket"] && ("object" === typeof Module["websocket"])) ? Module["websocket"] : {};
-  Module["websocket"]._callbacks = {};
-  Module["websocket"]["on"] = /** @this{Object} */ function(event, callback) {
-   if ("function" === typeof callback) {
-    this._callbacks[event] = callback;
-   }
-   return this;
-  };
-  Module["websocket"].emit = /** @this{Object} */ function(event, param) {
-   if ("function" === typeof this._callbacks[event]) {
-    this._callbacks[event].call(this, param);
-   }
-  };
-  return FS.createNode(null, "/", 16384 | 511, /* 0777 */ 0);
- },
- createSocket(family, type, protocol) {
-  type &= ~526336;
-  var streaming = type == 1;
-  if (streaming && protocol && protocol != 6) {
-   throw new FS.ErrnoError(66);
-  }
-  var sock = {
-   family: family,
-   type: type,
-   protocol: protocol,
-   server: null,
-   error: null,
-   peers: {},
-   pending: [],
-   recv_queue: [],
-   sock_ops: SOCKFS.websocket_sock_ops
-  };
-  var name = SOCKFS.nextname();
-  var node = FS.createNode(SOCKFS.root, name, 49152, 0);
-  node.sock = sock;
-  var stream = FS.createStream({
-   path: name,
-   node: node,
-   flags: 2,
-   seekable: false,
-   stream_ops: SOCKFS.stream_ops
-  });
-  sock.stream = stream;
-  return sock;
- },
- getSocket(fd) {
-  var stream = FS.getStream(fd);
-  if (!stream || !FS.isSocket(stream.node.mode)) {
-   return null;
-  }
-  return stream.node.sock;
- },
- stream_ops: {
-  poll(stream) {
-   var sock = stream.node.sock;
-   return sock.sock_ops.poll(sock);
-  },
-  ioctl(stream, request, varargs) {
-   var sock = stream.node.sock;
-   return sock.sock_ops.ioctl(sock, request, varargs);
-  },
-  read(stream, buffer, offset, length, position) {
-   /* ignored */ var sock = stream.node.sock;
-   var msg = sock.sock_ops.recvmsg(sock, length);
-   if (!msg) {
-    return 0;
-   }
-   buffer.set(msg.buffer, offset);
-   return msg.buffer.length;
-  },
-  write(stream, buffer, offset, length, position) {
-   /* ignored */ var sock = stream.node.sock;
-   return sock.sock_ops.sendmsg(sock, buffer, offset, length);
-  },
-  close(stream) {
-   var sock = stream.node.sock;
-   sock.sock_ops.close(sock);
-  }
- },
- nextname() {
-  if (!SOCKFS.nextname.current) {
-   SOCKFS.nextname.current = 0;
-  }
-  return "socket[" + (SOCKFS.nextname.current++) + "]";
- },
- websocket_sock_ops: {
-  createPeer(sock, addr, port) {
-   var ws;
-   if (typeof addr == "object") {
-    ws = addr;
-    addr = null;
-    port = null;
-   }
-   if (ws) {
-    if (ws._socket) {
-     addr = ws._socket.remoteAddress;
-     port = ws._socket.remotePort;
-    } else  {
-     var result = /ws[s]?:\/\/([^:]+):(\d+)/.exec(ws.url);
-     if (!result) {
-      throw new Error("WebSocket URL must be in the format ws(s)://address:port");
-     }
-     addr = result[1];
-     port = parseInt(result[2], 10);
-    }
-   } else {
-    try {
-     var runtimeConfig = (Module["websocket"] && ("object" === typeof Module["websocket"]));
-     var url = "ws:#".replace("#", "//");
-     if (runtimeConfig) {
-      if ("string" === typeof Module["websocket"]["url"]) {
-       url = Module["websocket"]["url"];
-      }
-     }
-     if (url === "ws://" || url === "wss://") {
-      var parts = addr.split("/");
-      url = url + parts[0] + ":" + port + "/" + parts.slice(1).join("/");
-     }
-     var subProtocols = "binary";
-     if (runtimeConfig) {
-      if ("string" === typeof Module["websocket"]["subprotocol"]) {
-       subProtocols = Module["websocket"]["subprotocol"];
-      }
-     }
-     var opts = undefined;
-     if (subProtocols !== "null") {
-      subProtocols = subProtocols.replace(/^ +| +$/g, "").split(/ *, */);
-      opts = subProtocols;
-     }
-     if (runtimeConfig && null === Module["websocket"]["subprotocol"]) {
-      subProtocols = "null";
-      opts = undefined;
-     }
-     var WebSocketConstructor;
-     if (ENVIRONMENT_IS_NODE) {
-      WebSocketConstructor = /** @type{(typeof WebSocket)} */ (require("ws"));
-     } else {
-      WebSocketConstructor = WebSocket;
-     }
-     ws = new WebSocketConstructor(url, opts);
-     ws.binaryType = "arraybuffer";
-    } catch (e) {
-     throw new FS.ErrnoError(23);
-    }
-   }
-   var peer = {
-    addr: addr,
-    port: port,
-    socket: ws,
-    dgram_send_queue: []
-   };
-   SOCKFS.websocket_sock_ops.addPeer(sock, peer);
-   SOCKFS.websocket_sock_ops.handlePeerEvents(sock, peer);
-   if (sock.type === 2 && typeof sock.sport != "undefined") {
-    peer.dgram_send_queue.push(new Uint8Array([ 255, 255, 255, 255, "p".charCodeAt(0), "o".charCodeAt(0), "r".charCodeAt(0), "t".charCodeAt(0), ((sock.sport & 65280) >> 8), (sock.sport & 255) ]));
-   }
-   return peer;
-  },
-  getPeer(sock, addr, port) {
-   return sock.peers[addr + ":" + port];
-  },
-  addPeer(sock, peer) {
-   sock.peers[peer.addr + ":" + peer.port] = peer;
-  },
-  removePeer(sock, peer) {
-   delete sock.peers[peer.addr + ":" + peer.port];
-  },
-  handlePeerEvents(sock, peer) {
-   var first = true;
-   var handleOpen = function() {
-    Module["websocket"].emit("open", sock.stream.fd);
-    try {
-     var queued = peer.dgram_send_queue.shift();
-     while (queued) {
-      peer.socket.send(queued);
-      queued = peer.dgram_send_queue.shift();
-     }
-    } catch (e) {
-     peer.socket.close();
-    }
-   };
-   function handleMessage(data) {
-    if (typeof data == "string") {
-     var encoder = new TextEncoder;
-     data = encoder.encode(data);
-    } else {
-     assert(data.byteLength !== undefined);
-     if (data.byteLength == 0) {
-      return;
-     }
-     data = new Uint8Array(data);
-    }
-    var wasfirst = first;
-    first = false;
-    if (wasfirst && data.length === 10 && data[0] === 255 && data[1] === 255 && data[2] === 255 && data[3] === 255 && data[4] === "p".charCodeAt(0) && data[5] === "o".charCodeAt(0) && data[6] === "r".charCodeAt(0) && data[7] === "t".charCodeAt(0)) {
-     var newport = ((data[8] << 8) | data[9]);
-     SOCKFS.websocket_sock_ops.removePeer(sock, peer);
-     peer.port = newport;
-     SOCKFS.websocket_sock_ops.addPeer(sock, peer);
-     return;
-    }
-    sock.recv_queue.push({
-     addr: peer.addr,
-     port: peer.port,
-     data: data
-    });
-    Module["websocket"].emit("message", sock.stream.fd);
-   }
-   if (ENVIRONMENT_IS_NODE) {
-    peer.socket.on("open", handleOpen);
-    peer.socket.on("message", function(data, isBinary) {
-     if (!isBinary) {
-      return;
-     }
-     handleMessage((new Uint8Array(data)).buffer);
-    });
-    peer.socket.on("close", function() {
-     Module["websocket"].emit("close", sock.stream.fd);
-    });
-    peer.socket.on("error", function(error) {
-     sock.error = 14;
-     Module["websocket"].emit("error", [ sock.stream.fd, sock.error, "ECONNREFUSED: Connection refused" ]);
-    });
-   } else {
-    peer.socket.onopen = handleOpen;
-    peer.socket.onclose = function() {
-     Module["websocket"].emit("close", sock.stream.fd);
-    };
-    peer.socket.onmessage = function peer_socket_onmessage(event) {
-     handleMessage(event.data);
-    };
-    peer.socket.onerror = function(error) {
-     sock.error = 14;
-     Module["websocket"].emit("error", [ sock.stream.fd, sock.error, "ECONNREFUSED: Connection refused" ]);
-    };
-   }
-  },
-  poll(sock) {
-   if (sock.type === 1 && sock.server) {
-    return sock.pending.length ? (64 | 1) : 0;
-   }
-   var mask = 0;
-   var dest = sock.type === 1 ?  SOCKFS.websocket_sock_ops.getPeer(sock, sock.daddr, sock.dport) : null;
-   if (sock.recv_queue.length || !dest ||  (dest && dest.socket.readyState === dest.socket.CLOSING) || (dest && dest.socket.readyState === dest.socket.CLOSED)) {
-    mask |= (64 | 1);
-   }
-   if (!dest ||  (dest && dest.socket.readyState === dest.socket.OPEN)) {
-    mask |= 4;
-   }
-   if ((dest && dest.socket.readyState === dest.socket.CLOSING) || (dest && dest.socket.readyState === dest.socket.CLOSED)) {
-    mask |= 16;
-   }
-   return mask;
-  },
-  ioctl(sock, request, arg) {
-   switch (request) {
-   case 21531:
-    var bytes = 0;
-    if (sock.recv_queue.length) {
-     bytes = sock.recv_queue[0].data.length;
-    }
-    GROWABLE_HEAP_I32()[((arg) >> 2)] = bytes;
-    return 0;
-
-   default:
-    return 28;
-   }
-  },
-  close(sock) {
-   if (sock.server) {
-    try {
-     sock.server.close();
-    } catch (e) {}
-    sock.server = null;
-   }
-   var peers = Object.keys(sock.peers);
-   for (var i = 0; i < peers.length; i++) {
-    var peer = sock.peers[peers[i]];
-    try {
-     peer.socket.close();
-    } catch (e) {}
-    SOCKFS.websocket_sock_ops.removePeer(sock, peer);
-   }
-   return 0;
-  },
-  bind(sock, addr, port) {
-   if (typeof sock.saddr != "undefined" || typeof sock.sport != "undefined") {
-    throw new FS.ErrnoError(28);
-   }
-   sock.saddr = addr;
-   sock.sport = port;
-   if (sock.type === 2) {
-    if (sock.server) {
-     sock.server.close();
-     sock.server = null;
-    }
-    try {
-     sock.sock_ops.listen(sock, 0);
-    } catch (e) {
-     if (!(e.name === "ErrnoError")) throw e;
-     if (e.errno !== 138) throw e;
-    }
-   }
-  },
-  connect(sock, addr, port) {
-   if (sock.server) {
-    throw new FS.ErrnoError(138);
-   }
-   if (typeof sock.daddr != "undefined" && typeof sock.dport != "undefined") {
-    var dest = SOCKFS.websocket_sock_ops.getPeer(sock, sock.daddr, sock.dport);
-    if (dest) {
-     if (dest.socket.readyState === dest.socket.CONNECTING) {
-      throw new FS.ErrnoError(7);
-     } else {
-      throw new FS.ErrnoError(30);
-     }
-    }
-   }
-   var peer = SOCKFS.websocket_sock_ops.createPeer(sock, addr, port);
-   sock.daddr = peer.addr;
-   sock.dport = peer.port;
-   throw new FS.ErrnoError(26);
-  },
-  listen(sock, backlog) {
-   if (!ENVIRONMENT_IS_NODE) {
-    throw new FS.ErrnoError(138);
-   }
-   if (sock.server) {
-    throw new FS.ErrnoError(28);
-   }
-   var WebSocketServer = require("ws").Server;
-   var host = sock.saddr;
-   sock.server = new WebSocketServer({
-    host: host,
-    port: sock.sport
-   });
-   Module["websocket"].emit("listen", sock.stream.fd);
-   sock.server.on("connection", function(ws) {
-    if (sock.type === 1) {
-     var newsock = SOCKFS.createSocket(sock.family, sock.type, sock.protocol);
-     var peer = SOCKFS.websocket_sock_ops.createPeer(newsock, ws);
-     newsock.daddr = peer.addr;
-     newsock.dport = peer.port;
-     sock.pending.push(newsock);
-     Module["websocket"].emit("connection", newsock.stream.fd);
-    } else {
-     SOCKFS.websocket_sock_ops.createPeer(sock, ws);
-     Module["websocket"].emit("connection", sock.stream.fd);
-    }
-   });
-   sock.server.on("close", function() {
-    Module["websocket"].emit("close", sock.stream.fd);
-    sock.server = null;
-   });
-   sock.server.on("error", function(error) {
-    sock.error = 23;
-    Module["websocket"].emit("error", [ sock.stream.fd, sock.error, "EHOSTUNREACH: Host is unreachable" ]);
-   });
-  },
-  accept(listensock) {
-   if (!listensock.server || !listensock.pending.length) {
-    throw new FS.ErrnoError(28);
-   }
-   var newsock = listensock.pending.shift();
-   newsock.stream.flags = listensock.stream.flags;
-   return newsock;
-  },
-  getname(sock, peer) {
-   var addr, port;
-   if (peer) {
-    if (sock.daddr === undefined || sock.dport === undefined) {
-     throw new FS.ErrnoError(53);
-    }
-    addr = sock.daddr;
-    port = sock.dport;
-   } else {
-    addr = sock.saddr || 0;
-    port = sock.sport || 0;
-   }
-   return {
-    addr: addr,
-    port: port
-   };
-  },
-  sendmsg(sock, buffer, offset, length, addr, port) {
-   if (sock.type === 2) {
-    if (addr === undefined || port === undefined) {
-     addr = sock.daddr;
-     port = sock.dport;
-    }
-    if (addr === undefined || port === undefined) {
-     throw new FS.ErrnoError(17);
-    }
-   } else {
-    addr = sock.daddr;
-    port = sock.dport;
-   }
-   var dest = SOCKFS.websocket_sock_ops.getPeer(sock, addr, port);
-   if (sock.type === 1) {
-    if (!dest || dest.socket.readyState === dest.socket.CLOSING || dest.socket.readyState === dest.socket.CLOSED) {
-     throw new FS.ErrnoError(53);
-    } else if (dest.socket.readyState === dest.socket.CONNECTING) {
-     throw new FS.ErrnoError(6);
-    }
-   }
-   if (ArrayBuffer.isView(buffer)) {
-    offset += buffer.byteOffset;
-    buffer = buffer.buffer;
-   }
-   var data;
-   if (buffer instanceof SharedArrayBuffer) {
-    data = new Uint8Array(new Uint8Array(buffer.slice(offset, offset + length))).buffer;
-   } else {
-    data = buffer.slice(offset, offset + length);
-   }
-   if (sock.type === 2) {
-    if (!dest || dest.socket.readyState !== dest.socket.OPEN) {
-     if (!dest || dest.socket.readyState === dest.socket.CLOSING || dest.socket.readyState === dest.socket.CLOSED) {
-      dest = SOCKFS.websocket_sock_ops.createPeer(sock, addr, port);
-     }
-     dest.dgram_send_queue.push(data);
-     return length;
-    }
-   }
-   try {
-    dest.socket.send(data);
-    return length;
-   } catch (e) {
-    throw new FS.ErrnoError(28);
-   }
-  },
-  recvmsg(sock, length) {
-   if (sock.type === 1 && sock.server) {
-    throw new FS.ErrnoError(53);
-   }
-   var queued = sock.recv_queue.shift();
-   if (!queued) {
-    if (sock.type === 1) {
-     var dest = SOCKFS.websocket_sock_ops.getPeer(sock, sock.daddr, sock.dport);
-     if (!dest) {
-      throw new FS.ErrnoError(53);
-     }
-     if (dest.socket.readyState === dest.socket.CLOSING || dest.socket.readyState === dest.socket.CLOSED) {
-      return null;
-     }
-     throw new FS.ErrnoError(6);
-    }
-    throw new FS.ErrnoError(6);
-   }
-   var queuedLength = queued.data.byteLength || queued.data.length;
-   var queuedOffset = queued.data.byteOffset || 0;
-   var queuedBuffer = queued.data.buffer || queued.data;
-   var bytesRead = Math.min(length, queuedLength);
-   var res = {
-    buffer: new Uint8Array(queuedBuffer, queuedOffset, bytesRead),
-    addr: queued.addr,
-    port: queued.port
-   };
-   if (sock.type === 1 && bytesRead < queuedLength) {
-    var bytesRemaining = queuedLength - bytesRead;
-    queued.data = new Uint8Array(queuedBuffer, queuedOffset + bytesRead, bytesRemaining);
-    sock.recv_queue.unshift(queued);
-   }
-   return res;
-  }
- }
-};
-
-var getSocketFromFD = fd => {
- var socket = SOCKFS.getSocket(fd);
- if (!socket) throw new FS.ErrnoError(8);
- return socket;
-};
-
-var Sockets = {
- BUFFER_SIZE: 10240,
- MAX_BUFFER_SIZE: 10485760,
- nextFd: 1,
- fds: {},
- nextport: 1,
- maxport: 65535,
- peer: null,
- connections: {},
- portmap: {},
- localAddr: 4261412874,
- addrPool: [ 33554442, 50331658, 67108874, 83886090, 100663306, 117440522, 134217738, 150994954, 167772170, 184549386, 201326602, 218103818, 234881034 ]
-};
-
-var inetNtop4 = addr => (addr & 255) + "." + ((addr >> 8) & 255) + "." + ((addr >> 16) & 255) + "." + ((addr >> 24) & 255);
-
-var inetNtop6 = ints => {
- var str = "";
- var word = 0;
- var longest = 0;
- var lastzero = 0;
- var zstart = 0;
- var len = 0;
- var i = 0;
- var parts = [ ints[0] & 65535, (ints[0] >> 16), ints[1] & 65535, (ints[1] >> 16), ints[2] & 65535, (ints[2] >> 16), ints[3] & 65535, (ints[3] >> 16) ];
- var hasipv4 = true;
- var v4part = "";
- for (i = 0; i < 5; i++) {
-  if (parts[i] !== 0) {
-   hasipv4 = false;
-   break;
-  }
- }
- if (hasipv4) {
-  v4part = inetNtop4(parts[6] | (parts[7] << 16));
-  if (parts[5] === -1) {
-   str = "::ffff:";
-   str += v4part;
-   return str;
-  }
-  if (parts[5] === 0) {
-   str = "::";
-   if (v4part === "0.0.0.0") v4part = "";
-   if (v4part === "0.0.0.1") v4part = "1";
-   str += v4part;
-   return str;
-  }
- }
- for (word = 0; word < 8; word++) {
-  if (parts[word] === 0) {
-   if (word - lastzero > 1) {
-    len = 0;
-   }
-   lastzero = word;
-   len++;
-  }
-  if (len > longest) {
-   longest = len;
-   zstart = word - longest + 1;
-  }
- }
- for (word = 0; word < 8; word++) {
-  if (longest > 1) {
-   if (parts[word] === 0 && word >= zstart && word < (zstart + longest)) {
-    if (word === zstart) {
-     str += ":";
-     if (zstart === 0) str += ":";
-    }
-    continue;
-   }
-  }
-  str += Number(_ntohs(parts[word] & 65535)).toString(16);
-  str += word < 7 ? ":" : "";
- }
- return str;
-};
-
-var readSockaddr = (sa, salen) => {
- var family = GROWABLE_HEAP_I16()[((sa) >> 1)];
- var port = _ntohs(GROWABLE_HEAP_U16()[(((sa) + (2)) >> 1)]);
- var addr;
- switch (family) {
- case 2:
-  if (salen !== 16) {
-   return {
-    errno: 28
-   };
-  }
-  addr = GROWABLE_HEAP_I32()[(((sa) + (4)) >> 2)];
-  addr = inetNtop4(addr);
-  break;
-
- case 10:
-  if (salen !== 28) {
-   return {
-    errno: 28
-   };
-  }
-  addr = [ GROWABLE_HEAP_I32()[(((sa) + (8)) >> 2)], GROWABLE_HEAP_I32()[(((sa) + (12)) >> 2)], GROWABLE_HEAP_I32()[(((sa) + (16)) >> 2)], GROWABLE_HEAP_I32()[(((sa) + (20)) >> 2)] ];
-  addr = inetNtop6(addr);
-  break;
-
- default:
-  return {
-   errno: 5
-  };
- }
- return {
-  family: family,
-  addr: addr,
-  port: port
- };
-};
-
-var inetPton4 = str => {
- var b = str.split(".");
- for (var i = 0; i < 4; i++) {
-  var tmp = Number(b[i]);
-  if (isNaN(tmp)) return null;
-  b[i] = tmp;
- }
- return (b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0;
-};
-
-/** @suppress {checkTypes} */ var jstoi_q = str => parseInt(str);
-
-var inetPton6 = str => {
- var words;
- var w, offset, z, i;
- /* http://home.deds.nl/~aeron/regex/ */ var valid6regx = /^((?=.*::)(?!.*::.+::)(::)?([\dA-F]{1,4}:(:|\b)|){5}|([\dA-F]{1,4}:){6})((([\dA-F]{1,4}((?!\3)::|:\b|$))|(?!\2\3)){2}|(((2[0-4]|1\d|[1-9])?\d|25[0-5])\.?\b){4})$/i;
- var parts = [];
- if (!valid6regx.test(str)) {
-  return null;
- }
- if (str === "::") {
-  return [ 0, 0, 0, 0, 0, 0, 0, 0 ];
- }
- if (str.startsWith("::")) {
-  str = str.replace("::", "Z:");
- } else  {
-  str = str.replace("::", ":Z:");
- }
- if (str.indexOf(".") > 0) {
-  str = str.replace(new RegExp("[.]", "g"), ":");
-  words = str.split(":");
-  words[words.length - 4] = jstoi_q(words[words.length - 4]) + jstoi_q(words[words.length - 3]) * 256;
-  words[words.length - 3] = jstoi_q(words[words.length - 2]) + jstoi_q(words[words.length - 1]) * 256;
-  words = words.slice(0, words.length - 2);
- } else {
-  words = str.split(":");
- }
- offset = 0;
- z = 0;
- for (w = 0; w < words.length; w++) {
-  if (typeof words[w] == "string") {
-   if (words[w] === "Z") {
-    for (z = 0; z < (8 - words.length + 1); z++) {
-     parts[w + z] = 0;
-    }
-    offset = z - 1;
-   } else {
-    parts[w + offset] = _htons(parseInt(words[w], 16));
-   }
-  } else {
-   parts[w + offset] = words[w];
-  }
- }
- return [ (parts[1] << 16) | parts[0], (parts[3] << 16) | parts[2], (parts[5] << 16) | parts[4], (parts[7] << 16) | parts[6] ];
-};
-
-var DNS = {
- address_map: {
-  id: 1,
-  addrs: {},
-  names: {}
- },
- lookup_name(name) {
-  var res = inetPton4(name);
-  if (res !== null) {
-   return name;
-  }
-  res = inetPton6(name);
-  if (res !== null) {
-   return name;
-  }
-  var addr;
-  if (DNS.address_map.addrs[name]) {
-   addr = DNS.address_map.addrs[name];
-  } else {
-   var id = DNS.address_map.id++;
-   assert(id < 65535, "exceeded max address mappings of 65535");
-   addr = "172.29." + (id & 255) + "." + (id & 65280);
-   DNS.address_map.names[addr] = name;
-   DNS.address_map.addrs[name] = addr;
-  }
-  return addr;
- },
- lookup_addr(addr) {
-  if (DNS.address_map.names[addr]) {
-   return DNS.address_map.names[addr];
-  }
-  return null;
- }
-};
-
-/** @param {boolean=} allowNull */ var getSocketAddress = (addrp, addrlen, allowNull) => {
- if (allowNull && addrp === 0) return null;
- var info = readSockaddr(addrp, addrlen);
- if (info.errno) throw new FS.ErrnoError(info.errno);
- info.addr = DNS.lookup_addr(info.addr) || info.addr;
- return info;
-};
-
-function ___syscall_connect(fd, addr, addrlen, d1, d2, d3) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(5, 0, 1, fd, addr, addrlen, d1, d2, d3);
- try {
-  var sock = getSocketFromFD(fd);
-  var info = getSocketAddress(addr, addrlen);
-  sock.sock_ops.connect(sock, info.addr, info.port);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_faccessat(dirfd, path, amode, flags) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(6, 0, 1, dirfd, path, amode, flags);
- try {
-  path = SYSCALLS.getStr(path);
-  path = SYSCALLS.calculateAt(dirfd, path);
-  if (amode & ~7) {
-   return -28;
-  }
-  var lookup = FS.lookupPath(path, {
-   follow: true
-  });
-  var node = lookup.node;
-  if (!node) {
-   return -44;
-  }
-  var perms = "";
-  if (amode & 4) perms += "r";
-  if (amode & 2) perms += "w";
-  if (amode & 1) perms += "x";
-  if (perms && /* otherwise, they've just passed F_OK */ FS.nodePermissions(node, perms)) {
-   return -2;
-  }
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_fadvise64(fd, offset, len, advice) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(7, 0, 0, fd, offset, len, advice);
- return 0;
-}
-
-function ___syscall_fchmod(fd, mode) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(8, 0, 1, fd, mode);
- try {
-  FS.fchmod(fd, mode);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_fcntl64(fd, cmd, varargs) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(9, 0, 1, fd, cmd, varargs);
- SYSCALLS.varargs = varargs;
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  switch (cmd) {
-  case 0:
-   {
-    var arg = SYSCALLS.get();
-    if (arg < 0) {
-     return -28;
-    }
-    while (FS.streams[arg]) {
-     arg++;
-    }
-    var newStream;
-    newStream = FS.dupStream(stream, arg);
-    return newStream.fd;
-   }
-
-  case 1:
-  case 2:
-   return 0;
-
-  case 3:
-   return stream.flags;
-
-  case 4:
-   {
-    var arg = SYSCALLS.get();
-    stream.flags |= arg;
-    return 0;
-   }
-
-  case 12:
-   {
-    var arg = SYSCALLS.getp();
-    var offset = 0;
-    GROWABLE_HEAP_I16()[(((arg) + (offset)) >> 1)] = 2;
-    return 0;
-   }
-
-  case 13:
-  case 14:
-   return 0;
-  }
-  return -28;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_fstat64(fd, buf) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(10, 0, 1, fd, buf);
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  return SYSCALLS.doStat(FS.stat, stream.path, buf);
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_statfs64(path, size, buf) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(12, 0, 1, path, size, buf);
- try {
-  path = SYSCALLS.getStr(path);
-  GROWABLE_HEAP_I32()[(((buf) + (4)) >> 2)] = 4096;
-  GROWABLE_HEAP_I32()[(((buf) + (40)) >> 2)] = 4096;
-  GROWABLE_HEAP_I32()[(((buf) + (8)) >> 2)] = 1e6;
-  GROWABLE_HEAP_I32()[(((buf) + (12)) >> 2)] = 5e5;
-  GROWABLE_HEAP_I32()[(((buf) + (16)) >> 2)] = 5e5;
-  GROWABLE_HEAP_I32()[(((buf) + (20)) >> 2)] = FS.nextInode;
-  GROWABLE_HEAP_I32()[(((buf) + (24)) >> 2)] = 1e6;
-  GROWABLE_HEAP_I32()[(((buf) + (28)) >> 2)] = 42;
-  GROWABLE_HEAP_I32()[(((buf) + (44)) >> 2)] = 2;
-  GROWABLE_HEAP_I32()[(((buf) + (36)) >> 2)] = 255;
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_fstatfs64(fd, size, buf) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(11, 0, 1, fd, size, buf);
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  return ___syscall_statfs64(0, size, buf);
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_ftruncate64(fd, length) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(13, 0, 1, fd, length);
- length = bigintToI53Checked(length);
- try {
-  if (isNaN(length)) return 61;
-  FS.ftruncate(fd, length);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-var stringToUTF8 = (str, outPtr, maxBytesToWrite) => stringToUTF8Array(str, GROWABLE_HEAP_U8(), outPtr, maxBytesToWrite);
-
-function ___syscall_getcwd(buf, size) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(14, 0, 1, buf, size);
- try {
-  if (size === 0) return -28;
-  var cwd = FS.cwd();
-  var cwdLengthInBytes = lengthBytesUTF8(cwd) + 1;
-  if (size < cwdLengthInBytes) return -68;
-  stringToUTF8(cwd, buf, size);
-  return cwdLengthInBytes;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_getdents64(fd, dirp, count) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(15, 0, 1, fd, dirp, count);
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  stream.getdents ||= FS.readdir(stream.path);
-  var struct_size = 280;
-  var pos = 0;
-  var off = FS.llseek(stream, 0, 1);
-  var idx = Math.floor(off / struct_size);
-  while (idx < stream.getdents.length && pos + struct_size <= count) {
-   var id;
-   var type;
-   var name = stream.getdents[idx];
-   if (name === ".") {
-    id = stream.node.id;
-    type = 4;
-   } else if (name === "..") {
-    var lookup = FS.lookupPath(stream.path, {
-     parent: true
-    });
-    id = lookup.node.id;
-    type = 4;
-   } else {
-    var child = FS.lookupNode(stream.node, name);
-    id = child.id;
-    type = FS.isChrdev(child.mode) ? 2 :  FS.isDir(child.mode) ? 4 :  FS.isLink(child.mode) ? 10 :  8;
-   }
-   HEAP64[((dirp + pos) >> 3)] = BigInt(id);
-   HEAP64[(((dirp + pos) + (8)) >> 3)] = BigInt((idx + 1) * struct_size);
-   GROWABLE_HEAP_I16()[(((dirp + pos) + (16)) >> 1)] = 280;
-   GROWABLE_HEAP_I8()[(dirp + pos) + (18)] = type;
-   stringToUTF8(name, dirp + pos + 19, 256);
-   pos += struct_size;
-   idx += 1;
-  }
-  FS.llseek(stream, idx * struct_size, 0);
-  return pos;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_ioctl(fd, op, varargs) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(16, 0, 1, fd, op, varargs);
- SYSCALLS.varargs = varargs;
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  switch (op) {
-  case 21509:
-   {
-    if (!stream.tty) return -59;
-    return 0;
-   }
-
-  case 21505:
-   {
-    if (!stream.tty) return -59;
-    if (stream.tty.ops.ioctl_tcgets) {
-     var termios = stream.tty.ops.ioctl_tcgets(stream);
-     var argp = SYSCALLS.getp();
-     GROWABLE_HEAP_I32()[((argp) >> 2)] = termios.c_iflag || 0;
-     GROWABLE_HEAP_I32()[(((argp) + (4)) >> 2)] = termios.c_oflag || 0;
-     GROWABLE_HEAP_I32()[(((argp) + (8)) >> 2)] = termios.c_cflag || 0;
-     GROWABLE_HEAP_I32()[(((argp) + (12)) >> 2)] = termios.c_lflag || 0;
-     for (var i = 0; i < 32; i++) {
-      GROWABLE_HEAP_I8()[(argp + i) + (17)] = termios.c_cc[i] || 0;
-     }
-     return 0;
-    }
-    return 0;
-   }
-
-  case 21510:
-  case 21511:
-  case 21512:
-   {
-    if (!stream.tty) return -59;
-    return 0;
-   }
-
-  case 21506:
-  case 21507:
-  case 21508:
-   {
-    if (!stream.tty) return -59;
-    if (stream.tty.ops.ioctl_tcsets) {
-     var argp = SYSCALLS.getp();
-     var c_iflag = GROWABLE_HEAP_I32()[((argp) >> 2)];
-     var c_oflag = GROWABLE_HEAP_I32()[(((argp) + (4)) >> 2)];
-     var c_cflag = GROWABLE_HEAP_I32()[(((argp) + (8)) >> 2)];
-     var c_lflag = GROWABLE_HEAP_I32()[(((argp) + (12)) >> 2)];
-     var c_cc = [];
-     for (var i = 0; i < 32; i++) {
-      c_cc.push(GROWABLE_HEAP_I8()[(argp + i) + (17)]);
-     }
-     return stream.tty.ops.ioctl_tcsets(stream.tty, op, {
-      c_iflag: c_iflag,
-      c_oflag: c_oflag,
-      c_cflag: c_cflag,
-      c_lflag: c_lflag,
-      c_cc: c_cc
-     });
-    }
-    return 0;
-   }
-
-  case 21519:
-   {
-    if (!stream.tty) return -59;
-    var argp = SYSCALLS.getp();
-    GROWABLE_HEAP_I32()[((argp) >> 2)] = 0;
-    return 0;
-   }
-
-  case 21520:
-   {
-    if (!stream.tty) return -59;
-    return -28;
-   }
-
-  case 21531:
-   {
-    var argp = SYSCALLS.getp();
-    return FS.ioctl(stream, op, argp);
-   }
-
-  case 21523:
-   {
-    if (!stream.tty) return -59;
-    if (stream.tty.ops.ioctl_tiocgwinsz) {
-     var winsize = stream.tty.ops.ioctl_tiocgwinsz(stream.tty);
-     var argp = SYSCALLS.getp();
-     GROWABLE_HEAP_I16()[((argp) >> 1)] = winsize[0];
-     GROWABLE_HEAP_I16()[(((argp) + (2)) >> 1)] = winsize[1];
-    }
-    return 0;
-   }
-
-  case 21524:
-   {
-    if (!stream.tty) return -59;
-    return 0;
-   }
-
-  case 21515:
-   {
-    if (!stream.tty) return -59;
-    return 0;
-   }
-
-  default:
-   return -28;
-  }
- }  catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_lstat64(path, buf) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(17, 0, 1, path, buf);
- try {
-  path = SYSCALLS.getStr(path);
-  return SYSCALLS.doStat(FS.lstat, path, buf);
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_mkdirat(dirfd, path, mode) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(18, 0, 1, dirfd, path, mode);
- try {
-  path = SYSCALLS.getStr(path);
-  path = SYSCALLS.calculateAt(dirfd, path);
-  path = PATH.normalize(path);
-  if (path[path.length - 1] === "/") path = path.substr(0, path.length - 1);
-  FS.mkdir(path, mode, 0);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_newfstatat(dirfd, path, buf, flags) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(19, 0, 1, dirfd, path, buf, flags);
- try {
-  path = SYSCALLS.getStr(path);
-  var nofollow = flags & 256;
-  var allowEmpty = flags & 4096;
-  flags = flags & (~6400);
-  path = SYSCALLS.calculateAt(dirfd, path, allowEmpty);
-  return SYSCALLS.doStat(nofollow ? FS.lstat : FS.stat, path, buf);
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_openat(dirfd, path, flags, varargs) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(20, 0, 1, dirfd, path, flags, varargs);
- SYSCALLS.varargs = varargs;
- try {
-  path = SYSCALLS.getStr(path);
-  path = SYSCALLS.calculateAt(dirfd, path);
-  var mode = varargs ? SYSCALLS.get() : 0;
-  return FS.open(path, flags, mode).fd;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_readlinkat(dirfd, path, buf, bufsize) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(21, 0, 1, dirfd, path, buf, bufsize);
- try {
-  path = SYSCALLS.getStr(path);
-  path = SYSCALLS.calculateAt(dirfd, path);
-  if (bufsize <= 0) return -28;
-  var ret = FS.readlink(path);
-  var len = Math.min(bufsize, lengthBytesUTF8(ret));
-  var endChar = GROWABLE_HEAP_I8()[buf + len];
-  stringToUTF8(ret, buf, bufsize + 1);
-  GROWABLE_HEAP_I8()[buf + len] = endChar;
-  return len;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-/** @param {number=} addrlen */ var writeSockaddr = (sa, family, addr, port, addrlen) => {
- switch (family) {
- case 2:
-  addr = inetPton4(addr);
-  zeroMemory(sa, 16);
-  if (addrlen) {
-   GROWABLE_HEAP_I32()[((addrlen) >> 2)] = 16;
-  }
-  GROWABLE_HEAP_I16()[((sa) >> 1)] = family;
-  GROWABLE_HEAP_I32()[(((sa) + (4)) >> 2)] = addr;
-  GROWABLE_HEAP_I16()[(((sa) + (2)) >> 1)] = _htons(port);
-  break;
-
- case 10:
-  addr = inetPton6(addr);
-  zeroMemory(sa, 28);
-  if (addrlen) {
-   GROWABLE_HEAP_I32()[((addrlen) >> 2)] = 28;
-  }
-  GROWABLE_HEAP_I32()[((sa) >> 2)] = family;
-  GROWABLE_HEAP_I32()[(((sa) + (8)) >> 2)] = addr[0];
-  GROWABLE_HEAP_I32()[(((sa) + (12)) >> 2)] = addr[1];
-  GROWABLE_HEAP_I32()[(((sa) + (16)) >> 2)] = addr[2];
-  GROWABLE_HEAP_I32()[(((sa) + (20)) >> 2)] = addr[3];
-  GROWABLE_HEAP_I16()[(((sa) + (2)) >> 1)] = _htons(port);
-  break;
-
- default:
-  return 5;
  }
  return 0;
 };
-
-function ___syscall_recvfrom(fd, buf, len, flags, addr, addrlen) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(22, 0, 1, fd, buf, len, flags, addr, addrlen);
- try {
-  var sock = getSocketFromFD(fd);
-  var msg = sock.sock_ops.recvmsg(sock, len);
-  if (!msg) return 0;
-  if (addr) {
-   var errno = writeSockaddr(addr, sock.family, DNS.lookup_name(msg.addr), msg.port, addrlen);
-  }
-  GROWABLE_HEAP_U8().set(msg.buffer, buf);
-  return msg.buffer.byteLength;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_renameat(olddirfd, oldpath, newdirfd, newpath) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(23, 0, 1, olddirfd, oldpath, newdirfd, newpath);
- try {
-  oldpath = SYSCALLS.getStr(oldpath);
-  newpath = SYSCALLS.getStr(newpath);
-  oldpath = SYSCALLS.calculateAt(olddirfd, oldpath);
-  newpath = SYSCALLS.calculateAt(newdirfd, newpath);
-  FS.rename(oldpath, newpath);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_rmdir(path) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(24, 0, 1, path);
- try {
-  path = SYSCALLS.getStr(path);
-  FS.rmdir(path);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_sendto(fd, message, length, flags, addr, addr_len) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(25, 0, 1, fd, message, length, flags, addr, addr_len);
- try {
-  var sock = getSocketFromFD(fd);
-  var dest = getSocketAddress(addr, addr_len, true);
-  if (!dest) {
-   return FS.write(sock.stream, GROWABLE_HEAP_I8(), message, length);
-  }
-  return sock.sock_ops.sendmsg(sock, GROWABLE_HEAP_I8(), message, length, dest.addr, dest.port);
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_socket(domain, type, protocol) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(26, 0, 1, domain, type, protocol);
- try {
-  var sock = SOCKFS.createSocket(domain, type, protocol);
-  return sock.stream.fd;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_stat64(path, buf) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(27, 0, 1, path, buf);
- try {
-  path = SYSCALLS.getStr(path);
-  return SYSCALLS.doStat(FS.stat, path, buf);
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_symlink(target, linkpath) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(28, 0, 1, target, linkpath);
- try {
-  target = SYSCALLS.getStr(target);
-  linkpath = SYSCALLS.getStr(linkpath);
-  FS.symlink(target, linkpath);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function ___syscall_unlinkat(dirfd, path, flags) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(29, 0, 1, dirfd, path, flags);
- try {
-  path = SYSCALLS.getStr(path);
-  path = SYSCALLS.calculateAt(dirfd, path);
-  if (flags === 0) {
-   FS.unlink(path);
-  } else if (flags === 512) {
-   FS.rmdir(path);
-  } else {
-   abort("Invalid flags passed to unlinkat");
-  }
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-var readI53FromI64 = ptr => GROWABLE_HEAP_U32()[((ptr) >> 2)] + GROWABLE_HEAP_I32()[(((ptr) + (4)) >> 2)] * 4294967296;
-
-function ___syscall_utimensat(dirfd, path, times, flags) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(30, 0, 1, dirfd, path, times, flags);
- try {
-  path = SYSCALLS.getStr(path);
-  path = SYSCALLS.calculateAt(dirfd, path, true);
-  if (!times) {
-   var atime = Date.now();
-   var mtime = atime;
-  } else {
-   var seconds = readI53FromI64(times);
-   var nanoseconds = GROWABLE_HEAP_I32()[(((times) + (8)) >> 2)];
-   atime = (seconds * 1e3) + (nanoseconds / (1e3 * 1e3));
-   times += 16;
-   seconds = readI53FromI64(times);
-   nanoseconds = GROWABLE_HEAP_I32()[(((times) + (8)) >> 2)];
-   mtime = (seconds * 1e3) + (nanoseconds / (1e3 * 1e3));
-  }
-  FS.utime(path, atime, mtime);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
 
 var nowIsMonotonic = 1;
 
@@ -4868,49 +1321,41 @@ function __localtime_js(time, tmPtr) {
  GROWABLE_HEAP_I32()[(((tmPtr) + (32)) >> 2)] = dst;
 }
 
-function __mmap_js(len, prot, flags, fd, offset, allocated, addr) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(31, 0, 1, len, prot, flags, fd, offset, allocated, addr);
- offset = bigintToI53Checked(offset);
- try {
-  if (isNaN(offset)) return 61;
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  var res = FS.mmap(stream, len, offset, prot, flags);
-  var ptr = res.ptr;
-  GROWABLE_HEAP_I32()[((allocated) >> 2)] = res.allocated;
-  GROWABLE_HEAP_U32()[((addr) >> 2)] = ptr;
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function __msync_js(addr, len, prot, flags, fd, offset) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(32, 0, 1, addr, len, prot, flags, fd, offset);
- offset = bigintToI53Checked(offset);
- try {
-  if (isNaN(offset)) return 61;
-  SYSCALLS.doMsync(addr, SYSCALLS.getStreamFromFD(fd), len, flags, offset);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
- }
-}
-
-function __munmap_js(addr, len, prot, flags, fd, offset) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(33, 0, 1, addr, len, prot, flags, fd, offset);
- offset = bigintToI53Checked(offset);
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  if (prot & 2) {
-   SYSCALLS.doMsync(addr, stream, len, flags, offset);
+var stringToUTF8Array = (str, heap, outIdx, maxBytesToWrite) => {
+ if (!(maxBytesToWrite > 0)) return 0;
+ var startIdx = outIdx;
+ var endIdx = outIdx + maxBytesToWrite - 1;
+ for (var i = 0; i < str.length; ++i) {
+  var u = str.charCodeAt(i);
+  if (u >= 55296 && u <= 57343) {
+   var u1 = str.charCodeAt(++i);
+   u = 65536 + ((u & 1023) << 10) | (u1 & 1023);
   }
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return -e.errno;
+  if (u <= 127) {
+   if (outIdx >= endIdx) break;
+   heap[outIdx++] = u;
+  } else if (u <= 2047) {
+   if (outIdx + 1 >= endIdx) break;
+   heap[outIdx++] = 192 | (u >> 6);
+   heap[outIdx++] = 128 | (u & 63);
+  } else if (u <= 65535) {
+   if (outIdx + 2 >= endIdx) break;
+   heap[outIdx++] = 224 | (u >> 12);
+   heap[outIdx++] = 128 | ((u >> 6) & 63);
+   heap[outIdx++] = 128 | (u & 63);
+  } else {
+   if (outIdx + 3 >= endIdx) break;
+   heap[outIdx++] = 240 | (u >> 18);
+   heap[outIdx++] = 128 | ((u >> 12) & 63);
+   heap[outIdx++] = 128 | ((u >> 6) & 63);
+   heap[outIdx++] = 128 | (u & 63);
+  }
  }
-}
+ heap[outIdx] = 0;
+ return outIdx - startIdx;
+};
+
+var stringToUTF8 = (str, outPtr, maxBytesToWrite) => stringToUTF8Array(str, GROWABLE_HEAP_U8(), outPtr, maxBytesToWrite);
 
 var __tzset_js = (timezone, daylight, std_name, dst_name) => {
  var currentYear = (new Date).getFullYear();
@@ -4934,6 +1379,480 @@ var __tzset_js = (timezone, daylight, std_name, dst_name) => {
   stringToUTF8(winterName, dst_name, 7);
   stringToUTF8(summerName, std_name, 7);
  }
+};
+
+var __wasmfs_copy_preloaded_file_data = (index, buffer) => GROWABLE_HEAP_U8().set(wasmFSPreloadedFiles[index].fileData, buffer);
+
+var wasmFSPreloadedDirs = [];
+
+var __wasmfs_get_num_preloaded_dirs = () => wasmFSPreloadedDirs.length;
+
+var wasmFSPreloadedFiles = [];
+
+var wasmFSPreloadingFlushed = false;
+
+var __wasmfs_get_num_preloaded_files = () => {
+ wasmFSPreloadingFlushed = true;
+ return wasmFSPreloadedFiles.length;
+};
+
+var __wasmfs_get_preloaded_child_path = (index, childNameBuffer) => {
+ var s = wasmFSPreloadedDirs[index].childName;
+ var len = lengthBytesUTF8(s) + 1;
+ stringToUTF8(s, childNameBuffer, len);
+};
+
+var __wasmfs_get_preloaded_file_mode = index => wasmFSPreloadedFiles[index].mode;
+
+var __wasmfs_get_preloaded_file_size = index => wasmFSPreloadedFiles[index].fileData.length;
+
+var __wasmfs_get_preloaded_parent_path = (index, parentPathBuffer) => {
+ var s = wasmFSPreloadedDirs[index].parentPath;
+ var len = lengthBytesUTF8(s) + 1;
+ stringToUTF8(s, parentPathBuffer, len);
+};
+
+var lengthBytesUTF8 = str => {
+ var len = 0;
+ for (var i = 0; i < str.length; ++i) {
+  var c = str.charCodeAt(i);
+  if (c <= 127) {
+   len++;
+  } else if (c <= 2047) {
+   len += 2;
+  } else if (c >= 55296 && c <= 57343) {
+   len += 4;
+   ++i;
+  } else {
+   len += 3;
+  }
+ }
+ return len;
+};
+
+var __wasmfs_get_preloaded_path_name = (index, fileNameBuffer) => {
+ var s = wasmFSPreloadedFiles[index].pathName;
+ var len = lengthBytesUTF8(s) + 1;
+ stringToUTF8(s, fileNameBuffer, len);
+};
+
+var __wasmfs_jsimpl_alloc_file = (backend, file) => wasmFS$backends[backend].allocFile(file);
+
+var __wasmfs_jsimpl_free_file = (backend, file) => wasmFS$backends[backend].freeFile(file);
+
+var __wasmfs_jsimpl_get_size = (backend, file) => wasmFS$backends[backend].getSize(file);
+
+function __wasmfs_jsimpl_read(backend, file, buffer, length, offset) {
+ offset = bigintToI53Checked(offset);
+ if (!wasmFS$backends[backend].read) {
+  return -28;
+ }
+ return wasmFS$backends[backend].read(file, buffer, length, offset);
+}
+
+function __wasmfs_jsimpl_write(backend, file, buffer, length, offset) {
+ offset = bigintToI53Checked(offset);
+ if (!wasmFS$backends[backend].write) {
+  return -28;
+ }
+ return wasmFS$backends[backend].write(file, buffer, length, offset);
+}
+
+class HandleAllocator {
+ constructor() {
+  this.allocated = [ undefined ];
+  this.freelist = [];
+ }
+ get(id) {
+  return this.allocated[id];
+ }
+ has(id) {
+  return this.allocated[id] !== undefined;
+ }
+ allocate(handle) {
+  var id = this.freelist.pop() || this.allocated.length;
+  this.allocated[id] = handle;
+  return id;
+ }
+ free(id) {
+  this.allocated[id] = undefined;
+  this.freelist.push(id);
+ }
+}
+
+var wasmfsOPFSAccessHandles = new HandleAllocator;
+
+var wasmfsOPFSProxyFinish = ctx => {
+ _emscripten_proxy_finish(ctx);
+};
+
+async function __wasmfs_opfs_close_access(ctx, accessID, errPtr) {
+ let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
+ try {
+  await accessHandle.close();
+ } catch {
+  let err = -29;
+  GROWABLE_HEAP_I32()[((errPtr) >> 2)] = err;
+ }
+ wasmfsOPFSAccessHandles.free(accessID);
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+var wasmfsOPFSBlobs = new HandleAllocator;
+
+var __wasmfs_opfs_close_blob = blobID => {
+ wasmfsOPFSBlobs.free(blobID);
+};
+
+async function __wasmfs_opfs_flush_access(ctx, accessID, errPtr) {
+ let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
+ try {
+  await accessHandle.flush();
+ } catch {
+  let err = -29;
+  GROWABLE_HEAP_I32()[((errPtr) >> 2)] = err;
+ }
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+var wasmfsOPFSDirectoryHandles = new HandleAllocator;
+
+var __wasmfs_opfs_free_directory = dirID => {
+ wasmfsOPFSDirectoryHandles.free(dirID);
+};
+
+var wasmfsOPFSFileHandles = new HandleAllocator;
+
+var __wasmfs_opfs_free_file = fileID => {
+ wasmfsOPFSFileHandles.free(fileID);
+};
+
+async function wasmfsOPFSGetOrCreateFile(parent, name, create) {
+ let parentHandle = wasmfsOPFSDirectoryHandles.get(parent);
+ let fileHandle;
+ try {
+  fileHandle = await parentHandle.getFileHandle(name, {
+   create: create
+  });
+ } catch (e) {
+  if (e.name === "NotFoundError") {
+   return -20;
+  }
+  if (e.name === "TypeMismatchError") {
+   return -31;
+  }
+  return -29;
+ }
+ return wasmfsOPFSFileHandles.allocate(fileHandle);
+}
+
+async function wasmfsOPFSGetOrCreateDir(parent, name, create) {
+ let parentHandle = wasmfsOPFSDirectoryHandles.get(parent);
+ let childHandle;
+ try {
+  childHandle = await parentHandle.getDirectoryHandle(name, {
+   create: create
+  });
+ } catch (e) {
+  if (e.name === "NotFoundError") {
+   return -20;
+  }
+  if (e.name === "TypeMismatchError") {
+   return -54;
+  }
+  return -29;
+ }
+ return wasmfsOPFSDirectoryHandles.allocate(childHandle);
+}
+
+async function __wasmfs_opfs_get_child(ctx, parent, namePtr, childTypePtr, childIDPtr) {
+ let name = UTF8ToString(namePtr);
+ let childType = 1;
+ let childID = await wasmfsOPFSGetOrCreateFile(parent, name, false);
+ if (childID == -31) {
+  childType = 2;
+  childID = await wasmfsOPFSGetOrCreateDir(parent, name, false);
+ }
+ GROWABLE_HEAP_I32()[((childTypePtr) >> 2)] = childType;
+ GROWABLE_HEAP_I32()[((childIDPtr) >> 2)] = childID;
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+var __wasmfs_opfs_get_entries = async function(ctx, dirID, entriesPtr, errPtr) {
+ let dirHandle = wasmfsOPFSDirectoryHandles.get(dirID);
+ try {
+  let iter = dirHandle.entries();
+  for (let entry; entry = await iter.next(), !entry.done; ) {
+   let [name, child] = entry.value;
+   withStackSave(() => {
+    let namePtr = stringToUTF8OnStack(name);
+    let type = child.kind == "file" ? 1 : 2;
+    __wasmfs_opfs_record_entry(entriesPtr, namePtr, type);
+   });
+  }
+ } catch {
+  let err = -29;
+  GROWABLE_HEAP_I32()[((errPtr) >> 2)] = err;
+ }
+ wasmfsOPFSProxyFinish(ctx);
+};
+
+async function __wasmfs_opfs_get_size_access(ctx, accessID, sizePtr) {
+ let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
+ let size;
+ try {
+  size = await accessHandle.getSize();
+ } catch {
+  size = -29;
+ }
+ HEAP64[((sizePtr) >> 3)] = BigInt(size);
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+var __wasmfs_opfs_get_size_blob = blobID => wasmfsOPFSBlobs.get(blobID).size;
+
+async function __wasmfs_opfs_get_size_file(ctx, fileID, sizePtr) {
+ let fileHandle = wasmfsOPFSFileHandles.get(fileID);
+ let size;
+ try {
+  size = (await fileHandle.getFile()).size;
+ } catch {
+  size = -29;
+ }
+ HEAP64[((sizePtr) >> 3)] = BigInt(size);
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_init_root_directory(ctx) {
+ if (wasmfsOPFSDirectoryHandles.allocated.length == 1) {
+  /** @suppress {checkTypes} */ let root = await navigator.storage.getDirectory();
+  wasmfsOPFSDirectoryHandles.allocated.push(root);
+ }
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_insert_directory(ctx, parent, namePtr, childIDPtr) {
+ let name = UTF8ToString(namePtr);
+ let childID = await wasmfsOPFSGetOrCreateDir(parent, name, true);
+ GROWABLE_HEAP_I32()[((childIDPtr) >> 2)] = childID;
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_insert_file(ctx, parent, namePtr, childIDPtr) {
+ let name = UTF8ToString(namePtr);
+ let childID = await wasmfsOPFSGetOrCreateFile(parent, name, true);
+ GROWABLE_HEAP_I32()[((childIDPtr) >> 2)] = childID;
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_move_file(ctx, fileID, newParentID, namePtr, errPtr) {
+ let name = UTF8ToString(namePtr);
+ let fileHandle = wasmfsOPFSFileHandles.get(fileID);
+ let newDirHandle = wasmfsOPFSDirectoryHandles.get(newParentID);
+ try {
+  await fileHandle.move(newDirHandle, name);
+ } catch {
+  let err = -29;
+  GROWABLE_HEAP_I32()[((errPtr) >> 2)] = err;
+ }
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_open_access(ctx, fileID, accessIDPtr) {
+ let fileHandle = wasmfsOPFSFileHandles.get(fileID);
+ let accessID;
+ try {
+  let accessHandle;
+  /** @suppress {checkTypes} */ var len = FileSystemFileHandle.prototype.createSyncAccessHandle.length;
+  if (len == 0) {
+   accessHandle = await fileHandle.createSyncAccessHandle();
+  } else {
+   accessHandle = await fileHandle.createSyncAccessHandle({
+    mode: "in-place"
+   });
+  }
+  accessID = wasmfsOPFSAccessHandles.allocate(accessHandle);
+ } catch (e) {
+  if (e.name === "InvalidStateError" || e.name === "NoModificationAllowedError") {
+   accessID = -2;
+  } else {
+   accessID = -29;
+  }
+ }
+ GROWABLE_HEAP_I32()[((accessIDPtr) >> 2)] = accessID;
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_open_blob(ctx, fileID, blobIDPtr) {
+ let fileHandle = wasmfsOPFSFileHandles.get(fileID);
+ let blobID;
+ try {
+  let blob = await fileHandle.getFile();
+  blobID = wasmfsOPFSBlobs.allocate(blob);
+ } catch (e) {
+  if (e.name === "NotAllowedError") {
+   blobID = -2;
+  } else {
+   blobID = -29;
+  }
+ }
+ GROWABLE_HEAP_I32()[((blobIDPtr) >> 2)] = blobID;
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+function __wasmfs_opfs_read_access(accessID, bufPtr, len, pos) {
+ let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
+ let data = GROWABLE_HEAP_U8().subarray(bufPtr, bufPtr + len);
+ try {
+  return accessHandle.read(data, {
+   at: pos
+  });
+ } catch (e) {
+  if (e.name == "TypeError") {
+   return -28;
+  }
+  return -29;
+ }
+}
+
+async function __wasmfs_opfs_read_blob(ctx, blobID, bufPtr, len, pos, nreadPtr) {
+ let blob = wasmfsOPFSBlobs.get(blobID);
+ let slice = blob.slice(pos, pos + len);
+ let nread = 0;
+ try {
+  let buf = await slice.arrayBuffer();
+  let data = new Uint8Array(buf);
+  GROWABLE_HEAP_U8().set(data, bufPtr);
+  nread += data.length;
+ } catch (e) {
+  if (e instanceof RangeError) {
+   nread = -21;
+  } else {
+   nread = -29;
+  }
+ }
+ GROWABLE_HEAP_I32()[((nreadPtr) >> 2)] = nread;
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_remove_child(ctx, dirID, namePtr, errPtr) {
+ let name = UTF8ToString(namePtr);
+ let dirHandle = wasmfsOPFSDirectoryHandles.get(dirID);
+ try {
+  await dirHandle.removeEntry(name);
+ } catch {
+  let err = -29;
+  GROWABLE_HEAP_I32()[((errPtr) >> 2)] = err;
+ }
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_set_size_access(ctx, accessID, size, errPtr) {
+ size = bigintToI53Checked(size);
+ let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
+ try {
+  await accessHandle.truncate(size);
+ } catch {
+  let err = -29;
+  GROWABLE_HEAP_I32()[((errPtr) >> 2)] = err;
+ }
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+async function __wasmfs_opfs_set_size_file(ctx, fileID, size, errPtr) {
+ size = bigintToI53Checked(size);
+ let fileHandle = wasmfsOPFSFileHandles.get(fileID);
+ try {
+  let writable = await fileHandle.createWritable({
+   keepExistingData: true
+  });
+  await writable.truncate(size);
+  await writable.close();
+ } catch {
+  let err = -29;
+  GROWABLE_HEAP_I32()[((errPtr) >> 2)] = err;
+ }
+ wasmfsOPFSProxyFinish(ctx);
+}
+
+function __wasmfs_opfs_write_access(accessID, bufPtr, len, pos) {
+ let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
+ let data = GROWABLE_HEAP_U8().subarray(bufPtr, bufPtr + len);
+ try {
+  return accessHandle.write(data, {
+   at: pos
+  });
+ } catch (e) {
+  if (e.name == "TypeError") {
+   return -28;
+  }
+  return -29;
+ }
+}
+
+var FS_stdin_getChar_buffer = [];
+
+/** @type {function(string, boolean=, number=)} */ function intArrayFromString(stringy, dontAddNull, length) {
+ var len = length > 0 ? length : lengthBytesUTF8(stringy) + 1;
+ var u8array = new Array(len);
+ var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
+ if (dontAddNull) u8array.length = numBytesWritten;
+ return u8array;
+}
+
+var FS_stdin_getChar = () => {
+ if (!FS_stdin_getChar_buffer.length) {
+  var result = null;
+  if (ENVIRONMENT_IS_NODE) {
+   var BUFSIZE = 256;
+   var buf = Buffer.alloc(BUFSIZE);
+   var bytesRead = 0;
+   /** @suppress {missingProperties} */ var fd = process.stdin.fd;
+   try {
+    bytesRead = fs.readSync(fd, buf);
+   } catch (e) {
+    if (e.toString().includes("EOF")) bytesRead = 0; else throw e;
+   }
+   if (bytesRead > 0) {
+    result = buf.slice(0, bytesRead).toString("utf-8");
+   } else {
+    result = null;
+   }
+  } else if (typeof window != "undefined" && typeof window.prompt == "function") {
+   result = window.prompt("Input: ");
+   if (result !== null) {
+    result += "\n";
+   }
+  } else if (typeof readline == "function") {
+   result = readline();
+   if (result !== null) {
+    result += "\n";
+   }
+  }
+  if (!result) {
+   return null;
+  }
+  FS_stdin_getChar_buffer = intArrayFromString(result, true);
+ }
+ return FS_stdin_getChar_buffer.shift();
+};
+
+var __wasmfs_stdin_get_char = () => {
+ var c = FS_stdin_getChar();
+ if (typeof c === "number") {
+  return c;
+ }
+ return -1;
+};
+
+var __wasmfs_thread_utils_heartbeat = queue => {
+ var intervalID = setInterval(() => {
+  if (ABORT) {
+   clearInterval(intervalID);
+  } else {
+   _emscripten_proxy_execute_queue(queue);
+  }
+ }, 50);
 };
 
 var _abort = () => {
@@ -5090,6 +2009,8 @@ var warnOnce = text => {
   err(text);
  }
 };
+
+var preloadPlugins = Module["preloadPlugins"] || [];
 
 var Browser = {
  mainLoop: {
@@ -6759,7 +3680,7 @@ var AL = {
 };
 
 function _alBufferData(bufferId, format, pData, size, freq) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(34, 0, 1, bufferId, format, pData, size, freq);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(3, 0, 1, bufferId, format, pData, size, freq);
  if (!AL.currentCtx) {
   return;
  }
@@ -6876,7 +3797,7 @@ function _alBufferData(bufferId, format, pData, size, freq) {
 }
 
 function _alDeleteBuffers(count, pBufferIds) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(35, 0, 1, count, pBufferIds);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(4, 0, 1, count, pBufferIds);
  if (!AL.currentCtx) {
   return;
  }
@@ -6906,7 +3827,7 @@ function _alDeleteBuffers(count, pBufferIds) {
 }
 
 function _alSourcei(sourceId, param, value) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(37, 0, 1, sourceId, param, value);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(6, 0, 1, sourceId, param, value);
  switch (param) {
  case 514:
  /* AL_SOURCE_RELATIVE */ case 4097:
@@ -6933,7 +3854,7 @@ function _alSourcei(sourceId, param, value) {
 }
 
 function _alDeleteSources(count, pSourceIds) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(36, 0, 1, count, pSourceIds);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(5, 0, 1, count, pSourceIds);
  if (!AL.currentCtx) {
   return;
  }
@@ -6954,12 +3875,12 @@ function _alDeleteSources(count, pSourceIds) {
 }
 
 function _alDistanceModel(model) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(38, 0, 1, model);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(7, 0, 1, model);
  AL.setGlobalParam("alDistanceModel", 53248, model);
 }
 
 function _alGenBuffers(count, pBufferIds) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(39, 0, 1, count, pBufferIds);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(8, 0, 1, count, pBufferIds);
  if (!AL.currentCtx) {
   return;
  }
@@ -6981,7 +3902,7 @@ function _alGenBuffers(count, pBufferIds) {
 }
 
 function _alGenSources(count, pSourceIds) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(40, 0, 1, count, pSourceIds);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(9, 0, 1, count, pSourceIds);
  if (!AL.currentCtx) {
   return;
  }
@@ -7027,7 +3948,7 @@ function _alGenSources(count, pSourceIds) {
 }
 
 function _alGetError() {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(41, 0, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(10, 0, 1);
  if (!AL.currentCtx) {
   return 40964;
  }
@@ -7037,7 +3958,7 @@ function _alGetError() {
 }
 
 function _alGetSourcei(sourceId, param, pValue) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(42, 0, 1, sourceId, param, pValue);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(11, 0, 1, sourceId, param, pValue);
  var val = AL.getSourceParam("alGetSourcei", sourceId, param);
  if (val === null) {
   return;
@@ -7076,7 +3997,7 @@ function _alGetSourcei(sourceId, param, pValue) {
 }
 
 function _alListenerf(param, value) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(43, 0, 1, param, value);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(12, 0, 1, param, value);
  switch (param) {
  case 4106:
   AL.setListenerParam("alListenerf", param, value);
@@ -7089,7 +4010,7 @@ function _alListenerf(param, value) {
 }
 
 function _alSource3f(sourceId, param, value0, value1, value2) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(44, 0, 1, sourceId, param, value0, value1, value2);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(13, 0, 1, sourceId, param, value0, value1, value2);
  switch (param) {
  case 4100:
  case 4101:
@@ -7107,7 +4028,7 @@ function _alSource3f(sourceId, param, value0, value1, value2) {
 }
 
 function _alSourcePause(sourceId) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(45, 0, 1, sourceId);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(14, 0, 1, sourceId);
  if (!AL.currentCtx) {
   return;
  }
@@ -7120,7 +4041,7 @@ function _alSourcePause(sourceId) {
 }
 
 function _alSourcePlay(sourceId) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(46, 0, 1, sourceId);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(15, 0, 1, sourceId);
  if (!AL.currentCtx) {
   return;
  }
@@ -7133,7 +4054,7 @@ function _alSourcePlay(sourceId) {
 }
 
 function _alSourceQueueBuffers(sourceId, count, pBufferIds) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(47, 0, 1, sourceId, count, pBufferIds);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(16, 0, 1, sourceId, count, pBufferIds);
  if (!AL.currentCtx) {
   return;
  }
@@ -7185,7 +4106,7 @@ function _alSourceQueueBuffers(sourceId, count, pBufferIds) {
 }
 
 function _alSourceRewind(sourceId) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(48, 0, 1, sourceId);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(17, 0, 1, sourceId);
  if (!AL.currentCtx) {
   return;
  }
@@ -7199,7 +4120,7 @@ function _alSourceRewind(sourceId) {
 }
 
 function _alSourceStop(sourceId) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(49, 0, 1, sourceId);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(18, 0, 1, sourceId);
  if (!AL.currentCtx) {
   return;
  }
@@ -7212,7 +4133,7 @@ function _alSourceStop(sourceId) {
 }
 
 function _alSourceUnqueueBuffers(sourceId, count, pBufferIds) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(50, 0, 1, sourceId, count, pBufferIds);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(19, 0, 1, sourceId, count, pBufferIds);
  if (!AL.currentCtx) {
   return;
  }
@@ -7242,7 +4163,7 @@ function _alSourceUnqueueBuffers(sourceId, count, pBufferIds) {
 }
 
 function _alSourcef(sourceId, param, value) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(51, 0, 1, sourceId, param, value);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(20, 0, 1, sourceId, param, value);
  switch (param) {
  case 4097:
  /* AL_CONE_INNER_ANGLE */ case 4098:
@@ -7268,7 +4189,7 @@ function _alSourcef(sourceId, param, value) {
 }
 
 function _alcCloseDevice(deviceId) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(52, 0, 1, deviceId);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(21, 0, 1, deviceId);
  if (!(deviceId in AL.deviceRefCounts) || AL.deviceRefCounts[deviceId] > 0) {
   return 0;
  }
@@ -7299,7 +4220,7 @@ var listenOnce = (object, event, func) => {
 };
 
 function _alcCreateContext(deviceId, pAttrList) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(53, 0, 1, deviceId, pAttrList);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(22, 0, 1, deviceId, pAttrList);
  if (!(deviceId in AL.deviceRefCounts)) {
   AL.alcErr = 40961;
   /* ALC_INVALID_DEVICE */ return 0;
@@ -7429,7 +4350,7 @@ function _alcCreateContext(deviceId, pAttrList) {
 }
 
 function _alcDestroyContext(contextId) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(54, 0, 1, contextId);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(23, 0, 1, contextId);
  var ctx = AL.contexts[contextId];
  if (AL.currentCtx === ctx) {
   AL.alcErr = 40962;
@@ -7444,14 +4365,14 @@ function _alcDestroyContext(contextId) {
 }
 
 function _alcGetError(deviceId) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(55, 0, 1, deviceId);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(24, 0, 1, deviceId);
  var err = AL.alcErr;
  AL.alcErr = 0;
  return err;
 }
 
 function _alcMakeContextCurrent(contextId) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(56, 0, 1, contextId);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(25, 0, 1, contextId);
  if (contextId === 0) {
   AL.currentCtx = null;
  } else {
@@ -7461,7 +4382,7 @@ function _alcMakeContextCurrent(contextId) {
 }
 
 function _alcOpenDevice(pDeviceName) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(57, 0, 1, pDeviceName);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(26, 0, 1, pDeviceName);
  if (pDeviceName) {
   var name = UTF8ToString(pDeviceName);
   if (name !== AL.DEVICE_NAME) {
@@ -7540,7 +4461,7 @@ var EGL = {
 };
 
 function _eglChooseConfig(display, attrib_list, configs, config_size, numConfigs) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(58, 0, 1, display, attrib_list, configs, config_size, numConfigs);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(27, 0, 1, display, attrib_list, configs, config_size, numConfigs);
  return EGL.chooseConfig(display, attrib_list, configs, config_size, numConfigs);
 }
 
@@ -8010,7 +4931,7 @@ var GL = {
 };
 
 function _eglCreateContext(display, config, hmm, contextAttribs) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(59, 0, 1, display, config, hmm, contextAttribs);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(28, 0, 1, display, config, hmm, contextAttribs);
  if (display != 62e3) {
   EGL.setErrorCode(12296);
   /* EGL_BAD_DISPLAY */ return 0;
@@ -8051,7 +4972,7 @@ function _eglCreateContext(display, config, hmm, contextAttribs) {
 }
 
 function _eglCreateWindowSurface(display, config, win, attrib_list) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(60, 0, 1, display, config, win, attrib_list);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(29, 0, 1, display, config, win, attrib_list);
  if (display != 62e3) {
   EGL.setErrorCode(12296);
   /* EGL_BAD_DISPLAY */ return 0;
@@ -8065,7 +4986,7 @@ function _eglCreateWindowSurface(display, config, win, attrib_list) {
 }
 
 function _eglGetDisplay(nativeDisplayType) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(61, 0, 1, nativeDisplayType);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(30, 0, 1, nativeDisplayType);
  EGL.setErrorCode(12288);
  if (nativeDisplayType != 0 && /* EGL_DEFAULT_DISPLAY */ nativeDisplayType != 1) /* see library_xlib.js */ {
   return 0;
@@ -8074,12 +4995,12 @@ function _eglGetDisplay(nativeDisplayType) {
 }
 
 function _eglGetError() {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(62, 0, 1);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(31, 0, 1);
  return EGL.errorCode;
 }
 
 function _eglInitialize(display, majorVersion, minorVersion) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(63, 0, 1, display, majorVersion, minorVersion);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(32, 0, 1, display, majorVersion, minorVersion);
  if (display != 62e3) {
   EGL.setErrorCode(12296);
   /* EGL_BAD_DISPLAY */ return 0;
@@ -8096,7 +5017,7 @@ function _eglInitialize(display, majorVersion, minorVersion) {
 }
 
 function _eglMakeCurrent(display, draw, read, context) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(64, 0, 1, display, draw, read, context);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(33, 0, 1, display, draw, read, context);
  if (display != 62e3) {
   EGL.setErrorCode(12296);
   /* EGL_BAD_DISPLAY */ return 0;
@@ -8118,7 +5039,7 @@ function _eglMakeCurrent(display, draw, read, context) {
 }
 
 function _eglSwapBuffers(dpy, surface) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(65, 0, 1, dpy, surface);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(34, 0, 1, dpy, surface);
  if (!EGL.defaultDisplayInitialized) {
   EGL.setErrorCode(12289);
  } else /* EGL_NOT_INITIALIZED */ if (!Module.ctx) {
@@ -8133,7 +5054,7 @@ function _eglSwapBuffers(dpy, surface) {
 }
 
 function _eglSwapInterval(display, interval) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(66, 0, 1, display, interval);
+ //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(35, 0, 1, display, interval);
  if (display != 62e3) {
   EGL.setErrorCode(12296);
   /* EGL_BAD_DISPLAY */ return 0;
@@ -8147,19 +5068,21 @@ var _emscripten_check_blocking_allowed = () => {};
 
 var _emscripten_date_now = () => Date.now();
 
+var _emscripten_err = str => err(UTF8ToString(str));
+
 var _emscripten_exit_with_live_runtime = () => {
  runtimeKeepalivePush();
  throw "unwind";
 };
 
 function __emscripten_runtime_keepalive_clear() {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(68, 0, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(37, 0, 1);
  noExitRuntime = false;
  runtimeKeepaliveCounter = 0;
 }
 
 function _emscripten_force_exit(status) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(67, 0, 1, status);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(36, 0, 1, status);
  __emscripten_runtime_keepalive_clear();
  _exit(status);
 }
@@ -9754,6 +6677,8 @@ var _emscripten_glGetUniformBlockIndex = _glGetUniformBlockIndex;
 
 var _emscripten_glGetUniformIndices = _glGetUniformIndices;
 
+/** @suppress {checkTypes} */ var jstoi_q = str => parseInt(str);
+
 /** @noinline */ var webglGetLeftBracePos = name => name.slice(-1) == "]" && name.lastIndexOf("[");
 
 var webglPrepareUniformLocationsBeforeFirstUse = program => {
@@ -10944,6 +7869,8 @@ var _emscripten_glWaitSync = _glWaitSync;
 
 var _emscripten_num_logical_cores = () => ENVIRONMENT_IS_NODE ? require("os").cpus().length : navigator["hardwareConcurrency"];
 
+var _emscripten_out = str => out(UTF8ToString(str));
+
 var _emscripten_request_animation_frame_loop = (cb, userData) => {
  function tick(timeStamp) {
   if (getWasmTableEntry(cb)(timeStamp, userData)) {
@@ -11042,7 +7969,7 @@ var stringToAscii = (str, buffer) => {
 };
 
 var _environ_get = function(__environ, environ_buf) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(69, 0, 1, __environ, environ_buf);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(38, 0, 1, __environ, environ_buf);
  var bufSize = 0;
  getEnvStrings().forEach((string, i) => {
   var ptr = environ_buf + bufSize;
@@ -11054,7 +7981,7 @@ var _environ_get = function(__environ, environ_buf) {
 };
 
 var _environ_sizes_get = function(penviron_count, penviron_buf_size) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(70, 0, 1, penviron_count, penviron_buf_size);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(39, 0, 1, penviron_count, penviron_buf_size);
  var strings = getEnvStrings();
  GROWABLE_HEAP_U32()[((penviron_count) >> 2)] = strings.length;
  var bufSize = 0;
@@ -11063,157 +7990,30 @@ var _environ_sizes_get = function(penviron_count, penviron_buf_size) {
  return 0;
 };
 
-function _fd_close(fd) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(71, 0, 1, fd);
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  FS.close(stream);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return e.errno;
+var initRandomFill = () => {
+ if (typeof crypto == "object" && typeof crypto["getRandomValues"] == "function") {
+  return view => (view.set(crypto.getRandomValues(new Uint8Array(view.byteLength))), 
+  view);
+ } else if (ENVIRONMENT_IS_NODE) {
+  try {
+   var crypto_module = require("crypto");
+   var randomFillSync = crypto_module["randomFillSync"];
+   if (randomFillSync) {
+    return view => crypto_module["randomFillSync"](view);
+   }
+   var randomBytes = crypto_module["randomBytes"];
+   return view => (view.set(randomBytes(view.byteLength)),  view);
+  } catch (e) {}
  }
-}
-
-function _fd_fdstat_get(fd, pbuf) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(72, 0, 1, fd, pbuf);
- try {
-  var rightsBase = 0;
-  var rightsInheriting = 0;
-  var flags = 0;
-  {
-   var stream = SYSCALLS.getStreamFromFD(fd);
-   var type = stream.tty ? 2 : FS.isDir(stream.mode) ? 3 : FS.isLink(stream.mode) ? 7 : 4;
-  }
-  GROWABLE_HEAP_I8()[pbuf] = type;
-  GROWABLE_HEAP_I16()[(((pbuf) + (2)) >> 1)] = flags;
-  HEAP64[(((pbuf) + (8)) >> 3)] = BigInt(rightsBase);
-  HEAP64[(((pbuf) + (16)) >> 3)] = BigInt(rightsInheriting);
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return e.errno;
- }
-}
-
-/** @param {number=} offset */ var doReadv = (stream, iov, iovcnt, offset) => {
- var ret = 0;
- for (var i = 0; i < iovcnt; i++) {
-  var ptr = GROWABLE_HEAP_U32()[((iov) >> 2)];
-  var len = GROWABLE_HEAP_U32()[(((iov) + (4)) >> 2)];
-  iov += 8;
-  var curr = FS.read(stream, GROWABLE_HEAP_I8(), ptr, len, offset);
-  if (curr < 0) return -1;
-  ret += curr;
-  if (curr < len) break;
-  if (typeof offset !== "undefined") {
-   offset += curr;
-  }
- }
- return ret;
+ abort("initRandomDevice");
 };
 
-function _fd_pread(fd, iov, iovcnt, offset, pnum) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(73, 0, 1, fd, iov, iovcnt, offset, pnum);
- offset = bigintToI53Checked(offset);
- try {
-  if (isNaN(offset)) return 61;
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  var num = doReadv(stream, iov, iovcnt, offset);
-  GROWABLE_HEAP_U32()[((pnum) >> 2)] = num;
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return e.errno;
- }
-}
+var randomFill = view => (randomFill = initRandomFill())(view);
 
-/** @param {number=} offset */ var doWritev = (stream, iov, iovcnt, offset) => {
- var ret = 0;
- for (var i = 0; i < iovcnt; i++) {
-  var ptr = GROWABLE_HEAP_U32()[((iov) >> 2)];
-  var len = GROWABLE_HEAP_U32()[(((iov) + (4)) >> 2)];
-  iov += 8;
-  var curr = FS.write(stream, GROWABLE_HEAP_I8(), ptr, len, offset);
-  if (curr < 0) return -1;
-  ret += curr;
-  if (typeof offset !== "undefined") {
-   offset += curr;
-  }
- }
- return ret;
+var _getentropy = (buffer, size) => {
+ randomFill(GROWABLE_HEAP_U8().subarray(buffer, buffer + size));
+ return 0;
 };
-
-function _fd_pwrite(fd, iov, iovcnt, offset, pnum) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(74, 0, 1, fd, iov, iovcnt, offset, pnum);
- offset = bigintToI53Checked(offset);
- try {
-  if (isNaN(offset)) return 61;
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  var num = doWritev(stream, iov, iovcnt, offset);
-  GROWABLE_HEAP_U32()[((pnum) >> 2)] = num;
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return e.errno;
- }
-}
-
-function _fd_read(fd, iov, iovcnt, pnum) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(75, 0, 1, fd, iov, iovcnt, pnum);
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  var num = doReadv(stream, iov, iovcnt);
-  GROWABLE_HEAP_U32()[((pnum) >> 2)] = num;
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return e.errno;
- }
-}
-
-function _fd_seek(fd, offset, whence, newOffset) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(76, 0, 1, fd, offset, whence, newOffset);
- offset = bigintToI53Checked(offset);
- try {
-  if (isNaN(offset)) return 61;
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  FS.llseek(stream, offset, whence);
-  HEAP64[((newOffset) >> 3)] = BigInt(stream.position);
-  if (stream.getdents && offset === 0 && whence === 0) stream.getdents = null;
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return e.errno;
- }
-}
-
-function _fd_sync(fd) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(77, 0, 1, fd);
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  if (stream.stream_ops?.fsync) {
-   return stream.stream_ops.fsync(stream);
-  }
-  return 0;
- }  catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return e.errno;
- }
-}
-
-function _fd_write(fd, iov, iovcnt, pnum) {
- if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(78, 0, 1, fd, iov, iovcnt, pnum);
- try {
-  var stream = SYSCALLS.getStreamFromFD(fd);
-  var num = doWritev(stream, iov, iovcnt);
-  GROWABLE_HEAP_U32()[((pnum) >> 2)] = num;
-  return 0;
- } catch (e) {
-  if (typeof FS == "undefined" || !(e.name === "ErrnoError")) throw e;
-  return e.errno;
- }
-}
 
 var DOTNET = {
  setup: function setup(emscriptenBuildOptions) {
@@ -11649,9 +8449,70 @@ var _strftime = (s, maxsize, format, tm) => {
  return bytes.length - 1;
 };
 
-var getCFunc = ident => {
- var func = Module["_" + ident];
- return func;
+var MEMFS = {
+ createBackend(opts) {
+  return _wasmfs_create_memory_backend();
+ }
+};
+
+var PATH = {
+ isAbs: path => path.charAt(0) === "/",
+ splitPath: filename => {
+  var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+  return splitPathRe.exec(filename).slice(1);
+ },
+ normalizeArray: (parts, allowAboveRoot) => {
+  var up = 0;
+  for (var i = parts.length - 1; i >= 0; i--) {
+   var last = parts[i];
+   if (last === ".") {
+    parts.splice(i, 1);
+   } else if (last === "..") {
+    parts.splice(i, 1);
+    up++;
+   } else if (up) {
+    parts.splice(i, 1);
+    up--;
+   }
+  }
+  if (allowAboveRoot) {
+   for (;up; up--) {
+    parts.unshift("..");
+   }
+  }
+  return parts;
+ },
+ normalize: path => {
+  var isAbsolute = PATH.isAbs(path), trailingSlash = path.substr(-1) === "/";
+  path = PATH.normalizeArray(path.split("/").filter(p => !!p), !isAbsolute).join("/");
+  if (!path && !isAbsolute) {
+   path = ".";
+  }
+  if (path && trailingSlash) {
+   path += "/";
+  }
+  return (isAbsolute ? "/" : "") + path;
+ },
+ dirname: path => {
+  var result = PATH.splitPath(path), root = result[0], dir = result[1];
+  if (!root && !dir) {
+   return ".";
+  }
+  if (dir) {
+   dir = dir.substr(0, dir.length - 1);
+  }
+  return root + dir;
+ },
+ basename: path => {
+  if (path === "/") return "/";
+  path = PATH.normalize(path);
+  path = path.replace(/\/$/, "");
+  var lastSlash = path.lastIndexOf("/");
+  if (lastSlash === -1) return path;
+  return path.substr(lastSlash + 1);
+ },
+ join: (...paths) => PATH.normalize(paths.join("/")),
+ join2: (l, r) => PATH.normalize(l + "/" + r)
 };
 
 var stringToUTF8OnStack = str => {
@@ -11659,6 +8520,554 @@ var stringToUTF8OnStack = str => {
  var ret = stackAlloc(size);
  stringToUTF8(str, ret, size);
  return ret;
+};
+
+var readI53FromI64 = ptr => GROWABLE_HEAP_U32()[((ptr) >> 2)] + GROWABLE_HEAP_I32()[(((ptr) + (4)) >> 2)] * 4294967296;
+
+var readI53FromU64 = ptr => GROWABLE_HEAP_U32()[((ptr) >> 2)] + GROWABLE_HEAP_U32()[(((ptr) + (4)) >> 2)] * 4294967296;
+
+var FS_mknod = (path, mode, dev) => FS.handleError(withStackSave(() => {
+ var pathBuffer = stringToUTF8OnStack(path);
+ return __wasmfs_mknod(pathBuffer, mode, dev);
+}));
+
+var FS_create = (path, mode = 438) => {
+ /* 0666 */ mode &= 4095;
+ mode |= 32768;
+ return FS_mknod(path, mode, 0);
+};
+
+var FS_writeFile = (path, data) => withStackSave(() => {
+ var pathBuffer = stringToUTF8OnStack(path);
+ if (typeof data == "string") {
+  var buf = new Uint8Array(lengthBytesUTF8(data) + 1);
+  var actualNumBytes = stringToUTF8Array(data, buf, 0, buf.length);
+  data = buf.slice(0, actualNumBytes);
+ }
+ var dataBuffer = _malloc(data.length);
+ for (var i = 0; i < data.length; i++) {
+  GROWABLE_HEAP_I8()[(dataBuffer) + (i)] = data[i];
+ }
+ var ret = __wasmfs_write_file(pathBuffer, dataBuffer, data.length);
+ _free(dataBuffer);
+ return ret;
+});
+
+var FS_createDataFile = (parent, name, fileData, canRead, canWrite, canOwn) => {
+ var pathName = name ? parent + "/" + name : parent;
+ var mode = FS_getMode(canRead, canWrite);
+ if (!wasmFSPreloadingFlushed) {
+  wasmFSPreloadedFiles.push({
+   pathName: pathName,
+   fileData: fileData,
+   mode: mode
+  });
+ } else {
+  FS_create(pathName, mode);
+  FS_writeFile(pathName, fileData);
+ }
+};
+
+/** @param {boolean=} noRunDep */ var asyncLoad = (url, onload, onerror, noRunDep) => {
+ var dep = !noRunDep ? getUniqueRunDependency(`al ${url}`) : "";
+ readAsync(url, arrayBuffer => {
+  onload(new Uint8Array(arrayBuffer));
+  if (dep) removeRunDependency(dep);
+ }, event => {
+  if (onerror) {
+   onerror();
+  } else {
+   throw `Loading data file "${url}" failed.`;
+  }
+ });
+ if (dep) addRunDependency(dep);
+};
+
+var PATH_FS = {
+ resolve: (...args) => {
+  var resolvedPath = "", resolvedAbsolute = false;
+  for (var i = args.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+   var path = (i >= 0) ? args[i] : FS.cwd();
+   if (typeof path != "string") {
+    throw new TypeError("Arguments to path.resolve must be strings");
+   } else if (!path) {
+    return "";
+   }
+   resolvedPath = path + "/" + resolvedPath;
+   resolvedAbsolute = PATH.isAbs(path);
+  }
+  resolvedPath = PATH.normalizeArray(resolvedPath.split("/").filter(p => !!p), !resolvedAbsolute).join("/");
+  return ((resolvedAbsolute ? "/" : "") + resolvedPath) || ".";
+ },
+ relative: (from, to) => {
+  from = PATH_FS.resolve(from).substr(1);
+  to = PATH_FS.resolve(to).substr(1);
+  function trim(arr) {
+   var start = 0;
+   for (;start < arr.length; start++) {
+    if (arr[start] !== "") break;
+   }
+   var end = arr.length - 1;
+   for (;end >= 0; end--) {
+    if (arr[end] !== "") break;
+   }
+   if (start > end) return [];
+   return arr.slice(start, end - start + 1);
+  }
+  var fromParts = trim(from.split("/"));
+  var toParts = trim(to.split("/"));
+  var length = Math.min(fromParts.length, toParts.length);
+  var samePartsLength = length;
+  for (var i = 0; i < length; i++) {
+   if (fromParts[i] !== toParts[i]) {
+    samePartsLength = i;
+    break;
+   }
+  }
+  var outputParts = [];
+  for (var i = samePartsLength; i < fromParts.length; i++) {
+   outputParts.push("..");
+  }
+  outputParts = outputParts.concat(toParts.slice(samePartsLength));
+  return outputParts.join("/");
+ }
+};
+
+var FS_handledByPreloadPlugin = (byteArray, fullname, finish, onerror) => {
+ if (typeof Browser != "undefined") Browser.init();
+ var handled = false;
+ preloadPlugins.forEach(plugin => {
+  if (handled) return;
+  if (plugin["canHandle"](fullname)) {
+   plugin["handle"](byteArray, fullname, finish, onerror);
+   handled = true;
+  }
+ });
+ return handled;
+};
+
+var FS_createPreloadedFile = (parent, name, url, canRead, canWrite, onload, onerror, dontCreateFile, canOwn, preFinish) => {
+ var fullname = name ? PATH_FS.resolve(PATH.join2(parent, name)) : parent;
+ var dep = getUniqueRunDependency(`cp ${fullname}`);
+ function processData(byteArray) {
+  function finish(byteArray) {
+   preFinish?.();
+   if (!dontCreateFile) {
+    FS_createDataFile(parent, name, byteArray, canRead, canWrite, canOwn);
+   }
+   onload?.();
+   removeRunDependency(dep);
+  }
+  if (FS_handledByPreloadPlugin(byteArray, fullname, finish, () => {
+   onerror?.();
+   removeRunDependency(dep);
+  })) {
+   return;
+  }
+  finish(byteArray);
+ }
+ addRunDependency(dep);
+ if (typeof url == "string") {
+  asyncLoad(url, processData, onerror);
+ } else {
+  processData(url);
+ }
+};
+
+var FS_getMode = (canRead, canWrite) => {
+ var mode = 0;
+ if (canRead) mode |= 292 | 73;
+ if (canWrite) mode |= 146;
+ return mode;
+};
+
+var FS_modeStringToFlags = str => {
+ var flagModes = {
+  "r": 0,
+  "r+": 2,
+  "w": 512 | 64 | 1,
+  "w+": 512 | 64 | 2,
+  "a": 1024 | 64 | 1,
+  "a+": 1024 | 64 | 2
+ };
+ var flags = flagModes[str];
+ if (typeof flags == "undefined") {
+  throw new Error(`Unknown file open mode: ${str}`);
+ }
+ return flags;
+};
+
+var FS_mkdir = (path, mode = 511) => /* 0777 */ FS.handleError(withStackSave(() => {
+ var buffer = stringToUTF8OnStack(path);
+ return __wasmfs_mkdir(buffer, mode);
+}));
+
+/**
+     * @param {number=} mode Optionally, the mode to create in. Uses mkdir's
+     *                       default if not set.
+     */ var FS_mkdirTree = (path, mode) => {
+ var dirs = path.split("/");
+ var d = "";
+ for (var i = 0; i < dirs.length; ++i) {
+  if (!dirs[i]) continue;
+  d += "/" + dirs[i];
+  try {
+   FS_mkdir(d, mode);
+  } catch (e) {
+   if (e.errno != 20) throw e;
+  }
+ }
+};
+
+var FS_unlink = path => withStackSave(() => {
+ var buffer = stringToUTF8OnStack(path);
+ return __wasmfs_unlink(buffer);
+});
+
+var OPFS = {
+ createBackend(opts) {
+  return _wasmfs_create_opfs_backend();
+ }
+};
+
+var wasmFS$backends = {};
+
+var wasmFSDevices = {};
+
+var wasmFSDeviceStreams = {};
+
+var FS = {
+ init() {
+  FS.ensureErrnoError();
+ },
+ ErrnoError: null,
+ handleError(returnValue) {
+  if (returnValue < 0) {
+   throw new FS.ErrnoError(-returnValue);
+  }
+  return returnValue;
+ },
+ ensureErrnoError() {
+  if (FS.ErrnoError) return;
+  FS.ErrnoError = /** @this{Object} */ function ErrnoError(code) {
+   Error.call(this);
+   this.errno = code;
+   this.message = "FS error";
+   this.name = "ErrnoError";
+   if (Error.captureStackTrace) {
+    Error.captureStackTrace(this, ErrnoError);
+   }
+  };
+  FS.ErrnoError.prototype = Object.create(Error.prototype);
+  FS.ErrnoError.prototype.constructor = FS.ErrnoError;
+ },
+ createDataFile(parent, name, fileData, canRead, canWrite, canOwn) {
+  FS_createDataFile(parent, name, fileData, canRead, canWrite, canOwn);
+ },
+ createPath(parent, path, canRead, canWrite) {
+  //Useless function;
+  return parent + path;
+  var parts = path.split("/").reverse();
+  while (parts.length) {
+   var part = parts.pop();
+   if (!part) continue;
+   var current = PATH.join2(parent, part);
+   if (!wasmFSPreloadingFlushed) {
+    wasmFSPreloadedDirs.push({
+     parentPath: parent,
+     childName: part
+    });
+   } else {
+    FS.mkdir(current);
+   }
+   parent = current;
+  }
+  return current;
+ },
+ createPreloadedFile(parent, name, url, canRead, canWrite, onload, onerror, dontCreateFile, canOwn, preFinish) {
+  return FS_createPreloadedFile(parent, name, url, canRead, canWrite, onload, onerror, dontCreateFile, canOwn, preFinish);
+ },
+ readFile(path, opts = {}) {
+  opts.encoding = opts.encoding || "binary";
+  if (opts.encoding !== "utf8" && opts.encoding !== "binary") {
+   throw new Error('Invalid encoding type "' + opts.encoding + '"');
+  }
+  var buf = withStackSave(() => __wasmfs_read_file(stringToUTF8OnStack(path)));
+  var length = readI53FromI64(buf);
+  var ret = new Uint8Array(GROWABLE_HEAP_U8().subarray(buf + 8, buf + 8 + length));
+  if (opts.encoding === "utf8") {
+   ret = UTF8ArrayToString(ret, 0);
+  }
+  return ret;
+ },
+ cwd: () => UTF8ToString(__wasmfs_get_cwd()),
+ analyzePath(path) {
+  var exists = !!FS.findObject(path);
+  return {
+   exists: exists,
+   object: {
+    contents: exists ? FS.readFile(path) : null
+   }
+  };
+ },
+ mkdir: (path, mode) => FS_mkdir(path, mode),
+ mkdirTree: (path, mode) => FS_mkdirTree(path, mode),
+ rmdir: path => FS.handleError(withStackSave(() => __wasmfs_rmdir(stringToUTF8OnStack(path)))),
+ open: (path, flags, mode) => withStackSave(() => {
+  flags = typeof flags == "string" ? FS_modeStringToFlags(flags) : flags;
+  mode = typeof mode == "undefined" ? 438 : /* 0666 */ mode;
+  var buffer = stringToUTF8OnStack(path);
+  var fd = FS.handleError(__wasmfs_open(buffer, flags, mode));
+  return {
+   fd: fd
+  };
+ }),
+ create: (path, mode) => FS_create(path, mode),
+ close: stream => FS.handleError(-__wasmfs_close(stream.fd)),
+ unlink: path => FS_unlink(path),
+ chdir: path => withStackSave(() => {
+  var buffer = stringToUTF8OnStack(path);
+  return __wasmfs_chdir(buffer);
+ }),
+ read(stream, buffer, offset, length, position) {
+  var seeking = typeof position != "undefined";
+  var dataBuffer = _malloc(length);
+  var bytesRead;
+  if (seeking) {
+   bytesRead = __wasmfs_pread(stream.fd, dataBuffer, length, position);
+  } else {
+   bytesRead = __wasmfs_read(stream.fd, dataBuffer, length);
+  }
+  bytesRead = FS.handleError(bytesRead);
+  for (var i = 0; i < length; i++) {
+   buffer[offset + i] = GROWABLE_HEAP_I8()[(dataBuffer) + (i)];
+  }
+  _free(dataBuffer);
+  return bytesRead;
+ },
+ write(stream, buffer, offset, length, position, canOwn) {
+  var seeking = typeof position != "undefined";
+  var dataBuffer = _malloc(length);
+  for (var i = 0; i < length; i++) {
+   GROWABLE_HEAP_I8()[(dataBuffer) + (i)] = buffer[offset + i];
+  }
+  var bytesRead;
+  if (seeking) {
+   bytesRead = __wasmfs_pwrite(stream.fd, dataBuffer, length, position);
+  } else {
+   bytesRead = __wasmfs_write(stream.fd, dataBuffer, length);
+  }
+  bytesRead = FS.handleError(bytesRead);
+  _free(dataBuffer);
+  return bytesRead;
+ },
+ allocate(stream, offset, length) {
+  return FS.handleError(__wasmfs_allocate(stream.fd, BigInt(offset), BigInt(length)));
+ },
+ writeFile: (path, data) => FS_writeFile(path, data),
+ mmap: (stream, length, offset, prot, flags) => {
+  var buf = FS.handleError(__wasmfs_mmap(length, prot, flags, stream.fd, BigInt(offset)));
+  return {
+   ptr: buf,
+   allocated: true
+  };
+ },
+ msync: (stream, bufferPtr, offset, length, mmapFlags) => {
+  assert(offset === 0);
+  return FS.handleError(__wasmfs_msync(bufferPtr, length, mmapFlags));
+ },
+ munmap: (addr, length) => (FS.handleError(__wasmfs_munmap(addr, length))),
+ symlink: (target, linkpath) => withStackSave(() => (__wasmfs_symlink(stringToUTF8OnStack(target), stringToUTF8OnStack(linkpath)))),
+ readlink(path) {
+  var readBuffer = FS.handleError(withStackSave(() => __wasmfs_readlink(stringToUTF8OnStack(path))));
+  return UTF8ToString(readBuffer);
+ },
+ statBufToObject(statBuf) {
+  return {
+   dev: GROWABLE_HEAP_U32()[((statBuf) >> 2)],
+   mode: GROWABLE_HEAP_U32()[(((statBuf) + (4)) >> 2)],
+   nlink: GROWABLE_HEAP_U32()[(((statBuf) + (8)) >> 2)],
+   uid: GROWABLE_HEAP_U32()[(((statBuf) + (12)) >> 2)],
+   gid: GROWABLE_HEAP_U32()[(((statBuf) + (16)) >> 2)],
+   rdev: GROWABLE_HEAP_U32()[(((statBuf) + (20)) >> 2)],
+   size: readI53FromI64((statBuf) + (24)),
+   blksize: GROWABLE_HEAP_U32()[(((statBuf) + (32)) >> 2)],
+   blocks: GROWABLE_HEAP_U32()[(((statBuf) + (36)) >> 2)],
+   atime: readI53FromI64((statBuf) + (40)),
+   mtime: readI53FromI64((statBuf) + (56)),
+   ctime: readI53FromI64((statBuf) + (72)),
+   ino: readI53FromU64((statBuf) + (88))
+  };
+ },
+ stat(path) {
+  var statBuf = _malloc(96);
+  FS.handleError(withStackSave(() => __wasmfs_stat(stringToUTF8OnStack(path), statBuf)));
+  var stats = FS.statBufToObject(statBuf);
+  _free(statBuf);
+  return stats;
+ },
+ lstat(path) {
+  var statBuf = _malloc(96);
+  FS.handleError(withStackSave(() => __wasmfs_lstat(stringToUTF8OnStack(path), statBuf)));
+  var stats = FS.statBufToObject(statBuf);
+  _free(statBuf);
+  return stats;
+ },
+ chmod(path, mode) {
+  return FS.handleError(withStackSave(() => {
+   var buffer = stringToUTF8OnStack(path);
+   return __wasmfs_chmod(buffer, mode);
+  }));
+ },
+ lchmod(path, mode) {
+  return FS.handleError(withStackSave(() => {
+   var buffer = stringToUTF8OnStack(path);
+   return __wasmfs_lchmod(buffer, mode);
+  }));
+ },
+ fchmod(fd, mode) {
+  return FS.handleError(__wasmfs_fchmod(fd, mode));
+ },
+ utime: (path, atime, mtime) => (FS.handleError(withStackSave(() => (__wasmfs_utime(stringToUTF8OnStack(path), atime, mtime))))),
+ truncate(path, len) {
+  return FS.handleError(withStackSave(() => (__wasmfs_truncate(stringToUTF8OnStack(path), BigInt(len)))));
+ },
+ ftruncate(fd, len) {
+  return FS.handleError(__wasmfs_ftruncate(fd, BigInt(len)));
+ },
+ findObject(path) {
+  var result = withStackSave(() => __wasmfs_identify(stringToUTF8OnStack(path)));
+  if (result == 44) {
+   return null;
+  }
+  return {
+   isFolder: result == 31,
+   isDevice: false
+  };
+ },
+ readdir: path => withStackSave(() => {
+  var pathBuffer = stringToUTF8OnStack(path);
+  var entries = [];
+  var state = __wasmfs_readdir_start(pathBuffer);
+  if (!state) {
+   throw new Error("No such directory");
+  }
+  var entry;
+  while (entry = __wasmfs_readdir_get(state)) {
+   entries.push(UTF8ToString(entry));
+  }
+  __wasmfs_readdir_finish(state);
+  return entries;
+ }),
+ mount: (type, opts, mountpoint) => {
+  var backendPointer = type.createBackend(opts);
+  return FS.handleError(withStackSave(() => __wasmfs_mount(stringToUTF8OnStack(mountpoint), backendPointer)));
+ },
+ unmount: mountpoint => (FS.handleError(withStackSave(() => __wasmfs_unmount(stringToUTF8OnStack(mountpoint))))),
+ mknod: (path, mode, dev) => FS_mknod(path, mode, dev),
+ makedev: (ma, mi) => ((ma) << 8 | (mi)),
+ registerDevice(dev, ops) {
+  var backendPointer = _wasmfs_create_jsimpl_backend();
+  var definedOps = {
+   userRead: ops.read,
+   userWrite: ops.write,
+   allocFile: file => {
+    wasmFSDeviceStreams[file] = {};
+   },
+   freeFile: file => {
+    wasmFSDeviceStreams[file] = undefined;
+   },
+   getSize: file => {},
+   read: (file, buffer, length, offset) => {
+    var bufferArray = Module.HEAP8.subarray(buffer, buffer + length);
+    try {
+     var bytesRead = definedOps.userRead(wasmFSDeviceStreams[file], bufferArray, 0, length, offset);
+    } catch (e) {
+     return -e.errno;
+    }
+    Module.HEAP8.set(bufferArray, buffer);
+    return bytesRead;
+   },
+   write: (file, buffer, length, offset) => {
+    var bufferArray = Module.HEAP8.subarray(buffer, buffer + length);
+    try {
+     var bytesWritten = definedOps.userWrite(wasmFSDeviceStreams[file], bufferArray, 0, length, offset);
+    } catch (e) {
+     return -e.errno;
+    }
+    Module.HEAP8.set(bufferArray, buffer);
+    return bytesWritten;
+   }
+  };
+  wasmFS$backends[backendPointer] = definedOps;
+  wasmFSDevices[dev] = backendPointer;
+ },
+ createDevice(parent, name, input, output) {
+  if (typeof parent != "string") {
+   throw new Error("Only string paths are accepted");
+  }
+  var path = PATH.join2(parent, name);
+  var mode = FS_getMode(!!input, !!output);
+  if (!FS.createDevice.major) FS.createDevice.major = 64;
+  var dev = FS.makedev(FS.createDevice.major++, 0);
+  FS.registerDevice(dev, {
+   read(stream, buffer, offset, length, pos) {
+    /* ignored */ var bytesRead = 0;
+    for (var i = 0; i < length; i++) {
+     var result;
+     try {
+      result = input();
+     } catch (e) {
+      throw new FS.ErrnoError(29);
+     }
+     if (result === undefined && bytesRead === 0) {
+      throw new FS.ErrnoError(6);
+     }
+     if (result === null || result === undefined) break;
+     bytesRead++;
+     buffer[offset + i] = result;
+    }
+    return bytesRead;
+   },
+   write(stream, buffer, offset, length, pos) {
+    for (var i = 0; i < length; i++) {
+     try {
+      output(buffer[offset + i]);
+     } catch (e) {
+      throw new FS.ErrnoError(29);
+     }
+    }
+    return i;
+   }
+  });
+  return FS.mkdev(path, mode, dev);
+ },
+ mkdev(path, mode, dev) {
+  if (typeof dev === "undefined") {
+   dev = mode;
+   mode = 438;
+  }
+  var deviceBackend = wasmFSDevices[dev];
+  if (!deviceBackend) {
+   throw new Error("Invalid device ID.");
+  }
+  return FS.handleError(withStackSave(() => (_wasmfs_create_file(stringToUTF8OnStack(path), mode, deviceBackend))));
+ },
+ rename(oldPath, newPath) {
+  return FS.handleError(withStackSave(() => {
+   var oldPathBuffer = stringToUTF8OnStack(oldPath);
+   var newPathBuffer = stringToUTF8OnStack(newPath);
+   return __wasmfs_rename(oldPathBuffer, newPathBuffer);
+  }));
+ },
+ llseek(stream, offset, whence) {
+  return FS.handleError(__wasmfs_llseek(stream.fd, BigInt(offset), whence));
+ }
+};
+
+var getCFunc = ident => {
+ var func = Module["_" + ident];
+ return func;
 };
 
 /**
@@ -11853,29 +9262,7 @@ var setWasmTableEntry = (idx, func) => wasmTable.set(idx, func);
  return ret;
 };
 
-var FS_unlink = path => FS.unlink(path);
-
 PThread.init();
-
-FS.createPreloadedFile = FS_createPreloadedFile;
-
-FS.staticInit();
-
-Module["FS_createPath"] = FS.createPath;
-
-Module["FS_createDataFile"] = FS.createDataFile;
-
-Module["FS_createPath"] = FS.createPath;
-
-Module["FS_createDataFile"] = FS.createDataFile;
-
-Module["FS_createPreloadedFile"] = FS.createPreloadedFile;
-
-Module["FS_unlink"] = FS.unlink;
-
-Module["FS_createLazyFile"] = FS.createLazyFile;
-
-Module["FS_createDevice"] = FS.createDevice;
 
 Module["requestFullscreen"] = Browser.requestFullscreen;
 
@@ -11923,40 +9310,16 @@ DOTNET.setup({
  gitHash: "fad253f51b461736dfd3cd9c15977bb7493becef"
 });
 
-var proxiedFunctionTable = [ _proc_exit, exitOnMainThread, pthreadCreateProxied, ___syscall_chdir, ___syscall_chmod, ___syscall_connect, ___syscall_faccessat, ___syscall_fadvise64, ___syscall_fchmod, ___syscall_fcntl64, ___syscall_fstat64, ___syscall_fstatfs64, ___syscall_statfs64, ___syscall_ftruncate64, ___syscall_getcwd, ___syscall_getdents64, ___syscall_ioctl, ___syscall_lstat64, ___syscall_mkdirat, ___syscall_newfstatat, ___syscall_openat, ___syscall_readlinkat, ___syscall_recvfrom, ___syscall_renameat, ___syscall_rmdir, ___syscall_sendto, ___syscall_socket, ___syscall_stat64, ___syscall_symlink, ___syscall_unlinkat, ___syscall_utimensat, __mmap_js, __msync_js, __munmap_js, _alBufferData, _alDeleteBuffers, _alDeleteSources, _alSourcei, _alDistanceModel, _alGenBuffers, _alGenSources, _alGetError, _alGetSourcei, _alListenerf, _alSource3f, _alSourcePause, _alSourcePlay, _alSourceQueueBuffers, _alSourceRewind, _alSourceStop, _alSourceUnqueueBuffers, _alSourcef, _alcCloseDevice, _alcCreateContext, _alcDestroyContext, _alcGetError, _alcMakeContextCurrent, _alcOpenDevice, _eglChooseConfig, _eglCreateContext, _eglCreateWindowSurface, _eglGetDisplay, _eglGetError, _eglInitialize, _eglMakeCurrent, _eglSwapBuffers, _eglSwapInterval, _emscripten_force_exit, __emscripten_runtime_keepalive_clear, _environ_get, _environ_sizes_get, _fd_close, _fd_fdstat_get, _fd_pread, _fd_pwrite, _fd_read, _fd_seek, _fd_sync, _fd_write ];
+FS.init();
+
+var proxiedFunctionTable = [ _proc_exit, exitOnMainThread, pthreadCreateProxied, _alBufferData, _alDeleteBuffers, _alDeleteSources, _alSourcei, _alDistanceModel, _alGenBuffers, _alGenSources, _alGetError, _alGetSourcei, _alListenerf, _alSource3f, _alSourcePause, _alSourcePlay, _alSourceQueueBuffers, _alSourceRewind, _alSourceStop, _alSourceUnqueueBuffers, _alSourcef, _alcCloseDevice, _alcCreateContext, _alcDestroyContext, _alcGetError, _alcMakeContextCurrent, _alcOpenDevice, _eglChooseConfig, _eglCreateContext, _eglCreateWindowSurface, _eglGetDisplay, _eglGetError, _eglInitialize, _eglMakeCurrent, _eglSwapBuffers, _eglSwapInterval, _emscripten_force_exit, __emscripten_runtime_keepalive_clear, _environ_get, _environ_sizes_get ];
 
 var wasmImports = {
  /** @export */ __assert_fail: ___assert_fail,
  /** @export */ __emscripten_init_main_thread_js: ___emscripten_init_main_thread_js,
  /** @export */ __emscripten_thread_cleanup: ___emscripten_thread_cleanup,
  /** @export */ __pthread_create_js: ___pthread_create_js,
- /** @export */ __syscall_chdir: ___syscall_chdir,
- /** @export */ __syscall_chmod: ___syscall_chmod,
- /** @export */ __syscall_connect: ___syscall_connect,
- /** @export */ __syscall_faccessat: ___syscall_faccessat,
- /** @export */ __syscall_fadvise64: ___syscall_fadvise64,
- /** @export */ __syscall_fchmod: ___syscall_fchmod,
- /** @export */ __syscall_fcntl64: ___syscall_fcntl64,
- /** @export */ __syscall_fstat64: ___syscall_fstat64,
- /** @export */ __syscall_fstatfs64: ___syscall_fstatfs64,
- /** @export */ __syscall_ftruncate64: ___syscall_ftruncate64,
- /** @export */ __syscall_getcwd: ___syscall_getcwd,
- /** @export */ __syscall_getdents64: ___syscall_getdents64,
- /** @export */ __syscall_ioctl: ___syscall_ioctl,
- /** @export */ __syscall_lstat64: ___syscall_lstat64,
- /** @export */ __syscall_mkdirat: ___syscall_mkdirat,
- /** @export */ __syscall_newfstatat: ___syscall_newfstatat,
- /** @export */ __syscall_openat: ___syscall_openat,
- /** @export */ __syscall_readlinkat: ___syscall_readlinkat,
- /** @export */ __syscall_recvfrom: ___syscall_recvfrom,
- /** @export */ __syscall_renameat: ___syscall_renameat,
- /** @export */ __syscall_rmdir: ___syscall_rmdir,
- /** @export */ __syscall_sendto: ___syscall_sendto,
- /** @export */ __syscall_socket: ___syscall_socket,
- /** @export */ __syscall_stat64: ___syscall_stat64,
- /** @export */ __syscall_symlink: ___syscall_symlink,
- /** @export */ __syscall_unlinkat: ___syscall_unlinkat,
- /** @export */ __syscall_utimensat: ___syscall_utimensat,
+ /** @export */ __pthread_kill_js: ___pthread_kill_js,
  /** @export */ _emscripten_get_now_is_monotonic: __emscripten_get_now_is_monotonic,
  /** @export */ _emscripten_notify_mailbox_postmessage: __emscripten_notify_mailbox_postmessage,
  /** @export */ _emscripten_receive_on_main_thread_js: __emscripten_receive_on_main_thread_js,
@@ -11964,10 +9327,44 @@ var wasmImports = {
  /** @export */ _emscripten_thread_set_strongref: __emscripten_thread_set_strongref,
  /** @export */ _gmtime_js: __gmtime_js,
  /** @export */ _localtime_js: __localtime_js,
- /** @export */ _mmap_js: __mmap_js,
- /** @export */ _msync_js: __msync_js,
- /** @export */ _munmap_js: __munmap_js,
  /** @export */ _tzset_js: __tzset_js,
+ /** @export */ _wasmfs_copy_preloaded_file_data: __wasmfs_copy_preloaded_file_data,
+ /** @export */ _wasmfs_get_num_preloaded_dirs: __wasmfs_get_num_preloaded_dirs,
+ /** @export */ _wasmfs_get_num_preloaded_files: __wasmfs_get_num_preloaded_files,
+ /** @export */ _wasmfs_get_preloaded_child_path: __wasmfs_get_preloaded_child_path,
+ /** @export */ _wasmfs_get_preloaded_file_mode: __wasmfs_get_preloaded_file_mode,
+ /** @export */ _wasmfs_get_preloaded_file_size: __wasmfs_get_preloaded_file_size,
+ /** @export */ _wasmfs_get_preloaded_parent_path: __wasmfs_get_preloaded_parent_path,
+ /** @export */ _wasmfs_get_preloaded_path_name: __wasmfs_get_preloaded_path_name,
+ /** @export */ _wasmfs_jsimpl_alloc_file: __wasmfs_jsimpl_alloc_file,
+ /** @export */ _wasmfs_jsimpl_free_file: __wasmfs_jsimpl_free_file,
+ /** @export */ _wasmfs_jsimpl_get_size: __wasmfs_jsimpl_get_size,
+ /** @export */ _wasmfs_jsimpl_read: __wasmfs_jsimpl_read,
+ /** @export */ _wasmfs_jsimpl_write: __wasmfs_jsimpl_write,
+ /** @export */ _wasmfs_opfs_close_access: __wasmfs_opfs_close_access,
+ /** @export */ _wasmfs_opfs_close_blob: __wasmfs_opfs_close_blob,
+ /** @export */ _wasmfs_opfs_flush_access: __wasmfs_opfs_flush_access,
+ /** @export */ _wasmfs_opfs_free_directory: __wasmfs_opfs_free_directory,
+ /** @export */ _wasmfs_opfs_free_file: __wasmfs_opfs_free_file,
+ /** @export */ _wasmfs_opfs_get_child: __wasmfs_opfs_get_child,
+ /** @export */ _wasmfs_opfs_get_entries: __wasmfs_opfs_get_entries,
+ /** @export */ _wasmfs_opfs_get_size_access: __wasmfs_opfs_get_size_access,
+ /** @export */ _wasmfs_opfs_get_size_blob: __wasmfs_opfs_get_size_blob,
+ /** @export */ _wasmfs_opfs_get_size_file: __wasmfs_opfs_get_size_file,
+ /** @export */ _wasmfs_opfs_init_root_directory: __wasmfs_opfs_init_root_directory,
+ /** @export */ _wasmfs_opfs_insert_directory: __wasmfs_opfs_insert_directory,
+ /** @export */ _wasmfs_opfs_insert_file: __wasmfs_opfs_insert_file,
+ /** @export */ _wasmfs_opfs_move_file: __wasmfs_opfs_move_file,
+ /** @export */ _wasmfs_opfs_open_access: __wasmfs_opfs_open_access,
+ /** @export */ _wasmfs_opfs_open_blob: __wasmfs_opfs_open_blob,
+ /** @export */ _wasmfs_opfs_read_access: __wasmfs_opfs_read_access,
+ /** @export */ _wasmfs_opfs_read_blob: __wasmfs_opfs_read_blob,
+ /** @export */ _wasmfs_opfs_remove_child: __wasmfs_opfs_remove_child,
+ /** @export */ _wasmfs_opfs_set_size_access: __wasmfs_opfs_set_size_access,
+ /** @export */ _wasmfs_opfs_set_size_file: __wasmfs_opfs_set_size_file,
+ /** @export */ _wasmfs_opfs_write_access: __wasmfs_opfs_write_access,
+ /** @export */ _wasmfs_stdin_get_char: __wasmfs_stdin_get_char,
+ /** @export */ _wasmfs_thread_utils_heartbeat: __wasmfs_thread_utils_heartbeat,
  /** @export */ abort: _abort,
  /** @export */ alBufferData: _alBufferData,
  /** @export */ alDeleteBuffers: _alDeleteBuffers,
@@ -12004,6 +9401,7 @@ var wasmImports = {
  /** @export */ eglSwapInterval: _eglSwapInterval,
  /** @export */ emscripten_check_blocking_allowed: _emscripten_check_blocking_allowed,
  /** @export */ emscripten_date_now: _emscripten_date_now,
+ /** @export */ emscripten_err: _emscripten_err,
  /** @export */ emscripten_exit_with_live_runtime: _emscripten_exit_with_live_runtime,
  /** @export */ emscripten_force_exit: _emscripten_force_exit,
  /** @export */ emscripten_get_heap_max: _emscripten_get_heap_max,
@@ -12267,6 +9665,7 @@ var wasmImports = {
  /** @export */ emscripten_glViewport: _emscripten_glViewport,
  /** @export */ emscripten_glWaitSync: _emscripten_glWaitSync,
  /** @export */ emscripten_num_logical_cores: _emscripten_num_logical_cores,
+ /** @export */ emscripten_out: _emscripten_out,
  /** @export */ emscripten_request_animation_frame_loop: _emscripten_request_animation_frame_loop,
  /** @export */ emscripten_resize_heap: _emscripten_resize_heap,
  /** @export */ emscripten_set_timeout: _emscripten_set_timeout,
@@ -12275,14 +9674,7 @@ var wasmImports = {
  /** @export */ environ_get: _environ_get,
  /** @export */ environ_sizes_get: _environ_sizes_get,
  /** @export */ exit: _exit,
- /** @export */ fd_close: _fd_close,
- /** @export */ fd_fdstat_get: _fd_fdstat_get,
- /** @export */ fd_pread: _fd_pread,
- /** @export */ fd_pwrite: _fd_pwrite,
- /** @export */ fd_read: _fd_read,
- /** @export */ fd_seek: _fd_seek,
- /** @export */ fd_sync: _fd_sync,
- /** @export */ fd_write: _fd_write,
+ /** @export */ getentropy: _getentropy,
  /** @export */ memory: wasmMemory || Module["wasmMemory"],
  /** @export */ mono_interp_tier_prepare_jiterpreter: _mono_interp_tier_prepare_jiterpreter,
  /** @export */ mono_wasm_add_dbg_command_received: _mono_wasm_add_dbg_command_received,
@@ -12318,6 +9710,8 @@ var wasmImports = {
 var wasmExports = createWasm();
 
 var ___wasm_call_ctors = () => (___wasm_call_ctors = wasmExports["__wasm_call_ctors"])();
+
+var _wasmfs_create_opfs_backend = () => (_wasmfs_create_opfs_backend = wasmExports["wasmfs_create_opfs_backend"])();
 
 var _mono_wasm_register_root = Module["_mono_wasm_register_root"] = (a0, a1, a2) => (_mono_wasm_register_root = Module["_mono_wasm_register_root"] = wasmExports["mono_wasm_register_root"])(a0, a1, a2);
 
@@ -12715,6 +10109,10 @@ var _emscripten_main_thread_process_queued_calls = () => (_emscripten_main_threa
 
 var _htonl = a0 => (_htonl = wasmExports["htonl"])(a0);
 
+var _emscripten_proxy_execute_queue = a0 => (_emscripten_proxy_execute_queue = wasmExports["emscripten_proxy_execute_queue"])(a0);
+
+var _emscripten_proxy_finish = a0 => (_emscripten_proxy_finish = wasmExports["emscripten_proxy_finish"])(a0);
+
 var __emscripten_run_on_main_thread_js = (a0, a1, a2, a3, a4) => (__emscripten_run_on_main_thread_js = wasmExports["_emscripten_run_on_main_thread_js"])(a0, a1, a2, a3, a4);
 
 var __emscripten_thread_free_data = a0 => (__emscripten_thread_free_data = wasmExports["_emscripten_thread_free_data"])(a0);
@@ -12737,15 +10135,91 @@ var stackRestore = Module["stackRestore"] = a0 => (stackRestore = Module["stackR
 
 var stackAlloc = Module["stackAlloc"] = a0 => (stackAlloc = Module["stackAlloc"] = wasmExports["stackAlloc"])(a0);
 
+var __wasmfs_read_file = a0 => (__wasmfs_read_file = wasmExports["_wasmfs_read_file"])(a0);
+
+var __wasmfs_write_file = (a0, a1, a2) => (__wasmfs_write_file = wasmExports["_wasmfs_write_file"])(a0, a1, a2);
+
+var __wasmfs_mkdir = (a0, a1) => (__wasmfs_mkdir = wasmExports["_wasmfs_mkdir"])(a0, a1);
+
+var __wasmfs_rmdir = a0 => (__wasmfs_rmdir = wasmExports["_wasmfs_rmdir"])(a0);
+
+var __wasmfs_open = (a0, a1, a2) => (__wasmfs_open = wasmExports["_wasmfs_open"])(a0, a1, a2);
+
+var __wasmfs_allocate = (a0, a1, a2) => (__wasmfs_allocate = wasmExports["_wasmfs_allocate"])(a0, a1, a2);
+
+var __wasmfs_mknod = (a0, a1, a2) => (__wasmfs_mknod = wasmExports["_wasmfs_mknod"])(a0, a1, a2);
+
+var __wasmfs_unlink = a0 => (__wasmfs_unlink = wasmExports["_wasmfs_unlink"])(a0);
+
+var __wasmfs_chdir = a0 => (__wasmfs_chdir = wasmExports["_wasmfs_chdir"])(a0);
+
+var __wasmfs_symlink = (a0, a1) => (__wasmfs_symlink = wasmExports["_wasmfs_symlink"])(a0, a1);
+
+var __wasmfs_readlink = a0 => (__wasmfs_readlink = wasmExports["_wasmfs_readlink"])(a0);
+
+var __wasmfs_write = (a0, a1, a2) => (__wasmfs_write = wasmExports["_wasmfs_write"])(a0, a1, a2);
+
+var __wasmfs_pwrite = (a0, a1, a2, a3) => (__wasmfs_pwrite = wasmExports["_wasmfs_pwrite"])(a0, a1, a2, a3);
+
+var __wasmfs_chmod = (a0, a1) => (__wasmfs_chmod = wasmExports["_wasmfs_chmod"])(a0, a1);
+
+var __wasmfs_fchmod = (a0, a1) => (__wasmfs_fchmod = wasmExports["_wasmfs_fchmod"])(a0, a1);
+
+var __wasmfs_lchmod = (a0, a1) => (__wasmfs_lchmod = wasmExports["_wasmfs_lchmod"])(a0, a1);
+
+var __wasmfs_llseek = (a0, a1, a2) => (__wasmfs_llseek = wasmExports["_wasmfs_llseek"])(a0, a1, a2);
+
+var __wasmfs_rename = (a0, a1) => (__wasmfs_rename = wasmExports["_wasmfs_rename"])(a0, a1);
+
+var __wasmfs_read = (a0, a1, a2) => (__wasmfs_read = wasmExports["_wasmfs_read"])(a0, a1, a2);
+
+var __wasmfs_pread = (a0, a1, a2, a3) => (__wasmfs_pread = wasmExports["_wasmfs_pread"])(a0, a1, a2, a3);
+
+var __wasmfs_truncate = (a0, a1) => (__wasmfs_truncate = wasmExports["_wasmfs_truncate"])(a0, a1);
+
+var __wasmfs_ftruncate = (a0, a1) => (__wasmfs_ftruncate = wasmExports["_wasmfs_ftruncate"])(a0, a1);
+
+var __wasmfs_close = a0 => (__wasmfs_close = wasmExports["_wasmfs_close"])(a0);
+
+var __wasmfs_mmap = (a0, a1, a2, a3, a4) => (__wasmfs_mmap = wasmExports["_wasmfs_mmap"])(a0, a1, a2, a3, a4);
+
+var __wasmfs_msync = (a0, a1, a2) => (__wasmfs_msync = wasmExports["_wasmfs_msync"])(a0, a1, a2);
+
+var __wasmfs_munmap = (a0, a1) => (__wasmfs_munmap = wasmExports["_wasmfs_munmap"])(a0, a1);
+
+var __wasmfs_utime = (a0, a1, a2) => (__wasmfs_utime = wasmExports["_wasmfs_utime"])(a0, a1, a2);
+
+var __wasmfs_stat = (a0, a1) => (__wasmfs_stat = wasmExports["_wasmfs_stat"])(a0, a1);
+
+var __wasmfs_lstat = (a0, a1) => (__wasmfs_lstat = wasmExports["_wasmfs_lstat"])(a0, a1);
+
+var __wasmfs_mount = (a0, a1) => (__wasmfs_mount = wasmExports["_wasmfs_mount"])(a0, a1);
+
+var __wasmfs_unmount = a0 => (__wasmfs_unmount = wasmExports["_wasmfs_unmount"])(a0);
+
+var __wasmfs_identify = a0 => (__wasmfs_identify = wasmExports["_wasmfs_identify"])(a0);
+
+var __wasmfs_readdir_start = a0 => (__wasmfs_readdir_start = wasmExports["_wasmfs_readdir_start"])(a0);
+
+var __wasmfs_readdir_get = a0 => (__wasmfs_readdir_get = wasmExports["_wasmfs_readdir_get"])(a0);
+
+var __wasmfs_readdir_finish = a0 => (__wasmfs_readdir_finish = wasmExports["_wasmfs_readdir_finish"])(a0);
+
+var __wasmfs_get_cwd = () => (__wasmfs_get_cwd = wasmExports["_wasmfs_get_cwd"])();
+
+var _wasmfs_create_jsimpl_backend = () => (_wasmfs_create_jsimpl_backend = wasmExports["wasmfs_create_jsimpl_backend"])();
+
+var _wasmfs_create_memory_backend = () => (_wasmfs_create_memory_backend = wasmExports["wasmfs_create_memory_backend"])();
+
+var __wasmfs_opfs_record_entry = (a0, a1, a2) => (__wasmfs_opfs_record_entry = wasmExports["_wasmfs_opfs_record_entry"])(a0, a1, a2);
+
+var _wasmfs_create_file = (a0, a1, a2) => (_wasmfs_create_file = wasmExports["wasmfs_create_file"])(a0, a1, a2);
+
 Module["addRunDependency"] = addRunDependency;
 
 Module["removeRunDependency"] = removeRunDependency;
 
 Module["FS_createPath"] = FS.createPath;
-
-Module["FS_createLazyFile"] = FS.createLazyFile;
-
-Module["FS_createDevice"] = FS.createDevice;
 
 Module["out"] = out;
 

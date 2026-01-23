@@ -9,6 +9,7 @@ using Foundation;
 using System.Diagnostics;
 #endif
 #if BROWSER
+using System.Runtime.InteropServices;
 using Engine.Browser;
 using System.Runtime.InteropServices.JavaScript;
 #pragma warning disable CA1416
@@ -28,6 +29,13 @@ namespace Engine {
 #else
         const bool m_isAndroidPlatform = true;
 #endif
+
+        public static void Initialize() {
+#if BROWSER
+            MountOPFS("/__root__");
+#endif
+        }
+
         public static long FreeSpace {
             get {
 #if ANDROID
@@ -327,7 +335,11 @@ namespace Engine {
                 text = string.Empty;
                 path = path.Substring(7);
             }
-            return !string.IsNullOrEmpty(text) ? Path.Combine(text, path) : path;
+            string result = string.IsNullOrEmpty(text) ? path : Path.Combine(text, path);
+#if BROWSER
+            EnsurePathLinked(result);
+#endif
+            return result;
         }
 #endif
         public static void MoveDirectory(string path, string newPath) => Directory.Move(ProcessPath(path, true, false), ProcessPath(newPath, true, false));
@@ -519,5 +531,51 @@ namespace Engine {
             return (null, null);
 #endif
         }
+
+#if BROWSER
+        static HashSet<string> m_linkedPaths = ["__root__", "dev", "tmp"];
+        /// <summary>
+        /// 自动映射路径。By Gemini
+        /// </summary>
+        static void EnsurePathLinked(string path) {
+            if (string.IsNullOrEmpty(path)) {
+                return;
+            }
+            path = path.Replace('\\', '/');
+            string[] parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length <= 1) {
+                return;
+            }
+            string topDir = parts[0];
+            // 如果已经是系统目录或挂载根目录，直接跳过
+            if (m_linkedPaths.Contains(topDir)) {
+                return;
+            }
+            string linkPath = $"/{topDir}";
+            string realPath = $"/__root__/{topDir}";
+            if (!Directory.Exists(realPath)) {
+                Directory.CreateDirectory(realPath);
+            }
+            int res = CreateSymlink(realPath, linkPath);
+            switch (res) {
+                case 0:
+                    m_linkedPaths.Add(topDir);
+                    break;
+                case -17:// EEXIST
+                    m_linkedPaths.Add(topDir);
+                    // 可以在这里加个校验，确定它是不是指向正确的地方，但通常没必要
+                    break;
+                default: throw new Exception($"Failed to link \"{linkPath}\" to \"{realPath}\", error code: {res}");
+            }
+        }
+
+        [DllImport("wasmfsHelper", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        static extern int MountOPFS(string mountPath);
+
+        [DllImport("wasmfsHelper", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        static extern int CreateSymlink(string target, string linkpath);
+#endif
     }
 }

@@ -147,6 +147,10 @@ runtime.setModuleImports("main.js", {
             }
         }
 
+        const visibilityChange = () => {
+            interop.OnVisibilityChange(document.visibilityState === "visible");
+        };
+
         canvas.addEventListener("contextmenu", (e) => e.preventDefault(), false);
         canvas.addEventListener("keydown", keyDown, false);
         canvas.addEventListener("keyup", keyUp, false);
@@ -159,6 +163,7 @@ runtime.setModuleImports("main.js", {
         document.addEventListener("pointerlockchange", pointerLockChange, false);
         canvas.addEventListener("drop", drop, false);
         canvas.addEventListener("dragover", e => e.preventDefault(), false);
+        document.addEventListener("visibilitychange", visibilityChange, false);
 
         canvas.tabIndex = 1000;
 

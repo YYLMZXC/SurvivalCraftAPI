@@ -518,7 +518,7 @@ namespace Engine {
             }
         }
 
-        static void FocusedChangedHandler(bool focused) {
+        internal static void FocusedChangedHandler(bool focused) {
             if (focused) {
                 if (m_state == State.Inactive) {
                     m_state = State.Active;

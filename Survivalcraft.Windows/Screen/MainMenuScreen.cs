@@ -178,9 +178,5 @@ namespace Game {
                 ScreensManager.SwitchScreen("ExternalContent");
             }*/
         }
-
-        public class Test : IComparer<ReleaseInfo> {
-            public int Compare(ReleaseInfo x, ReleaseInfo y) => 1;
-        }
     }
 }

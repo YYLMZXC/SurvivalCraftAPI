@@ -29,7 +29,9 @@
         <!-- <AOTMode>LLVMOnly</AOTMode> -->
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Browser' ">
-        <DefineConstants>DEBUG;BROWSER</DefineConstants>
+        <DebugType>none</DebugType>
+        <DefineConstants>TRACE;DEBUG;BROWSER</DefineConstants>
+        <Optimize>true</Optimize>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0" />

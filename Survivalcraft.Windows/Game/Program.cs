@@ -54,6 +54,8 @@ namespace Game {
                 Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&Frame, nint.Zero);
             }
         }
+
+        public static int Counter;
         [System.Runtime.InteropServices.UnmanagedCallersOnly]
         public static int Frame(double time, nint userData)
         {
@@ -61,8 +63,11 @@ namespace Game {
             PrimitivesRenderer2D primitivesRenderer2D = new PrimitivesRenderer2D();
             FlatBatch2D flatBatch2D = primitivesRenderer2D.FlatBatch();
             Point2 size = Display.BackbufferSize;
-            flatBatch2D.QueueLine(Vector2.Zero, size, 0f, Color.Black);
+            flatBatch2D.QueueLine(new Vector2(Counter, 0f), new Vector2(size.X - Counter, size.Y), 0f, Color.Black);
             primitivesRenderer2D.Flush();
+            if (++Counter >= size.X) {
+                Counter = 0;
+            }
             return 1;
         }
         public static async Task Main(string[] args) {

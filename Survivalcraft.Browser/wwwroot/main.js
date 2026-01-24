@@ -28,6 +28,36 @@ function checkAndRequestPointerLock(){
 }
 
 let connectedGamepadCount = 0;
+let gamepadBufferPtr = 0;
+
+async function reportGamepadState() {
+    if (connectedGamepadCount === 0) {
+        return;
+    }
+    if (gamepadBufferPtr === 0){
+        gamepadBufferPtr = await interop.GetGamepadBufferPtr();
+    }
+    const gamepadView = new Float32Array(runtime.Module.wasmMemory.buffer, gamepadBufferPtr, 88);
+    const gamepads = globalThis.navigator.getGamepads();
+    let offset = 0;
+    let gamepadsCount = Math.min(gamepads.length, 4);
+    for (let i = 0; i < gamepadsCount; i++) {
+        let gamepad = gamepads[i];
+        if (!gamepad || !gamepad.connected || gamepad.mapping !== "standard") {
+            continue;
+        }
+        gamepadView[offset++] = gamepad.index;
+        const buttons = gamepad.buttons;
+        for (let j = 0; j < 17; j++) {
+            gamepadView[offset++] = buttons[j].value;
+        }
+        const axes = gamepad.axes;
+        for (let j = 0; j < 4; j++) {
+            gamepadView[offset++] = axes[j];
+        }
+    }
+    globalThis.requestAnimationFrame(reportGamepadState);
+}
 
 runtime.setModuleImports("main.js", {
     initialize: () => {
@@ -90,10 +120,10 @@ runtime.setModuleImports("main.js", {
             switch (e.pointerType) {
                 case "mouse":
                 case "pen":
-                    interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio, e.movementX, e.movementY);
+                    //interop.OnMouseMove(e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio, e.movementX, e.movementY);
                     break;
                 case "touch":
-                    interop.OnTouchMove(e.pointerId, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
+                    //interop.OnTouchMove(e.pointerId, e.offsetX * devicePixelRatio, e.offsetY * devicePixelRatio);
                     break
             }
         }
@@ -120,6 +150,7 @@ runtime.setModuleImports("main.js", {
             if (gamepad !== null) {
                 connectedGamepadCount++;
                 interop.OnGamepadConnected(gamepad.index, gamepad.id, gamepad.buttons.length - 2, gamepad.axes.length / 2, 2);
+                reportGamepadState();
             }
         }
 

@@ -2072,7 +2072,7 @@ namespace Engine.Browser {
         delegate void glNamedBufferStorage_t(uint buffer, int size, void* data, uint flags);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void glNamedBufferData_t(uint buffer, int size, void* data, VertexBufferObjectUsage usage);
+        delegate void glNamedBufferData_t(uint buffer, int size, void* data, BufferUsageARB usage);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void glNamedBufferSubData_t(uint buffer, IntPtr offset, int size, void* data);

@@ -50,7 +50,9 @@
     <PropertyGroup Condition="'$(Configuration)' == 'Browser'">
         <TargetFramework>net10.0</TargetFramework>
         <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
-        <DefineConstants>DEBUG;BROWSER</DefineConstants>
+        <DebugType>none</DebugType>
+        <DefineConstants>TRACE;RELEASE;BROWSER</DefineConstants>
+        <Optimize>true</Optimize>
         <IsAotCompatible>true</IsAotCompatible>
         <InvariantGlobalization>false</InvariantGlobalization>
         <PublishTrimmed>true</PublishTrimmed>

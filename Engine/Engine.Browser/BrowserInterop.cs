@@ -113,5 +113,8 @@ namespace Engine.Browser {
 
         [JSExport]
         public static async Task SetHostedHref(string href) => Window.HostedHref = href;
+
+        [JSExport]
+        public static async Task<IntPtr> GetGamepadBufferPtr() => GamePadBridge.GetGamepadBufferPtr();
     }
 }

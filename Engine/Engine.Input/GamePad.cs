@@ -66,7 +66,7 @@ namespace Engine.Input {
 
         const float TRIGGER_DOWN_THRESHOLD = 0.5f;
         const float TRIGGER_UP_THRESHOLD = 0.4f;
-#elif !MOBILE && !BROWSER
+#elif !IOS && !BROWSER
         public static IReadOnlyList<IGamepad> m_gamepads;
 #endif
         public static double m_buttonFirstRepeatTime = 0.2;
@@ -254,7 +254,7 @@ namespace Engine.Input {
         }
 #elif BROWSER
         internal static void BeforeFrame() {
-            double[] browserStates = BrowserInterop.GetGamepadStates();
+            ReadOnlySpan<float> browserStates = GamePadBridge.DataSpan;
             if (browserStates == null
                 || browserStates.Length <= 0
                 || browserStates.Length % 22 != 0) {
@@ -282,10 +282,10 @@ namespace Engine.Input {
                 buttons[11] = browserStates[i + 13] > 0;
                 buttons[12] = browserStates[i + 16] > 0;
                 buttons[13] = browserStates[i + 14] > 0;
-                state.Triggers[0] = (float)browserStates[i + 7];
-                state.Triggers[1] = (float)browserStates[i + 8];
-                state.Sticks[0] = new Vector2((float)browserStates[i + 18], -(float)browserStates[i + 19]);
-                state.Sticks[1] = new Vector2((float)browserStates[i + 20], -(float)browserStates[i + 21]);
+                state.Triggers[0] = browserStates[i + 7];
+                state.Triggers[1] = browserStates[i + 8];
+                state.Sticks[0] = new Vector2(browserStates[i + 18], -browserStates[i + 19]);
+                state.Sticks[1] = new Vector2(browserStates[i + 20], -browserStates[i + 21]);
             }
         }
 #elif IOS

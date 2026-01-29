@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 
 namespace Engine.Input {
     public static class Touch {
+#if ANDROID
         public struct TouchInfo {
             public int PointerId;
             public Vector2 Position;
@@ -18,6 +19,7 @@ namespace Engine.Input {
                 ActionMasked = actionMasked;
             }
         }
+#endif
 
         static List<TouchLocation> m_touchLocations = [];
 
@@ -33,10 +35,9 @@ namespace Engine.Input {
 
         internal static void Dispose() { }
 
-#if ANDROID || BROWSER
+#if ANDROID
         public static ConcurrentQueue<TouchInfo> m_cachedTouchEvents = [];
         public static void EnqueueTouchEvent(int pointerId, Vector2 position, int actionMasked) => m_cachedTouchEvents.Enqueue(new TouchInfo(pointerId, position, actionMasked));
-#if ANDROID
         internal static void HandleTouchEvent(MotionEvent e) {
 #pragma warning disable CA1416
             switch (e.ActionMasked) {
@@ -60,19 +61,12 @@ namespace Engine.Input {
             }
 #pragma warning restore CA1416
         }
-#else
-        internal static void TouchDownHandler(int pointerId, float x, float y) => EnqueueTouchEvent(pointerId, new Vector2(x, y), 1);
-
-        internal static void TouchMoveHandler(int pointerId, float x, float y) => EnqueueTouchEvent(pointerId, new Vector2(x, y), 2);
-
-        internal static void TouchUpHandler(int pointerId, float x, float y) => EnqueueTouchEvent(pointerId, new Vector2(x, y), 3);
-#endif
 #endif
 
         public static void Clear() => m_touchLocations.Clear();
 
         internal static void BeforeFrame() {
-#if ANDROID || BROWSER
+#if ANDROID
             while (!m_cachedTouchEvents.IsEmpty) {
                 if (m_cachedTouchEvents.TryDequeue(out TouchInfo touchInfo)) {
                     switch (touchInfo.ActionMasked) {

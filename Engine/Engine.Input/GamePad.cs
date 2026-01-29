@@ -10,7 +10,7 @@ using Silk.NET.Input;
 #endif
 namespace Engine.Input {
     public static class GamePad {
-        class State {
+        internal class State {
             // ReSharper disable MemberHidesStaticFromOuterClass
 #pragma warning disable CS0649
             public bool IsConnected;
@@ -33,31 +33,31 @@ namespace Engine.Input {
         }
 #if ANDROID
         public struct KeyInfo {
-            public int DeviceId;
-            public Keycode KeyCode;
-            public KeyEventActions Action;
+            public int GamepadIndex;
+            public GamePadButton Button;
+            public bool Press;
 
-            public KeyInfo(int deviceId, Keycode keyCode, KeyEventActions action) {
-                DeviceId = deviceId;
-                KeyCode = keyCode;
-                Action = action;
+            public KeyInfo(int gamepadIndex, GamePadButton button, bool press) {
+                GamepadIndex = gamepadIndex;
+                Button = button;
+                Press = press;
             }
         }
 
         public struct TriggerInfo {
-            public int DeviceId;
+            public int GamepadIndex;
             public GamePadTrigger Trigger;
             public float Value;
 
-            public TriggerInfo(int deviceId, GamePadTrigger trigger, float value) {
-                DeviceId = deviceId;
+            public TriggerInfo(int gamepadIndex, GamePadTrigger trigger, float value) {
+                GamepadIndex = gamepadIndex;
                 Trigger = trigger;
                 Value = value;
             }
         }
 
         public static Dictionary<int, int> m_deviceToIndex = [];
-        public static List<int> m_toRemove = [];
+        public static List<int> m_deviceToRemove = [];
         public static ConcurrentQueue<KeyInfo> m_cachedKeyEvents = [];
         public static ConcurrentQueue<TriggerInfo> m_cachedTriggerEvents = [];
         public static readonly bool[,] m_lastDpadStates = new bool[4, 4];
@@ -73,7 +73,7 @@ namespace Engine.Input {
 
         public static double m_buttonNextRepeatTime = 0.04;
 
-        static State[] m_states = [new(), new(), new(), new()];
+        internal static State[] m_states = [new(), new(), new(), new()];
 
         internal static void Initialize() {
 #if !MOBILE && !BROWSER
@@ -86,24 +86,26 @@ namespace Engine.Input {
 #if ANDROID
         internal static void BeforeFrame() {
             if (Time.PeriodicEvent(2.0, 0.0)) {
-                m_toRemove.Clear();
+                m_deviceToRemove.Clear();
                 foreach (int key in m_deviceToIndex.Keys) {
                     if (InputDevice.GetDevice(key) == null) {
-                        m_toRemove.Add(key);
+                        m_deviceToRemove.Add(key);
                     }
                 }
-                foreach (int item in m_toRemove) {
+                foreach (int item in m_deviceToRemove) {
                     Disconnect(item);
                 }
             }
             while (m_cachedKeyEvents.TryDequeue(out KeyInfo keyInfo)) {
-                switch (keyInfo.Action) {
-                    case KeyEventActions.Down: HandleKeyDown(keyInfo.DeviceId, keyInfo.KeyCode); break;
-                    case KeyEventActions.Up: HandleKeyUp(keyInfo.DeviceId, keyInfo.KeyCode); break;
+                if (keyInfo.Press) {
+                    HandleKeyDown(keyInfo.GamepadIndex, keyInfo.Button);
+                }
+                else {
+                    HandleKeyUp(keyInfo.GamepadIndex, keyInfo.Button);
                 }
             }
             while (m_cachedTriggerEvents.TryDequeue(out TriggerInfo info)) {
-                int num = TranslateDeviceId(info.DeviceId);
+                int num = TranslateDeviceId(info.GamepadIndex);
                 if (num >= 0) {
                     // 在这里更新 Triggers，此时它是当前帧的最新值
                     m_states[num].Triggers[(int)info.Trigger] = info.Value;
@@ -112,25 +114,12 @@ namespace Engine.Input {
         }
 
         public static void HandleKeyEvent(KeyEvent e) {
-            m_cachedKeyEvents.Enqueue(new KeyInfo(e.DeviceId, e.KeyCode, e.Action));
+            m_cachedKeyEvents.Enqueue(new KeyInfo(TranslateDeviceId(e.DeviceId), TranslateKey(e.KeyCode), e.Action == KeyEventActions.Down));
         }
 
-        internal static void HandleKeyDown(int deviceId, Keycode keyCode) {
-            int num = TranslateDeviceId(deviceId);
-            if (num < 0) {
+        internal static void HandleKeyDown(int gamepadIndex, GamePadButton gamePadButton) {
+            if (gamepadIndex < 0) {
                 return;
-            }
-            GamePadButton gamePadButton = TranslateKey(keyCode);
-            if (gamePadButton >= GamePadButton.DPadLeft
-                && gamePadButton <= GamePadButton.DPadDown) {
-                int idx = gamePadButton switch {
-                    GamePadButton.DPadLeft => 0,
-                    GamePadButton.DPadRight => 1,
-                    GamePadButton.DPadUp => 2,
-                    GamePadButton.DPadDown => 3,
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-                m_dpadFromKey[num, idx] = true;
             }
             if (gamePadButton >= GamePadButton.A) {
                 if (gamePadButton >= GamePadButton.DPadLeft
@@ -142,23 +131,20 @@ namespace Engine.Input {
                         GamePadButton.DPadDown => 3,
                         _ => throw new ArgumentOutOfRangeException()
                     };
-                    m_dpadFromKey[num, idx] = true;
+                    m_dpadFromKey[gamepadIndex, idx] = true;
                 }
-                m_states[num].Buttons[(int)gamePadButton] = true;
-                return;
-            }
-            switch (keyCode) {
-                case Keycode.ButtonL2: m_states[num].Triggers[0] = 1f; break;
-                case Keycode.ButtonR2: m_states[num].Triggers[1] = 1f; break;
+                m_states[gamepadIndex].Buttons[(int)gamePadButton] = true;
+                switch (gamePadButton) {
+                    case GamePadButton.LeftShoulder: m_states[gamepadIndex].Triggers[0] = 1f; break;
+                    case GamePadButton.RightShoulder: m_states[gamepadIndex].Triggers[1] = 1f; break;
+                }
             }
         }
 
-        internal static void HandleKeyUp(int deviceId, Keycode keyCode) {
-            int num = TranslateDeviceId(deviceId);
-            if (num < 0) {
+        internal static void HandleKeyUp(int gamepadIndex, GamePadButton gamePadButton) {
+            if (gamepadIndex < 0) {
                 return;
             }
-            GamePadButton gamePadButton = TranslateKey(keyCode);
             if (gamePadButton >= GamePadButton.A) {
                 if (gamePadButton >= GamePadButton.DPadLeft
                     && gamePadButton <= GamePadButton.DPadDown) {
@@ -169,36 +155,35 @@ namespace Engine.Input {
                         GamePadButton.DPadDown => 3,
                         _ => throw new ArgumentOutOfRangeException()
                     };
-                    m_dpadFromKey[num, idx] = false;
+                    m_dpadFromKey[gamepadIndex, idx] = false;
                 }
-                m_states[num].Buttons[(int)gamePadButton] = false;
-                return;
-            }
-            switch (keyCode) {
-                case Keycode.ButtonL2: m_states[num].Triggers[0] = 0f; break;
-                case Keycode.ButtonR2: m_states[num].Triggers[1] = 0f; break;
+                m_states[gamepadIndex].Buttons[(int)gamePadButton] = false;
+                switch (gamePadButton) {
+                    case GamePadButton.LeftShoulder: m_states[gamepadIndex].Triggers[0] = 0f; break;
+                    case GamePadButton.RightShoulder: m_states[gamepadIndex].Triggers[1] = 0f; break;
+                }
             }
         }
 
         internal static void HandleMotionEvent(MotionEvent e) {
-            int deviceId = TranslateDeviceId(e.DeviceId);
-            if (deviceId >= 0) {
-                m_states[deviceId].Sticks[0] = new Vector2(e.GetAxisValue(Axis.X), 0f - e.GetAxisValue(Axis.Y));
-                m_states[deviceId].Sticks[1] = new Vector2(e.GetAxisValue(Axis.Z), 0f - e.GetAxisValue(Axis.Rz));
+            int gamepadIndex = TranslateDeviceId(e.DeviceId);
+            if (gamepadIndex >= 0) {
+                m_states[gamepadIndex].Sticks[0] = new Vector2(e.GetAxisValue(Axis.X), 0f - e.GetAxisValue(Axis.Y));
+                m_states[gamepadIndex].Sticks[1] = new Vector2(e.GetAxisValue(Axis.Z), 0f - e.GetAxisValue(Axis.Rz));
                 float l = MathF.Max(e.GetAxisValue(Axis.Ltrigger), e.GetAxisValue(Axis.Brake));
                 float r = MathF.Max(e.GetAxisValue(Axis.Rtrigger), e.GetAxisValue(Axis.Gas));
-                m_cachedTriggerEvents.Enqueue(new TriggerInfo(e.DeviceId, GamePadTrigger.Left, l));
-                m_cachedTriggerEvents.Enqueue(new TriggerInfo(e.DeviceId, GamePadTrigger.Right, r));
+                m_cachedTriggerEvents.Enqueue(new TriggerInfo(TranslateDeviceId(e.DeviceId), GamePadTrigger.Left, l));
+                m_cachedTriggerEvents.Enqueue(new TriggerInfo(TranslateDeviceId(e.DeviceId), GamePadTrigger.Right, r));
                 float axisX = e.GetAxisValue(Axis.HatX);
                 float axisY = e.GetAxisValue(Axis.HatY);
-                ProcessDpad(e.DeviceId, deviceId, 0, axisX < -0.5f, Keycode.DpadLeft);
-                ProcessDpad(e.DeviceId, deviceId, 1, axisX > 0.5f, Keycode.DpadRight);
-                ProcessDpad(e.DeviceId, deviceId, 2, axisY < -0.5f, Keycode.DpadUp);
-                ProcessDpad(e.DeviceId, deviceId, 3, axisY > 0.5f, Keycode.DpadDown);
+                ProcessDpad(gamepadIndex, gamepadIndex, 0, axisX < -0.5f, GamePadButton.DPadLeft);
+                ProcessDpad(gamepadIndex, gamepadIndex, 1, axisX > 0.5f, GamePadButton.DPadRight);
+                ProcessDpad(gamepadIndex, gamepadIndex, 2, axisY < -0.5f, GamePadButton.DPadUp);
+                ProcessDpad(gamepadIndex, gamepadIndex, 3, axisY > 0.5f, GamePadButton.DPadDown);
             }
         }
 
-        public static void ProcessDpad(int deviceId, int padIndex, int dpadIndex, bool current, Keycode keyCode) {
+        public static void ProcessDpad(int gamepadIndex, int padIndex, int dpadIndex, bool current, GamePadButton button) {
             if (m_dpadFromKey[padIndex, dpadIndex]) {
                 return;
             }
@@ -207,7 +192,7 @@ namespace Engine.Input {
                 return;
             }
             m_lastDpadStates[padIndex, dpadIndex] = current;
-            m_cachedKeyEvents.Enqueue(new KeyInfo(deviceId, keyCode, current ? KeyEventActions.Down : KeyEventActions.Up));
+            m_cachedKeyEvents.Enqueue(new KeyInfo(gamepadIndex, button, current));
         }
 
         public static int TranslateDeviceId(int deviceId) {
@@ -252,43 +237,7 @@ namespace Engine.Input {
                 m_states[value].IsConnected = false;
             }
         }
-#elif BROWSER
-        internal static void BeforeFrame() {
-            ReadOnlySpan<float> browserStates = GamePadBridge.DataSpan;
-            if (browserStates == null
-                || browserStates.Length <= 0
-                || browserStates.Length % 22 != 0) {
-                return;
-            }
-            for (int i = 0; i < browserStates.Length; i += 22) {
-                int index = (int)browserStates[i];
-                if (index < 0
-                    || index >= m_states.Length) {
-                    continue;
-                }
-                State state = m_states[index];
-                bool[] buttons = state.Buttons;
-                buttons[0] = browserStates[i + 1] > 0;
-                buttons[1] = browserStates[i + 2] > 0;
-                buttons[2] = browserStates[i + 3] > 0;
-                buttons[3] = browserStates[i + 4] > 0;
-                buttons[4] = browserStates[i + 9] > 0;
-                buttons[5] = browserStates[i + 10] > 0;
-                buttons[6] = browserStates[i + 11] > 0;
-                buttons[7] = browserStates[i + 12] > 0;
-                buttons[8] = browserStates[i + 5] > 0;
-                buttons[9] = browserStates[i + 6] > 0;
-                buttons[10] = browserStates[i + 15] > 0;
-                buttons[11] = browserStates[i + 13] > 0;
-                buttons[12] = browserStates[i + 16] > 0;
-                buttons[13] = browserStates[i + 14] > 0;
-                state.Triggers[0] = browserStates[i + 7];
-                state.Triggers[1] = browserStates[i + 8];
-                state.Sticks[0] = new Vector2(browserStates[i + 18], -browserStates[i + 19]);
-                state.Sticks[1] = new Vector2(browserStates[i + 20], -browserStates[i + 21]);
-            }
-        }
-#elif IOS
+#elif IOS || BROWSER
         internal static void BeforeFrame() {}
 #else
         internal static void BeforeFrame() {

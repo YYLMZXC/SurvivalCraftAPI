@@ -1,5 +1,8 @@
 #if ANDROID
 using Android.Content;
+#elif BROWSER
+using System.Runtime.Versioning;
+using Engine.Browser;
 #else
 using Engine.Input;
 using System.Diagnostics;
@@ -8,9 +11,6 @@ using ImeSharp;
 using System.Security.Cryptography;
 using System.Text;
 using System.Reflection;
-#elif BROWSER
-using System.Runtime.Versioning;
-using Engine.Browser;
 #endif
 #endif
 using System.Globalization;
@@ -45,10 +45,10 @@ namespace Game {
         public static async Task Main2(string[] args) {
             Console.WriteLine("Display.Initialize()");
             Display.Initialize();
-            BrowserInterop.Initialize();
-            BrowserInterop.CanvasResizeCallback += size => {
+            BrowserInterop.Initialize(InputBridge.Initialize());
+            /*BrowserInterop.CanvasResizeCallback += size => {
                 Display.Resize();
-            };
+            };*/
             Display.Resize();
             unsafe {
                 Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&Frame, nint.Zero);

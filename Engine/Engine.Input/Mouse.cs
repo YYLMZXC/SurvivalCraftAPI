@@ -5,7 +5,6 @@ using Android.OS;
 using Android.Views;
 #pragma warning disable CA1416
 #elif BROWSER
-using System.Collections.Concurrent;
 using Engine.Browser;
 #elif !IOS
 using Silk.NET.Input;
@@ -13,7 +12,7 @@ using Silk.NET.Input;
 
 namespace Engine.Input {
     public static class Mouse {
-#if ANDROID || BROWSER
+#if ANDROID
         public struct MouseButtonInfo {
             public MouseButton Button;
             public bool Press;//true：按下，false: 抬起
@@ -33,9 +32,13 @@ namespace Engine.Input {
         static float m_queuedMouseWheelMovement;
 
         static bool m_pointerCaptureRequested;
+#elif BROWSER
+        internal static Point2 m_currentMousePosition;
+        internal static Vector2 m_queuedMouseMovement;
+        internal static float m_queuedMouseWheelMovement;
+        static bool m_pointerCaptureRequested;
 #elif !IOS
         public static IMouse m_mouse;
-
 #endif
         public static Point2? m_lastMousePosition;
 
@@ -86,17 +89,13 @@ namespace Engine.Input {
         internal static void Dispose() { }
 
         internal static void BeforeFrame() {
-#if ANDROID || BROWSER
+#if ANDROID
             if (IsMouseVisible) {
                 if (m_pointerCaptureRequested) {
                     m_pointerCaptureRequested = false;
-#if ANDROID
                     if (Build.VERSION.SdkInt >= (BuildVersionCodes)26) {
                         Window.m_surface?.ReleasePointerCapture();
                     }
-#elif BROWSER
-                    BrowserInterop.SetNeedPointerLock(false);
-#endif
                     Clear();
                 }
                 MouseMovement = Point2.Zero;
@@ -105,13 +104,9 @@ namespace Engine.Input {
             else {
                 if (!m_pointerCaptureRequested) {
                     m_pointerCaptureRequested = true;
-#if ANDROID
                     if (Build.VERSION.SdkInt >= (BuildVersionCodes)26) {
                         Window.m_surface?.RequestPointerCapture();
                     }
-#elif BROWSER
-                    BrowserInterop.SetNeedPointerLock(true);
-#endif
                 }
                 if (m_lastMousePosition.HasValue) {
                     MouseMovement = Point2.Round(m_queuedMouseMovement.X, m_queuedMouseMovement.Y);
@@ -135,6 +130,34 @@ namespace Engine.Input {
                     Thread.Yield();
                 }
             }
+#elif BROWSER
+            if (Window.IsActive) {
+                ProcessMouseMove(m_currentMousePosition);
+                if (IsMouseVisible) {
+                    if (m_pointerCaptureRequested) {
+                        m_pointerCaptureRequested = false;
+                        BrowserInterop.SetNeedPointerLock(false);
+                    }
+                    MouseMovement = Point2.Zero;
+                    m_lastMousePosition = null;
+                }
+                else {
+                    if (!m_pointerCaptureRequested) {
+                        m_pointerCaptureRequested = true;
+                        BrowserInterop.SetNeedPointerLock(true);
+                    }
+                    if (m_lastMousePosition.HasValue) {
+                        MouseMovement = Point2.Round(m_queuedMouseMovement.X, m_queuedMouseMovement.Y);
+                    }
+                    m_lastMousePosition = m_currentMousePosition;
+                    m_queuedMouseMovement = Vector2.Zero;
+                }
+            }
+            else {
+                m_lastMousePosition = null;
+            }
+            MouseWheelMovement = (int)MathUtils.Round(m_queuedMouseWheelMovement) * 120;
+            m_queuedMouseWheelMovement = 0f;
 #elif !IOS
             if (Window.IsActive) {
                 Point2 position = new((int)m_mouse.Position.X, (int)m_mouse.Position.Y);
@@ -165,7 +188,7 @@ namespace Engine.Input {
             }
 #endif
         }
-#if ANDROID || BROWSER
+#if ANDROID
         public static void EnqueueMouseButtonEvent(MouseButton button, bool press, Point2 position) => m_cachedMouseButtonEvents.Enqueue(new MouseButtonInfo(button, press, position));
 #endif
 #if ANDROID
@@ -229,35 +252,7 @@ namespace Engine.Input {
                 return true;
             }
         }
-#elif BROWSER
-        internal static void MouseDownHandler(int button, float x, float y) {
-            EnqueueMouseButtonEvent(TranslateMouseButton(button), true, Point2.Round(x, y));
-        }
-
-        internal static void MouseUpHandler(int button, float x, float y) {
-            EnqueueMouseButtonEvent(TranslateMouseButton(button), false, Point2.Round(x, y));
-        }
-
-        internal static void MouseMoveHandler(float x, float y, float deltaX, float deltaY) {
-            m_queuedMouseMovement += new Vector2(deltaX, deltaY);
-            MousePosition = Point2.Round(x, y);
-        }
-
-        internal static void MouseWheelHandler(float value) {
-            m_queuedMouseWheelMovement += MathUtils.Sign(value);
-        }
-
-        public static MouseButton TranslateMouseButton(int button) {
-            switch (button) {
-                case 0: return MouseButton.Left;
-                case 1: return MouseButton.Middle;
-                case 2: return MouseButton.Right;
-                case 3: return MouseButton.Ext1;
-                case 4: return MouseButton.Ext2;
-                default: return MouseButton.Left;
-            }
-        }
-#elif !IOS
+#elif !IOS && !BROWSER
         static void MouseDownHandler(IMouse mouse, Silk.NET.Input.MouseButton button) {
             MouseButton mouseButton = TranslateMouseButton(button);
             if (mouseButton != (MouseButton)(-1)) {

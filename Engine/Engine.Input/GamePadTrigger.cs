@@ -1,6 +1,6 @@
 namespace Engine.Input {
     public enum GamePadTrigger {
-        Left,
-        Right
+        Left = 0,
+        Right = 1
     }
 }

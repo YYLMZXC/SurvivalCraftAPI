@@ -4,15 +4,13 @@ using System.Collections.Concurrent;
 using Android.App;
 using Android.Views;
 using Android.Widget;
-#elif BROWSER
-using System.Collections.Concurrent;
-#else
+#elif !BROWSER
 using Silk.NET.Input;
 #endif
 
 namespace Engine.Input {
     public static class Keyboard {
-#if ANDROID || BROWSER
+#if ANDROID
         public struct KeyInfo {
             public Key Key;
             public bool Press;//true：按下，false: 抬起
@@ -26,7 +24,7 @@ namespace Engine.Input {
         }
 
         public static ConcurrentQueue<KeyInfo> m_cachedKeyEvents = [];
-#else
+#elif !BROWSER
         public static IKeyboard m_keyboard;
 #endif
 
@@ -123,7 +121,7 @@ namespace Engine.Input {
         }
 
         internal static void BeforeFrame() {
-#if ANDROID || BROWSER
+#if ANDROID
             while (!m_cachedKeyEvents.IsEmpty) {
                 if (m_cachedKeyEvents.TryDequeue(out KeyInfo keyInfo)) {
                     if (keyInfo.Press) {
@@ -169,7 +167,7 @@ namespace Engine.Input {
             }
         }
 
-#if ANDROID || BROWSER
+#if ANDROID
         public static void EnqueueMouseButtonEvent(Key key, bool press, int? unicodeChar) {
             m_cachedKeyEvents.Enqueue(new KeyInfo(key, press, unicodeChar));
         }
@@ -223,12 +221,7 @@ namespace Engine.Input {
         public static void HandleKeyEvent(KeyEvent keyEvent) {
             EnqueueMouseButtonEvent(TranslateKey(keyEvent.KeyCode), keyEvent.Action == KeyEventActions.Down, keyEvent.UnicodeChar);
         }
-#elif BROWSER
-        internal static void KeyDownHandler(string keyCode, string key) => EnqueueMouseButtonEvent(TranslateKey(keyCode), true, key.Length == 1 ? key[0] : null);
-
-        internal static void KeyUpHandler(string keyCode) => EnqueueMouseButtonEvent(TranslateKey(keyCode), false, null);
-#else
-
+#elif !BROWSER
         static void KeyDownHandler(IKeyboard keyboard, Silk.NET.Input.Key key, int scancode) {
             if (scancode == 270
                 || key == Silk.NET.Input.Key.Delete) {

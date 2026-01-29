@@ -58,6 +58,7 @@ namespace Engine {
 #endif
 
         static bool m_closing;
+        static bool m_closingRequested;
         static bool m_restarting;
 #pragma warning disable CS0169
         static int? m_swapInterval;
@@ -192,7 +193,7 @@ namespace Engine {
             get {
                 VerifyWindowOpened();
 #if BROWSER
-                return BrowserInterop.CanvasSize;
+                return InputBridge.CanvasSize;
 #else
                 return new Point2(m_view.FramebufferSize.X, m_view.FramebufferSize.Y);
 #endif
@@ -548,7 +549,7 @@ namespace Engine {
             DisposeAll();
         }
 
-        static void ResizeHandler(Vector2D<int> _) {
+        internal static void ResizeHandler(Vector2D<int> _) {
 #if MOBILE
             if (m_state != State.Uncreated) {
                 Display.Resize();
@@ -608,7 +609,8 @@ namespace Engine {
                 m_view.SwapBuffers();
 #endif
             }
-            else {
+            else if(!m_closingRequested){
+                m_closingRequested = true;
 #if ANDROID
                 if (Build.VERSION.SdkInt >= (BuildVersionCodes)21) {
                     Activity.FinishAndRemoveTask();
@@ -699,8 +701,6 @@ namespace Engine {
 
         static void SubscribeToEvents() {
 #if BROWSER
-            BrowserInterop.CanvasResizeCallback += _ => ResizeHandler(default);
-            ResizeHandler(default);
             unsafe {
                 Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&BrowserRenderFrameHandler, nint.Zero);
             }
@@ -751,7 +751,8 @@ namespace Engine {
                 Dispatcher.Initialize();
                 Display.Initialize();
 #if BROWSER
-                BrowserInterop.Initialize();
+                IntPtr ptr = InputBridge.Initialize();
+                BrowserInterop.Initialize(ptr);
 #endif
                 Keyboard.Initialize();
                 Mouse.Initialize();
@@ -777,6 +778,9 @@ namespace Engine {
         static void BeforeFrameAll() {
             Time.BeforeFrame();
             Dispatcher.BeforeFrame();
+#if BROWSER
+            InputBridge.BeforeFrame();
+#endif
             Display.BeforeFrame();
             Keyboard.BeforeFrame();
             Mouse.BeforeFrame();

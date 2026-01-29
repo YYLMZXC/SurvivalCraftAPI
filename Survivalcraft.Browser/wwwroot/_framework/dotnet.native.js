@@ -350,7 +350,7 @@ function updateMemoryViews() {
  Module["HEAPU64"] = HEAPU64 = new BigUint64Array(b);
 }
 
-var INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 55640064;
+var INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 36175872;
 
 if (ENVIRONMENT_IS_PTHREAD) {
  wasmMemory = Module["wasmMemory"];
@@ -478,9 +478,6 @@ function removeRunDependency(id) {
  ABORT = true;
  EXITSTATUS = 1;
  what += ". Build with -sASSERTIONS for more info.";
- if (runtimeInitialized) {
-  ___trap();
- }
  /** @suppress {checkTypes} */ var e = new WebAssembly.RuntimeError(what);
  readyPromiseReject(e);
  throw e;
@@ -1049,6 +1046,131 @@ var ___assert_fail = (condition, filename, line, func) => {
  abort(`Assertion failed: ${UTF8ToString(condition)}, at: ` + [ filename ? UTF8ToString(filename) : "unknown filename", line, func ? UTF8ToString(func) : "unknown function" ]);
 };
 
+var exceptionCaught = [];
+
+var uncaughtExceptionCount = 0;
+
+var ___cxa_begin_catch = ptr => {
+ var info = new ExceptionInfo(ptr);
+ if (!info.get_caught()) {
+  info.set_caught(true);
+  uncaughtExceptionCount--;
+ }
+ info.set_rethrown(false);
+ exceptionCaught.push(info);
+ ___cxa_increment_exception_refcount(info.excPtr);
+ return info.get_exception_ptr();
+};
+
+var exceptionLast = 0;
+
+var ___cxa_end_catch = () => {
+ _setThrew(0, 0);
+ var info = exceptionCaught.pop();
+ ___cxa_decrement_exception_refcount(info.excPtr);
+ exceptionLast = 0;
+};
+
+class ExceptionInfo {
+ constructor(excPtr) {
+  this.excPtr = excPtr;
+  this.ptr = excPtr - 24;
+ }
+ set_type(type) {
+  GROWABLE_HEAP_U32()[(((this.ptr) + (4)) >> 2)] = type;
+ }
+ get_type() {
+  return GROWABLE_HEAP_U32()[(((this.ptr) + (4)) >> 2)];
+ }
+ set_destructor(destructor) {
+  GROWABLE_HEAP_U32()[(((this.ptr) + (8)) >> 2)] = destructor;
+ }
+ get_destructor() {
+  return GROWABLE_HEAP_U32()[(((this.ptr) + (8)) >> 2)];
+ }
+ set_caught(caught) {
+  caught = caught ? 1 : 0;
+  GROWABLE_HEAP_I8()[(this.ptr) + (12)] = caught;
+ }
+ get_caught() {
+  return GROWABLE_HEAP_I8()[(this.ptr) + (12)] != 0;
+ }
+ set_rethrown(rethrown) {
+  rethrown = rethrown ? 1 : 0;
+  GROWABLE_HEAP_I8()[(this.ptr) + (13)] = rethrown;
+ }
+ get_rethrown() {
+  return GROWABLE_HEAP_I8()[(this.ptr) + (13)] != 0;
+ }
+ init(type, destructor) {
+  this.set_adjusted_ptr(0);
+  this.set_type(type);
+  this.set_destructor(destructor);
+ }
+ set_adjusted_ptr(adjustedPtr) {
+  GROWABLE_HEAP_U32()[(((this.ptr) + (16)) >> 2)] = adjustedPtr;
+ }
+ get_adjusted_ptr() {
+  return GROWABLE_HEAP_U32()[(((this.ptr) + (16)) >> 2)];
+ }
+ get_exception_ptr() {
+  var isPointer = ___cxa_is_pointer_type(this.get_type());
+  if (isPointer) {
+   return GROWABLE_HEAP_U32()[((this.excPtr) >> 2)];
+  }
+  var adjusted = this.get_adjusted_ptr();
+  if (adjusted !== 0) return adjusted;
+  return this.excPtr;
+ }
+}
+
+var ___resumeException = ptr => {
+ if (!exceptionLast) {
+  exceptionLast = ptr;
+ }
+ throw exceptionLast;
+};
+
+var findMatchingCatch = args => {
+ var thrown = exceptionLast;
+ if (!thrown) {
+  setTempRet0(0);
+  return 0;
+ }
+ var info = new ExceptionInfo(thrown);
+ info.set_adjusted_ptr(thrown);
+ var thrownType = info.get_type();
+ if (!thrownType) {
+  setTempRet0(0);
+  return thrown;
+ }
+ for (var arg in args) {
+  var caughtType = args[arg];
+  if (caughtType === 0 || caughtType === thrownType) {
+   break;
+  }
+  var adjusted_ptr_addr = info.ptr + 16;
+  if (___cxa_can_catch(caughtType, thrownType, adjusted_ptr_addr)) {
+   setTempRet0(caughtType);
+   return thrown;
+  }
+ }
+ setTempRet0(thrownType);
+ return thrown;
+};
+
+var ___cxa_find_matching_catch_2 = () => findMatchingCatch([]);
+
+var ___cxa_find_matching_catch_3 = arg0 => findMatchingCatch([ arg0 ]);
+
+var ___cxa_throw = (ptr, type, destructor) => {
+ var info = new ExceptionInfo(ptr);
+ info.init(type, destructor);
+ exceptionLast = ptr;
+ uncaughtExceptionCount++;
+ throw exceptionLast;
+};
+
 var ___emscripten_init_main_thread_js = tb => {
  __emscripten_thread_init(tb, /*is_main=*/ !ENVIRONMENT_IS_WORKER, /*is_runtime=*/ 1, /*can_block=*/ !ENVIRONMENT_IS_WEB, /*default_stacksize=*/ 5242880, /*start_profiling=*/ false);
  PThread.threadInitTLS();
@@ -1079,7 +1201,7 @@ var ___pthread_create_js = (pthread_ptr, attr, startRoutine, arg) => {
  } else transferredCanvasNames &&= UTF8ToString(transferredCanvasNames).trim();
     if (transferredCanvasNames === 0
         && Module["canvas"]
-        && startRoutine === 429
+        && startRoutine === 87051
     ) {
         transferredCanvasNames = "#canvas";
     }
@@ -1272,21 +1394,6 @@ var __emscripten_thread_set_strongref = thread => {
   PThread.pthreads[thread].ref();
  }
 };
-
-function __gmtime_js(time, tmPtr) {
- time = bigintToI53Checked(time);
- var date = new Date(time * 1e3);
- GROWABLE_HEAP_I32()[((tmPtr) >> 2)] = date.getUTCSeconds();
- GROWABLE_HEAP_I32()[(((tmPtr) + (4)) >> 2)] = date.getUTCMinutes();
- GROWABLE_HEAP_I32()[(((tmPtr) + (8)) >> 2)] = date.getUTCHours();
- GROWABLE_HEAP_I32()[(((tmPtr) + (12)) >> 2)] = date.getUTCDate();
- GROWABLE_HEAP_I32()[(((tmPtr) + (16)) >> 2)] = date.getUTCMonth();
- GROWABLE_HEAP_I32()[(((tmPtr) + (20)) >> 2)] = date.getUTCFullYear() - 1900;
- GROWABLE_HEAP_I32()[(((tmPtr) + (24)) >> 2)] = date.getUTCDay();
- var start = Date.UTC(date.getUTCFullYear(), 0, 1, 0, 0, 0, 0);
- var yday = ((date.getTime() - start) / (1e3 * 60 * 60 * 24)) | 0;
- GROWABLE_HEAP_I32()[(((tmPtr) + (28)) >> 2)] = yday;
-}
 
 var isLeapYear = year => year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 
@@ -4995,7 +5102,7 @@ function _eglGetDisplay(nativeDisplayType) {
 }
 
 function _eglGetError() {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(31, 0, 1);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(31, 0, 1);
  return EGL.errorCode;
 }
 
@@ -5039,7 +5146,7 @@ function _eglMakeCurrent(display, draw, read, context) {
 }
 
 function _eglSwapBuffers(dpy, surface) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(34, 0, 1, dpy, surface);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(34, 0, 1, dpy, surface);
  if (!EGL.defaultDisplayInitialized) {
   EGL.setErrorCode(12289);
  } else /* EGL_NOT_INITIALIZED */ if (!Module.ctx) {
@@ -5054,7 +5161,7 @@ function _eglSwapBuffers(dpy, surface) {
 }
 
 function _eglSwapInterval(display, interval) {
- //if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(35, 0, 1, display, interval);
+ if (ENVIRONMENT_IS_PTHREAD) return proxyToMainThread(35, 0, 1, display, interval);
  if (display != 62e3) {
   EGL.setErrorCode(12296);
   /* EGL_BAD_DISPLAY */ return 0;
@@ -8015,6 +8122,8 @@ var _getentropy = (buffer, size) => {
  return 0;
 };
 
+var _llvm_eh_typeid_for = type => type;
+
 var DOTNET = {
  setup: function setup(emscriptenBuildOptions) {
   const modulePThread = PThread;
@@ -8054,18 +8163,6 @@ function _mono_interp_tier_prepare_jiterpreter() {
  };
 }
 
-function _mono_wasm_add_dbg_command_received() {
- return {
-  runtime_idx: 3
- };
-}
-
-function _mono_wasm_asm_loaded() {
- return {
-  runtime_idx: 1
- };
-}
-
 function _mono_wasm_browser_entropy() {
  return {
   runtime_idx: 18
@@ -8084,21 +8181,9 @@ function _mono_wasm_console_clear() {
  };
 }
 
-function _mono_wasm_debugger_log() {
- return {
-  runtime_idx: 2
- };
-}
-
 function _mono_wasm_dump_threads() {
  return {
   runtime_idx: 40
- };
-}
-
-function _mono_wasm_fire_debugger_agent_message_with_data() {
- return {
-  runtime_idx: 4
  };
 }
 
@@ -9300,7 +9385,7 @@ for (/**@suppress{duplicate}*/ var i = 0; i < 288; ++i) {
 
 DOTNET.setup({
  wasmEnableSIMD: true,
- wasmEnableEH: true,
+ wasmEnableEH: false,
  enableAotProfiler: false,
  enableDevToolsProfiler: false,
  enableLogProfiler: false,
@@ -9316,16 +9401,21 @@ var proxiedFunctionTable = [ _proc_exit, exitOnMainThread, pthreadCreateProxied,
 
 var wasmImports = {
  /** @export */ __assert_fail: ___assert_fail,
+ /** @export */ __cxa_begin_catch: ___cxa_begin_catch,
+ /** @export */ __cxa_end_catch: ___cxa_end_catch,
+ /** @export */ __cxa_find_matching_catch_2: ___cxa_find_matching_catch_2,
+ /** @export */ __cxa_find_matching_catch_3: ___cxa_find_matching_catch_3,
+ /** @export */ __cxa_throw: ___cxa_throw,
  /** @export */ __emscripten_init_main_thread_js: ___emscripten_init_main_thread_js,
  /** @export */ __emscripten_thread_cleanup: ___emscripten_thread_cleanup,
  /** @export */ __pthread_create_js: ___pthread_create_js,
  /** @export */ __pthread_kill_js: ___pthread_kill_js,
+ /** @export */ __resumeException: ___resumeException,
  /** @export */ _emscripten_get_now_is_monotonic: __emscripten_get_now_is_monotonic,
  /** @export */ _emscripten_notify_mailbox_postmessage: __emscripten_notify_mailbox_postmessage,
  /** @export */ _emscripten_receive_on_main_thread_js: __emscripten_receive_on_main_thread_js,
  /** @export */ _emscripten_thread_mailbox_await: __emscripten_thread_mailbox_await,
  /** @export */ _emscripten_thread_set_strongref: __emscripten_thread_set_strongref,
- /** @export */ _gmtime_js: __gmtime_js,
  /** @export */ _localtime_js: __localtime_js,
  /** @export */ _tzset_js: __tzset_js,
  /** @export */ _wasmfs_copy_preloaded_file_data: __wasmfs_copy_preloaded_file_data,
@@ -9675,16 +9765,115 @@ var wasmImports = {
  /** @export */ environ_sizes_get: _environ_sizes_get,
  /** @export */ exit: _exit,
  /** @export */ getentropy: _getentropy,
+ /** @export */ invoke_di: invoke_di,
+ /** @export */ invoke_dii: invoke_dii,
+ /** @export */ invoke_fffi: invoke_fffi,
+ /** @export */ invoke_ffi: invoke_ffi,
+ /** @export */ invoke_fi: invoke_fi,
+ /** @export */ invoke_fiffi: invoke_fiffi,
+ /** @export */ invoke_fii: invoke_fii,
+ /** @export */ invoke_fiifi: invoke_fiifi,
+ /** @export */ invoke_fiii: invoke_fiii,
+ /** @export */ invoke_i: invoke_i,
+ /** @export */ invoke_ifi: invoke_ifi,
+ /** @export */ invoke_ii: invoke_ii,
+ /** @export */ invoke_iifi: invoke_iifi,
+ /** @export */ invoke_iii: invoke_iii,
+ /** @export */ invoke_iiifi: invoke_iiifi,
+ /** @export */ invoke_iiifiii: invoke_iiifiii,
+ /** @export */ invoke_iiii: invoke_iiii,
+ /** @export */ invoke_iiiii: invoke_iiiii,
+ /** @export */ invoke_iiiiii: invoke_iiiiii,
+ /** @export */ invoke_iiiiiii: invoke_iiiiiii,
+ /** @export */ invoke_iiiiiiii: invoke_iiiiiiii,
+ /** @export */ invoke_iiiiiiiii: invoke_iiiiiiiii,
+ /** @export */ invoke_iiiiiiiiii: invoke_iiiiiiiiii,
+ /** @export */ invoke_iiiiiiijiii: invoke_iiiiiiijiii,
+ /** @export */ invoke_iiiji: invoke_iiiji,
+ /** @export */ invoke_iijii: invoke_iijii,
+ /** @export */ invoke_iijji: invoke_iijji,
+ /** @export */ invoke_iijjii: invoke_iijjii,
+ /** @export */ invoke_iji: invoke_iji,
+ /** @export */ invoke_ijji: invoke_ijji,
+ /** @export */ invoke_ji: invoke_ji,
+ /** @export */ invoke_jii: invoke_jii,
+ /** @export */ invoke_jiii: invoke_jiii,
+ /** @export */ invoke_jiiiii: invoke_jiiiii,
+ /** @export */ invoke_jiiiiiiiiii: invoke_jiiiiiiiiii,
+ /** @export */ invoke_jiiji: invoke_jiiji,
+ /** @export */ invoke_jijii: invoke_jijii,
+ /** @export */ invoke_jji: invoke_jji,
+ /** @export */ invoke_v: invoke_v,
+ /** @export */ invoke_vdi: invoke_vdi,
+ /** @export */ invoke_vi: invoke_vi,
+ /** @export */ invoke_vidi: invoke_vidi,
+ /** @export */ invoke_vifffi: invoke_vifffi,
+ /** @export */ invoke_viffi: invoke_viffi,
+ /** @export */ invoke_vifi: invoke_vifi,
+ /** @export */ invoke_vifii: invoke_vifii,
+ /** @export */ invoke_vii: invoke_vii,
+ /** @export */ invoke_viidi: invoke_viidi,
+ /** @export */ invoke_viifffiifi: invoke_viifffiifi,
+ /** @export */ invoke_viifffiii: invoke_viifffiii,
+ /** @export */ invoke_viifi: invoke_viifi,
+ /** @export */ invoke_viii: invoke_viii,
+ /** @export */ invoke_viiidii: invoke_viiidii,
+ /** @export */ invoke_viiiffiii: invoke_viiiffiii,
+ /** @export */ invoke_viiifi: invoke_viiifi,
+ /** @export */ invoke_viiifiii: invoke_viiifiii,
+ /** @export */ invoke_viiii: invoke_viiii,
+ /** @export */ invoke_viiiii: invoke_viiiii,
+ /** @export */ invoke_viiiiifi: invoke_viiiiifi,
+ /** @export */ invoke_viiiiififi: invoke_viiiiififi,
+ /** @export */ invoke_viiiiii: invoke_viiiiii,
+ /** @export */ invoke_viiiiiii: invoke_viiiiiii,
+ /** @export */ invoke_viiiiiiii: invoke_viiiiiiii,
+ /** @export */ invoke_viiiiiiiii: invoke_viiiiiiiii,
+ /** @export */ invoke_viiiiiiiiii: invoke_viiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiii: invoke_viiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiii: invoke_viiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiii: invoke_viiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiii: invoke_viiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii: invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii,
+ /** @export */ invoke_viiji: invoke_viiji,
+ /** @export */ invoke_viji: invoke_viji,
+ /** @export */ invoke_vijii: invoke_vijii,
+ /** @export */ invoke_vijji: invoke_vijji,
+ /** @export */ invoke_vji: invoke_vji,
+ /** @export */ llvm_eh_typeid_for: _llvm_eh_typeid_for,
  /** @export */ memory: wasmMemory || Module["wasmMemory"],
  /** @export */ mono_interp_tier_prepare_jiterpreter: _mono_interp_tier_prepare_jiterpreter,
- /** @export */ mono_wasm_add_dbg_command_received: _mono_wasm_add_dbg_command_received,
- /** @export */ mono_wasm_asm_loaded: _mono_wasm_asm_loaded,
  /** @export */ mono_wasm_browser_entropy: _mono_wasm_browser_entropy,
  /** @export */ mono_wasm_cancel_promise: _mono_wasm_cancel_promise,
  /** @export */ mono_wasm_console_clear: _mono_wasm_console_clear,
- /** @export */ mono_wasm_debugger_log: _mono_wasm_debugger_log,
  /** @export */ mono_wasm_dump_threads: _mono_wasm_dump_threads,
- /** @export */ mono_wasm_fire_debugger_agent_message_with_data: _mono_wasm_fire_debugger_agent_message_with_data,
  /** @export */ mono_wasm_free_method_data: _mono_wasm_free_method_data,
  /** @export */ mono_wasm_get_locale_info: _mono_wasm_get_locale_info,
  /** @export */ mono_wasm_install_js_worker_interop: _mono_wasm_install_js_worker_interop,
@@ -9797,9 +9986,143 @@ var _mono_wasm_assembly_find_class = Module["_mono_wasm_assembly_find_class"] = 
 
 var _mono_wasm_assembly_find_method = Module["_mono_wasm_assembly_find_method"] = (a0, a1, a2) => (_mono_wasm_assembly_find_method = Module["_mono_wasm_assembly_find_method"] = wasmExports["mono_wasm_assembly_find_method"])(a0, a1, a2);
 
-var _mono_wasm_set_is_debugger_attached = Module["_mono_wasm_set_is_debugger_attached"] = a0 => (_mono_wasm_set_is_debugger_attached = Module["_mono_wasm_set_is_debugger_attached"] = wasmExports["mono_wasm_set_is_debugger_attached"])(a0);
+var _sin = Module["_sin"] = a0 => (_sin = Module["_sin"] = wasmExports["sin"])(a0);
 
-var _mono_wasm_change_debugger_log_level = Module["_mono_wasm_change_debugger_log_level"] = a0 => (_mono_wasm_change_debugger_log_level = Module["_mono_wasm_change_debugger_log_level"] = wasmExports["mono_wasm_change_debugger_log_level"])(a0);
+var _cos = Module["_cos"] = a0 => (_cos = Module["_cos"] = wasmExports["cos"])(a0);
+
+var _exp = Module["_exp"] = a0 => (_exp = Module["_exp"] = wasmExports["exp"])(a0);
+
+var _log = Module["_log"] = a0 => (_log = Module["_log"] = wasmExports["log"])(a0);
+
+var _log10 = Module["_log10"] = a0 => (_log10 = Module["_log10"] = wasmExports["log10"])(a0);
+
+var _pow = Module["_pow"] = (a0, a1) => (_pow = Module["_pow"] = wasmExports["pow"])(a0, a1);
+
+var _cosf = Module["_cosf"] = a0 => (_cosf = Module["_cosf"] = wasmExports["cosf"])(a0);
+
+var _sinf = Module["_sinf"] = a0 => (_sinf = Module["_sinf"] = wasmExports["sinf"])(a0);
+
+var _mono_aot_Engine_get_method = Module["_mono_aot_Engine_get_method"] = a0 => (_mono_aot_Engine_get_method = Module["_mono_aot_Engine_get_method"] = wasmExports["mono_aot_Engine_get_method"])(a0);
+
+var _mono_aot_EntitySystem_get_method = Module["_mono_aot_EntitySystem_get_method"] = a0 => (_mono_aot_EntitySystem_get_method = Module["_mono_aot_EntitySystem_get_method"] = wasmExports["mono_aot_EntitySystem_get_method"])(a0);
+
+var _mono_aot_NAudio_Core_get_method = Module["_mono_aot_NAudio_Core_get_method"] = a0 => (_mono_aot_NAudio_Core_get_method = Module["_mono_aot_NAudio_Core_get_method"] = wasmExports["mono_aot_NAudio_Core_get_method"])(a0);
+
+var _mono_aot_NAudio_Flac_get_method = Module["_mono_aot_NAudio_Flac_get_method"] = a0 => (_mono_aot_NAudio_Flac_get_method = Module["_mono_aot_NAudio_Flac_get_method"] = wasmExports["mono_aot_NAudio_Flac_get_method"])(a0);
+
+var _mono_aot_NLayer_get_method = Module["_mono_aot_NLayer_get_method"] = a0 => (_mono_aot_NLayer_get_method = Module["_mono_aot_NLayer_get_method"] = wasmExports["mono_aot_NLayer_get_method"])(a0);
+
+var _mono_aot_NLayer_NAudioSupport_get_method = Module["_mono_aot_NLayer_NAudioSupport_get_method"] = a0 => (_mono_aot_NLayer_NAudioSupport_get_method = Module["_mono_aot_NLayer_NAudioSupport_get_method"] = wasmExports["mono_aot_NLayer_NAudioSupport_get_method"])(a0);
+
+var _mono_aot_NuGet_Versioning_get_method = Module["_mono_aot_NuGet_Versioning_get_method"] = a0 => (_mono_aot_NuGet_Versioning_get_method = Module["_mono_aot_NuGet_Versioning_get_method"] = wasmExports["mono_aot_NuGet_Versioning_get_method"])(a0);
+
+var _mono_aot_NVorbis_get_method = Module["_mono_aot_NVorbis_get_method"] = a0 => (_mono_aot_NVorbis_get_method = Module["_mono_aot_NVorbis_get_method"] = wasmExports["mono_aot_NVorbis_get_method"])(a0);
+
+var _mono_aot_Silk_NET_Core_get_method = Module["_mono_aot_Silk_NET_Core_get_method"] = a0 => (_mono_aot_Silk_NET_Core_get_method = Module["_mono_aot_Silk_NET_Core_get_method"] = wasmExports["mono_aot_Silk_NET_Core_get_method"])(a0);
+
+var _mono_aot_Silk_NET_Maths_get_method = Module["_mono_aot_Silk_NET_Maths_get_method"] = a0 => (_mono_aot_Silk_NET_Maths_get_method = Module["_mono_aot_Silk_NET_Maths_get_method"] = wasmExports["mono_aot_Silk_NET_Maths_get_method"])(a0);
+
+var _mono_aot_Silk_NET_OpenGLES_get_method = Module["_mono_aot_Silk_NET_OpenGLES_get_method"] = a0 => (_mono_aot_Silk_NET_OpenGLES_get_method = Module["_mono_aot_Silk_NET_OpenGLES_get_method"] = wasmExports["mono_aot_Silk_NET_OpenGLES_get_method"])(a0);
+
+var _powf = Module["_powf"] = (a0, a1) => (_powf = Module["_powf"] = wasmExports["powf"])(a0, a1);
+
+var _mono_aot_SixLabors_ImageSharp_get_method = Module["_mono_aot_SixLabors_ImageSharp_get_method"] = a0 => (_mono_aot_SixLabors_ImageSharp_get_method = Module["_mono_aot_SixLabors_ImageSharp_get_method"] = wasmExports["mono_aot_SixLabors_ImageSharp_get_method"])(a0);
+
+var _log10f = Module["_log10f"] = a0 => (_log10f = Module["_log10f"] = wasmExports["log10f"])(a0);
+
+var _mono_aot_Survivalcraft_get_method = Module["_mono_aot_Survivalcraft_get_method"] = a0 => (_mono_aot_Survivalcraft_get_method = Module["_mono_aot_Survivalcraft_get_method"] = wasmExports["mono_aot_Survivalcraft_get_method"])(a0);
+
+var _mono_aot_System_Collections_Concurrent_get_method = Module["_mono_aot_System_Collections_Concurrent_get_method"] = a0 => (_mono_aot_System_Collections_Concurrent_get_method = Module["_mono_aot_System_Collections_Concurrent_get_method"] = wasmExports["mono_aot_System_Collections_Concurrent_get_method"])(a0);
+
+var _mono_aot_System_Collections_get_method = Module["_mono_aot_System_Collections_get_method"] = a0 => (_mono_aot_System_Collections_get_method = Module["_mono_aot_System_Collections_get_method"] = wasmExports["mono_aot_System_Collections_get_method"])(a0);
+
+var _mono_aot_System_Collections_NonGeneric_get_method = Module["_mono_aot_System_Collections_NonGeneric_get_method"] = a0 => (_mono_aot_System_Collections_NonGeneric_get_method = Module["_mono_aot_System_Collections_NonGeneric_get_method"] = wasmExports["mono_aot_System_Collections_NonGeneric_get_method"])(a0);
+
+var _mono_aot_System_Collections_Specialized_get_method = Module["_mono_aot_System_Collections_Specialized_get_method"] = a0 => (_mono_aot_System_Collections_Specialized_get_method = Module["_mono_aot_System_Collections_Specialized_get_method"] = wasmExports["mono_aot_System_Collections_Specialized_get_method"])(a0);
+
+var _mono_aot_System_ComponentModel_get_method = Module["_mono_aot_System_ComponentModel_get_method"] = a0 => (_mono_aot_System_ComponentModel_get_method = Module["_mono_aot_System_ComponentModel_get_method"] = wasmExports["mono_aot_System_ComponentModel_get_method"])(a0);
+
+var _mono_aot_System_ComponentModel_Primitives_get_method = Module["_mono_aot_System_ComponentModel_Primitives_get_method"] = a0 => (_mono_aot_System_ComponentModel_Primitives_get_method = Module["_mono_aot_System_ComponentModel_Primitives_get_method"] = wasmExports["mono_aot_System_ComponentModel_Primitives_get_method"])(a0);
+
+var _mono_aot_System_ComponentModel_TypeConverter_get_method = Module["_mono_aot_System_ComponentModel_TypeConverter_get_method"] = a0 => (_mono_aot_System_ComponentModel_TypeConverter_get_method = Module["_mono_aot_System_ComponentModel_TypeConverter_get_method"] = wasmExports["mono_aot_System_ComponentModel_TypeConverter_get_method"])(a0);
+
+var _mono_aot_System_Console_get_method = Module["_mono_aot_System_Console_get_method"] = a0 => (_mono_aot_System_Console_get_method = Module["_mono_aot_System_Console_get_method"] = wasmExports["mono_aot_System_Console_get_method"])(a0);
+
+var _mono_aot_System_get_method = Module["_mono_aot_System_get_method"] = a0 => (_mono_aot_System_get_method = Module["_mono_aot_System_get_method"] = wasmExports["mono_aot_System_get_method"])(a0);
+
+var _mono_aot_System_Drawing_get_method = Module["_mono_aot_System_Drawing_get_method"] = a0 => (_mono_aot_System_Drawing_get_method = Module["_mono_aot_System_Drawing_get_method"] = wasmExports["mono_aot_System_Drawing_get_method"])(a0);
+
+var _mono_aot_System_Drawing_Primitives_get_method = Module["_mono_aot_System_Drawing_Primitives_get_method"] = a0 => (_mono_aot_System_Drawing_Primitives_get_method = Module["_mono_aot_System_Drawing_Primitives_get_method"] = wasmExports["mono_aot_System_Drawing_Primitives_get_method"])(a0);
+
+var _mono_aot_System_IO_Compression_get_method = Module["_mono_aot_System_IO_Compression_get_method"] = a0 => (_mono_aot_System_IO_Compression_get_method = Module["_mono_aot_System_IO_Compression_get_method"] = wasmExports["mono_aot_System_IO_Compression_get_method"])(a0);
+
+var _mono_aot_System_IO_FileSystem_DriveInfo_get_method = Module["_mono_aot_System_IO_FileSystem_DriveInfo_get_method"] = a0 => (_mono_aot_System_IO_FileSystem_DriveInfo_get_method = Module["_mono_aot_System_IO_FileSystem_DriveInfo_get_method"] = wasmExports["mono_aot_System_IO_FileSystem_DriveInfo_get_method"])(a0);
+
+var _mono_aot_System_IO_Pipelines_get_method = Module["_mono_aot_System_IO_Pipelines_get_method"] = a0 => (_mono_aot_System_IO_Pipelines_get_method = Module["_mono_aot_System_IO_Pipelines_get_method"] = wasmExports["mono_aot_System_IO_Pipelines_get_method"])(a0);
+
+var _mono_aot_System_Linq_get_method = Module["_mono_aot_System_Linq_get_method"] = a0 => (_mono_aot_System_Linq_get_method = Module["_mono_aot_System_Linq_get_method"] = wasmExports["mono_aot_System_Linq_get_method"])(a0);
+
+var _mono_aot_System_Memory_get_method = Module["_mono_aot_System_Memory_get_method"] = a0 => (_mono_aot_System_Memory_get_method = Module["_mono_aot_System_Memory_get_method"] = wasmExports["mono_aot_System_Memory_get_method"])(a0);
+
+var _mono_aot_System_Net_Http_get_method = Module["_mono_aot_System_Net_Http_get_method"] = a0 => (_mono_aot_System_Net_Http_get_method = Module["_mono_aot_System_Net_Http_get_method"] = wasmExports["mono_aot_System_Net_Http_get_method"])(a0);
+
+var _mono_aot_System_Net_Primitives_get_method = Module["_mono_aot_System_Net_Primitives_get_method"] = a0 => (_mono_aot_System_Net_Primitives_get_method = Module["_mono_aot_System_Net_Primitives_get_method"] = wasmExports["mono_aot_System_Net_Primitives_get_method"])(a0);
+
+var _mono_aot_System_Net_WebClient_get_method = Module["_mono_aot_System_Net_WebClient_get_method"] = a0 => (_mono_aot_System_Net_WebClient_get_method = Module["_mono_aot_System_Net_WebClient_get_method"] = wasmExports["mono_aot_System_Net_WebClient_get_method"])(a0);
+
+var _mono_aot_System_ObjectModel_get_method = Module["_mono_aot_System_ObjectModel_get_method"] = a0 => (_mono_aot_System_ObjectModel_get_method = Module["_mono_aot_System_ObjectModel_get_method"] = wasmExports["mono_aot_System_ObjectModel_get_method"])(a0);
+
+var _fmodf = Module["_fmodf"] = (a0, a1) => (_fmodf = Module["_fmodf"] = wasmExports["fmodf"])(a0, a1);
+
+var _mono_aot_corlib_get_method = Module["_mono_aot_corlib_get_method"] = a0 => (_mono_aot_corlib_get_method = Module["_mono_aot_corlib_get_method"] = wasmExports["mono_aot_corlib_get_method"])(a0);
+
+var _mono_aot_System_Private_Uri_get_method = Module["_mono_aot_System_Private_Uri_get_method"] = a0 => (_mono_aot_System_Private_Uri_get_method = Module["_mono_aot_System_Private_Uri_get_method"] = wasmExports["mono_aot_System_Private_Uri_get_method"])(a0);
+
+var _mono_aot_System_Private_Xml_get_method = Module["_mono_aot_System_Private_Xml_get_method"] = a0 => (_mono_aot_System_Private_Xml_get_method = Module["_mono_aot_System_Private_Xml_get_method"] = wasmExports["mono_aot_System_Private_Xml_get_method"])(a0);
+
+var _mono_aot_System_Private_Xml_Linq_get_method = Module["_mono_aot_System_Private_Xml_Linq_get_method"] = a0 => (_mono_aot_System_Private_Xml_Linq_get_method = Module["_mono_aot_System_Private_Xml_Linq_get_method"] = wasmExports["mono_aot_System_Private_Xml_Linq_get_method"])(a0);
+
+var _mono_aot_System_Runtime_get_method = Module["_mono_aot_System_Runtime_get_method"] = a0 => (_mono_aot_System_Runtime_get_method = Module["_mono_aot_System_Runtime_get_method"] = wasmExports["mono_aot_System_Runtime_get_method"])(a0);
+
+var _mono_aot_System_Runtime_InteropServices_get_method = Module["_mono_aot_System_Runtime_InteropServices_get_method"] = a0 => (_mono_aot_System_Runtime_InteropServices_get_method = Module["_mono_aot_System_Runtime_InteropServices_get_method"] = wasmExports["mono_aot_System_Runtime_InteropServices_get_method"])(a0);
+
+var _mono_aot_System_Runtime_InteropServices_JavaScript_get_method = Module["_mono_aot_System_Runtime_InteropServices_JavaScript_get_method"] = a0 => (_mono_aot_System_Runtime_InteropServices_JavaScript_get_method = Module["_mono_aot_System_Runtime_InteropServices_JavaScript_get_method"] = wasmExports["mono_aot_System_Runtime_InteropServices_JavaScript_get_method"])(a0);
+
+var _mono_aot_System_Runtime_Numerics_get_method = Module["_mono_aot_System_Runtime_Numerics_get_method"] = a0 => (_mono_aot_System_Runtime_Numerics_get_method = Module["_mono_aot_System_Runtime_Numerics_get_method"] = wasmExports["mono_aot_System_Runtime_Numerics_get_method"])(a0);
+
+var _mono_aot_System_Runtime_Serialization_Primitives_get_method = Module["_mono_aot_System_Runtime_Serialization_Primitives_get_method"] = a0 => (_mono_aot_System_Runtime_Serialization_Primitives_get_method = Module["_mono_aot_System_Runtime_Serialization_Primitives_get_method"] = wasmExports["mono_aot_System_Runtime_Serialization_Primitives_get_method"])(a0);
+
+var _mono_aot_System_Security_Cryptography_get_method = Module["_mono_aot_System_Security_Cryptography_get_method"] = a0 => (_mono_aot_System_Security_Cryptography_get_method = Module["_mono_aot_System_Security_Cryptography_get_method"] = wasmExports["mono_aot_System_Security_Cryptography_get_method"])(a0);
+
+var _mono_aot_System_Text_Encoding_CodePages_get_method = Module["_mono_aot_System_Text_Encoding_CodePages_get_method"] = a0 => (_mono_aot_System_Text_Encoding_CodePages_get_method = Module["_mono_aot_System_Text_Encoding_CodePages_get_method"] = wasmExports["mono_aot_System_Text_Encoding_CodePages_get_method"])(a0);
+
+var _mono_aot_System_Text_Encoding_Extensions_get_method = Module["_mono_aot_System_Text_Encoding_Extensions_get_method"] = a0 => (_mono_aot_System_Text_Encoding_Extensions_get_method = Module["_mono_aot_System_Text_Encoding_Extensions_get_method"] = wasmExports["mono_aot_System_Text_Encoding_Extensions_get_method"])(a0);
+
+var _mono_aot_System_Text_Encodings_Web_get_method = Module["_mono_aot_System_Text_Encodings_Web_get_method"] = a0 => (_mono_aot_System_Text_Encodings_Web_get_method = Module["_mono_aot_System_Text_Encodings_Web_get_method"] = wasmExports["mono_aot_System_Text_Encodings_Web_get_method"])(a0);
+
+var _mono_aot_System_Text_Json_get_method = Module["_mono_aot_System_Text_Json_get_method"] = a0 => (_mono_aot_System_Text_Json_get_method = Module["_mono_aot_System_Text_Json_get_method"] = wasmExports["mono_aot_System_Text_Json_get_method"])(a0);
+
+var _mono_aot_System_Text_RegularExpressions_get_method = Module["_mono_aot_System_Text_RegularExpressions_get_method"] = a0 => (_mono_aot_System_Text_RegularExpressions_get_method = Module["_mono_aot_System_Text_RegularExpressions_get_method"] = wasmExports["mono_aot_System_Text_RegularExpressions_get_method"])(a0);
+
+var _mono_aot_System_Threading_Channels_get_method = Module["_mono_aot_System_Threading_Channels_get_method"] = a0 => (_mono_aot_System_Threading_Channels_get_method = Module["_mono_aot_System_Threading_Channels_get_method"] = wasmExports["mono_aot_System_Threading_Channels_get_method"])(a0);
+
+var _mono_aot_System_Threading_get_method = Module["_mono_aot_System_Threading_get_method"] = a0 => (_mono_aot_System_Threading_get_method = Module["_mono_aot_System_Threading_get_method"] = wasmExports["mono_aot_System_Threading_get_method"])(a0);
+
+var _mono_aot_System_Threading_Tasks_Parallel_get_method = Module["_mono_aot_System_Threading_Tasks_Parallel_get_method"] = a0 => (_mono_aot_System_Threading_Tasks_Parallel_get_method = Module["_mono_aot_System_Threading_Tasks_Parallel_get_method"] = wasmExports["mono_aot_System_Threading_Tasks_Parallel_get_method"])(a0);
+
+var _mono_aot_System_Threading_Thread_get_method = Module["_mono_aot_System_Threading_Thread_get_method"] = a0 => (_mono_aot_System_Threading_Thread_get_method = Module["_mono_aot_System_Threading_Thread_get_method"] = wasmExports["mono_aot_System_Threading_Thread_get_method"])(a0);
+
+var _mono_aot_System_Threading_ThreadPool_get_method = Module["_mono_aot_System_Threading_ThreadPool_get_method"] = a0 => (_mono_aot_System_Threading_ThreadPool_get_method = Module["_mono_aot_System_Threading_ThreadPool_get_method"] = wasmExports["mono_aot_System_Threading_ThreadPool_get_method"])(a0);
+
+var _mono_aot_System_Xml_Linq_get_method = Module["_mono_aot_System_Xml_Linq_get_method"] = a0 => (_mono_aot_System_Xml_Linq_get_method = Module["_mono_aot_System_Xml_Linq_get_method"] = wasmExports["mono_aot_System_Xml_Linq_get_method"])(a0);
+
+var _mono_aot_System_Xml_ReaderWriter_get_method = Module["_mono_aot_System_Xml_ReaderWriter_get_method"] = a0 => (_mono_aot_System_Xml_ReaderWriter_get_method = Module["_mono_aot_System_Xml_ReaderWriter_get_method"] = wasmExports["mono_aot_System_Xml_ReaderWriter_get_method"])(a0);
+
+var _mono_aot_System_Xml_XDocument_get_method = Module["_mono_aot_System_Xml_XDocument_get_method"] = a0 => (_mono_aot_System_Xml_XDocument_get_method = Module["_mono_aot_System_Xml_XDocument_get_method"] = wasmExports["mono_aot_System_Xml_XDocument_get_method"])(a0);
+
+var _mono_aot_Tomlyn_get_method = Module["_mono_aot_Tomlyn_get_method"] = a0 => (_mono_aot_Tomlyn_get_method = Module["_mono_aot_Tomlyn_get_method"] = wasmExports["mono_aot_Tomlyn_get_method"])(a0);
+
+var _mono_aot_aot_instances_get_method = Module["_mono_aot_aot_instances_get_method"] = a0 => (_mono_aot_aot_instances_get_method = Module["_mono_aot_aot_instances_get_method"] = wasmExports["mono_aot_aot_instances_get_method"])(a0);
 
 var _mono_wasm_send_dbg_command_with_parms = Module["_mono_wasm_send_dbg_command_with_parms"] = (a0, a1, a2, a3, a4, a5, a6) => (_mono_wasm_send_dbg_command_with_parms = Module["_mono_wasm_send_dbg_command_with_parms"] = wasmExports["mono_wasm_send_dbg_command_with_parms"])(a0, a1, a2, a3, a4, a5, a6);
 
@@ -9821,8 +10144,6 @@ var _mono_jiterp_ld_delegate_method_ptr = Module["_mono_jiterp_ld_delegate_metho
 
 var _mono_jiterp_interp_entry = Module["_mono_jiterp_interp_entry"] = (a0, a1) => (_mono_jiterp_interp_entry = Module["_mono_jiterp_interp_entry"] = wasmExports["mono_jiterp_interp_entry"])(a0, a1);
 
-var _fmodf = Module["_fmodf"] = (a0, a1) => (_fmodf = Module["_fmodf"] = wasmExports["fmodf"])(a0, a1);
-
 var _fmod = Module["_fmod"] = (a0, a1) => (_fmod = Module["_fmod"] = wasmExports["fmod"])(a0, a1);
 
 var _asin = Module["_asin"] = a0 => (_asin = Module["_asin"] = wasmExports["asin"])(a0);
@@ -9837,21 +10158,11 @@ var _atan = Module["_atan"] = a0 => (_atan = Module["_atan"] = wasmExports["atan
 
 var _atanh = Module["_atanh"] = a0 => (_atanh = Module["_atanh"] = wasmExports["atanh"])(a0);
 
-var _cos = Module["_cos"] = a0 => (_cos = Module["_cos"] = wasmExports["cos"])(a0);
-
 var _cbrt = Module["_cbrt"] = a0 => (_cbrt = Module["_cbrt"] = wasmExports["cbrt"])(a0);
 
 var _cosh = Module["_cosh"] = a0 => (_cosh = Module["_cosh"] = wasmExports["cosh"])(a0);
 
-var _exp = Module["_exp"] = a0 => (_exp = Module["_exp"] = wasmExports["exp"])(a0);
-
-var _log = Module["_log"] = a0 => (_log = Module["_log"] = wasmExports["log"])(a0);
-
 var _log2 = Module["_log2"] = a0 => (_log2 = Module["_log2"] = wasmExports["log2"])(a0);
-
-var _log10 = Module["_log10"] = a0 => (_log10 = Module["_log10"] = wasmExports["log10"])(a0);
-
-var _sin = Module["_sin"] = a0 => (_sin = Module["_sin"] = wasmExports["sin"])(a0);
 
 var _sinh = Module["_sinh"] = a0 => (_sinh = Module["_sinh"] = wasmExports["sinh"])(a0);
 
@@ -9860,8 +10171,6 @@ var _tan = Module["_tan"] = a0 => (_tan = Module["_tan"] = wasmExports["tan"])(a
 var _tanh = Module["_tanh"] = a0 => (_tanh = Module["_tanh"] = wasmExports["tanh"])(a0);
 
 var _atan2 = Module["_atan2"] = (a0, a1) => (_atan2 = Module["_atan2"] = wasmExports["atan2"])(a0, a1);
-
-var _pow = Module["_pow"] = (a0, a1) => (_pow = Module["_pow"] = wasmExports["pow"])(a0, a1);
 
 var _fma = Module["_fma"] = (a0, a1, a2) => (_fma = Module["_fma"] = wasmExports["fma"])(a0, a1, a2);
 
@@ -9877,8 +10186,6 @@ var _atanf = Module["_atanf"] = a0 => (_atanf = Module["_atanf"] = wasmExports["
 
 var _atanhf = Module["_atanhf"] = a0 => (_atanhf = Module["_atanhf"] = wasmExports["atanhf"])(a0);
 
-var _cosf = Module["_cosf"] = a0 => (_cosf = Module["_cosf"] = wasmExports["cosf"])(a0);
-
 var _cbrtf = Module["_cbrtf"] = a0 => (_cbrtf = Module["_cbrtf"] = wasmExports["cbrtf"])(a0);
 
 var _coshf = Module["_coshf"] = a0 => (_coshf = Module["_coshf"] = wasmExports["coshf"])(a0);
@@ -9889,10 +10196,6 @@ var _logf = Module["_logf"] = a0 => (_logf = Module["_logf"] = wasmExports["logf
 
 var _log2f = Module["_log2f"] = a0 => (_log2f = Module["_log2f"] = wasmExports["log2f"])(a0);
 
-var _log10f = Module["_log10f"] = a0 => (_log10f = Module["_log10f"] = wasmExports["log10f"])(a0);
-
-var _sinf = Module["_sinf"] = a0 => (_sinf = Module["_sinf"] = wasmExports["sinf"])(a0);
-
 var _sinhf = Module["_sinhf"] = a0 => (_sinhf = Module["_sinhf"] = wasmExports["sinhf"])(a0);
 
 var _tanf = Module["_tanf"] = a0 => (_tanf = Module["_tanf"] = wasmExports["tanf"])(a0);
@@ -9900,8 +10203,6 @@ var _tanf = Module["_tanf"] = a0 => (_tanf = Module["_tanf"] = wasmExports["tanf
 var _tanhf = Module["_tanhf"] = a0 => (_tanhf = Module["_tanhf"] = wasmExports["tanhf"])(a0);
 
 var _atan2f = Module["_atan2f"] = (a0, a1) => (_atan2f = Module["_atan2f"] = wasmExports["atan2f"])(a0, a1);
-
-var _powf = Module["_powf"] = (a0, a1) => (_powf = Module["_powf"] = wasmExports["powf"])(a0, a1);
 
 var _fmaf = Module["_fmaf"] = (a0, a1, a2) => (_fmaf = Module["_fmaf"] = wasmExports["fmaf"])(a0, a1, a2);
 
@@ -10077,17 +10378,11 @@ var _mono_wasm_register_io_thread = Module["_mono_wasm_register_io_thread"] = ()
 
 var _mono_threads_wasm_sync_run_in_target_thread_done = Module["_mono_threads_wasm_sync_run_in_target_thread_done"] = a0 => (_mono_threads_wasm_sync_run_in_target_thread_done = Module["_mono_threads_wasm_sync_run_in_target_thread_done"] = wasmExports["mono_threads_wasm_sync_run_in_target_thread_done"])(a0);
 
-var _htons = Module["_htons"] = a0 => (_htons = Module["_htons"] = wasmExports["htons"])(a0);
-
 var _mono_wasm_gc_lock = Module["_mono_wasm_gc_lock"] = () => (_mono_wasm_gc_lock = Module["_mono_wasm_gc_lock"] = wasmExports["mono_wasm_gc_lock"])();
 
 var _mono_wasm_gc_unlock = Module["_mono_wasm_gc_unlock"] = () => (_mono_wasm_gc_unlock = Module["_mono_wasm_gc_unlock"] = wasmExports["mono_wasm_gc_unlock"])();
 
 var _mono_print_method_from_ip = Module["_mono_print_method_from_ip"] = a0 => (_mono_print_method_from_ip = Module["_mono_print_method_from_ip"] = wasmExports["mono_print_method_from_ip"])(a0);
-
-var _mono_wasm_load_icu_data = Module["_mono_wasm_load_icu_data"] = a0 => (_mono_wasm_load_icu_data = Module["_mono_wasm_load_icu_data"] = wasmExports["mono_wasm_load_icu_data"])(a0);
-
-var _ntohs = Module["_ntohs"] = a0 => (_ntohs = Module["_ntohs"] = wasmExports["ntohs"])(a0);
 
 var _memset = Module["_memset"] = (a0, a1, a2) => (_memset = Module["_memset"] = wasmExports["memset"])(a0, a1, a2);
 
@@ -10107,9 +10402,11 @@ var __emscripten_thread_crashed = Module["__emscripten_thread_crashed"] = () => 
 
 var _emscripten_main_thread_process_queued_calls = () => (_emscripten_main_thread_process_queued_calls = wasmExports["emscripten_main_thread_process_queued_calls"])();
 
-var _htonl = a0 => (_htonl = wasmExports["htonl"])(a0);
+var _htons = Module["_htons"] = a0 => (_htons = Module["_htons"] = wasmExports["htons"])(a0);
 
 var _emscripten_proxy_execute_queue = a0 => (_emscripten_proxy_execute_queue = wasmExports["emscripten_proxy_execute_queue"])(a0);
+
+var _ntohs = Module["_ntohs"] = a0 => (_ntohs = Module["_ntohs"] = wasmExports["ntohs"])(a0);
 
 var _emscripten_proxy_finish = a0 => (_emscripten_proxy_finish = wasmExports["emscripten_proxy_finish"])(a0);
 
@@ -10125,7 +10422,9 @@ var __emscripten_check_mailbox = () => (__emscripten_check_mailbox = wasmExports
 
 var _memalign = Module["_memalign"] = (a0, a1) => (_memalign = Module["_memalign"] = wasmExports["memalign"])(a0, a1);
 
-var ___trap = () => (___trap = wasmExports["__trap"])();
+var _setThrew = (a0, a1) => (_setThrew = wasmExports["setThrew"])(a0, a1);
+
+var setTempRet0 = a0 => (setTempRet0 = wasmExports["setTempRet0"])(a0);
 
 var _emscripten_stack_set_limits = (a0, a1) => (_emscripten_stack_set_limits = wasmExports["emscripten_stack_set_limits"])(a0, a1);
 
@@ -10134,6 +10433,16 @@ var stackSave = Module["stackSave"] = () => (stackSave = Module["stackSave"] = w
 var stackRestore = Module["stackRestore"] = a0 => (stackRestore = Module["stackRestore"] = wasmExports["stackRestore"])(a0);
 
 var stackAlloc = Module["stackAlloc"] = a0 => (stackAlloc = Module["stackAlloc"] = wasmExports["stackAlloc"])(a0);
+
+var ___cxa_free_exception = a0 => (___cxa_free_exception = wasmExports["__cxa_free_exception"])(a0);
+
+var ___cxa_increment_exception_refcount = a0 => (___cxa_increment_exception_refcount = wasmExports["__cxa_increment_exception_refcount"])(a0);
+
+var ___cxa_decrement_exception_refcount = a0 => (___cxa_decrement_exception_refcount = wasmExports["__cxa_decrement_exception_refcount"])(a0);
+
+var ___cxa_can_catch = (a0, a1, a2) => (___cxa_can_catch = wasmExports["__cxa_can_catch"])(a0, a1, a2);
+
+var ___cxa_is_pointer_type = a0 => (___cxa_is_pointer_type = wasmExports["__cxa_is_pointer_type"])(a0);
 
 var __wasmfs_read_file = a0 => (__wasmfs_read_file = wasmExports["_wasmfs_read_file"])(a0);
 
@@ -10214,6 +10523,1136 @@ var _wasmfs_create_memory_backend = () => (_wasmfs_create_memory_backend = wasmE
 var __wasmfs_opfs_record_entry = (a0, a1, a2) => (__wasmfs_opfs_record_entry = wasmExports["_wasmfs_opfs_record_entry"])(a0, a1, a2);
 
 var _wasmfs_create_file = (a0, a1, a2) => (_wasmfs_create_file = wasmExports["wasmfs_create_file"])(a0, a1, a2);
+
+function invoke_iii(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vii(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viii(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_v(index) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)();
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vi(index, a1) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_ii(index, a1) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiii(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiii(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_jii(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+  return 0n;
+ }
+}
+
+function invoke_viji(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiii(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiii(index, a1, a2, a3, a4, a5) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_fii(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viffi(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiifi(index, a1, a2, a3, a4, a5) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiififi(index, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiifi(index, a1, a2, a3, a4, a5, a6, a7) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiii(index, a1, a2, a3, a4, a5, a6, a7) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiii(index, a1, a2, a3, a4, a5, a6) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiiii(index, a1, a2, a3, a4, a5) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_dii(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_jiiiii(index, a1, a2, a3, a4, a5) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+  return 0n;
+ }
+}
+
+function invoke_viiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiiiiii(index, a1, a2, a3, a4, a5, a6, a7) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vijii(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_jiii(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+  return 0n;
+ }
+}
+
+function invoke_fiifi(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vifi(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vifffi(index, a1, a2, a3, a4, a5) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiifiii(index, a1, a2, a3, a4, a5, a6) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_fiffi(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viifi(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiffiii(index, a1, a2, a3, a4, a5, a6, a7, a8) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_ji(index, a1) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+  return 0n;
+ }
+}
+
+function invoke_di(index, a1) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_jijii(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+  return 0n;
+ }
+}
+
+function invoke_viiji(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viifffiii(index, a1, a2, a3, a4, a5, a6, a7, a8) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiiiii(index, a1, a2, a3, a4, a5, a6) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vdi(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_fiii(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_fi(index, a1) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_ffi(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viifffiifi(index, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_ijji(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiifiii(index, a1, a2, a3, a4, a5, a6, a7) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiifi(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iifi(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiidii(index, a1, a2, a3, a4, a5, a6) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_fffi(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_ifi(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iijii(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiiiiijiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiji(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_jiiji(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+  return 0n;
+ }
+}
+
+function invoke_iijji(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_jiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+  return 0n;
+ }
+}
+
+function invoke_iijjii(index, a1, a2, a3, a4, a5) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2, a3, a4, a5);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_jji(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+  return 0n;
+ }
+}
+
+function invoke_i(index) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)();
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vijji(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vji(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iji(index, a1, a2) {
+ var sp = stackSave();
+ try {
+  return getWasmTableEntry(index)(a1, a2);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viidi(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vidi(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vifii(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42) {
+ var sp = stackSave();
+ try {
+  getWasmTableEntry(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0) throw e;
+  _setThrew(1, 0);
+ }
+}
 
 Module["addRunDependency"] = addRunDependency;
 

@@ -4,7 +4,8 @@ const document = globalThis.document;
 const canvas = document.getElementById("canvas");
 const runtime = await createDotnetRuntime({
     // 目前只找到这种方式来设置 C# worker 中的 Module.canvas，它会自己将其转换为 OffscreenCanvas
-    canvas: canvas
+    canvas: canvas,
+    INITIAL_MEMORY: 386662400
 });
 globalThis.dotnetRuntime = runtime;
 const engineExports = await runtime.getAssemblyExports("Engine.dll");

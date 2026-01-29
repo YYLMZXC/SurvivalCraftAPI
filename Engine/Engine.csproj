@@ -60,6 +60,7 @@
         <InvariantTimezone>true</InvariantTimezone>
         <PublishTrimmed>true</PublishTrimmed>
         <TrimMode>full</TrimMode>
+        <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
         <DebuggerSupport>false</DebuggerSupport>
         <WasmBuildNative>true</WasmBuildNative>
         <RunAOTCompilation>true</RunAOTCompilation>

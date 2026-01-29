@@ -350,7 +350,7 @@ function updateMemoryViews() {
  Module["HEAPU64"] = HEAPU64 = new BigUint64Array(b);
 }
 
-var INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 36175872;
+var INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 36110336;
 
 if (ENVIRONMENT_IS_PTHREAD) {
  wasmMemory = Module["wasmMemory"];
@@ -1199,12 +1199,14 @@ var ___pthread_create_js = (pthread_ptr, attr, startRoutine, arg) => {
  if (transferredCanvasNames == 4294967295) {
   transferredCanvasNames = "#canvas";
  } else transferredCanvasNames &&= UTF8ToString(transferredCanvasNames).trim();
-    if (transferredCanvasNames === 0
-        && Module["canvas"]
-        && startRoutine === 87051
-    ) {
-        transferredCanvasNames = "#canvas";
-    }
+ if (transferredCanvasNames === 0
+  && !ENVIRONMENT_IS_PTHREAD
+  && Module["canvas"]
+  && !Module["canvas"].transferred
+ ) {
+  transferredCanvasNames = "#canvas";
+  Module["canvas"].transferred = true;
+ }
  transferredCanvasNames &&= transferredCanvasNames.split(",");
  var offscreenCanvases = {};
  var moduleCanvasId = Module["canvas"] ? Module["canvas"].id : "";

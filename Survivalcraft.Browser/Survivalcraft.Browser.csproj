@@ -17,11 +17,12 @@
         <IsAotCompatible>true</IsAotCompatible>
         <InvariantGlobalization>true</InvariantGlobalization>
         <InvariantTimezone>true</InvariantTimezone>
-        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s USE_PTHREADS=1 -s OFFSCREENCANVAS_SUPPORT=1 -s OFFSCREENCANVASES_TO_PTHREAD=#canvas -s OFFSCREEN_FRAMEBUFFER=1 -lopfs.js -s WASMFS -s FORCE_FILESYSTEM</EmccFlags>
+        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s USE_PTHREADS=1 -s OFFSCREENCANVAS_SUPPORT=1 -s OFFSCREENCANVASES_TO_PTHREAD=#canvas -s OFFSCREEN_FRAMEBUFFER=1 -lopfs.js -s WASMFS -s FORCE_FILESYSTEM -s INITIAL_MEMORY=536870912</EmccFlags>
         <WasmMainJSPath>wwwroot\main.js</WasmMainJSPath>
     </PropertyGroup>
     <PropertyGroup>
         <PublishTrimmed>true</PublishTrimmed>
+        <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
         <WasmBuildNative>true</WasmBuildNative>
         <RunAOTCompilation>true</RunAOTCompilation>
         <WasmEnableThreads>true</WasmEnableThreads>

@@ -28,17 +28,25 @@ namespace Game {
         public static string Exists;
         public static string Success;
         public static string Delete;
-
         /// <summary>
         ///     语言标识符、与相应的CultureInfo
         /// </summary>
+#if BROWSER
+        public static HashSet<string> LanguageTypes = [];
+#else
         public static Dictionary<string, CultureInfo> LanguageTypes = [];
 
-        public static string CurrentLanguageName { get; set; } = "en-US";
         public static CultureInfo CurrentLanguageCultureInfo { get; set; } = new("en-US", false);
+#endif
+
+        public static string CurrentLanguageName { get; set; } = "en-US";
 
         public static void Initialize(string languageType) {
+#if BROWSER
+            if (!LanguageTypes.Contains(languageType)) {
+#else
             if (!LanguageTypes.TryGetValue(languageType, out CultureInfo cultureInfo)) {
+#endif
                 throw new Exception($"Language {languageType} not supported.");
             }
             Ok = null;
@@ -64,9 +72,10 @@ namespace Game {
             jsonNode = null;
             ModsManager.SetConfig("Language", languageType);
             CurrentLanguageName = languageType;
-            CurrentLanguageCultureInfo = cultureInfo;
 #if BROWSER
             Engine.Browser.BrowserInterop.SetDocumentLang(languageType);
+#else
+            CurrentLanguageCultureInfo = cultureInfo;
 #endif
         }
 
@@ -387,6 +396,23 @@ namespace Game {
 
         public static void CreateLanguageSelectionDialog(Widget parent) {
             if (CachedLanguageFullNames.Count == 0) {
+#if BROWSER
+                foreach (string name in LanguageTypes) {
+                    CachedLanguageFullNames.Add(
+                        name,
+                        name switch {
+                            "en-US" => "English (United States)",
+                            "zh-CN" => "中文 (中国）",
+                            "ro-RO" => "română (România)",
+                            "ru-RU" => "русский (Россия)",
+                            "es-419" => "español (Latinoamérica)",
+                            "vi-VN" => "Tiếng Việt (Việt Nam)",
+                            "zh-CN-old" => "[旧] 中文 (中国）",
+                            _ => $"{name}"
+                        }
+                    );
+                }
+#else
                 CultureInfo oldUICulture = Thread.CurrentThread.CurrentUICulture;
                 try {
                     Thread.CurrentThread.CurrentUICulture = CurrentLanguageCultureInfo;
@@ -404,6 +430,7 @@ namespace Game {
                 finally {
                     Thread.CurrentThread.CurrentUICulture = oldUICulture;
                 }
+#endif
             }
             IOrderedEnumerable<KeyValuePair<string, string>> sorted = CachedLanguageFullNames.OrderBy(item => item.Key switch {
                     "en-US" => 0,

@@ -70,9 +70,13 @@ namespace Game {
             m_worldsListWidget.ScrollSpeed = 0f;
             m_worldsListWidget.ItemClicked += OnWorldsListWidgetItemClicked;
             m_modTipsTime = -10000000f;
+#if BROWSER
+            m_cultureInfo = CultureInfo.CurrentCulture;
+#else
             m_cultureInfo = Program.SystemLanguage == null
                 ? CultureInfo.CurrentCulture
                 : new CultureInfo(Program.SystemLanguage);
+#endif
         }
 
         public override void Enter(object[] parameters) {

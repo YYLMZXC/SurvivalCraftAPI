@@ -56,7 +56,7 @@
         <DefineConstants>TRACE;RELEASE;BROWSER</DefineConstants>
         <Optimize>true</Optimize>
         <IsAotCompatible>true</IsAotCompatible>
-        <InvariantGlobalization>false</InvariantGlobalization>
+        <InvariantGlobalization>true</InvariantGlobalization>
         <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s</EmccFlags>
         <PublishTrimmed>true</PublishTrimmed>
         <WasmBuildNative>true</WasmBuildNative>

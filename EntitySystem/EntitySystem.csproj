@@ -54,7 +54,7 @@
         <DefineConstants>TRACE;RELEASE;BROWSER</DefineConstants>
         <Optimize>true</Optimize>
         <IsAotCompatible>true</IsAotCompatible>
-        <InvariantGlobalization>false</InvariantGlobalization>
+        <InvariantGlobalization>true</InvariantGlobalization>
         <PublishTrimmed>true</PublishTrimmed>
         <WasmBuildNative>true</WasmBuildNative>
         <RunAOTCompilation>true</RunAOTCompilation>

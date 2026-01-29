@@ -53,6 +53,9 @@ namespace Engine.Browser {
         [JSImport("saveBytesToFileHandle", "main.js")]
         public static partial Task SaveBytesToFileHandle(JSObject fileHandle, byte[] bytes);
 
+        [JSImport("toggleFullscreen", "main.js")]
+        public static partial void ToggleFullscreen();
+
         [JSExport]
         public static async Task OnGamepadConnected(int index, string name) => GamePad.GamepadConnectedHandler(index, name);
 

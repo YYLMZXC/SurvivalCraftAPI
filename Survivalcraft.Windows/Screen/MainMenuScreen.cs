@@ -16,6 +16,7 @@ namespace Game {
         public Subtexture m_needToUpdateIcon;
         public Subtexture m_dontNeedUpdateIcon;
         public RectangleWidget m_updateButtonIcon;
+        public ButtonWidget m_fullscreenButton;
         public StackPanelWidget m_leftBottomBar;
         public StackPanelWidget m_rightBottomBar;
 
@@ -34,6 +35,10 @@ namespace Game {
             m_updateButtonIcon = Children.Find<RectangleWidget>("UpdateIcon", false);
             m_needToUpdateIcon = ContentManager.Get<Subtexture>("Textures/Gui/NeedToUpdate");
             m_dontNeedUpdateIcon = ContentManager.Get<Subtexture>("Textures/Gui/UpdateChecking");
+            m_fullscreenButton = Children.Find<ButtonWidget>("FullscreenButton", false);
+#if BROWSER
+            m_fullscreenButton.IsVisible = true;
+#endif
             ModsManager.HookAction(
                 "OnMainMenuScreenCreated",
                 loader => {
@@ -126,6 +131,11 @@ namespace Game {
                 //	else DialogsManager.ShowDialog(this,new MessageDialog(LanguageControl.Get(fName,7),LanguageControl.Get(fName,3),LanguageControl.Ok,null,null));
                 //}
             }
+#if BROWSER
+            if (m_fullscreenButton.IsClicked) {
+                Engine.Browser.BrowserInterop.ToggleFullscreen();
+            }
+#endif
             if (Children.Find<ButtonWidget>("Play").IsClicked) {
                 ScreensManager.SwitchScreen("Play");
             }

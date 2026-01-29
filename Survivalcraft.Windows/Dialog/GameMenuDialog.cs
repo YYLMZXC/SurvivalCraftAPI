@@ -468,6 +468,9 @@ namespace Game {
                         delegate { DialogsManager.ShowDialog(ParentWidget, new RunJsDialog()); }
                     )
                 );
+#if BROWSER
+                list.Add(new Tuple<string, Action>(LanguageControl.Get(fName, "104"), Engine.Browser.BrowserInterop.ToggleFullscreen));
+#endif
                 ListSelectionDialog dialog = new(
                     LanguageControl.Get(fName, 92),
                     list,

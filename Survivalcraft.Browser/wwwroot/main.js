@@ -640,6 +640,15 @@ runtime.setModuleImports("main.js", {
         const writable = await fileHandle.createWritable();
         await writable.write(bytes);
         await writable.close();
+    },
+    toggleFullscreen: async () => {
+        if (document.fullscreenElement === canvas) {
+            await document.exitFullscreen();
+        }
+        else if (canvas.requestFullscreen) {
+            await canvas.requestFullscreen({navigationUI: "hide"});
+            await globalThis.screen?.orientation?.lock("landscape"); // 经常无效
+        }
     }
 });
 await runtime.runMain(runtime.getConfig().mainAssemblyName);

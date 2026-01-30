@@ -152,7 +152,10 @@ namespace Game {
 
         public override void Save(ValuesDictionary valuesDictionary) {
             if (UpdateTimeDebug) {
-                int maxTypeNameLength = m_debugInfos.Keys.Max(type => type.FullName?.Length ?? 0) + 1;
+                int maxTypeNameLength = 1;
+                if (m_debugInfos.Keys.Count > 0) {
+                    maxTypeNameLength = m_debugInfos.Keys.Max(type => type.FullName?.Length ?? 0) + 1;
+                }
                 StringBuilder stringBuilder = new();
                 stringBuilder.AppendLine("====== SubsystemUpdate Performance Analyze ======");
                 stringBuilder.Append("TypeName".PadRight(maxTypeNameLength));

@@ -56,6 +56,9 @@ namespace Engine.Browser {
         [JSImport("toggleFullscreen", "main.js")]
         public static partial void ToggleFullscreen();
 
+        [JSImport("showKeyboard", "main.js")]
+        public static partial string ShowKeyboard(string title, string defaultText);
+
         [JSExport]
         public static async Task OnGamepadConnected(int index, string name) => GamePad.GamepadConnectedHandler(index, name);
 

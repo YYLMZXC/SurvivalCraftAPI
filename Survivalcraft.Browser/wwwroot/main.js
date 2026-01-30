@@ -650,6 +650,9 @@ runtime.setModuleImports("main.js", {
             await canvas.requestFullscreen({navigationUI: "hide"});
             await globalThis.screen?.orientation?.lock("landscape"); // 经常无效
         }
+    },
+    showKeyboard: (title, defaultText) => {
+        return globalThis.prompt(title, defaultText);
     }
 });
 await runtime.runMain(runtime.getConfig().mainAssemblyName);

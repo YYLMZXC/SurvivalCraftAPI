@@ -1,3 +1,4 @@
+using Engine.Browser;
 #if ANDROID
 #pragma warning disable CA1416
 using System.Collections.Concurrent;
@@ -520,6 +521,16 @@ namespace Engine.Input {
                     alertDialog.Show();
                 }
             );
+#elif BROWSER
+            Task.Run(() => {
+                string input = BrowserInterop.ShowKeyboard(title, defaultText);
+                if (input == null) {
+                    cancel();
+                }
+                else {
+                    enter(input);
+                }
+            });
 #else
             cancel();
 #endif

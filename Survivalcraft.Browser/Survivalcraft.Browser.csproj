@@ -57,7 +57,11 @@
         <EmbeddedResource Include="..\Survivalcraft.Windows\Content.zip" Link="Content.zip" />
     </ItemGroup>
     <ItemGroup>
-        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\**" TargetPath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\index.html" TargetPath="%(RecursiveDir)index.html" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\main.js" TargetPath="%(RecursiveDir)main.js" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\favicon.webp" TargetPath="%(RecursiveDir)favicon.webp" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkPublish\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(MSBuildTargetName)' == 'Publish'" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkBuild\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(MSBuildTargetName)' != 'Publish'" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs"/>

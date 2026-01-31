@@ -101,7 +101,7 @@ namespace Engine.Browser {
                 case InputEventType.GamepadDisconnected:
                     GamePad.GamepadDisconnectedHandler(e->Payload);
                     break;
-                case InputEventType.VisibilityChange:
+                case InputEventType.FocusChange:
                     Window.FocusedChangedHandler(e->Param == 1);
                     break;
             }

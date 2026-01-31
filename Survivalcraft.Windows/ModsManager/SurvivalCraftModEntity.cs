@@ -1,8 +1,10 @@
 using System.Reflection;
 using System.Xml.Linq;
-using Engine;
 using Game.IContentReader;
 using StringReader = Game.IContentReader.StringReader;
+#if !BROWSER
+using Engine;
+#endif
 
 namespace Game {
     public class SurvivalCraftModEntity : ModEntity {
@@ -35,6 +37,15 @@ namespace Game {
             for (int i = 0; i < readers.Count; i++) {
                 ContentManager.ReaderList.Add(readers[i].Type, readers[i]);
             }
+#if BROWSER
+            Engine.Browser.BrowserInterop.SetContentPtr(ContentFileBridge.Initialize());
+            while (!ContentFileBridge.GetIsDownloaded()) {
+                Thread.Sleep(100);
+            }
+            UnmanagedMemoryStream memoryStream = ContentFileBridge.GetStream();
+            Size = memoryStream.Length;
+            ModArchive = ZipArchive.Open(memoryStream);
+#else
             MemoryStream memoryStream = new();
             const string ContentPath = "app:/Content.zip";
             if (Storage.FileExists(ContentPath)) //检测外置资源是否存在，如果不存在就使用内置资源
@@ -50,6 +61,7 @@ namespace Game {
             Size = memoryStream.Length;
             memoryStream.Position = 0L;
             ModArchive = ZipArchive.Open(memoryStream);
+#endif
             InitResources();
             if (modInfo != null) {
                 modInfo.LoadOrder = int.MinValue;

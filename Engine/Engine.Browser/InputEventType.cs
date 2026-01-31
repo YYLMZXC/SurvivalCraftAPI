@@ -11,7 +11,7 @@
         GamepadConnected = 5, // 未使用，还是走 BrowserInterop
         GamepadDisconnected = 6,
         //其他
-        VisibilityChange = 64, // Param: 0 不可见，1 可见
+        FocusChange = 64, // Param: 0 不可见，1 可见
 
 
         // --- 12 字节事件 (有 float X, Y) ---

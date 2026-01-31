@@ -1,12 +1,51 @@
-import createDotnetRuntime from './_framework/dotnet.js'
+import {dotnet} from './_framework/dotnet.js'
 
 const document = globalThis.document;
 const canvas = document.getElementById("canvas");
-const runtime = await createDotnetRuntime({
-    // 目前只找到这种方式来设置 C# worker 中的 Module.canvas，它会自己将其转换为 OffscreenCanvas
+let sharedInputMemoryPtr = 0;
+let sharedContentMemoryPtr = 0;
+const contentPendingChunks = [];
+let contentWrittenOffset = 8;
+let contentDownloaded = false;
+
+async function downloadContent() {
+    const response = await globalThis.fetch("./assets/Content.zip", { cache: 'force-cache' });
+    const reader = response.body.getReader();
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+            contentDownloaded = true;
+            if (sharedContentMemoryPtr !== 0) {
+                const view = new Uint8Array(runtime.Module.wasmMemory.buffer);
+                Atomics.store(view, sharedContentMemoryPtr, 1);
+            }
+            break;
+        }
+        if (sharedContentMemoryPtr === 0){
+            contentPendingChunks.push(value);
+        } else {
+            const view = new Uint8Array(runtime.Module.wasmMemory.buffer);
+            view.set(value, sharedContentMemoryPtr + contentWrittenOffset);
+            contentWrittenOffset += value.length;
+        }
+    }
+}
+downloadContent();
+
+const busyBar = document.getElementById("splashBusyBar");
+let litIndex = 0;
+const busyBarInterval = globalThis.setInterval(() => {
+    busyBar.children[litIndex].classList.remove("lit");
+    litIndex = (litIndex + 1) % 5;
+    busyBar.children[litIndex].classList.add("lit");
+}, 250);
+
+// TODO: 加上 withResourceLoader
+const runtime = await dotnet.withModuleConfig({
+    //设置 C# worker 中的 Module.canvas，它会自己将其转换为 OffscreenCanvas
     canvas: canvas,
     INITIAL_MEMORY: 386662400
-});
+}).create();
 globalThis.dotnetRuntime = runtime;
 const engineExports = await runtime.getAssemblyExports("Engine.dll");
 const interop = engineExports.Engine.Browser.BrowserInterop; // 调用这个特别慢，屏幕刷新率过高甚至会因此导致卡顿，能少用就少用
@@ -48,8 +87,6 @@ const STRUCT = {
     BUFFER_SIZE: 4220 // 一个 Buffer 的总大小，124 + 4096
 };
 
-// 全局变量
-let sharedInputMemoryPtr = 0;
 let canvasWidth = 1;
 let canvasHeight = 1;
 let mousePositionX = 0;
@@ -64,12 +101,12 @@ function getWritePtr(sharedInputView) {
 }
 
 // --- 写入 4字节事件 ---
-function writeSmallEvent(type, param = 0, payload = 0, sharedInputView = null) {
+function writeSmallEvent(type, param = 0, payload = 0, dataView = null) {
     // 这个 buffer 是一个 SharedArrayBuffer，因为指针可能会变，所以每次都要重新获取；另外，sharedInputMemoryPtr 不会变
-    sharedInputView ??= new DataView(runtime.Module.wasmMemory.buffer);
-    const base = getWritePtr(sharedInputView);
+    dataView ??= new DataView(runtime.Module.wasmMemory.buffer);
+    const base = getWritePtr(dataView);
     const usedBytesOffset = base + STRUCT.OFF_USED_BYTES;
-    const used = sharedInputView.getInt32(usedBytesOffset, true);
+    const used = dataView.getInt32(usedBytesOffset, true);
     const newUsed = used + 4;
     if (newUsed > 4096) {
         return;
@@ -80,16 +117,16 @@ function writeSmallEvent(type, param = 0, payload = 0, sharedInputView = null) {
     // 内存结构: [Type | Param | PayloadL | PayloadH] (Little Endian)
     // Packed: Type | (Param << 8) | (Payload << 16)
     const packed = (type & 0xFF) | ((param & 0xFF) << 8) | ((payload & 0xFFFF) << 16);
-    sharedInputView.setInt32(ptr, packed, true);
-    sharedInputView.setInt32(usedBytesOffset, newUsed, true);
+    dataView.setInt32(ptr, packed, true);
+    dataView.setInt32(usedBytesOffset, newUsed, true);
 }
 
 // --- 写入 12字节事件 ---
-function writeLargeEvent(type, param = 0, payload = 0, x = 0, y = 0, sharedInputView = null) {
-    sharedInputView ??= new DataView(runtime.Module.wasmMemory.buffer);
-    const base = getWritePtr(sharedInputView);
+function writeLargeEvent(type, param = 0, payload = 0, x = 0, y = 0, dataView = null) {
+    dataView ??= new DataView(runtime.Module.wasmMemory.buffer);
+    const base = getWritePtr(dataView);
     const usedBytesOffset = base + STRUCT.OFF_USED_BYTES;
-    const used = sharedInputView.getInt32(usedBytesOffset, true);
+    const used = dataView.getInt32(usedBytesOffset, true);
     const newUsed = used + 12;
     if (newUsed > 4096) {
         return;
@@ -97,22 +134,22 @@ function writeLargeEvent(type, param = 0, payload = 0, x = 0, y = 0, sharedInput
     const ptr = base + STRUCT.OFF_EVENT_DATA + used;
     // 1. Header (4 bytes)
     const packed = (type & 0xFF) | ((param & 0xFF) << 8) | ((payload & 0xFFFF) << 16);
-    sharedInputView.setInt32(ptr, packed, true);
+    dataView.setInt32(ptr, packed, true);
     // 2. Floats (8 bytes)
-    sharedInputView.setFloat32(ptr + 4, x, true);
-    sharedInputView.setFloat32(ptr + 8, y, true);
-    sharedInputView.setInt32(usedBytesOffset, newUsed, true);
+    dataView.setFloat32(ptr + 4, x, true);
+    dataView.setFloat32(ptr + 8, y, true);
+    dataView.setInt32(usedBytesOffset, newUsed, true);
 }
 
 function pollInputLoop() {
-    let sharedInputView = new DataView(runtime.Module.wasmMemory.buffer);
-    const base = getWritePtr(sharedInputView);
+    const dataView = new DataView(runtime.Module.wasmMemory.buffer);
+    const base = getWritePtr(dataView);
     // 1. 写入公共状态
-    sharedInputView.setFloat32(base + STRUCT.OFF_CANVAS_WIDTH, canvasWidth, true);
-    sharedInputView.setFloat32(base + STRUCT.OFF_CANVAS_HEIGHT, canvasHeight, true);
-    sharedInputView.setFloat32(base + STRUCT.OFF_DEVICE_PIXEL_RATIO, globalThis.devicePixelRatio, true);
-    sharedInputView.setFloat32(base + STRUCT.OFF_MOUSE_POSITION_X, mousePositionX, true);
-    sharedInputView.setFloat32(base + STRUCT.OFF_MOUSE_POSITION_Y, mousePositionY, true);
+    dataView.setFloat32(base + STRUCT.OFF_CANVAS_WIDTH, canvasWidth, true);
+    dataView.setFloat32(base + STRUCT.OFF_CANVAS_HEIGHT, canvasHeight, true);
+    dataView.setFloat32(base + STRUCT.OFF_DEVICE_PIXEL_RATIO, globalThis.devicePixelRatio, true);
+    dataView.setFloat32(base + STRUCT.OFF_MOUSE_POSITION_X, mousePositionX, true);
+    dataView.setFloat32(base + STRUCT.OFF_MOUSE_POSITION_Y, mousePositionY, true);
     // 2. 手柄
     const gamepads = globalThis.navigator.getGamepads();
     for (let i = 0; i < gamepads.length; i++) {
@@ -127,11 +164,11 @@ function pollInputLoop() {
         // --- A. 写入摇杆和扳机状态 (Snapshot) ---
         const axes = gamepad.axes;
         for (let a = 0; a < 4; a++) {
-            sharedInputView.setFloat32(base + STRUCT.OFF_GP_AXES + (gamepadIndex * 16) + (a * 4), axes[a], true);
+            dataView.setFloat32(base + STRUCT.OFF_GP_AXES + (gamepadIndex * 16) + (a * 4), axes[a], true);
         }
         const buttons = gamepad.buttons;
-        sharedInputView.setFloat32(base + STRUCT.OFF_GP_TRIGGERS + (gamepadIndex * 8), buttons[6].value, true);
-        sharedInputView.setFloat32(base + STRUCT.OFF_GP_TRIGGERS + (gamepadIndex * 8) + 4, buttons[7].value, true);
+        dataView.setFloat32(base + STRUCT.OFF_GP_TRIGGERS + (gamepadIndex * 8), buttons[6].value, true);
+        dataView.setFloat32(base + STRUCT.OFF_GP_TRIGGERS + (gamepadIndex * 8) + 4, buttons[7].value, true);
         // --- B. 按键事件检测 ---
         let currMask = 0;
         // 跳过 6、7、16
@@ -151,13 +188,13 @@ function pollInputLoop() {
             for (let b = 0; b < 6; b++) {
                 if ((changes & (1 << b)) !== 0) {
                     const isDown = (currMask & (1 << b)) !== 0;
-                    writeSmallEvent(isDown ? 3 : 4, translateGamepadButtons(b), gamepadIndex, sharedInputView);
+                    writeSmallEvent(isDown ? 3 : 4, translateGamepadButtons(b), gamepadIndex, dataView);
                 }
             }
             for (let b = 8; b < 16; b++) {
                 if ((changes & (1 << b)) !== 0) {
                     const isDown = (currMask & (1 << b)) !== 0;
-                    writeSmallEvent(isDown ? 3 : 4, translateGamepadButtons(b), gamepadIndex, sharedInputView);
+                    writeSmallEvent(isDown ? 3 : 4, translateGamepadButtons(b), gamepadIndex, dataView);
                 }
             }
             lastGamepadBtnMasks[i] = currMask;
@@ -398,8 +435,8 @@ function translateGamepadButtons(button) {
 // ---------------------------------------------------------------
 
 runtime.setModuleImports("main.js", {
-    initialize: (ptr) => {
-        sharedInputMemoryPtr = ptr;
+    initialize: inputPtr => {
+        sharedInputMemoryPtr = inputPtr;
 
         const observer = new ResizeObserver(entries => {
             const entry = entries[0];
@@ -426,8 +463,7 @@ runtime.setModuleImports("main.js", {
         });
         observer.observe(canvas);
 
-        const keyDown = (e) => {
-            e.preventDefault();
+        const keyDown = e => {
             e.stopPropagation();
             checkAndRequestPointerLock();
             let translatedKeyCode = translateKeyCode(e.code);
@@ -436,8 +472,7 @@ runtime.setModuleImports("main.js", {
             }
         }
 
-        const keyUp = (e) => {
-            e.preventDefault();
+        const keyUp = e => {
             e.stopPropagation();
             let translatedKeyCode = translateKeyCode(e.code);
             if (translatedKeyCode >= 0) {
@@ -445,7 +480,7 @@ runtime.setModuleImports("main.js", {
             }
         }
 
-        const pointerDown = (e) => {
+        const pointerDown = e => {
             e.preventDefault();
             e.stopPropagation();
             canvas.focus();
@@ -462,7 +497,7 @@ runtime.setModuleImports("main.js", {
             }
         }
 
-        const pointerMove = (e) => {
+        const pointerMove = e => {
             e.preventDefault();
             e.stopPropagation();
             const devicePixelRatio = globalThis.devicePixelRatio || 1.0;
@@ -479,7 +514,7 @@ runtime.setModuleImports("main.js", {
             }
         }
 
-        const pointerUp = (e) => {
+        const pointerUp = e => {
             e.preventDefault();
             e.stopPropagation();
             switch (e.pointerType) {
@@ -493,13 +528,13 @@ runtime.setModuleImports("main.js", {
             }
         }
 
-        const mouseWheel = (e) => {
+        const mouseWheel = e => {
             e.preventDefault();
             e.stopPropagation();
             writeLargeEvent(131, 0, 0, e.deltaX / 100, e.deltaY / 100);
         }
 
-        const gamepadConnected = (e) => {
+        const gamepadConnected = e => {
             let gamepad = e.gamepad;
             if (gamepad !== null && gamepad.index >= 0 && gamepad.index < 4) {
                 // id 是字符串，所以还是走 interop
@@ -507,7 +542,7 @@ runtime.setModuleImports("main.js", {
             }
         }
 
-        const gamepadDisconnected = (e) => {
+        const gamepadDisconnected = e => {
             let gamepad = e.gamepad;
             if (gamepad !== null && gamepad.index >= 0 && gamepad.index < 4) {
                 lastGamepadBtnMasks[gamepad.index] = 0;
@@ -523,7 +558,7 @@ runtime.setModuleImports("main.js", {
             }
         }
 
-        const drop = async (e) => {
+        const drop = async e => {
             e.preventDefault();
             e.stopPropagation();
             if (e.dataTransfer.files.length > 0) {
@@ -537,7 +572,15 @@ runtime.setModuleImports("main.js", {
             writeSmallEvent(64, document.visibilityState === "visible" ? 1 : 0);
         };
 
-        const popState = (e) => {
+        const focus = () => {
+            writeSmallEvent(64, 1);
+        };
+
+        const blur = () => {
+            writeSmallEvent(64, 0);
+        };
+
+        const popState = e => {
             e.preventDefault();
             //20：Escape
             writeSmallEvent(1, 20);
@@ -545,7 +588,7 @@ runtime.setModuleImports("main.js", {
             globalThis.history.pushState(null, "", globalThis.location.href);
         }
 
-        canvas.addEventListener("contextmenu", (e) => e.preventDefault(), false);
+        canvas.addEventListener("contextmenu", e => e.preventDefault(), false);
         canvas.addEventListener("keydown", keyDown, false);
         canvas.addEventListener("keyup", keyUp, false);
         canvas.addEventListener("pointerdown", pointerDown, false);
@@ -558,20 +601,23 @@ runtime.setModuleImports("main.js", {
         canvas.addEventListener("drop", drop, false);
         canvas.addEventListener("dragover", e => e.preventDefault(), false);
         document.addEventListener("visibilitychange", visibilityChange, false);
+        canvas.addEventListener("focus", focus, false);
+        canvas.addEventListener("blur", blur, false);
         globalThis.addEventListener("popstate", popState, false);
 
         globalThis.history.pushState(null, "", globalThis.location.href);
-        interop.SetHostedHref(globalThis.location.href);
+        //interop.SetHostedHref(globalThis.location.href);
+        canvas.focus();
         pollInputLoop();
     },
     getTitle: () => document.title,
-    setTitle: (title) => document.title = title,
+    setTitle: title => document.title = title,
     getLanguage: () => globalThis.navigator.language,
     close: () => globalThis.close(),
     reload: () => globalThis.location.reload(),
-    setDocumentLang : (lang) => document.documentElement.lang = lang,
-    openUrlInNewTab: (url) => globalThis.open(url),
-    setNeedPointerLock: (need) => {
+    setDocumentLang : lang => document.documentElement.lang = lang,
+    openUrlInNewTab: url => globalThis.open(url),
+    setNeedPointerLock: need => {
         needPointerLock = need;
         checkAndRequestPointerLock();
     },
@@ -607,8 +653,8 @@ runtime.setModuleImports("main.js", {
         }
         return null;
     },
-    getFileName: (file) => file?.name ?? "",
-    getFileBytes: async (file) => {
+    getFileName: file => file?.name ?? "",
+    getFileBytes: async file => {
         if (file === null) {
             return [];
         }
@@ -653,6 +699,22 @@ runtime.setModuleImports("main.js", {
     },
     showKeyboard: (title, defaultText) => {
         return globalThis.prompt(title, defaultText);
-    }
+    },
+    setContentPtr: ptr => {
+        sharedContentMemoryPtr = ptr;
+        const view = new Uint8Array(runtime.Module.wasmMemory.buffer);
+        for (const chunk of contentPendingChunks) {
+            view.set(chunk, sharedContentMemoryPtr + contentWrittenOffset);
+            contentWrittenOffset += chunk.length;
+        }
+        contentPendingChunks.length = 0;
+        if (contentDownloaded) {
+            Atomics.store(view, sharedContentMemoryPtr, 1);
+        }
+    },
+    firstFramePrepared: () => {
+        globalThis.clearInterval(busyBarInterval);
+        document.getElementById("splash")?.remove();
+    },
 });
 await runtime.runMain(runtime.getConfig().mainAssemblyName);

@@ -42,7 +42,7 @@ namespace Engine {
 
         static State m_state;
 #if BROWSER
-        public static string HostedHref;
+        //public static string HostedHref;
 #else
         public static IView m_view;
 #endif
@@ -751,8 +751,7 @@ namespace Engine {
                 Dispatcher.Initialize();
                 Display.Initialize();
 #if BROWSER
-                IntPtr ptr = InputBridge.Initialize();
-                BrowserInterop.Initialize(ptr);
+                BrowserInterop.Initialize(InputBridge.Initialize());
 #endif
                 Keyboard.Initialize();
                 Mouse.Initialize();

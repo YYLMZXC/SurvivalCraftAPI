@@ -59,6 +59,12 @@ namespace Engine.Browser {
         [JSImport("showKeyboard", "main.js")]
         public static partial string ShowKeyboard(string title, string defaultText);
 
+        [JSImport("setContentPtr", "main.js")]
+        public static partial void SetContentPtr(IntPtr ptr);
+
+        [JSImport("firstFramePrepared", "main.js")]
+        public static partial void FirstFramePrepared();
+
         [JSExport]
         public static async Task OnGamepadConnected(int index, string name) => GamePad.GamepadConnectedHandler(index, name);
 
@@ -69,10 +75,7 @@ namespace Engine.Browser {
             Window.FileDropHandler(stream, fileName);
         }
 
-        [JSExport]
-        public static async Task OnVisibilityChange(bool visible) => Window.FocusedChangedHandler(visible);
-
-        [JSExport]
-        public static async Task SetHostedHref(string href) => Window.HostedHref = href;
+        //[JSExport]
+        //public static async Task SetHostedHref(string href) => Window.HostedHref = href;
     }
 }

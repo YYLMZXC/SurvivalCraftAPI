@@ -475,7 +475,11 @@ namespace Game {
                 //MoveWidgetSize = 1f;
                 MoveWidgetMarginX = 0f;
                 MoveWidgetMarginY = 0f;
+#if BROWSER
+                AnimatedTextureRefreshLimit = 2;
+#else
                 AnimatedTextureRefreshLimit = 7;
+#endif
                 FileAssociationEnabled = true;
                 SafeMode = false;
                 AdaptEdgeToEdgeDisplay = Window.HasWideNotch;

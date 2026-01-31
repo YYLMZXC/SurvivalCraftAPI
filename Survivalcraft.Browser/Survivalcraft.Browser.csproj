@@ -54,12 +54,11 @@
         <NativeFileReference Include="Native/wasmfsHelper.c" ScanForPInvokes="true" />
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="..\Survivalcraft.Windows\Content.zip" Link="Content.zip" />
-    </ItemGroup>
-    <ItemGroup>
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\index.html" TargetPath="%(RecursiveDir)index.html" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\main.js" TargetPath="%(RecursiveDir)main.js" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\favicon.webp" TargetPath="%(RecursiveDir)favicon.webp" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\assets\**" TargetPath="%(RecursiveDir)assets\%(Filename)%(Extension)" />
+        <WasmExtraFilesToDeploy Include="..\Survivalcraft.Windows\Content.zip" TargetPath="%(RecursiveDir)assets\Content.zip" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkPublish\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(MSBuildTargetName)' == 'Publish'" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkBuild\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(MSBuildTargetName)' != 'Publish'" />
     </ItemGroup>
@@ -70,4 +69,27 @@
         <TrimmerRootAssembly Include="Survivalcraft" />
         <TrimmerRootAssembly Include="Engine" />
     </ItemGroup>
+    <UsingTask TaskName="GenerateContentInfo" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <ContentFilePath ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+<![CDATA[
+var info = new FileInfo(ContentFilePath);
+long size = info.Exists ? info.Length : 0;
+string content = $@"namespace Game {{
+    public static class ContentFileInfo {{
+        public const long FileSize = {size};
+    }}
+}}";
+File.WriteAllText("ContentFileInfo.g.cs", content);
+]]>
+            </Code>
+        </Task>
+    </UsingTask>
+    <Target Name="UpdateContentFileSize" BeforeTargets="BeforeBuild">
+        <GenerateContentInfo ContentFilePath="..\Survivalcraft.Windows\Content.zip" />
+    </Target>
 </Project>

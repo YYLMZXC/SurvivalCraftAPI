@@ -35,7 +35,7 @@ namespace Game {
         public static float LastCpuFrameTime { get; set; }
 
         public static event Action<Uri> HandleUri;
-#if ANDROID
+#if ANDROID || BROWSER
         public static bool m_firstFramePrepared;
 #endif
 
@@ -43,12 +43,8 @@ namespace Game {
         // ReSharper disable UnusedMember.Local
 #if BROWSER
         public static async Task Main2(string[] args) {
-            Console.WriteLine("Display.Initialize()");
             Display.Initialize();
             BrowserInterop.Initialize(InputBridge.Initialize());
-            /*BrowserInterop.CanvasResizeCallback += size => {
-                Display.Resize();
-            };*/
             Display.Resize();
             unsafe {
                 Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&Frame, nint.Zero);
@@ -59,6 +55,7 @@ namespace Game {
         [System.Runtime.InteropServices.UnmanagedCallersOnly]
         public static int Frame(double time, nint userData)
         {
+            InputBridge.BeforeFrame();
             Display.Clear(Color.White);
             PrimitivesRenderer2D primitivesRenderer2D = new PrimitivesRenderer2D();
             FlatBatch2D flatBatch2D = primitivesRenderer2D.FlatBatch();
@@ -70,6 +67,7 @@ namespace Game {
             }
             return 1;
         }
+
         public static async Task Main(string[] args) {
 #else
         static void Main(string[] args) {
@@ -296,13 +294,18 @@ namespace Game {
                 ExceptionManager.ReportExceptionToUser(null, e2);
                 ScreensManager.SwitchScreen("MainMenu");
             }
-#if ANDROID
             finally {
+#if ANDROID
                 if (LoadingScreen.m_isContentLoaded) {
                     m_firstFramePrepared = true;
                 }
-            }
+#elif BROWSER
+                if (!m_firstFramePrepared && LoadingScreen.m_isContentLoaded) {
+                    m_firstFramePrepared = true;
+                    BrowserInterop.FirstFramePrepared();
+                }
 #endif
+            }
         }
 
         public static void ToRestartHandler() {

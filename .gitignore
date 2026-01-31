@@ -340,3 +340,6 @@ healthchecksdb
 
 
 /Survivalcraft/Properties/launchSettings.json
+
+# Local Netlify folder
+.netlify

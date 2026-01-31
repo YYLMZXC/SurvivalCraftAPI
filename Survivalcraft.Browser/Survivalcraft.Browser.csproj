@@ -59,6 +59,7 @@
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\favicon.webp" TargetPath="%(RecursiveDir)favicon.webp" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\manifest.json" TargetPath="%(RecursiveDir)manifest.json" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\service-worker.js" TargetPath="%(RecursiveDir)service-worker.js" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_headers" TargetPath="%(RecursiveDir)_headers" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\assets\**" TargetPath="%(RecursiveDir)assets\%(Filename)%(Extension)" />
         <WasmExtraFilesToDeploy Include="..\Survivalcraft.Windows\Content.zip" TargetPath="%(RecursiveDir)assets\Content.zip" />
         <WasmExtraFilesToDeploy Include="..\Survivalcraft.Android\Resources\mipmap-xxxhdpi\icon.webp" TargetPath="%(RecursiveDir)assets\icon.webp" />

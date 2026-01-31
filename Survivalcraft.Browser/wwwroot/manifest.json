@@ -5,7 +5,7 @@
   "id": "com.candy.survivalcraftAPI1_8",
   "start_url": "./index.html",
   "display": "standalone",
-  "display_override": "standalone",
+  "display_override": ["fullscreen", "standalone"],
   "lang": "en",
   "theme_color": "#108C00",
   "background_color": "#000000",

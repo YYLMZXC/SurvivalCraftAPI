@@ -1,3 +1,12 @@
+if ("serviceWorker" in globalThis.navigator) {
+    try {
+        await globalThis.navigator.serviceWorker.register("./service-worker.js");
+        await globalThis.navigator.serviceWorker.ready;
+    } catch (error) {
+        console.error(`Register service worker failed: ${error}`);
+    }
+}
+
 import {dotnet} from './_framework/dotnet.js'
 
 const document = globalThis.document;
@@ -9,7 +18,7 @@ let contentWrittenOffset = 8;
 let contentDownloaded = false;
 
 async function downloadContent() {
-    const response = await globalThis.fetch("./assets/Content.zip", { cache: 'force-cache' });
+    const response = await globalThis.fetch("./assets/Content.zip");
     const reader = response.body.getReader();
     while (true) {
         const { done, value } = await reader.read();

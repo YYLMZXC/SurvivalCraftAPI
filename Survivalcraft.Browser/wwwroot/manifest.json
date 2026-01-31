@@ -1,0 +1,22 @@
+﻿{
+  "name": "Survivalcraft 2.4 - API 1.8.2.3",
+  "short_name": "SC API",
+  "description": "",
+  "id": "com.candy.survivalcraftAPI1_8",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "display_override": "standalone",
+  "lang": "en",
+  "theme_color": "#108C00",
+  "background_color": "#000000",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "./assets/icon.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any"
+    }
+  ],
+  "prefer_related_applications": false
+}

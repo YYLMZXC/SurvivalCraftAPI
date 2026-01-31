@@ -57,8 +57,11 @@
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\index.html" TargetPath="%(RecursiveDir)index.html" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\main.js" TargetPath="%(RecursiveDir)main.js" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\favicon.webp" TargetPath="%(RecursiveDir)favicon.webp" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\manifest.json" TargetPath="%(RecursiveDir)manifest.json" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\service-worker.js" TargetPath="%(RecursiveDir)service-worker.js" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\assets\**" TargetPath="%(RecursiveDir)assets\%(Filename)%(Extension)" />
         <WasmExtraFilesToDeploy Include="..\Survivalcraft.Windows\Content.zip" TargetPath="%(RecursiveDir)assets\Content.zip" />
+        <WasmExtraFilesToDeploy Include="..\Survivalcraft.Android\Resources\mipmap-xxxhdpi\icon.webp" TargetPath="%(RecursiveDir)assets\icon.webp" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkPublish\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(MSBuildTargetName)' == 'Publish'" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkBuild\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(MSBuildTargetName)' != 'Publish'" />
     </ItemGroup>

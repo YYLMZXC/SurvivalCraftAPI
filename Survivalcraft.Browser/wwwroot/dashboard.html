@@ -1,0 +1,405 @@
+﻿<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>Dashboard - Survivalcraft API</title>
+    <link rel="icon" type="image/webp" href="./favicon.webp" />
+    <link rel="manifest" href="./manifest.json" />
+    <!-- 简单的内联样式，不依赖第三方库 -->
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-main: #333;
+            --text-sub: #666;
+            --accent-color: #007bff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --border-radius: 8px;
+            --console-bg: #1e1e1e;
+            --console-text: #00ff00;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* 状态列表布局 */
+        .status-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto; /* 名称 - 状态 - 按钮 */
+            gap: 10px;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .status-value {
+            font-family: monospace;
+            font-size: 0.9em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #eee;
+        }
+
+        .status-value.success { color: var(--success-color); background: #e6f4ea; }
+        .status-value.error { color: var(--error-color); background: #fbeaea; }
+
+        /* 按钮样式 */
+        button {
+            background-color: var(--bg-color);
+            border: 1px solid #ddd;
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background-color: #e2e6ea;
+            border-color: #ccc;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.primary {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+        }
+        button.primary:hover {
+            background-color: #0056b3;
+        }
+
+        /* 控制台/输出区域 */
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        #outputContainer {
+            background-color: var(--console-bg);
+            color: var(--console-text);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #outputContainer div {
+            margin-bottom: 4px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 2px;
+            word-break: break-all;
+        }
+
+        /* 滚动条美化 */
+        #outputContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+        #outputContainer::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+        #outputContainer::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .status-row {
+                grid-template-columns: 1fr auto;
+                grid-template-areas:
+                    "label status"
+                    "action action";
+            }
+            .status-label { grid-area: label; }
+            .status-value { grid-area: status; }
+            .status-row button {
+                grid-area: action;
+                width: 100%;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="dashboard" class="card">
+        <h2>Dashboard</h2>
+
+        <div class="status-row">
+            <span class="status-label">Service Worker</span>
+            <span id="serviceWorkerStatus" class="status-value">Checking...</span>
+            <div></div> <!-- 占位，这行没有按钮 -->
+        </div>
+
+        <div class="status-row">
+            <span class="status-label">SharedArrayBuffer</span>
+            <span id="sharedArrayBufferStatus" class="status-value">Checking...</span>
+            <div></div>
+        </div>
+
+        <div class="status-row">
+            <span class="status-label">CacheStorage</span>
+            <span id="cacheStorageStatus" class="status-value">Checking...</span>
+            <button id="clearCachesButton">Clear Caches</button>
+        </div>
+
+        <div class="status-row">
+            <span class="status-label">Origin Private File System</span>
+            <span id="opfsStatus" class="status-value">Checking...</span>
+            <button id="clearOpfsButton">Clear OPFS</button>
+        </div>
+    </div>
+
+    <div class="console-header">
+        <h3 style="margin:0; font-size:1.1rem; color:#555;">Log Output</h3>
+        <button id="clearOutputButton" class="primary">Clear Log</button>
+    </div>
+
+    <div id="outputContainer"></div>
+</div>
+
+<script type="module">
+    // DOM 元素缓存
+    const els = {
+        outputContainer: document.getElementById("outputContainer"),
+        swStatus: document.getElementById("serviceWorkerStatus"),
+        sabStatus: document.getElementById("sharedArrayBufferStatus"),
+        cacheStorageStatus: document.getElementById("cacheStorageStatus"),
+        opfsStatus: document.getElementById("opfsStatus"),
+        clearCachesButton: document.getElementById("clearCachesButton"),
+        clearOpfsButton: document.getElementById("clearOpfsButton"),
+        clearOutputButton: document.getElementById("clearOutputButton")
+    };
+
+    // 日志输出工具
+    function output(message, type = 'info') {
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+        const div = document.createElement("div");
+        div.innerHTML = `<span style="opacity:0.5">[${time}]</span> ${message}`;
+        if (type === 'error') div.style.color = '#ff6b6b';
+        els.outputContainer.appendChild(div);
+        // 自动滚动到底部
+        els.outputContainer.scrollTop = els.outputContainer.scrollHeight;
+    }
+
+    function setStatus(element, text, isSuccess) {
+        element.textContent = text;
+        element.className = 'status-value ' + (isSuccess ? 'success' : 'error');
+    }
+
+    els.clearOutputButton.addEventListener("click", () => els.outputContainer.replaceChildren());
+
+    // --- CacheStorage Logic ---
+    async function clearCaches() {
+        if (typeof CacheStorage === "function" && globalThis.caches) {
+            try {
+                const keys = await caches.keys();
+                // 并行删除以提高速度
+                await Promise.all(keys.map(key => globalThis.caches.delete(key)));
+                output("Clear caches succeeded.");
+                setStatus(els.cacheStorageStatus, "✔️ 0", true);
+            } catch (e) {
+                output(`Clear caches failed: ${e}`, 'error');
+            }
+        } else {
+            output("Clear caches failed: Not supported.", 'error');
+        }
+    }
+    els.clearCachesButton.addEventListener("click", clearCaches);
+
+    // --- OPFS Logic ---
+    async function clearOpfs() {
+        if (typeof FileSystemDirectoryHandle === "function" && globalThis.navigator.storage?.getDirectory) {
+            try {
+                const root = await globalThis.navigator.storage.getDirectory();
+
+                // 修正逻辑：先收集所有条目，再删除。
+                // 避免在迭代过程中修改集合可能导致的跳过问题。
+                const entries = [];
+                for await (const entry of root.keys()) {
+                    entries.push(entry);
+                }
+
+                for (const name of entries) {
+                    await root.removeEntry(name, { recursive: true });
+                }
+
+                output("Clear OPFS succeeded.");
+                setStatus(els.opfsStatus, "✔️ 0 B", true);
+            } catch (error) {
+                output(`Clear OPFS failed: ${error}`, 'error');
+            }
+        } else {
+            output("Clear OPFS failed: Not supported.", 'error');
+        }
+    }
+    els.clearOpfsButton.addEventListener("click", clearOpfs);
+
+    // --- Helper: Format Bytes ---
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // --- Helper: Recursively calculate size ---
+    async function countFilesAndSize(dirHandle) {
+        let totalCount = 0;
+        let totalSize = 0;
+
+        for await (const entry of dirHandle.values()) {
+            if (entry.kind === 'file') {
+                const file = await entry.getFile();
+                totalCount++;
+                totalSize += file.size;
+            } else if (entry.kind === 'directory') {
+                const { count, size } = await countFilesAndSize(entry);
+                totalCount += count;
+                totalSize += size;
+            }
+        }
+        return { count: totalCount, size: totalSize };
+    }
+
+    // --- Main Check Logic ---
+    async function checkAll() {
+        // 1. Service Worker
+        output("Checking Service Worker...");
+        if ("serviceWorker" in navigator) {
+            // 注意：这里需要 ensure 当前目录下真的有 service-worker.js，否则控制台会报 404
+            navigator.serviceWorker.register("./service-worker.js")
+                .then(() => {
+                    output("Service Worker registered.");
+                    setStatus(els.swStatus, "✔️ OK", true);
+                })
+                .catch(err => {
+                    // 如果是因为文件不存在导致的失败，我们不认为它是浏览器不支持
+                    output(`Service Worker registration warning: ${err.message}`, 'error');
+                    // 依然标记为支持，但是注册失败
+                    setStatus(els.swStatus, "⚠️ Register Failed", false);
+                });
+        } else {
+            output("Service Worker not supported.", 'error');
+            setStatus(els.swStatus, "❌ Unsupported", false);
+        }
+
+        // 2. SharedArrayBuffer
+        output("Checking SharedArrayBuffer...");
+        // SAB 需要 Cross-Origin-Opener-Policy 和 Cross-Origin-Embedder-Policy 响应头
+        if (typeof SharedArrayBuffer === "function") {
+            try {
+                new SharedArrayBuffer(1024);
+                output("SharedArrayBuffer created.");
+                setStatus(els.sabStatus, "✔️ OK", true);
+            } catch (error) {
+                output(`SharedArrayBuffer Error: ${error}`, 'error');
+                setStatus(els.sabStatus, "❌ Error", false);
+            }
+        } else {
+            output("SharedArrayBuffer not supported.", 'error');
+            setStatus(els.sabStatus, "❌ Unsupported", false);
+        }
+
+        // 3. CacheStorage
+        output("Checking CacheStorage...");
+        if (typeof CacheStorage === "function" && globalThis.caches) {
+            try {
+                let cacheCount = 0;
+                const keys = await caches.keys();
+                // 这里的逻辑稍微优化一下，只取 key length，避免深入打开每个 cache 浪费 IO，除非确实需要计算内容
+                // 原逻辑是打开每个 cache 算 item 数量，保留原逻辑
+                for (const key of keys) {
+                    const cache = await caches.open(key);
+                    cacheCount += (await cache.keys()).length;
+                }
+                output(`CacheStorage: ${keys.length} caches, ${cacheCount} items.`);
+                setStatus(els.cacheStorageStatus, `✔️ ${cacheCount} Items`, true);
+            } catch (error) {
+                output(`CacheStorage error: ${error}`, 'error');
+                setStatus(els.cacheStorageStatus, "❌ Error", false);
+            }
+        } else {
+            setStatus(els.cacheStorageStatus, "❌ Unsupported", false);
+        }
+
+        // 4. OPFS
+        output("Checking OPFS...");
+        if (typeof FileSystemDirectoryHandle === "function" && navigator.storage?.getDirectory) {
+            try {
+                const root = await navigator.storage.getDirectory();
+                const { count, size } = await countFilesAndSize(root);
+                const formatted = formatBytes(size);
+                output(`OPFS: ${count} files, total ${formatted}.`);
+                setStatus(els.opfsStatus, `✔️ ${formatted}`, true);
+            } catch (error) {
+                output(`OPFS Access Error: ${error}`, 'error');
+                setStatus(els.opfsStatus, "❌ Error", false);
+            }
+        } else {
+            output("OPFS not supported.", 'error');
+            setStatus(els.opfsStatus, "❌ Unsupported", false);
+        }
+    }
+
+    // Start
+    checkAll();
+</script>
+</body>
+</html>

@@ -31,6 +31,8 @@ namespace Engine.Input {
 
         public static event Action<TouchLocation> TouchMoved;
 
+        public static bool IsTouched;
+
         internal static void Initialize() { }
 
         internal static void Dispose() { }
@@ -117,6 +119,7 @@ namespace Engine.Input {
                 || Keyboard.IsKeyboardVisible) {
                 return;
             }
+            IsTouched = true;
             int num = FindTouchLocationIndex(id);
             if (num >= 0) {
                 if (m_touchLocations[num].State == TouchLocationState.Moved) {

@@ -60,11 +60,12 @@
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\manifest.json" TargetPath="%(RecursiveDir)manifest.json" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\service-worker.js" TargetPath="%(RecursiveDir)service-worker.js" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_headers" TargetPath="%(RecursiveDir)_headers" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\dashboard.html" TargetPath="%(RecursiveDir)dashboard.html" />
         <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\assets\**" TargetPath="%(RecursiveDir)assets\%(Filename)%(Extension)" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\.netlify\**" TargetPath="%(RecursiveDir).netlify\%(Filename)%(Extension)" />
         <WasmExtraFilesToDeploy Include="..\Survivalcraft.Windows\Content.zip" TargetPath="%(RecursiveDir)assets\Content.zip" />
-        <WasmExtraFilesToDeploy Include="..\Survivalcraft.Android\Resources\mipmap-xxxhdpi\icon.webp" TargetPath="%(RecursiveDir)assets\icon.webp" />
-        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkPublish\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(MSBuildTargetName)' == 'Publish'" />
-        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkBuild\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(MSBuildTargetName)' != 'Publish'" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkPublish\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(IsPublishing)' == 'true'" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkBuild\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(IsPublishing)' != 'true'" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs"/>
@@ -95,5 +96,6 @@ File.WriteAllText("ContentFileInfo.g.cs", content);
     </UsingTask>
     <Target Name="UpdateContentFileSize" BeforeTargets="BeforeBuild">
         <GenerateContentInfo ContentFilePath="..\Survivalcraft.Windows\Content.zip" />
+        <Message Text="Updated ContentFileInfo.g.cs" Importance="high" />
     </Target>
 </Project>

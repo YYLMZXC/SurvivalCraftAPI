@@ -90,7 +90,7 @@ self.addEventListener("activate", (event) => {
     self.clients.claim();
 });
 self.addEventListener("install", (event) => {
-    event.waitUntil(addResourcesToCache(["./", "./index.html", "./main.js", "./_framework/dotnet.js", "./assets/logo.webp", "./favicon.webp"]));
+    event.waitUntil(addResourcesToCache(["./", "./index.html", "./main.js", "./assets/logo.webp", "./favicon.webp", "./dashboard.html"]));
     self.skipWaiting();
 });
 self.addEventListener("fetch", (event) => {

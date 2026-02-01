@@ -10,13 +10,44 @@
   "theme_color": "#108C00",
   "background_color": "#000000",
   "orientation": "landscape",
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./assets/icon.webp",
+      "src": "./assets/icon-192.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    },
+    {
+      "src": "./assets/icon-512.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    },
+    {
+      "src": "./assets/icon-maskable-192.webp",
       "sizes": "192x192",
       "type": "image/webp",
-      "purpose": "any"
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icon-maskable-512.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "maskable"
     }
   ],
-  "prefer_related_applications": false
+  "screenshots": [
+    {
+      "src": "assets/screenshot-wide.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Wide Screenshot"
+    },
+    {
+      "src": "assets/screenshot-narrow.webp",
+      "sizes": "608x1080",
+      "type": "image/webp",
+      "label": "Narrow Screenshot"
+    }
+  ]
 }

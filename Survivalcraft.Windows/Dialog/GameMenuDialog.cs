@@ -469,7 +469,7 @@ namespace Game {
                     )
                 );
 #if BROWSER
-                list.Add(new Tuple<string, Action>(LanguageControl.Get(fName, "104"), Engine.Browser.BrowserInterop.ToggleFullscreen));
+                list.Add(new Tuple<string, Action>(LanguageControl.Get(fName, "104"), () => Window.WindowMode = Window.WindowMode == WindowMode.Fullscreen ? WindowMode.Fixed : WindowMode.Fullscreen));
 #endif
                 ListSelectionDialog dialog = new(
                     LanguageControl.Get(fName, 92),

@@ -174,6 +174,14 @@ namespace Game {
         }
 
         public static WindowMode WindowMode {
+#if BROWSER
+            get => Window.WindowMode;
+            set {
+                value = value == WindowMode.Fullscreen ? WindowMode.Fullscreen : WindowMode.Fixed;
+                Window.WindowMode = value;
+                m_windowMode = value;
+            }
+#else
             get => m_windowMode;
             set {
                 if (value != m_windowMode) {
@@ -203,6 +211,7 @@ namespace Game {
                     }
                 );
             }
+#endif
         }
 
         #region 简单设置项
@@ -305,6 +314,7 @@ namespace Game {
                     && Window.WindowMode == WindowMode.Fullscreen) {
                     Window.WindowMode = WindowMode.Resizable;
                 }
+#if !BROWSER
                 ModsManager.HookAction(
                     "WindowModeChanged",
                     loader => {
@@ -312,6 +322,7 @@ namespace Game {
                         return false;
                     }
                 );
+#endif
             }
         }
 

@@ -595,6 +595,10 @@ runtime.setModuleImports("main.js", {
             writeSmallEvent(64, 0);
         };
 
+        const fullscreenChange = () => {
+            writeSmallEvent(65, document.fullscreenElement === canvas ? 1 : 0);
+        };
+
         const popState = e => {
             e.preventDefault();
             //20：Escape
@@ -618,11 +622,15 @@ runtime.setModuleImports("main.js", {
         document.addEventListener("visibilitychange", visibilityChange, false);
         canvas.addEventListener("focus", focus, false);
         canvas.addEventListener("blur", blur, false);
+        document.addEventListener("fullscreenchange", fullscreenChange, false);
         globalThis.addEventListener("popstate", popState, false);
 
         globalThis.history.pushState(null, "", globalThis.location.href);
         //interop.SetHostedHref(globalThis.location.href);
         canvas.focus();
+        if (document.fullscreenElement === canvas) {
+            writeSmallEvent(65, 1);
+        }
         pollInputLoop();
     },
     getTitle: () => document.title,
@@ -703,13 +711,15 @@ runtime.setModuleImports("main.js", {
         await writable.write(bytes);
         await writable.close();
     },
-    toggleFullscreen: async () => {
-        if (document.fullscreenElement === canvas) {
-            await document.exitFullscreen();
+    setFullscreen: async (flag) => {
+        if (flag) {
+            if (document.fullscreenElement !== canvas) {
+                await canvas.requestFullscreen({navigationUI: "hide"});
+                await globalThis.screen?.orientation?.lock("landscape"); // 经常无效
+            }
         }
-        else if (canvas.requestFullscreen) {
-            await canvas.requestFullscreen({navigationUI: "hide"});
-            await globalThis.screen?.orientation?.lock("landscape"); // 经常无效
+        else {
+            await document.exitFullscreen();
         }
     },
     showKeyboard: (title, defaultText) => {

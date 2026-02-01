@@ -133,7 +133,7 @@ namespace Game {
             }
 #if BROWSER
             if (m_fullscreenButton.IsClicked) {
-                Engine.Browser.BrowserInterop.ToggleFullscreen();
+                Window.WindowMode = Window.WindowMode == WindowMode.Fullscreen ? WindowMode.Fixed : WindowMode.Fullscreen;
             }
 #endif
             if (Children.Find<ButtonWidget>("Play").IsClicked) {

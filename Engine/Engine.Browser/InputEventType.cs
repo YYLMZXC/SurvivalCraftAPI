@@ -12,6 +12,7 @@
         GamepadDisconnected = 6,
         //其他
         FocusChange = 64, // Param: 0 不可见，1 可见
+        FullscreenChange = 65, // Param: 0 退出全屏，1 进入全屏
 
 
         // --- 12 字节事件 (有 float X, Y) ---

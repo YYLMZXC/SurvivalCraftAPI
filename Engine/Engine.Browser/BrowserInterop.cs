@@ -53,8 +53,8 @@ namespace Engine.Browser {
         [JSImport("saveBytesToFileHandle", "main.js")]
         public static partial Task SaveBytesToFileHandle(JSObject fileHandle, byte[] bytes);
 
-        [JSImport("toggleFullscreen", "main.js")]
-        public static partial void ToggleFullscreen();
+        [JSImport("setFullscreen", "main.js")]
+        public static partial void SetFullscreen(bool fullscreen);
 
         [JSImport("showKeyboard", "main.js")]
         public static partial string ShowKeyboard(string title, string defaultText);

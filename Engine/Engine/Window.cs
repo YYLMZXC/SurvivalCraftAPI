@@ -122,8 +122,10 @@ namespace Engine {
 
         public static WindowMode WindowMode {
             get {
-#if MOBILE || BROWSER
+#if MOBILE
                 return WindowMode.Fullscreen;
+#elif BROWSER
+                return InputBridge.IsFullscreen ? WindowMode.Fullscreen : WindowMode.Fixed;
 #else
                 VerifyWindowOpened();
                 return m_gameWindow.WindowState == WindowState.Fullscreen ? WindowMode.Fullscreen :
@@ -134,7 +136,16 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if !MOBILE && !BROWSER
+#if BROWSER
+                if (value == WindowMode.Fullscreen) {
+                    if (!InputBridge.IsFullscreen) {
+                        BrowserInterop.SetFullscreen(true);
+                    }
+                }
+                else if (InputBridge.IsFullscreen) {
+                    BrowserInterop.SetFullscreen(false);
+                }
+#elif !MOBILE
                 if (!IsWindowOpened()) {
                     return;
                 }

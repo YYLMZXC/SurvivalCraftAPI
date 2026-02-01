@@ -7,6 +7,7 @@ namespace Engine.Browser {
         static InputBuffer* _currentReadBuffer;
 
         public static Point2 CanvasSize = Point2.One;
+        public static bool IsFullscreen = false;
 
         public static IntPtr Initialize() {
             // 分配对齐的非托管内存
@@ -103,6 +104,9 @@ namespace Engine.Browser {
                     break;
                 case InputEventType.FocusChange:
                     Window.FocusedChangedHandler(e->Param == 1);
+                    break;
+                case InputEventType.FullscreenChange:
+                    IsFullscreen = e->Param == 1;
                     break;
             }
         }

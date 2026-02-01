@@ -83,7 +83,11 @@ namespace Game {
 
         public override void Update() {
             if (m_windowModeButton.IsClicked) {
+#if BROWSER
+                Window.WindowMode = Window.WindowMode == WindowMode.Fullscreen ? WindowMode.Fixed : WindowMode.Fullscreen;
+#else
                 SettingsManager.WindowMode = (WindowMode)((int)(SettingsManager.WindowMode + 1) % EnumUtils.GetEnumValues<WindowMode>().Count);
+#endif
             }
             if (m_uiScaleSlider.SlidingCompleted) {
                 SettingsManager.UIScale = m_uiScaleSlider.Value;
@@ -151,7 +155,11 @@ namespace Game {
                 SettingsManager.OriginalCommunityContentMode = (CommunityContentMode)((int)(SettingsManager.OriginalCommunityContentMode + 1)
                     % EnumUtils.GetEnumValues<CommunityContentMode>().Count);
             }
+#if BROWSER
+            m_windowModeButton.Text = LanguageControl.Get("WindowMode", Window.WindowMode.ToString());
+#else
             m_windowModeButton.Text = LanguageControl.Get("WindowMode", SettingsManager.WindowMode.ToString());
+#endif
             m_languageButton.Text = LanguageControl.Get("Language", "Name");
             m_displayLogButton.Text = SettingsManager.DisplayLog ? LanguageControl.Yes : LanguageControl.No;
             m_upsideDownButton.Text = SettingsManager.UpsideDownLayout ? LanguageControl.Yes : LanguageControl.No;

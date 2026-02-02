@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en-US">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -25,15 +25,18 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 20px 20px 0 20px;
             line-height: 1.5;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 20px);
         }
 
         .container {
             width: 100%;
             max-width: 600px;
+            flex: 1;
         }
 
         h2 {
@@ -152,6 +155,8 @@
             overflow-y: auto;
             border: 1px solid #333;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            resize: vertical;
+            min-height: 100px;
         }
 
         #outputContainer div {
@@ -159,6 +164,45 @@
             border-bottom: 1px solid #333;
             padding-bottom: 2px;
             word-break: break-all;
+        }
+
+        /* Footer Styles */
+        footer {
+            margin-top: 40px;
+            padding: 20px 0;
+            width: 100%;
+            border-top: 1px solid #e0e4e8;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+            opacity: 0.8;
+        }
+
+        .footer-copyright {
+            margin-bottom: 8px;
+        }
+
+        .footer-host {
+            font-size: 0.75rem;
+            opacity: 0.7;
         }
 
         /* Modal Styles */
@@ -246,14 +290,15 @@
             width: 18px;
             height: 18px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
-        .file-icon { margin-right: 10px; font-size: 1.2rem; min-width: 24px; text-align: center; }
+        .file-icon { margin-right: 10px; font-size: 1.2rem; min-width: 24px; text-align: center; flex-shrink: 0; }
         .file-info { flex: 1; min-width: 0; margin-right: 10px;}
         .file-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-        .file-meta { font-size: 0.8rem; color: #888; }
+        .file-meta { font-size: 0.8rem; color: #888; white-space: nowrap; }
 
-        .file-actions { display: flex; gap: 5px; }
+        .file-actions { display: flex; gap: 5px; flex-shrink: 0; }
 
         /* Bulk Actions Toolbar */
         .bulk-actions-bar {
@@ -268,6 +313,17 @@
         .bulk-actions-bar.visible { display: flex; }
         .bulk-info { font-weight: 500; font-size: 0.9rem; color: #333; }
         .bulk-buttons { display: flex; gap: 10px; }
+        .bulk-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            font-size: 0.9rem;
+        }
+        .bulk-btn:hover { background: #e9e9e9; }
 
         @keyframes slideUp {
             from { transform: translateY(100%); opacity: 0; }
@@ -291,9 +347,30 @@
             }
             .btn-group button { flex: 1; }
 
-            .file-item { flex-wrap: wrap; }
-            .file-info { width: calc(100% - 80px); margin-bottom: 5px; } /* Adjust for checkbox+icon space */
-            .file-actions { width: 100%; justify-content: flex-end; padding-top: 5px; border-top: 1px dashed #eee; margin-top: 5px;}
+            /* Mobile File List: 强制单行 */
+            .file-item {
+                padding: 8px 10px; /* Reduce padding */
+            }
+            .file-checkbox { margin-right: 8px; }
+            .file-icon { margin-right: 6px; font-size: 1.1rem; }
+            .file-info { margin-right: 5px; }
+
+            /* Hide file size on very small screens if needed, but flex should handle it */
+            .file-meta { font-size: 0.75rem; }
+            .file-actions { gap: 2px; }
+            button.icon-btn {
+                padding: 4px 6px;
+                font-size: 1rem;
+            }
+
+            /* Bulk bar on mobile */
+            .bulk-actions-bar {
+                padding: 8px 10px;
+            }
+            .bulk-btn {
+                padding: 4px 8px;
+                font-size: 0.85rem;
+            }
         }
 
         /* 隐藏的文件输入框 */
@@ -340,6 +417,19 @@
     <div id="outputContainer"></div>
 </div>
 
+<footer>
+    <div class="footer-links">
+        <a href="https://gitee.com/SC-SPM/SurvivalcraftApi/" target="_blank">Source Code↗</a>
+        <a href="https://scapiweb.netlify.app/" target="_blank">Back to Game↗</a>
+    </div>
+    <div class="footer-copyright">
+        &copy; 2026 <a href="https://gitee.com/SC-SPM" target="_blank" style="color: inherit; text-decoration: none; font-weight: 500;">SC-SPM</a>
+    </div>
+    <div class="footer-host">
+        Hosted by <a href="https://www.netlify.com/" target="_blank" style="color: inherit; text-decoration: underline;">Netlify</a>
+    </div>
+</footer>
+
 <!-- OPFS Manager Modal -->
 <div id="opfsModal" class="modal">
     <div class="modal-content">
@@ -358,8 +448,12 @@
             <div id="bulkActionsBar" class="bulk-actions-bar">
                 <div class="bulk-info" id="bulkInfoText">0 selected</div>
                 <div class="bulk-buttons">
-                    <button id="bulkDownloadBtn" class="icon-btn" title="Download Selected">📥</button>
-                    <button id="bulkDeleteBtn" class="icon-btn" title="Delete Selected" style="color:var(--error-color);">🗑️</button>
+                    <button id="bulkDownloadBtn" class="bulk-btn">
+                        <span>📥</span> <span>Download</span>
+                    </button>
+                    <button id="bulkDeleteBtn" class="bulk-btn" style="color:var(--error-color); border-color: #ffcccc;">
+                        <span>🗑️</span> <span>Delete</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -571,6 +665,7 @@
         for (const entry of entries) {
             const li = document.createElement('li');
             li.className = 'file-item';
+            li.dataset.filename = entry.name;
             if (selectedEntries.has(entry.name)) {
                 li.classList.add('selected');
             }
@@ -656,7 +751,19 @@
         } else {
             selectedEntries.add(name);
         }
-        renderFileManager(); // Re-render to update classes
+
+        const li = els.fileList.querySelector(`li[data-filename="${name}"]`);
+        if (li) {
+            const checkbox = li.querySelector('.file-checkbox');
+            if (selectedEntries.has(name)) {
+                li.classList.add('selected');
+                checkbox.checked = true;
+            } else {
+                li.classList.remove('selected');
+                checkbox.checked = false;
+            }
+        }
+
         updateBulkBar();
     }
 

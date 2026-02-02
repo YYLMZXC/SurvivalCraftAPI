@@ -13,9 +13,17 @@ if ("serviceWorker" in globalThis.navigator) {
     }
 }
 
+const document = globalThis.document;
+const busyBar = document.getElementById("splashBusyBar");
+let litIndex = 0;
+const busyBarInterval = globalThis.setInterval(() => {
+    busyBar.children[litIndex].classList.remove("lit");
+    litIndex = (litIndex + 1) % 5;
+    busyBar.children[litIndex].classList.add("lit");
+}, 250);
+
 import {dotnet} from './_framework/dotnet.js'
 
-const document = globalThis.document;
 const canvas = document.getElementById("canvas");
 let sharedInputMemoryPtr = 0;
 let sharedContentMemoryPtr = 0;
@@ -46,14 +54,6 @@ async function downloadContent() {
     }
 }
 downloadContent();
-
-const busyBar = document.getElementById("splashBusyBar");
-let litIndex = 0;
-const busyBarInterval = globalThis.setInterval(() => {
-    busyBar.children[litIndex].classList.remove("lit");
-    litIndex = (litIndex + 1) % 5;
-    busyBar.children[litIndex].classList.add("lit");
-}, 250);
 
 // TODO: 加上 withResourceLoader
 const runtime = await dotnet.withModuleConfig({
@@ -639,7 +639,7 @@ runtime.setModuleImports("main.js", {
     close: () => globalThis.close(),
     reload: () => globalThis.location.reload(),
     setDocumentLang : lang => document.documentElement.lang = lang,
-    openUrlInNewTab: url => globalThis.open(url),
+    openUrlInNewTab: url => globalThis.open(url, "_blank"),
     setNeedPointerLock: need => {
         needPointerLock = need;
         checkAndRequestPointerLock();

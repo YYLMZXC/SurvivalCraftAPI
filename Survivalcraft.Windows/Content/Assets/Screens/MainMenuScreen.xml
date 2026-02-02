@@ -67,6 +67,9 @@
 		<BevelledButtonWidget Size="60, 60" Name="FullscreenButton" IsVisible="false">
 			<RectangleWidget Size="28, 28" TextureLinearFilter="true" HorizontalAlignment="Center" VerticalAlignment="Center" Subtexture="{Textures/Gui/Fullscreen}" OutlineColor="0, 0, 0, 0" FillColor="255, 255, 255" IsVisible="true" TextureAnisotropicFilter="true" BlendState="NonPremultiplied"/>
 		</BevelledButtonWidget>
+		<BevelledButtonWidget Size="60, 60" Name="DashboardButton" IsVisible="false">
+			<RectangleWidget Size="28, 28" TextureLinearFilter="true" HorizontalAlignment="Center" VerticalAlignment="Center" Subtexture="{Textures/Gui/BugReport}" OutlineColor="0, 0, 0, 0" FillColor="255, 255, 255" IsVisible="true" TextureAnisotropicFilter="true" BlendState="NonPremultiplied"/>
+		</BevelledButtonWidget>
 	</StackPanelWidget>
 
 </Screen>

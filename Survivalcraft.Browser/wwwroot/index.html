@@ -68,13 +68,42 @@
                 background-color: rgb(16, 140, 0);
             }
         }
+
+        #splashRightBottomBar {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+        }
+
+        .beveledButton {
+            display: block;
+            width: 72px;
+            height: 72px;
+            box-sizing: border-box;
+            border-radius: 9px;
+            margin: 9px;
+            padding: 3px;
+            background: linear-gradient(165deg, rgb(181, 172, 154), rgb(36.2, 34.4, 30.8));
+            box-shadow: rgba(0, 0, 0, 0.125) 3px 3px;
+
+            &:active {
+                background: linear-gradient(-15deg, rgb(181, 172, 154), rgb(36.2, 34.4, 30.8));
+            }
+
+            & > .beveledButtonContent {
+                width: 100%;
+                height: 100%;
+                border-radius: 9px;
+                background-color: rgb(108.6, 103.2, 92.4);
+            }
+        }
     </style>
 </head>
 <body>
     <canvas id="canvas" tabIndex="0"></canvas>
     <div id="splash">
         <div id="splashLogo">
-            <img src="./assets/logo.webp" style="width: 1024px; max-width: 80vw;"/>
+            <img src="./assets/logo.webp" style="width: 1024px; max-width: 80vw;" alt="logo" />
         </div>
         <div id="splashBusyBar">
             <div class="lit"></div>
@@ -82,6 +111,13 @@
             <div></div>
             <div></div>
             <div></div>
+        </div>
+        <div id="splashRightBottomBar">
+            <a class="beveledButton" href="./dashboard.html" target="_blank">
+                <div class="beveledButtonContent">
+                    <img src="assets/BugReport.webp" alt="Open Dashboard" style="width: 42px; height: 42px; margin-top: 12px; margin-left: 12px;"/>
+                </div>
+            </a>
         </div>
     </div>
     <script type="module" src="./main.js"></script>

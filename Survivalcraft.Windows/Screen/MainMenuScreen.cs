@@ -17,6 +17,7 @@ namespace Game {
         public Subtexture m_dontNeedUpdateIcon;
         public RectangleWidget m_updateButtonIcon;
         public ButtonWidget m_fullscreenButton;
+        public ButtonWidget m_dashboardButton;
         public StackPanelWidget m_leftBottomBar;
         public StackPanelWidget m_rightBottomBar;
 
@@ -36,8 +37,10 @@ namespace Game {
             m_needToUpdateIcon = ContentManager.Get<Subtexture>("Textures/Gui/NeedToUpdate");
             m_dontNeedUpdateIcon = ContentManager.Get<Subtexture>("Textures/Gui/UpdateChecking");
             m_fullscreenButton = Children.Find<ButtonWidget>("FullscreenButton", false);
+            m_dashboardButton = Children.Find<ButtonWidget>("DashboardButton", false);
 #if BROWSER
             m_fullscreenButton.IsVisible = true;
+            m_dashboardButton.IsVisible = true;
 #endif
             ModsManager.HookAction(
                 "OnMainMenuScreenCreated",
@@ -134,6 +137,9 @@ namespace Game {
 #if BROWSER
             if (m_fullscreenButton.IsClicked) {
                 Window.WindowMode = Window.WindowMode == WindowMode.Fullscreen ? WindowMode.Fixed : WindowMode.Fullscreen;
+            }
+            if (m_dashboardButton.IsClicked) {
+                WebBrowserManager.LaunchBrowser("./dashboard.html");
             }
 #endif
             if (Children.Find<ButtonWidget>("Play").IsClicked) {

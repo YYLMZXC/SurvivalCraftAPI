@@ -85,13 +85,13 @@ const enableNavigationPreloadAndClearOldCache = async () => {
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
 };
 
-self.addEventListener("activate", (event) => {
+self.addEventListener("activate", async (event) => {
     event.waitUntil(enableNavigationPreloadAndClearOldCache());
-    self.clients.claim();
+    await self.clients.claim();
 });
-self.addEventListener("install", (event) => {
+self.addEventListener("install", async (event) => {
     event.waitUntil(addResourcesToCache(["./", "./index.html", "./main.js", "./assets/logo.webp", "./favicon.webp", "./dashboard.html"]));
-    self.skipWaiting();
+    await self.skipWaiting();
 });
 self.addEventListener("fetch", (event) => {
     event.respondWith(cacheFirst({ request: event.request, preloadResponsePromise: event.preloadResponse, event }));

@@ -1,7 +1,8 @@
+const document = globalThis.document;
 if (typeof SharedArrayBuffer !== "function") {
     const errorString = "This page requires a browser that supports SharedArrayBuffer. We recommend using the latest version of Chrome.\n该网页需要运行在支持 SharedArrayBuffer 的浏览器上，推荐使用最新版的 Chrome";
-    globalThis.alert(errorString);
-    globalThis.close();
+    document.body.innerText = errorString;
+    throw new Error(errorString);
 }
 
 if ("serviceWorker" in globalThis.navigator) {
@@ -13,7 +14,6 @@ if ("serviceWorker" in globalThis.navigator) {
     }
 }
 
-const document = globalThis.document;
 const busyBar = document.getElementById("splashBusyBar");
 let litIndex = 0;
 const busyBarInterval = globalThis.setInterval(() => {
@@ -22,7 +22,7 @@ const busyBarInterval = globalThis.setInterval(() => {
     busyBar.children[litIndex].classList.add("lit");
 }, 250);
 
-import {dotnet} from './_framework/dotnet.js'
+const { dotnet } = await import('./_framework/dotnet.js');
 
 const canvas = document.getElementById("canvas");
 let sharedInputMemoryPtr = 0;

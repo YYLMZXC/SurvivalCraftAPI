@@ -19,6 +19,7 @@
             --console-bg: #1e1e1e;
             --console-text: #00ff00;
             --modal-overlay: rgba(0, 0, 0, 0.5);
+            --tooltip-bg: #333;
         }
 
         body {
@@ -71,9 +72,62 @@
             border-bottom: none;
         }
 
+        /* Label with Tooltip Icon */
+        .status-label-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: fit-content;
+            position: relative;
+            cursor: help;
+        }
+
         .status-label {
             font-weight: 500;
             color: var(--text-main);
+        }
+
+        .info-icon {
+            width: 14px;
+            height: 14px;
+            color: #aaa;
+            flex-shrink: 0;
+        }
+
+        /* Tooltip Style */
+        .tooltip {
+            position: absolute;
+            bottom: 125%;
+            left: 0;
+            background-color: var(--tooltip-bg);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            width: 200px;
+            z-index: 100;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 10px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--tooltip-bg) transparent transparent transparent;
+        }
+
+        /* Hover & Active Tooltip Logic */
+        .status-label-wrap:hover .tooltip,
+        .status-label-wrap.active .tooltip {
+            visibility: visible;
+            opacity: 1;
         }
 
         .status-value {
@@ -383,24 +437,48 @@
     <div id="dashboard" class="card">
         <h2>Dashboard</h2>
         <div class="status-row">
-            <span class="status-label">Service Worker</span>
+            <div class="status-label-wrap" onclick="toggleTooltip(this)">
+                <span class="status-label">Service Worker</span>
+                <svg class="info-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <div class="tooltip">Used to persistently cache network requests locally, such as game assemblies and assets.</div>
+            </div>
             <span id="serviceWorkerStatus" class="status-value">Checking...</span>
             <div></div>
         </div>
         <div class="status-row">
-            <span class="status-label">SharedArrayBuffer</span>
+            <div class="status-label-wrap" onclick="toggleTooltip(this)">
+                <span class="status-label">SharedArrayBuffer</span>
+                <svg class="info-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <div class="tooltip">Essential for multi-threading support in the game.</div>
+            </div>
             <span id="sharedArrayBufferStatus" class="status-value">Checking...</span>
             <div></div>
         </div>
         <div class="status-row">
-            <span class="status-label">CacheStorage</span>
+            <div class="status-label-wrap" onclick="toggleTooltip(this)">
+                <span class="status-label">CacheStorage</span>
+                <svg class="info-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <div class="tooltip">Where network requests, such as game assemblies and assets, are cached.</div>
+            </div>
             <span id="cacheStorageStatus" class="status-value">Checking...</span>
             <div class="btn-group">
                 <button id="clearCachesButton">Clear</button>
             </div>
         </div>
         <div class="status-row">
-            <span class="status-label">Origin Private File System</span>
+            <div class="status-label-wrap" onclick="toggleTooltip(this)">
+                <span class="status-label">Origin Private File System</span>
+                <svg class="info-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <div class="tooltip">Used to persistently store game world saves and settings locally.</div>
+            </div>
             <span id="opfsStatus" class="status-value">Checking...</span>
             <div class="btn-group">
                 <button id="manageOpfsButton" class="primary">Manage</button>
@@ -465,7 +543,20 @@
 
 <script type="module">
     // Import fflate for ZIP functionality
-    import * as fflate from 'https://cdn.skypack.dev/fflate@0.8.2?min';
+    let fflateModule = null;
+
+    async function getFflate() {
+        if (fflateModule) return fflateModule;
+        output("Loading compression library...");
+        try {
+            fflateModule = await import('https://cdn.skypack.dev/fflate@0.8.2?min');
+            output("Library loaded successfully.");
+            return fflateModule;
+        } catch (e) {
+            output("Failed to load fflate: " + e.message, 'error');
+            throw e;
+        }
+    }
 
     // DOM 元素缓存
     const els = {
@@ -490,6 +581,16 @@
         bulkDownloadBtn: document.getElementById("bulkDownloadBtn"),
         bulkDeleteBtn: document.getElementById("bulkDeleteBtn")
     };
+
+    window.toggleTooltip = function(el) {
+        const isActive = el.classList.contains('active');
+        document.querySelectorAll('.status-label-wrap').forEach(w => w.classList.remove('active'));
+        if (!isActive) el.classList.add('active');
+    };
+
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.status-label-wrap').forEach(w => w.classList.remove('active'));
+    });
 
     // State for File Manager
     let currentDirHandle = null;
@@ -534,7 +635,7 @@
 
     async function clearOpfs() {
         if (typeof FileSystemDirectoryHandle === "function" && globalThis.navigator.storage?.getDirectory) {
-            if (!globalThis.confirm("This will delete all files in OPFS. Are you sure?")) return;
+            if (!globalThis.confirm("This will delete all files in OPFS, including game world saves and settings. Are you sure?")) return;
             try {
                 const root = await globalThis.navigator.storage.getDirectory();
                 const entries = [];
@@ -818,6 +919,7 @@
         }
 
         try {
+            const fflate = await getFflate();
             const zipContent = {};
             for (const entry of entriesToZip) {
                 if (entry.kind === 'file') {
@@ -924,6 +1026,7 @@
     async function downloadFolderAsZip(dirHandle) {
         output(`Preparing to zip folder: ${dirHandle.name}...`);
         try {
+            const fflate = await getFflate();
             const zipContent = await buildZipObjectRecursive(dirHandle, "");
             output(`Compressing ${dirHandle.name}...`);
             fflate.zip(zipContent, (err, data) => {

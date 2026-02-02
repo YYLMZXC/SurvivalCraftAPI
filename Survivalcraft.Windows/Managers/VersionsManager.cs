@@ -9,23 +9,26 @@ namespace Game {
         public static List<VersionConverter> m_versionConverters;
 
         public enum Platform {
-            Windows, Android, Linux, Other
+            Windows, Android, Linux, Other, Browser, IOS
         }
 
         public static string PlatformString => CurrentPlatform.ToString();
 
         public static Platform CurrentPlatform {
             get {
-                if (OperatingSystem.IsWindows()) {
-                    return Platform.Windows;
-                }
-                if (OperatingSystem.IsAndroid()) {
-                    return Platform.Android;
-                }
-                if (OperatingSystem.IsLinux()) {
-                    return Platform.Linux;
-                }
+#if WINDOWS
+                return Platform.Windows;
+#elif ANDROID
+                return Platform.Android;
+#elif LINUX
+                return Platform.Linux;
+#elif BROWSER
+                return Platform.Browser;
+#elif IOS
+                return Platform.IOS;
+#else
                 return Platform.Other;
+#endif
             }
         }
 

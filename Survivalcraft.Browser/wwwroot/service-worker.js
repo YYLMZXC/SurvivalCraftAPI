@@ -30,8 +30,16 @@ const cacheFirst = async ({request, preloadResponsePromise, event}) => {
 
     // for navigation requests, fallback to cached index.html
     if (request.mode === 'navigate') {
-        const cachedIndex = await caches.match('./index.html');
-        if (cachedIndex) return cachedIndex;
+        let requestUrl = request.url.endsWith('/dashboard.html') ? './dashboard.html' : './index.html';
+        let cachedIndex = await caches.match(requestUrl);
+        if (cachedIndex) {
+            return cachedIndex;
+        }
+        await addResourcesToCache(["./", "./index.html", "./main.js", "./assets/logo.webp", "./favicon.webp", "./dashboard.html"]);
+        cachedIndex = await caches.match(requestUrl);
+        if (cachedIndex) {
+            return cachedIndex;
+        }
         return generateErrorResponse();
     }
 

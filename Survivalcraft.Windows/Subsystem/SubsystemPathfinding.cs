@@ -238,13 +238,14 @@ namespace Game {
                 Monitor.Pulse(m_requests);
             }
         }
-
         public void ThreadFunction() {
             while (true) {
                 Request request;
                 lock (m_requests) {
                     while (m_requests.Count == 0) {
+#pragma warning disable CA1416
                         Monitor.Wait(m_requests);
+#pragma warning restore CA1416
                     }
                     request = m_requests.Dequeue();
                 }
@@ -255,6 +256,7 @@ namespace Game {
                 Task.Delay(250).Wait();
             }
         }
+
 
         public void ProcessRequest(Request request) {
             ((World)m_astar.World).Request = request;

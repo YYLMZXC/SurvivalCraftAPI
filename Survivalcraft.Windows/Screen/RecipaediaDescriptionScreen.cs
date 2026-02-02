@@ -153,7 +153,9 @@ namespace Game {
             ModsManager.HookAction(
                 "EditBlockDescriptionScreen",
                 loader => {
+#pragma warning disable CS0618
                     loader.EditBlockDescriptionScreen(dictionary);
+#pragma warning restore CS0618
                     loader.EditBlockDescriptionScreen(dictionary, value);
                     return false;
                 }

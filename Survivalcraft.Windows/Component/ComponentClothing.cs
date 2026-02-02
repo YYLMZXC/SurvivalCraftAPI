@@ -161,7 +161,9 @@ namespace Game {
                 ModsManager.HookAction(
                     "ApplyArmorProtection",
                     modLoader => {
+#pragma warning disable CS0618
                         attackment.AttackPower = modLoader.ApplyArmorProtection(this, attackment.AttackPower, Applied, out bool flag2);
+#pragma warning restore CS0618
                         Applied |= flag2;
                         return false;
                     }
@@ -452,6 +454,7 @@ namespace Game {
                         skippedByMods,
                         out bool skipVanilla
                     );
+#pragma warning disable CS0618
                     modLoader.ClothingProcessSlotItems(
                         m_componentPlayer,
                         slotIndex,
@@ -469,6 +472,7 @@ namespace Game {
                         value,
                         count
                     );
+#pragma warning restore CS0618
                     skippedByMods |= oldLoaderResult;
                     skippedByMods |= skipVanilla;
                     skippedByMods |= glitchedLoaderResult;

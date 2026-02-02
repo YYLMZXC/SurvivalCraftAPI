@@ -9,23 +9,26 @@ namespace Game {
         public static List<VersionConverter> m_versionConverters;
 
         public enum Platform {
-            Windows, Android, Linux, Other
+            Windows, Android, Linux, Other, Browser, IOS
         }
 
         public static string PlatformString => CurrentPlatform.ToString();
 
         public static Platform CurrentPlatform {
             get {
-                if (OperatingSystem.IsWindows()) {
-                    return Platform.Windows;
-                }
-                if (OperatingSystem.IsAndroid()) {
-                    return Platform.Android;
-                }
-                if (OperatingSystem.IsLinux()) {
-                    return Platform.Linux;
-                }
+#if WINDOWS
+                return Platform.Windows;
+#elif ANDROID
+                return Platform.Android;
+#elif LINUX
+                return Platform.Linux;
+#elif BROWSER
+                return Platform.Browser;
+#elif IOS
+                return Platform.IOS;
+#else
                 return Platform.Other;
+#endif
             }
         }
 
@@ -56,11 +59,15 @@ namespace Game {
             AssemblyName assemblyName = new(assembly.FullName!);
             Version = $"{assemblyName.Version!.Major}.{assemblyName.Version.Minor}.{assemblyName.Version.Build}.{assemblyName.Version.Revision}";
             SerializationVersion = $"{assemblyName.Version.Major}.{assemblyName.Version.Minor}";
+#pragma warning disable IL2026
             foreach (TypeInfo definedType in assembly.DefinedTypes) {
+#pragma warning restore IL2026
                 if (!definedType.IsAbstract
                     && !definedType.IsInterface
                     && typeof(VersionConverter).GetTypeInfo().IsAssignableFrom(definedType)) {
+#pragma warning disable IL2072
                     VersionConverter item = (VersionConverter)Activator.CreateInstance(definedType.AsType());
+#pragma warning restore IL2072
                     m_versionConverters.Add(item);
                 }
             }

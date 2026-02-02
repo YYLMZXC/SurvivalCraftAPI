@@ -154,7 +154,7 @@ namespace Game {
 
         public override void Initialize() {
             Model model = ContentManager.Get<Model>("Models/Arrows");
-            foreach (int enumValue in EnumUtils.GetEnumValues(typeof(ArrowType))) {
+            foreach (int enumValue in EnumUtils.GetEnumValues<ArrowType>()) {
                 if (enumValue > 15) {
                     throw new InvalidOperationException("Too many arrow types.");
                 }
@@ -263,7 +263,7 @@ namespace Game {
         public override string GetDisplayName(SubsystemTerrain subsystemTerrain, int value) {
             int arrowType = (int)GetArrowType(Terrain.ExtractData(value));
             if (arrowType < 0
-                || arrowType >= Enum.GetValues(typeof(ArrowType)).Length) {
+                || arrowType >= Enum.GetValues<ArrowType>().Length) {
                 return string.Empty;
             }
             return LanguageControl.Get("ArrowBlock", arrowType);

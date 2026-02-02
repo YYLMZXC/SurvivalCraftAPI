@@ -1,15 +1,21 @@
 using System.Runtime.InteropServices;
 using Engine.Media;
+#if BROWSER
+using SourceInteger = Engine.Browser.AL.SourceInteger;
+using GetSourceInteger = Engine.Browser.AL.GetSourceInteger;
+using BufferFormat = Engine.Browser.AL.BufferFormat;
+using SourceVector3 = Engine.Browser.AL.SourceVector3;
+using SourceState = Engine.Browser.AL.SourceState;
+#else
 using Silk.NET.OpenAL;
+#endif
 
 namespace Engine.Audio {
     public class StreamingSound : BaseSound {
         Task m_task;
-
         ManualResetEvent m_stopTaskEvent = new(false);
 
         bool m_noMoreData;
-
         public readonly float m_bufferDuration;
 
         public StreamingSource StreamingSource { get; set; }

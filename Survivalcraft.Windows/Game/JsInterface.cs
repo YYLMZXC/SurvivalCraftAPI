@@ -1,4 +1,4 @@
-#if !IOS
+#if !IOS && !BROWSER
 using System.Diagnostics;
 using System.Net;
 using System.Text;
@@ -285,8 +285,8 @@ namespace Game {
                     }
                 }
                 else if (context.Request.HttpMethod == "ELEVATE") {
-#if !ANDROID
-                    Hyper_Threading.SetPriority_Process(true);
+#if !MOBILE && !BROWSER
+                    Thread.CurrentThread.Priority = ThreadPriority.Highest;
 #endif
                     responseString = "Sucess";
                 }

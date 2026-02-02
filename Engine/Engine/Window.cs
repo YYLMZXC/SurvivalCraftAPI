@@ -4,6 +4,9 @@ using Android.Content;
 using Android.OS;
 using Android.Views;
 using Org.Libsdl.App;
+#elif BROWSER
+using Engine.Browser;
+using System.Runtime.InteropServices;
 #elif !IOS
 using System.Diagnostics;
 using System.Reflection;
@@ -18,12 +21,14 @@ using Monitor = Silk.NET.Windowing.Monitor;
 using System.Runtime.InteropServices;
 #endif
 #endif
+#if !BROWSER
+using Silk.NET.Windowing;
+#endif
 using Engine.Audio;
 using Engine.Graphics;
 using Engine.Input;
 using Silk.NET.Core.Contexts;
 using Silk.NET.Maths;
-using Silk.NET.Windowing;
 using Display = Engine.Graphics.Display;
 using Environment = System.Environment;
 
@@ -36,26 +41,28 @@ namespace Engine {
         }
 
         static State m_state;
-
+#if BROWSER
+        //public static string HostedHref;
+#else
         public static IView m_view;
+#endif
 
 #if ANDROID
         public static EngineActivity Activity => EngineActivity.m_activity;
 
         public static SDLSurface m_surface;
-#elif IOS
-        public static IWindow m_gameWindow;
-#else
+#elif !IOS && !BROWSER
         public static IWindow m_gameWindow;
 
         public static IInputContext m_inputContext;
 #endif
 
         static bool m_closing;
+        static bool m_closingRequested;
         static bool m_restarting;
-
+#pragma warning disable CS0169
         static int? m_swapInterval;
-
+#pragma warning restore CS0169
         public static string m_titlePrefix = string.Empty;
 
         public static string m_titleSuffix = string.Empty;
@@ -66,6 +73,8 @@ namespace Engine {
             get {
 #if MOBILE
                 return new Point2(m_view.Size.X, m_view.Size.Y);
+#elif BROWSER
+                return Size;
 #else
                 IMonitor monitor = m_gameWindow?.Monitor;
                 if (monitor == null) {
@@ -115,6 +124,8 @@ namespace Engine {
             get {
 #if MOBILE
                 return WindowMode.Fullscreen;
+#elif BROWSER
+                return InputBridge.IsFullscreen ? WindowMode.Fullscreen : WindowMode.Fixed;
 #else
                 VerifyWindowOpened();
                 return m_gameWindow.WindowState == WindowState.Fullscreen ? WindowMode.Fullscreen :
@@ -125,8 +136,16 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if MOBILE
-#else
+#if BROWSER
+                if (value == WindowMode.Fullscreen) {
+                    if (!InputBridge.IsFullscreen) {
+                        BrowserInterop.SetFullscreen(true);
+                    }
+                }
+                else if (InputBridge.IsFullscreen) {
+                    BrowserInterop.SetFullscreen(false);
+                }
+#elif !MOBILE
                 if (!IsWindowOpened()) {
                     return;
                 }
@@ -162,7 +181,7 @@ namespace Engine {
         public static Point2 Position {
             get {
                 VerifyWindowOpened();
-#if MOBILE
+#if MOBILE || BROWSER
                 return Point2.Zero;
 #else
                 return new Point2(m_gameWindow.Position.X, m_gameWindow.Position.Y);
@@ -172,8 +191,7 @@ namespace Engine {
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if MOBILE
-#else
+#if !MOBILE && !BROWSER
                 if (!IsWindowOpened()) {
                     return;
                 }
@@ -185,14 +203,17 @@ namespace Engine {
         public static Point2 Size {
             get {
                 VerifyWindowOpened();
+#if BROWSER
+                return InputBridge.CanvasSize;
+#else
                 return new Point2(m_view.FramebufferSize.X, m_view.FramebufferSize.Y);
+#endif
             }
             // ReSharper disable ValueParameterNotUsed
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if MOBILE
-#else
+#if !MOBILE && !BROWSER
                 if (!IsWindowOpened()) {
                     return;
                 }
@@ -222,7 +243,12 @@ namespace Engine {
                     return;
                 }
                 m_titlePrefix = value;
-                m_gameWindow.Title = $"{m_titlePrefix}{m_titleSuffix}";
+                string newTitle = $"{m_titlePrefix}{m_titleSuffix}";
+#if BROWSER
+                BrowserInterop.SetTitle(newTitle);
+#else
+                m_gameWindow.Title = newTitle;
+#endif
 #endif
             }
         }
@@ -241,7 +267,12 @@ namespace Engine {
                     return;
                 }
                 m_titleSuffix = value;
-                m_gameWindow.Title = $"{m_titlePrefix}{m_titleSuffix}";
+                string newTitle = $"{m_titlePrefix}{m_titleSuffix}";
+#if BROWSER
+                BrowserInterop.SetTitle(newTitle);
+#else
+                m_gameWindow.Title = newTitle;
+#endif
 #endif
             }
         }
@@ -250,6 +281,8 @@ namespace Engine {
             get {
 #if MOBILE
                 return string.Empty;
+#elif BROWSER
+                return BrowserInterop.GetTitle();
 #else
                 VerifyWindowOpened();
                 return m_gameWindow.Title;
@@ -263,14 +296,22 @@ namespace Engine {
                 if (!IsWindowOpened()) {
                     return;
                 }
-                m_gameWindow.Title = value;
                 m_titlePrefix = value;
                 m_titleSuffix = string.Empty;
+#if BROWSER
+                BrowserInterop.SetTitle(value);
+#else
+                m_gameWindow.Title = value;
+#endif
 #endif
             }
         }
 
         public static int PresentationInterval {
+            #if IOS || BROWSER
+            get => 1;
+            set { }
+#else
             get {
                 VerifyWindowOpened();
                 m_swapInterval ??= m_view.VSync ? 1 : 0;
@@ -284,17 +325,18 @@ namespace Engine {
                 if (value != PresentationInterval) {
 #if ANGLE
                     Egl.SwapInterval(GLWrapper.m_eglDisplay, value);
-#elif !IOS
-                    //IOS不支持下面的设置
+#else
                     m_view.GLContext?.SwapInterval(value);
 #endif
                     m_swapInterval = value;
                 }
             }
+#endif
         }
 
         public static IntPtr Handle {
             get {
+#if !BROWSER
                 INativeWindow native = m_view.Native;
                 if (native != null) {
                     NativeWindowFlags kind = native.Kind;
@@ -311,8 +353,8 @@ namespace Engine {
                         return native.Wayland?.Surface ?? IntPtr.Zero;
                     }
                 }
+#endif
                 return IntPtr.Zero;
-
             }
         }
 
@@ -341,21 +383,21 @@ namespace Engine {
 
         public static event Action LowMemory;
 
+        public static event Action<List<(Stream stream, string fileName)>> FileDropped;
+
 #if MOBILE
         public const string WindowingLibrary = "Silk.NET.Windowing.Sdl";
-#else
+#elif !BROWSER
         public const string WindowingLibrary = "Silk.NET.Windowing.Glfw";
         public const string InputLibrary = "Silk.NET.Input.Glfw";
 #endif
 
-        public static void Run(int width = 0, int height = 0, WindowMode windowMode = WindowMode.Fixed, string title = "") {
+        public static void Run(int width = 0, int height = 0, WindowMode windowMode = WindowMode.Resizable, string title = "") {
+#if !BROWSER
             if (m_view != null) {
                 throw new InvalidOperationException("Window is already opened.");
             }
-            /*if ((width != 0 || height != 0) && (width <= 0 || height <= 0))
-            {
-                throw new ArgumentOutOfRangeException("size");
-            }*/
+#endif
             width = Math.Max(width, 0);
             height = Math.Max(height, 0);
             if (width > 0
@@ -376,12 +418,15 @@ namespace Engine {
                     Environment.Exit(1);
                 }
             };
+#if !BROWSER
             Silk.NET.Windowing.Window.ShouldLoadFirstPartyPlatforms(false);
             Silk.NET.Windowing.Window.TryAdd(WindowingLibrary);
+#endif
 #if DIRECT3D11 || ANGLE
             GraphicsAPI api = GraphicsAPI.None;
 #elif IOS
             GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 0));
+#elif BROWSER
 #elif DEBUG
             GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Compatability, ContextFlags.Debug, new APIVersion(3, 2));
 #elif ANDROID
@@ -408,6 +453,8 @@ namespace Engine {
 #elif IOS
             ViewOptions options = ViewOptions.Default with { API = api };
             m_view = Silk.NET.Windowing.Window.GetView(options);
+#elif BROWSER
+            Title = title;
 #else
             Point2 screenSize = ScreenSize;
             if (screenSize.X == 0
@@ -425,6 +472,9 @@ namespace Engine {
             Position = new Point2(Math.Max((screenSize.X - m_gameWindow.Size.X) / 2, 0), Math.Max((screenSize.Y - m_gameWindow.Size.Y) / 2, 0));
             WindowMode = windowMode;
 #endif
+#if BROWSER
+            LoadHandler();
+#else
             m_view.ShouldSwapAutomatically = false;
             m_view.Load += LoadHandler;
             try {
@@ -448,13 +498,14 @@ namespace Engine {
                     Log.Error($"Unhandled exception.\n{e}");
                 }
             }
-#endif
+#endif // !MOBILE
             finally {
 #if !DIRECT3D11
                 GLWrapper.GL?.Dispose();
 #endif
                 m_view?.Dispose();
             }
+#endif // !BROWSER
         }
 
         public static void Close() {
@@ -479,7 +530,7 @@ namespace Engine {
             }
         }
 
-        static void FocusedChangedHandler(bool focused) {
+        internal static void FocusedChangedHandler(bool focused) {
             if (focused) {
                 if (m_state == State.Inactive) {
                     m_state = State.Active;
@@ -509,7 +560,7 @@ namespace Engine {
             DisposeAll();
         }
 
-        static void ResizeHandler(Vector2D<int> _) {
+        internal static void ResizeHandler(Vector2D<int> _) {
 #if MOBILE
             if (m_state != State.Uncreated) {
                 Display.Resize();
@@ -520,7 +571,23 @@ namespace Engine {
             Resized?.Invoke();
 #endif
         }
-
+#if BROWSER
+        internal static void FileDropHandler(Stream stream, string fileName) => FileDropped?.Invoke([(stream, fileName)]);
+#elif !MOBILE
+        static void FileDropHandler(string[] paths) {
+            List<(Stream stream, string fileName)> results = new(paths.Length);
+            foreach (string path in paths) {
+                try {
+                    Stream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    results.Add((stream, Storage.GetFileName(path)));
+                }
+                catch (Exception e) {
+                    Log.Error($"{e}");
+                }
+            }
+            FileDropped?.Invoke(results);
+        }
+#endif
         public static void DisplayCutoutInsetsChangedHandler(Vector4 insets, bool hasWideNotch) {
             if (HasWideNotch == hasWideNotch && DisplayCutoutInsets == insets) {
                 return;
@@ -529,6 +596,14 @@ namespace Engine {
             DisplayCutoutInsets = insets;
             DisplayCutoutInsetsChanged?.Invoke(insets, hasWideNotch);
         }
+
+#if BROWSER
+        [UnmanagedCallersOnly]
+        public static int BrowserRenderFrameHandler(double time, nint userData) {
+            RenderFrameHandler(time);
+            return 1;
+        }
+#endif
 
         static void RenderFrameHandler(double lastRenderDelta) {
             m_lastRenderDelta = (float)lastRenderDelta;
@@ -541,12 +616,12 @@ namespace Engine {
                 DXWrapper.Present(m_swapInterval ?? 1);
 #elif ANGLE
                 Egl.SwapBuffers(GLWrapper.m_eglDisplay, GLWrapper.m_eglSurface);
-#else
+#elif !BROWSER
                 m_view.SwapBuffers();
-
 #endif
             }
-            else {
+            else if(!m_closingRequested){
+                m_closingRequested = true;
 #if ANDROID
                 if (Build.VERSION.SdkInt >= (BuildVersionCodes)21) {
                     Activity.FinishAndRemoveTask();
@@ -555,10 +630,20 @@ namespace Engine {
                     Activity.FinishAffinity();
                 }
 #endif
+#if BROWSER
+                ClosedHandler();
+                if (m_restarting) {
+                    BrowserInterop.Reload();
+                }
+                else {
+                    BrowserInterop.Close();
+                }
+#else
                 m_view.Close();
                 if (m_restarting) {
                     ToRestart?.Invoke();
                 }
+#endif
             }
         }
 
@@ -612,25 +697,45 @@ namespace Engine {
 #endif
 
         static void VerifyWindowOpened() {
+#if !BROWSER
             if (m_view == null) {
                 throw new InvalidOperationException("Window is not opened.");
             }
+#endif
         }
 
+#if BROWSER
+        static bool IsWindowOpened() => true;
+#else
         static bool IsWindowOpened() => m_view != null;
+#endif
 
         static void SubscribeToEvents() {
+#if BROWSER
+            unsafe {
+                Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&BrowserRenderFrameHandler, nint.Zero);
+            }
+#else
             m_view.FocusChanged += FocusedChangedHandler;
             m_view.Closing += ClosedHandler;
             m_view.Resize += ResizeHandler;
             m_view.Render += RenderFrameHandler;
+#if !MOBILE && !BROWSER
+            m_gameWindow.FileDrop += FileDropHandler;
+#endif
+#endif
         }
 
         static void UnsubscribeFromEvents() {
+#if !BROWSER
             m_view.FocusChanged -= FocusedChangedHandler;
             m_view.Closing -= ClosedHandler;
             m_view.Resize -= ResizeHandler;
             m_view.Render -= RenderFrameHandler;
+#if !MOBILE
+            m_gameWindow.FileDrop -= FileDropHandler;
+#endif
+#endif
         }
 
         static void InitializeAll() {
@@ -641,7 +746,7 @@ namespace Engine {
                     && viewGroup.GetChildAt(0) is SDLSurface surface) {
                     m_surface = surface;
                 }
-#elif !IOS
+#elif !IOS && !BROWSER
                 using (Stream iconStream = typeof(Window).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.icon.png")) {
                     if (iconStream != null) {
                         Image<Rgba32> image = SixLabors.ImageSharp.Image.Load<Rgba32>(Media.Image.DefaultImageSharpDecoderOptions, iconStream);
@@ -653,10 +758,12 @@ namespace Engine {
                 InputWindowExtensions.ShouldLoadFirstPartyPlatforms(false);
                 InputWindowExtensions.TryAdd(InputLibrary);
                 m_inputContext = m_view.CreateInput();
-
 #endif
                 Dispatcher.Initialize();
                 Display.Initialize();
+#if BROWSER
+                BrowserInterop.Initialize(InputBridge.Initialize());
+#endif
                 Keyboard.Initialize();
                 Mouse.Initialize();
                 Touch.Initialize();
@@ -681,6 +788,9 @@ namespace Engine {
         static void BeforeFrameAll() {
             Time.BeforeFrame();
             Dispatcher.BeforeFrame();
+#if BROWSER
+            InputBridge.BeforeFrame();
+#endif
             Display.BeforeFrame();
             Keyboard.BeforeFrame();
             Mouse.BeforeFrame();

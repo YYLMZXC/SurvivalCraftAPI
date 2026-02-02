@@ -263,7 +263,12 @@ namespace Game {
                 try {
                     string className = item.GetValue("Class", typeof(Projectile).FullName);
                     Type type = TypeCache.FindType(className, false, true);
+#pragma warning disable IL2072
                     Projectile projectile = (Projectile)Activator.CreateInstance(type);
+#pragma warning restore IL2072
+                    if (projectile == null) {
+                        continue;
+                    }
                     projectile.Project = Project;
                     projectile.InitializeData(
                         () => m_subsystemTerrain.Terrain,

@@ -1,16 +1,21 @@
+#if BROWSER
+using AL = Engine.Browser.AL;
+using ALContext = Engine.Browser.ALContext;
+using GetSourceInteger = Engine.Browser.AL.GetSourceInteger;
+using SourceState = Engine.Browser.AL.SourceState;
+using ListenerFloat = Engine.Browser.AL.ListenerFloat;
+using AudioError = Engine.Browser.AL.AudioError;
+#else
 using Silk.NET.OpenAL;
+#endif
 
 namespace Engine.Audio {
     public static class Mixer {
         public static AL AL;
-        static float m_masterVolume = 1f;
-
-        public static readonly List<Sound> m_soundsToStop = [];
-
-        public static HashSet<Sound> m_soundsToStopPoll = [];
-
         public static ALContext m_audioContext;
-
+        static float m_masterVolume = 1f;
+        public static readonly List<Sound> m_soundsToStop = [];
+        public static HashSet<Sound> m_soundsToStopPoll = [];
         public static bool m_isInitialized;
 
         public static float MasterVolume {
@@ -24,7 +29,14 @@ namespace Engine.Audio {
             }
         }
 
-        internal static unsafe void Initialize() {
+        internal static void Initialize() {
+#if BROWSER
+            m_audioContext = new ALContext();
+            AL = new AL();
+            if (!CheckALErrorFull()) {
+                m_isInitialized = true;
+            }
+#else
 #if !MOBILE
             //直接加载
             string fullPath = Path.GetDirectoryName(
@@ -34,16 +46,19 @@ namespace Engine.Audio {
 #endif
             m_audioContext = ALContext.GetApi();
             AL = AL.GetApi();
-            Device* device = m_audioContext.OpenDevice("");
-            if (device == null) {
-                Log.Error("Could not create audio device");
-                return;
+            unsafe {
+                Device* device = m_audioContext.OpenDevice("");
+                if (device == null) {
+                    Log.Error("Could not create audio device");
+                    return;
+                }
+                Context* c = m_audioContext.CreateContext(device, null);
+                m_audioContext.MakeContextCurrent(c);
             }
-            Context* c = m_audioContext.CreateContext(device, null);
-            m_audioContext.MakeContextCurrent(c);
             if (!CheckALErrorFull()) {
                 m_isInitialized = true;
             }
+#endif
         }
 
         internal static void Dispose() {

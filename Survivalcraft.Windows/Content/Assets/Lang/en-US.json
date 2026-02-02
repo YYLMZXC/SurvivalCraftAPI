@@ -42,6 +42,7 @@
     "3": "Select the file you want to import",
     "4": "Import {0} Successfully",
     "5": "Select Community",
+    "6": "Choose file failed. File path: \"{0}\". The reason is in the game log.",
     "ExtensionName": {
       ".scworld": "World",
       ".scbtex": "Block Texture",
@@ -195,6 +196,9 @@
     "15": "{0} uploaded.",
     "16": "Share",
     "17": "Close",
+    "18": "Import successful: \"{0}\"",
+    "19": "Import failed: \"{0}\", reason: {1}",
+    "20": "Completed",
     "Directory": "Directory",
     "World": "World",
     "Blocks Texture": "Blocks Texture",
@@ -624,7 +628,8 @@
     "100": "Terrain {0}, Season {1}, Env. {2}, Final {3}",
     "101": "Humidity",
     "102": "Terrain {0}, Season {1}, Final {2}",
-    "103": "Spawn Location"
+    "103": "Spawn Location",
+    "104": "Toggle Fullscreen"
   },
   "ModDetailsDialog": {
     "1": "Disable Reason: ",
@@ -643,12 +648,15 @@
     "14": "Delete \"{0}\" Successfully."
   },
   "BlocksManager": {
-    "1": "Block with type {0} not found in all loaded assemblies.",
-    "2": "Fields count of block \"{0}\" is not enough in BlocksData.",
-    "3": "Block \"{0}\" not found in BlocksData.",
-    "4": "Data for block \"{0}\" specified more than once in BlocksData.",
-    "5": "Field \"{0}\" not found or not accessible in BlocksData.",
-    "6": "Reference block \"{0}\" not found in BlocksData.",
+    "1": "Block class \"{0}\" is not found in all loaded assemblies.",
+    "2": "Fields count of block \"{0}\" is not equal to the fields count defined in the first line in BlocksData.",
+    "3": "Block class \"{0}\" is not found in all loaded assemblies.",
+    "4": "A Field in block \"{0}\" specified more than once in BlocksData.",
+    "5": "Field \"{0}\" is not found or not accessible in the block class.",
+    "6": "Reference block class \"{0}\" not found in all loaded assemblies.",
+    "7": " (First line: {0} columns. Current line: {1} columns.)",
+    "8": "Failed to set the \"{0}\" field of \"{1}\" class, because the block class doesn't have the required field.",
+    "9": "Failed to set the \"{2}\" field of \"{1}\" class, because the reference block class \"{0}\" is not found in all loaded assemblies.",
     "Terrain": "Terrain",
     "Minerals": "Minerals",
     "Plants": "Plants",
@@ -1178,7 +1186,8 @@
     "1": "Please attach log file when you are reporting any bug.",
     "2": "After enabling file association, you can open associated files with API to import them.",
     "3": "After enabling safe mode, API will stop loading any mod.",
-    "4": "Restart game to take effect "
+    "4": "Restart game to take effect ",
+    "5": "Please open Console in the browser DevTools manually."
   },
   "JsInterface": {
     "1": "There is already a script running.",
@@ -1218,7 +1227,8 @@
     "1": "Make a wooden rake instead"
   },
   "GameLogSink": {
-    "1": "The log file may be occupied by another program, resulting in a failed load."
+    "1": "The log file may be occupied by another program, resulting in a failed load.",
+    "2": "The logs are in the Console of the browser DevTools."
   },
   "BasePumpkinBlock": {
     "1": "Pumpkin",

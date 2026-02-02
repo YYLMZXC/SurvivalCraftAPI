@@ -24,24 +24,24 @@
         <OutputType>WinExe</OutputType>
         <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
         <TargetFramework>net10.0-windows</TargetFramework>
         <DefineConstants>DEBUG</DefineConstants>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
         <DebugType>none</DebugType>
         <DefineConstants>TRACE</DefineConstants>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Direct3D11' ">
+    <PropertyGroup Condition="'$(Configuration)' == 'Direct3D11'">
         <TargetFramework>net10.0-windows</TargetFramework>
         <DebugType>none</DebugType>
         <DefineConstants>TRACE;RELEASE;DIRECT3D11</DefineConstants>
         <Optimize>true</Optimize>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Angle' ">
+    <PropertyGroup Condition="'$(Configuration)' == 'Angle'">
         <TargetFramework>net10.0-windows</TargetFramework>
         <DebugType>none</DebugType>
         <DefineConstants>TRACE;RELEASE;ANGLE</DefineConstants>
@@ -50,9 +50,13 @@
     <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\Engine\Engine.csproj" />
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" />
+    <ItemGroup Condition="'$(Configuration)' != 'Release'">
+        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0-windows" />
+        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net10.0-windows" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFrameworks=net10.0;net10.0-windows" />
+        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFrameworks=net10.0;net10.0-windows" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="TextCopy" Version="6.2.1" Condition="'$(TargetFramework)' == 'net10.0-windows'" />

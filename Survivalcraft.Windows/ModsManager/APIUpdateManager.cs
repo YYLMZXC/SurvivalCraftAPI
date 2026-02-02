@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Game {
@@ -173,5 +174,17 @@ namespace Game {
     public class Asset {
         public string browser_download_url { get; set; }
         public string name { get; set; }
+    }
+
+    [JsonSourceGenerationOptions(
+        PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower
+    )]
+    [JsonSerializable(typeof(List<ReleaseInfo>))]
+    [JsonSerializable(typeof(ReleaseInfo))]
+    [JsonSerializable(typeof(Author))]
+    [JsonSerializable(typeof(List<Asset>))]
+    [JsonSerializable(typeof(Asset))]
+    public partial class GiteeReleaseInfoJsonContext : JsonSerializerContext
+    {
     }
 }

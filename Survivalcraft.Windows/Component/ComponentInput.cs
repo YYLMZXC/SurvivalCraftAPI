@@ -21,12 +21,8 @@ namespace Game {
 
         public bool ToggleFlyInDoubleJump { get; set; } = true;
         public PlayerInput PlayerInput => m_playerInput;
-#if ANDROID
-        public bool IsControlledByTouch { get; set; } = true;
-#endif
-#if !ANDROID
-        public bool IsControlledByTouch { get; set; }
-#endif
+
+        public bool IsControlledByTouch { get; set; } = Touch.IsTouched;
 
         public bool IsControlledByVr {
             get {

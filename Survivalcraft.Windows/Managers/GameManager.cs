@@ -46,7 +46,9 @@ namespace Game {
                 ModsManager.HookAction(
                     "ProjectXmlLoad",
                     loader => {
+#pragma warning disable CS0618
                         loader.ProjectXmlLoad(projectNode);
+#pragma warning restore CS0618
                         loader.ProjectXmlLoad(projectNode, worldInfo, gamesWidget);
                         return false;
                     }
@@ -119,62 +121,62 @@ namespace Game {
                 m_saveCompleted.WaitOne();
                 m_saveCompleted.Reset();
                 SubsystemGameInfo subsystemGameInfo = m_project.FindSubsystem<SubsystemGameInfo>(true);
-                string projectFileName = Storage.CombinePaths(subsystemGameInfo.DirectoryName, "Project.xml");
-                Task.Run(
-                    delegate {
-                        try {
-                            WorldsManager.MakeQuickWorldBackup(subsystemGameInfo.DirectoryName);
-                            XElement xElement = new("Project");
-                            ModsManager.HookAction(
-                                "ProjectXmlSave",
-                                loader => {
-                                    loader.ProjectXmlSave(xElement);
-                                    return false;
-                                }
-                            );
-                            projectData.Save(xElement);
-                            XmlUtils.SetAttributeValue(xElement, "Version", VersionsManager.SerializationVersion);
-                            XmlUtils.SetAttributeValue(xElement, "APIVersion", ModsManager.APIVersionString);
-                            Storage.CreateDirectory(subsystemGameInfo.DirectoryName);
-                            ModsManager.HookAction(
-                                "OnProjectXmlSaved",
-                                loader => {
-                                    loader.OnProjectXmlSaved(xElement);
-                                    return false;
-                                }
-                            );
-                            using (Stream stream = Storage.OpenFile(projectFileName, OpenFileMode.Create)) {
-                                XmlUtils.SaveXmlToStream(xElement, stream, null, true);
-                            }
-                        }
-                        catch (Exception ex) {
-                            if (showErrorDialog) {
-                                Dispatcher.Dispatch(
-                                    delegate {
-                                        DialogsManager.ShowDialog(
-                                            null,
-                                            new MessageDialog(
-                                                LanguageControl.Get(fName, "2"),
-                                                $"{ex.Message}\n{LanguageControl.Get(fName, "3")}",
-                                                LanguageControl.Ok,
-                                                null,
-                                                null
-                                            )
-                                        );
-                                    }
-                                );
-                            }
-                            Log.Error($"{LanguageControl.Get(fName, "2")}\n{ex}");
-                        }
-                        finally {
-                            m_saveCompleted.Set();
-                        }
-                    }
-                );
+                Task.Run(() => InternalSaveProject(projectData, subsystemGameInfo.DirectoryName, showErrorDialog));
                 if (waitForCompletion) {
                     m_saveCompleted.WaitOne();
                 }
                 Log.Verbose(string.Format(LanguageControl.Get(fName, "4"), Math.Round((Time.RealTime - realTime) * 1000.0)));
+            }
+        }
+
+        public static void InternalSaveProject(ProjectData projectData, string directoryName, bool showErrorDialog) {
+            try {
+                string projectFileName = Storage.CombinePaths(directoryName, "Project.xml");
+                WorldsManager.MakeQuickWorldBackup(directoryName);
+                XElement xElement = new("Project");
+                ModsManager.HookAction(
+                    "ProjectXmlSave",
+                    loader => {
+                        loader.ProjectXmlSave(xElement);
+                        return false;
+                    }
+                );
+                projectData.Save(xElement);
+                XmlUtils.SetAttributeValue(xElement, "Version", VersionsManager.SerializationVersion);
+                XmlUtils.SetAttributeValue(xElement, "APIVersion", ModsManager.APIVersionString);
+                Storage.CreateDirectory(directoryName);
+                ModsManager.HookAction(
+                    "OnProjectXmlSaved",
+                    loader => {
+                        loader.OnProjectXmlSaved(xElement);
+                        return false;
+                    }
+                );
+                using (Stream stream = Storage.OpenFile(projectFileName, OpenFileMode.Create)) {
+                    XmlUtils.SaveXmlToStream(xElement, stream, null, true);
+                }
+            }
+            catch (Exception ex) {
+                if (showErrorDialog) {
+                    Dispatcher.Dispatch(
+                        delegate {
+                            DialogsManager.ShowDialog(
+                                null,
+                                new MessageDialog(
+                                    LanguageControl.Get(fName, "2"),
+                                    $"{ex.Message}\n{LanguageControl.Get(fName, "3")}",
+                                    LanguageControl.Ok,
+                                    null,
+                                    null
+                                )
+                            );
+                        }
+                    );
+                }
+                Log.Error($"{LanguageControl.Get(fName, "2")}\n{ex}");
+            }
+            finally {
+                m_saveCompleted.Set();
             }
         }
 

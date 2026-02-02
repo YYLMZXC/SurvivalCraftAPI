@@ -61,7 +61,7 @@ namespace Game {
         }
 
         public override IEnumerable<int> GetCreativeValues() {
-            foreach (int enumValue in EnumUtils.GetEnumValues(typeof(BulletType))) {
+            foreach (int enumValue in EnumUtils.GetEnumValues<BulletType>()) {
                 yield return Terrain.MakeBlockValue(BlockIndex, 0, SetBulletType(0, (BulletType)enumValue));
             }
         }
@@ -69,7 +69,7 @@ namespace Game {
         public override string GetDisplayName(SubsystemTerrain subsystemTerrain, int value) {
             int bulletType = (int)GetBulletType(Terrain.ExtractData(value));
             if (bulletType < 0
-                || bulletType >= Enum.GetValues(typeof(BulletType)).Length) {
+                || bulletType >= Enum.GetValues<BulletType>().Length) {
                 return string.Empty;
             }
             return LanguageControl.Get("BulletBlock", bulletType);

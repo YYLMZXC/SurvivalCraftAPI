@@ -2,7 +2,11 @@ using System.Runtime.InteropServices;
 
 namespace Engine.Graphics {
     public static class Egl {
+#if BROWSER
+        public const string LibEgl = "libEGL";
+#else
         public const string LibEgl = "libEGL.dll";
+#endif
         public const int None = 0x3038;
         public const int RedSize = 0x3024;
         public const int GreenSize = 0x3023;
@@ -21,35 +25,45 @@ namespace Engine.Graphics {
         public const int NativeVisualId = 0x302E;
         public const int OpenglEsApi = 0x30A0;
 
-        [DllImport(LibEgl, EntryPoint = "eglGetDisplay", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglGetDisplay", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern IntPtr GetDisplay(IntPtr displayId);
 
-        [DllImport(LibEgl, EntryPoint = "eglInitialize", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglInitialize", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern bool Initialize(IntPtr dpy, out int major, out int minor);
 
-        [DllImport(LibEgl, EntryPoint = "eglChooseConfig", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglChooseConfig", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern bool ChooseConfig(IntPtr dpy, int[] attribList, IntPtr[] configs, int configSize, out int numConfig);
 
-        [DllImport(LibEgl, EntryPoint = "eglCreateWindowSurface", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglCreateWindowSurface", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern IntPtr CreateWindowSurface(IntPtr dpy, IntPtr config, IntPtr nativeWindow, int[] attribList);
 
-        [DllImport(LibEgl, EntryPoint = "eglCreateContext", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglCreateContext", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern IntPtr CreateContext(IntPtr dpy, IntPtr config, IntPtr shareContext, int[] attribList);
 
-        [DllImport(LibEgl, EntryPoint = "eglMakeCurrent", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglMakeCurrent", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern bool MakeCurrent(IntPtr dpy, IntPtr draw, IntPtr read, IntPtr ctx);
 
-        [DllImport(LibEgl, EntryPoint = "eglSwapBuffers", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglSwapBuffers", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern bool SwapBuffers(IntPtr dpy, IntPtr surface);
 
-        [DllImport(LibEgl, EntryPoint = "eglSwapInterval", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglSwapInterval", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern bool SwapInterval(IntPtr dpy, int interval);
 
-        [DllImport(LibEgl, EntryPoint = "eglGetError", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(LibEgl, EntryPoint = "eglGetError", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern int GetError();
 
         // wrapper to get proc addresses used by GL.GetApi
         [DllImport(LibEgl, EntryPoint = "eglGetProcAddress", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         public static extern IntPtr GetProcAddress(string proc);
     }
 }

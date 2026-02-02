@@ -100,7 +100,7 @@ namespace Engine.Graphics {
             VertexDeclaration vertexDeclaration,
             T[] vertexData,
             int startVertex,
-            int verticesCount) where T : struct {
+            int verticesCount) where T : unmanaged {
             VerifyParametersDrawUser(primitiveType, shader, vertexDeclaration, vertexData, startVertex, verticesCount);
 #if DIRECT3D11
             int num = DXWrapper.AppendUserVertices(vertexData, vertexDeclaration.VertexStride, startVertex, verticesCount);
@@ -144,7 +144,7 @@ namespace Engine.Graphics {
             int verticesCount,
             int[] indexData,
             int startIndex,
-            int indicesCount) where T : struct {
+            int indicesCount) where T : unmanaged {
             VerifyParametersDrawUserIndexed(
                 primitiveType,
                 shader,
@@ -323,9 +323,10 @@ namespace Engine.Graphics {
         public static void AfterFrame() { }
 
         public static void Resize() {
-            BackbufferSize = new Point2(Window.Size.X, Window.Size.Y);
-            Viewport = new Viewport(0, 0, Window.Size.X, Window.Size.Y);
-            ScissorRectangle = new Rectangle(0, 0, Window.Size.X, Window.Size.Y);
+            Point2 size = Window.Size;
+            BackbufferSize = new Point2(size.X, size.Y);
+            Viewport = new Viewport(0, 0, size.X, size.Y);
+            ScissorRectangle = new Rectangle(0, 0, size.X, size.Y);
 #if DIRECT3D11
             DXWrapper.ResizeSwapChainIfNeeded();
 #endif
@@ -348,7 +349,7 @@ namespace Engine.Graphics {
             VertexDeclaration vertexDeclaration,
             T[] vertexData,
             int startVertex,
-            int verticesCount) where T : struct {
+            int verticesCount) where T : unmanaged {
             int num = Utilities.SizeOf<T>();
             ArgumentNullException.ThrowIfNull(shader);
             ArgumentNullException.ThrowIfNull(vertexDeclaration);
@@ -374,7 +375,7 @@ namespace Engine.Graphics {
             int verticesCount,
             int[] indexData,
             int startIndex,
-            int indicesCount) where T : struct {
+            int indicesCount) where T : unmanaged {
             int num = Utilities.SizeOf<T>();
             ArgumentNullException.ThrowIfNull(shader);
             ArgumentNullException.ThrowIfNull(vertexDeclaration);

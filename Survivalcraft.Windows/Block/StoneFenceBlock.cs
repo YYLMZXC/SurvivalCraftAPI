@@ -1,3 +1,4 @@
+using Engine;
 namespace Game {
     public class StoneFenceBlock : FenceBlock {
         public static int Index = 202;

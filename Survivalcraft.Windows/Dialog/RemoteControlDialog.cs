@@ -1,4 +1,4 @@
-#if !IOS
+#if !IOS && !BROWSER
 using System.Net;
 using System.Xml.Linq;
 

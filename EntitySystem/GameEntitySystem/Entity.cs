@@ -101,7 +101,9 @@ namespace GameEntitySystem {
                 if (type != null) {
                     object obj;
                     try {
+#pragma warning disable IL2072
                         obj = Activator.CreateInstance(type);
+#pragma warning restore IL2072
                     }
                     catch (TargetInvocationException ex) {
                         if (ex.InnerException is not null) {

@@ -16,11 +16,11 @@ public static class MultiMouse {
         public int MouseWheelMovement;
         // ReSharper restore MemberHidesStaticFromOuterClass
 
-        public bool[] MouseButtonsDownArray = new bool[Enum.GetValues(typeof(MouseButton)).Length];
+        public bool[] MouseButtonsDownArray = new bool[Enum.GetValues<MouseButton>().Length];
 
-        public bool[] MouseButtonsDownOnceArray = new bool[Enum.GetValues(typeof(MouseButton)).Length];
+        public bool[] MouseButtonsDownOnceArray = new bool[Enum.GetValues<MouseButton>().Length];
 
-        public bool[] MouseButtonsUpOnceArray = new bool[Enum.GetValues(typeof(MouseButton)).Length];
+        public bool[] MouseButtonsUpOnceArray = new bool[Enum.GetValues<MouseButton>().Length];
     }
 
     static MouseData[] _MouseData = [new(), new(), new(), new()];

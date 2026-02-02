@@ -83,7 +83,11 @@ namespace Game {
 
         public override void Update() {
             if (m_windowModeButton.IsClicked) {
-                SettingsManager.WindowMode = (WindowMode)((int)(SettingsManager.WindowMode + 1) % EnumUtils.GetEnumValues(typeof(WindowMode)).Count);
+#if BROWSER
+                Window.WindowMode = Window.WindowMode == WindowMode.Fullscreen ? WindowMode.Fixed : WindowMode.Fullscreen;
+#else
+                SettingsManager.WindowMode = (WindowMode)((int)(SettingsManager.WindowMode + 1) % EnumUtils.GetEnumValues<WindowMode>().Count);
+#endif
             }
             if (m_uiScaleSlider.SlidingCompleted) {
                 SettingsManager.UIScale = m_uiScaleSlider.Value;
@@ -124,7 +128,7 @@ namespace Game {
             }
             if (m_screenshotSizeButton.IsClicked) {
                 SettingsManager.ScreenshotSize = (ScreenshotSize)((int)(SettingsManager.ScreenshotSize + 1)
-                    % EnumUtils.GetEnumValues(typeof(ScreenshotSize)).Count);
+                    % EnumUtils.GetEnumValues<ScreenshotSize>().Count);
                 if (SettingsManager.ScreenshotSize == ScreenshotSize.Custom) {
                     m_screenshotSizeCustomWidthSliderContainer.IsVisible = true;
                     m_screenshotSizeCustomAspectRatioSliderContainer.IsVisible = true;
@@ -145,13 +149,17 @@ namespace Game {
             }
             if (m_communityContentModeButton.IsClicked) {
                 SettingsManager.CommunityContentMode = (CommunityContentMode)((int)(SettingsManager.CommunityContentMode + 1)
-                    % EnumUtils.GetEnumValues(typeof(CommunityContentMode)).Count);
+                    % EnumUtils.GetEnumValues<CommunityContentMode>().Count);
             }
             if (m_originalCommunityContentModeButton.IsClicked) {
                 SettingsManager.OriginalCommunityContentMode = (CommunityContentMode)((int)(SettingsManager.OriginalCommunityContentMode + 1)
-                    % EnumUtils.GetEnumValues(typeof(CommunityContentMode)).Count);
+                    % EnumUtils.GetEnumValues<CommunityContentMode>().Count);
             }
+#if BROWSER
+            m_windowModeButton.Text = LanguageControl.Get("WindowMode", Window.WindowMode.ToString());
+#else
             m_windowModeButton.Text = LanguageControl.Get("WindowMode", SettingsManager.WindowMode.ToString());
+#endif
             m_languageButton.Text = LanguageControl.Get("Language", "Name");
             m_displayLogButton.Text = SettingsManager.DisplayLog ? LanguageControl.Yes : LanguageControl.No;
             m_upsideDownButton.Text = SettingsManager.UpsideDownLayout ? LanguageControl.Yes : LanguageControl.No;

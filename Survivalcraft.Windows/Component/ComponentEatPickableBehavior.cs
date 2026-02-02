@@ -56,7 +56,7 @@ namespace Game {
             m_subsystemPickables = Project.FindSubsystem<SubsystemPickables>(true);
             m_componentCreature = Entity.FindComponent<ComponentCreature>(true);
             m_componentPathfinding = Entity.FindComponent<ComponentPathfinding>(true);
-            m_foodFactors = new float[EnumUtils.GetEnumValues(typeof(FoodType)).Max() + 1];
+            m_foodFactors = new float[EnumUtils.GetEnumValues<FoodType>().Max() + 1];
             foreach (KeyValuePair<string, object> item in valuesDictionary.GetValue<ValuesDictionary>("FoodFactors")) {
                 FoodType foodType = (FoodType)Enum.Parse(typeof(FoodType), item.Key, false);
                 m_foodFactors[(int)foodType] = (float)item.Value;

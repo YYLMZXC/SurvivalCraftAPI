@@ -25,9 +25,9 @@ namespace Game {
 
         [Obsolete("overrode \"IsIndexDynamic\" instead.")]
         public bool StaticBlockIndex = false;
-
+#pragma warning disable CS0618
         public virtual bool IsIndexDynamic => !StaticBlockIndex;
-
+#pragma warning restore CS0618
         public bool CanBeBuiltIntoFurniture = false;
 
         public bool IsCollapsable = false;

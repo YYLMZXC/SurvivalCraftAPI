@@ -186,7 +186,9 @@ namespace Game {
                 try {
                     string className = item.GetValue("Class", typeof(Pickable).FullName);
                     Type type = TypeCache.FindType(className, false, true);
+#pragma warning disable IL2072
                     if (Activator.CreateInstance(type) is Pickable pickable) {
+#pragma warning restore IL2072
                         pickable.Project = Project;
                         pickable.InitializeData(
                             () => m_subsystemTerrain.Terrain,

@@ -49,6 +49,6 @@ namespace Engine.Serialization {
             ReadSingle()
         );
 
-        public virtual T ReadStruct<T>() where T : struct => Utilities.ArrayToStructure<T>(ReadBytes(Utilities.SizeOf<T>()));
+        public virtual T ReadStruct<T>() where T : unmanaged => Utilities.ArrayToStructure<T>(ReadBytes(Utilities.SizeOf<T>()));
     }
 }

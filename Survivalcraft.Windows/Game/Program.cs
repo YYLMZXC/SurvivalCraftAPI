@@ -1,5 +1,8 @@
 #if ANDROID
 using Android.Content;
+#elif BROWSER
+using System.Runtime.Versioning;
+using Engine.Browser;
 #else
 using Engine.Input;
 using System.Diagnostics;
@@ -14,6 +17,9 @@ using System.Globalization;
 using Engine;
 using Engine.Graphics;
 
+#if BROWSER
+[assembly: SupportedOSPlatform("browser")]
+#endif
 namespace Game {
     public static class Program {
         public static double m_frameBeginTime;
@@ -29,14 +35,44 @@ namespace Game {
         public static float LastCpuFrameTime { get; set; }
 
         public static event Action<Uri> HandleUri;
-#if ANDROID
+#if ANDROID || BROWSER
         public static bool m_firstFramePrepared;
 #endif
 
 #if !ANDROID
         // ReSharper disable UnusedMember.Local
+#if BROWSER
+        public static async Task Main2(string[] args) {
+            Display.Initialize();
+            BrowserInterop.Initialize(InputBridge.Initialize());
+            Display.Resize();
+            unsafe {
+                Emscripten.RequestAnimationFrameLoop((delegate* unmanaged<double, nint, int>)&Frame, nint.Zero);
+            }
+        }
+
+        public static int Counter;
+        [System.Runtime.InteropServices.UnmanagedCallersOnly]
+        public static int Frame(double time, nint userData)
+        {
+            InputBridge.BeforeFrame();
+            Display.Clear(Color.White);
+            PrimitivesRenderer2D primitivesRenderer2D = new PrimitivesRenderer2D();
+            FlatBatch2D flatBatch2D = primitivesRenderer2D.FlatBatch();
+            Point2 size = Display.BackbufferSize;
+            flatBatch2D.QueueLine(new Vector2(Counter, 0f), new Vector2(size.X - Counter, size.Y), 0f, Color.Black);
+            primitivesRenderer2D.Flush();
+            if (++Counter >= size.X) {
+                Counter = 0;
+            }
+            return 1;
+        }
+
+        public static async Task Main(string[] args) {
+#else
         static void Main(string[] args) {
-            // ReSharper restore UnusedMember.Local
+#endif
+        // ReSharper restore UnusedMember.Local
 #if WINDOWS
             if (args != null
                 && args.Length > 0) {
@@ -49,13 +85,7 @@ namespace Game {
                             using (FileStream fileStream = File.OpenRead(path)) {
                                 string fileName = Storage.GetFileName(path);
                                 try {
-                                    switch (type) {
-                                        case ExternalContentType.World: WorldsManager.ImportWorld(fileStream); break;
-                                        case ExternalContentType.BlocksTexture: BlocksTexturesManager.ImportBlocksTexture(fileName, fileStream); break;
-                                        case ExternalContentType.CharacterSkin: CharacterSkinsManager.ImportCharacterSkin(fileName, fileStream); break;
-                                        case ExternalContentType.FurniturePack: FurniturePacksManager.ImportFurniturePack(fileName, fileStream); break;
-                                        case ExternalContentType.Mod: ModsManager.ImportMod(fileName, fileStream); break;
-                                    }
+                                    ExternalContentManager.ImportExternalContentSync(fileStream, type, fileName);
                                     Window.MessageBox(IntPtr.Zero, $"Successfully imported {fileName}.\n导入 {fileName} 成功", "Success 成功", 0x40u);
                                 }
                                 catch (Exception e) {
@@ -119,28 +149,36 @@ namespace Game {
             //    new Option<string>(["-l", "--language"], "")
             //];
         }
-#endif
+#endif // !ANDROID
 
         [STAThread]
         public static void EntryPoint() {
+#if BROWSER
+            SystemLanguage = BrowserInterop.GetLanguage();
+#else
             SystemLanguage = CultureInfo.CurrentUICulture.Name;
+#endif
             if (string.IsNullOrEmpty(SystemLanguage)) {
                 SystemLanguage = RegionInfo.CurrentRegion.DisplayName != "United States" ? "zh-CN" : "en-US";
             }
             //预加载
+            Storage.Initialize();
             VersionsManager.Initialize();
             Window.HandleUri += HandleUriHandler;
             Window.Deactivated += DeactivatedHandler;
             Window.Frame += FrameHandler;
-            Window.ToRestart += Restart;
+            Window.ToRestart += ToRestartHandler;
+            Window.FileDropped += FileDropHandler;
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             string title = $"Survivalcraft {ModsManager.ShortGameVersion} - API {ModsManager.APIVersionString}";
+#if !BROWSER
             Log.RemoveAllLogSinks();
             Log.AddLogSink(new GameLogSink());
 #if DEBUG
             Log.AddLogSink(new ConsoleLogSink());
             title = $"[DEBUG]{title}";
+#endif
 #endif
             Window.UnhandledException += delegate(UnhandledExceptionInfo e) {
                 ExceptionManager.ReportExceptionToUser("Unhandled exception.", e.Exception);
@@ -191,7 +229,7 @@ namespace Game {
             LastFrameTime = (float)(Time.RealTime - m_frameBeginTime);
             LastCpuFrameTime = (float)(m_cpuEndTime - m_frameBeginTime);
             m_frameBeginTime = Time.RealTime;
-#if !ANDROID &&!IOS
+#if !MOBILE && !BROWSER
             if (Keyboard.IsKeyDownOnce(Key.F11)) {
                 SettingsManager.WindowMode = SettingsManager.WindowMode == WindowMode.Fullscreen ? WindowMode.Resizable : WindowMode.Fullscreen;
                 Mouse.m_lastMousePosition = null;
@@ -208,7 +246,7 @@ namespace Game {
                     MusicManager.Update();
                     ScreensManager.Update();
                     DialogsManager.Update();
-#if !IOS
+#if !IOS && !BROWSER
                     JsInterface.Update();
 #endif
                 }
@@ -256,21 +294,26 @@ namespace Game {
                 ExceptionManager.ReportExceptionToUser(null, e2);
                 ScreensManager.SwitchScreen("MainMenu");
             }
-#if ANDROID
             finally {
+#if ANDROID
                 if (LoadingScreen.m_isContentLoaded) {
                     m_firstFramePrepared = true;
                 }
-            }
+#elif BROWSER
+                if (!m_firstFramePrepared && LoadingScreen.m_isContentLoaded) {
+                    m_firstFramePrepared = true;
+                    BrowserInterop.FirstFramePrepared();
+                }
 #endif
+            }
         }
 
-        public static void Restart() {
+        public static void ToRestartHandler() {
 #if ANDROID
 #pragma warning disable CA1416
             Intent intent = new Intent(Window.Activity, Window.Activity.Class);
             Window.Activity.StartActivity(intent);
-#else
+#elif !BROWSER
             Process current = Process.GetCurrentProcess();
             Process.Start(new ProcessStartInfo
             {
@@ -279,6 +322,13 @@ namespace Game {
                 UseShellExecute = false
             });
 #endif
+        }
+
+        public static void FileDropHandler(List<(Stream stream, string fileName)> files) {
+            if (ScreensManager.CurrentScreen is LoadingScreen) {
+                return;
+            }
+            _ = ExternalContentManager.ImportExternalContentsAsync(files, true);
         }
     }
 }

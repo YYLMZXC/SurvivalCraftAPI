@@ -1,3 +1,4 @@
+using Engine;
 namespace Game {
     public class MagmaBlock : FluidBlock {
         public static int Index = 92;

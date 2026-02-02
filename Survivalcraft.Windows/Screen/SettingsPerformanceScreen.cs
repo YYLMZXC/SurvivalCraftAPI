@@ -83,6 +83,9 @@ namespace Game {
             m_animatedTextureRefreshLimitSlider = Children.Find<SliderWidget>("AnimatedTextureRefreshLimitSlider");
 #if ANDROID || ANGLE
             m_framerateLimitSlider.MinValue = 1;
+#elif BROWSER
+            m_framerateLimitSlider.MinValue = 1;
+            m_framerateLimitSlider.MaxValue = 1;
 #endif
         }
 
@@ -92,7 +95,7 @@ namespace Game {
 
         public override void Update() {
             if (m_resolutionButton.IsClicked) {
-                IList<int> enumValues = EnumUtils.GetEnumValues(typeof(ResolutionMode));
+                IList<int> enumValues = EnumUtils.GetEnumValues<ResolutionMode>();
                 SettingsManager.ResolutionMode = (ResolutionMode)((enumValues.IndexOf((int)SettingsManager.ResolutionMode) + 1) % enumValues.Count);
             }
             if (m_visibilityRangeSlider.IsSliding) {
@@ -102,7 +105,7 @@ namespace Game {
                 SettingsManager.TerrainMipmapsEnabled = !SettingsManager.TerrainMipmapsEnabled;
             }
             if (m_skyRenderingModeButton.IsClicked) {
-                IList<int> enumValues3 = EnumUtils.GetEnumValues(typeof(SkyRenderingMode));
+                IList<int> enumValues3 = EnumUtils.GetEnumValues<SkyRenderingMode>();
                 SettingsManager.SkyRenderingMode = (SkyRenderingMode)((enumValues3.IndexOf((int)SettingsManager.SkyRenderingMode) + 1)
                     % enumValues3.Count);
             }

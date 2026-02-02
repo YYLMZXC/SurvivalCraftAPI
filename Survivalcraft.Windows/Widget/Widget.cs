@@ -487,7 +487,9 @@ namespace Game {
             if (node.Name.LocalName.Contains(".")) {
                 throw new NotImplementedException("Node property specification not implemented.");
             }
+#pragma warning disable IL2072
             if (Activator.CreateInstance(FindTypeFromXmlName(node.Name.LocalName, node.Name.NamespaceName)) is not Widget widget) {
+#pragma warning restore IL2072
                 throw new Exception($"Type \"{node.Name.LocalName}\" is not a Widget.");
             }
             ModsManager.HookAction(
@@ -515,7 +517,9 @@ namespace Game {
         }
 
         public virtual void LoadProperties(object eventsTarget, XElement node) {
+#pragma warning disable IL2072
             IEnumerable<PropertyInfo> runtimeProperties = GetType().GetRuntimeProperties().ToArray();
+#pragma warning restore IL2072
             foreach (XAttribute attribute in node.Attributes()) {
                 if (!attribute.IsNamespaceDeclaration
                     && !attribute.Name.LocalName.StartsWith('_')) {
@@ -531,7 +535,9 @@ namespace Game {
                             attribute.Name.NamespaceName != string.Empty ? attribute.Name.NamespaceName : node.Name.NamespaceName
                         );
                         string setterName = $"Set{array[1]}";
+#pragma warning disable IL2072
                         MethodInfo methodInfo = type.GetRuntimeMethods().FirstOrDefault(mi => mi.Name == setterName && mi.IsPublic && mi.IsStatic);
+#pragma warning restore IL2072
                         if (!(methodInfo != null)) {
                             throw new InvalidOperationException(
                                 $"Attached property public static setter method \"{setterName}\" not found, property \"{attribute.Name.LocalName}\" in widget of type \"{GetType().FullName}\"."

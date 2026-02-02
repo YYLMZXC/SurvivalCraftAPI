@@ -8,9 +8,16 @@ using Foundation;
 #if WINDOWS
 using System.Diagnostics;
 #endif
-using System.Reflection;
+#if BROWSER
+using System.Runtime.InteropServices;
+using Engine.Browser;
+using System.Runtime.InteropServices.JavaScript;
+#pragma warning disable CA1416
+#else
 using NativeFileDialogCore;
 #endif
+using System.Reflection;
+#endif // !ANDROID
 using System.Text;
 
 namespace Engine {
@@ -22,6 +29,13 @@ namespace Engine {
 #else
         const bool m_isAndroidPlatform = true;
 #endif
+
+        public static void Initialize() {
+#if BROWSER
+            MountOPFS("/__root__");
+#endif
+        }
+
         public static long FreeSpace {
             get {
 #if ANDROID
@@ -272,8 +286,9 @@ namespace Engine {
 #else
         public static string GetAppDirectory(bool failIfApp) => failIfApp
             ? throw new InvalidOperationException("Access denied.")
+#pragma warning disable IL3000
             : Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location);
-
+#pragma warning restore IL3000
         public static string GetDataDirectory(bool writeAccess) {
             string text = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -311,21 +326,25 @@ namespace Engine {
             }
             else {
                 if (!path.StartsWith("system:")) {
+#if BROWSER
+                    return path;
+#else
                     throw new InvalidOperationException("Invalid path.");
+#endif
                 }
                 text = string.Empty;
                 path = path.Substring(7);
             }
-            return !string.IsNullOrEmpty(text) ? Path.Combine(text, path) : path;
+            string result = string.IsNullOrEmpty(text) ? path : Path.Combine(text, path);
+#if BROWSER
+            EnsurePathLinked(result);
+#endif
+            return result;
         }
 #endif
-        public static void MoveDirectory(string path, string newPath) {
-            Directory.Move(ProcessPath(path, true, false), ProcessPath(newPath, true, false));
-        }
+        public static void MoveDirectory(string path, string newPath) => Directory.Move(ProcessPath(path, true, false), ProcessPath(newPath, true, false));
 
-        public static void DeleteDirectoryRecursive(string path) {
-            Directory.Delete(ProcessPath(path, true, false));
-        }
+        public static void DeleteDirectoryRecursive(string path) => Directory.Delete(ProcessPath(path, true, false));
 
         public static DirectoryInfo GetDirectoryInfo(string path) => new(ProcessPath(path, true, false));
 
@@ -376,19 +395,26 @@ namespace Engine {
 
         /*
          * <Summary>
-         *  分享文件，当前版本仅支持安卓
+         *  分享文件，当前版本仅支持安卓、浏览器，浏览器上的形式为下载
          * </Summary>
          * <Param name="path">文件路径</Param>
-         * <Param name="chooserTitle">应用选择器标题，留空时使用文件名</Param>
+         * <Param name="chooserTitle">（浏览器无效）应用选择器标题，留空时使用文件名</Param>
          * <Param name="mimeType">MIME 类型，留空时自动根据文件后缀推断</Param>
          */
-        public static void ShareFile(string path, string chooserTitle = null, string mimeType = null) {
+        public static async Task ShareFile(string path, string chooserTitle = null, string mimeType = null) {
             if (!FileExists(path)) {
                 throw new FileNotFoundException($"Share {path} failed, because it is not exists.");
             }
-            path = ProcessPath(path, false, false);
 #if ANDROID
+            path = ProcessPath(path, false, false);
             Window.Activity.ShareFile(path, chooserTitle, mimeType);
+#elif BROWSER
+            Console.WriteLine(path);
+            JSObject fileHandle = await BrowserInterop.ShowSaveFilePicker(Storage.GetFileName(path), mimeType);
+            Stream stream = OpenFile(path, OpenFileMode.Read);
+            byte[] bytes = new byte[stream.Length];
+            _ = await stream.ReadAsync(bytes);
+            await BrowserInterop.SaveBytesToFileHandle(fileHandle, bytes);
 #endif
         }
 
@@ -398,8 +424,8 @@ namespace Engine {
          * </Summary>
          * <Param name="title">文件选择器的标题</Param>
          * <Param name="filters">（安卓无效）过滤器列表。键为名称，例如“图片”；值为通配符列表，例如["*.png", "*.jpg"]</Param>
-         * <Param name="defaultPath">（安卓无效）默认路径</Param>
-         * <Param name="mode">（安卓永远只读）文件打开模式</Param>
+         * <Param name="defaultPath">（安卓无效）默认路径。其中浏览器只支持"desktop"、"documents"、"downloads"、"music"、"pictures" 或 "videos"</Param>
+         * <Param name="mode">（安卓、浏览器只读）文件打开模式</Param>
          */
 #pragma warning disable CS1998
         public static async Task<(Stream, string)> ChooseFile(string title = null,
@@ -415,7 +441,39 @@ namespace Engine {
             return await Window.Activity.ChooseFileAsync(title);
 #elif  IOS
             throw new Exception("Unsupported Operation");
-
+#elif BROWSER
+            List<string> descAndExtArray = [];
+            List<int> extCounts = [];
+            if (filters != null) {
+                foreach (KeyValuePair<string, string[]> filter in filters) {
+                    descAndExtArray.Add(filter.Key);
+                    extCounts.Add(filter.Value.Length);
+                    string[] extensions = filter.Value;
+                    foreach (string extension in extensions) {
+                        descAndExtArray.Add(extension);
+                    }
+                }
+            }
+            JSObject file = null;
+            try {
+                file = await BrowserInterop.ShowOpenFilePicker(descAndExtArray.ToArray(), extCounts.ToArray(), defaultPath);
+            }
+            catch {
+                // ignore
+            }
+            if (file == null) {
+                return (null, null);
+            }
+            string fileName = BrowserInterop.GetFileName(file);
+            if (string.IsNullOrEmpty(fileName)) {
+                return (null, null);
+            }
+            JSObject bytes = await BrowserInterop.GetFileBytes(file);
+            file.Dispose();
+            Stream stream = new MemoryStream(BrowserInterop.JSObject2ByteArray(bytes));
+            bytes.Dispose();
+            stream.Position = 0;
+            return (stream, fileName);
 #else
             string filtersString = null;
             if (filters != null) {
@@ -456,10 +514,68 @@ namespace Engine {
             );
             if (result.IsOk
                 && !string.IsNullOrEmpty(result.Path)) {
-                return ( File.Open(result.Path, FileMode.Open, mode == OpenFileMode.Read ? FileAccess.Read : FileAccess.ReadWrite, FileShare.Read), GetFileName(result.Path));
+                try {
+                    Stream stream = File.Open(
+                        result.Path,
+                        FileMode.Open,
+                        mode == OpenFileMode.Read ? FileAccess.Read : FileAccess.ReadWrite,
+                        FileShare.Read
+                    );
+                    return (stream, GetFileName(result.Path));
+                }
+                catch (Exception e) {
+                    Log.Error($"Choose file failed. File path: \"{result.Path}\". Reason: {e.Message}");
+                    return (null, result.Path);
+                }
             }
             return (null, null);
 #endif
         }
+
+#if BROWSER
+        static HashSet<string> m_linkedPaths = ["__root__", "dev", "tmp"];
+        /// <summary>
+        /// 自动映射路径。By Gemini
+        /// </summary>
+        static void EnsurePathLinked(string path) {
+            if (string.IsNullOrEmpty(path)) {
+                return;
+            }
+            path = path.Replace('\\', '/');
+            string[] parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length <= 1) {
+                return;
+            }
+            string topDir = parts[0];
+            // 如果已经是系统目录或挂载根目录，直接跳过
+            if (m_linkedPaths.Contains(topDir)) {
+                return;
+            }
+            string linkPath = $"/{topDir}";
+            string realPath = $"/__root__/{topDir}";
+            if (!Directory.Exists(realPath)) {
+                Directory.CreateDirectory(realPath);
+            }
+            int res = CreateSymlink(realPath, linkPath);
+            switch (res) {
+                case 0:
+                    m_linkedPaths.Add(topDir);
+                    break;
+                case -17:// EEXIST
+                    m_linkedPaths.Add(topDir);
+                    // 可以在这里加个校验，确定它是不是指向正确的地方，但通常没必要
+                    break;
+                default: throw new Exception($"Failed to link \"{linkPath}\" to \"{realPath}\", error code: {res}");
+            }
+        }
+
+        [DllImport("wasmfsHelper", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        static extern int MountOPFS(string mountPath);
+
+        [DllImport("wasmfsHelper", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+        static extern int CreateSymlink(string target, string linkpath);
+#endif
     }
 }

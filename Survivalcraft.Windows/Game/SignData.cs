@@ -1,3 +1,4 @@
+using Engine;
 namespace Game {
     public class SignData {
         public string[] Lines = [string.Empty, string.Empty, string.Empty, string.Empty];

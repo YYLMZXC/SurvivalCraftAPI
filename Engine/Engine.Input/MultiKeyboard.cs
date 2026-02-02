@@ -11,11 +11,11 @@ public static class MultiKeyboard {
         public char? LastChar;
         // ReSharper restore MemberHidesStaticFromOuterClass
 
-        public bool[] KeysDownArray = new bool[Enum.GetValues(typeof(Key)).Length];
+        public bool[] KeysDownArray = new bool[Enum.GetValues<Key>().Length];
 
-        public bool[] KeysDownOnceArray = new bool[Enum.GetValues(typeof(Key)).Length];
+        public bool[] KeysDownOnceArray = new bool[Enum.GetValues<Key>().Length];
 
-        public double[] KeysDownRepeatArray = new double[Enum.GetValues(typeof(Key)).Length];
+        public double[] KeysDownRepeatArray = new double[Enum.GetValues<Key>().Length];
     }
 
     static double KeyFirstRepeatTime = 0.3;

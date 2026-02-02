@@ -79,7 +79,8 @@
         <PackageReference Include="NuGet.Versioning" Version="7.0.1" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj"/>
+        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0-android"/>
+        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net10.0-android" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs"/>

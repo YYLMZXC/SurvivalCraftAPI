@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Engine;
+using Engine.Media;
 using Engine.Graphics;
 
 namespace Game {

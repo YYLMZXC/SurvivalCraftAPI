@@ -6,6 +6,7 @@ using Game.IContentReader;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Color = Engine.Color;
 
 namespace Game {
     public class CommunityContentScreen : Screen {
@@ -181,7 +182,7 @@ namespace Game {
             m_filterLabel.Text = GetFilterDisplayName(m_filter);
             m_searchTypeButton.Text = GetSearchTypeDisplayName(m_searchType);
             if (m_changeOrderButton.IsClicked) {
-                List<Order> items = EnumUtils.GetEnumValues(typeof(Order)).Cast<Order>().ToList();
+                List<Order> items = EnumUtils.GetEnumValues<Order>().Cast<Order>().ToList();
                 if (!m_isAdmin) {
                     items.Remove(Order.ByHide);
                 }
@@ -204,7 +205,7 @@ namespace Game {
             }
             if (m_changeFilterButton.IsClicked) {
                 List<object> list = [string.Empty];
-                foreach (ExternalContentType item in from ExternalContentType t in EnumUtils.GetEnumValues(typeof(ExternalContentType))
+                foreach (ExternalContentType item in from ExternalContentType t in EnumUtils.GetEnumValues<ExternalContentType>()
                     where ExternalContentManager.IsEntryTypeDownloadSupported(t)
                     select t) {
                     list.Add(item);

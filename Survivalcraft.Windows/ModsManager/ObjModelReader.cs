@@ -219,7 +219,9 @@ namespace Game {
             if (!ctype.IsSubclassOf(typeof(Model))) {
                 throw new Exception($"不能将{ctype.Name}转换为Model类型");
             }
+#pragma warning disable IL2087
             object iobj = Activator.CreateInstance(ctype);
+#pragma warning restore IL2087
             Model Model = iobj as Model;
             ModelBone rootBone = Model.NewBone("Object", Matrix.Identity, null);
             foreach (KeyValuePair<string, ObjMesh> c in Meshes) {

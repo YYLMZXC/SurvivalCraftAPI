@@ -28,17 +28,25 @@ namespace Game {
         public static string Exists;
         public static string Success;
         public static string Delete;
-
         /// <summary>
         ///     语言标识符、与相应的CultureInfo
         /// </summary>
+#if BROWSER
+        public static HashSet<string> LanguageTypes = [];
+#else
         public static Dictionary<string, CultureInfo> LanguageTypes = [];
 
-        public static string CurrentLanguageName { get; set; } = "en-US";
         public static CultureInfo CurrentLanguageCultureInfo { get; set; } = new("en-US", false);
+#endif
+
+        public static string CurrentLanguageName { get; set; } = "en-US";
 
         public static void Initialize(string languageType) {
+#if BROWSER
+            if (!LanguageTypes.Contains(languageType)) {
+#else
             if (!LanguageTypes.TryGetValue(languageType, out CultureInfo cultureInfo)) {
+#endif
                 throw new Exception($"Language {languageType} not supported.");
             }
             Ok = null;
@@ -64,7 +72,11 @@ namespace Game {
             jsonNode = null;
             ModsManager.SetConfig("Language", languageType);
             CurrentLanguageName = languageType;
+#if BROWSER
+            Engine.Browser.BrowserInterop.SetDocumentLang(languageType);
+#else
             CurrentLanguageCultureInfo = cultureInfo;
+#endif
         }
 
         public static void loadJson(Stream stream) {
@@ -168,17 +180,16 @@ namespace Game {
                             if (newChild.Value == null) {
                                 continue;
                             }
-                            JsonNode oldChild = oldObject[newChild.Key];
-                            if (oldChild == null) {
-                                oldObject.Add(newChild.Key, newChild.Value.DeepClone());
+                            if (oldObject.TryGetPropertyValue(newChild.Key, out JsonNode oldChild)) {
+                                MergeJsonNode(oldChild, newChild.Value);
                             }
                             else {
-                                MergeJsonNode(oldChild, newChild.Value);
+                                oldObject.Add(newChild.Key, newChild.Value.DeepClone());
                             }
                         }
                     }
                     else {
-                        oldNode.ReplaceWith(newNode.DeepClone());
+                        ReplaceJsonNode(oldNode, newNode.DeepClone());
                     }
                     break;
                 }
@@ -201,7 +212,7 @@ namespace Game {
                         }
                     }
                     else {
-                        oldNode.ReplaceWith(newNode.DeepClone());
+                        ReplaceJsonNode(oldNode, newNode.DeepClone());
                     }
                     break;
                 }
@@ -209,9 +220,18 @@ namespace Game {
                 case JsonValueKind.Number:
                 case JsonValueKind.True:
                 case JsonValueKind.False: {
-                    oldNode.ReplaceWith(newNode.DeepClone());
+                    ReplaceJsonNode(oldNode, newNode.DeepClone());
                     break;
                 }
+            }
+        }
+
+        public static void ReplaceJsonNode(JsonNode oldNode, JsonNode newNode) {
+            switch (oldNode.Parent) {
+                case JsonObject parentObject:
+                    parentObject[oldNode.GetPropertyName()] = newNode;
+                    return;
+                case JsonArray parentArray: parentArray[oldNode.GetElementIndex()] = newNode; break;
             }
         }
 
@@ -357,7 +377,9 @@ namespace Game {
             Dictionary<string, object> objs = [];
             foreach (KeyValuePair<string, Screen> c in ScreensManager.m_screens) {
                 Type type = c.Value.GetType();
+#pragma warning disable IL2072
                 object obj = Activator.CreateInstance(type);
+#pragma warning restore IL2072
                 objs.Add(c.Key, obj);
             }
             foreach (KeyValuePair<string, object> c in objs) {
@@ -374,6 +396,23 @@ namespace Game {
 
         public static void CreateLanguageSelectionDialog(Widget parent) {
             if (CachedLanguageFullNames.Count == 0) {
+#if BROWSER
+                foreach (string name in LanguageTypes) {
+                    CachedLanguageFullNames.Add(
+                        name,
+                        name switch {
+                            "en-US" => "English (United States)",
+                            "zh-CN" => "中文 (中国）",
+                            "ro-RO" => "română (România)",
+                            "ru-RU" => "русский (Россия)",
+                            "es-419" => "español (Latinoamérica)",
+                            "vi-VN" => "Tiếng Việt (Việt Nam)",
+                            "zh-CN-old" => "[旧] 中文 (中国）",
+                            _ => $"{name}"
+                        }
+                    );
+                }
+#else
                 CultureInfo oldUICulture = Thread.CurrentThread.CurrentUICulture;
                 try {
                     Thread.CurrentThread.CurrentUICulture = CurrentLanguageCultureInfo;
@@ -391,6 +430,7 @@ namespace Game {
                 finally {
                     Thread.CurrentThread.CurrentUICulture = oldUICulture;
                 }
+#endif
             }
             IOrderedEnumerable<KeyValuePair<string, string>> sorted = CachedLanguageFullNames.OrderBy(item => item.Key switch {
                     "en-US" => 0,

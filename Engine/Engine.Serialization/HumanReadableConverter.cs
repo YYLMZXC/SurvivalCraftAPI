@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Engine.Serialization {
@@ -7,12 +8,15 @@ namespace Engine.Serialization {
         static HashSet<Assembly> m_scannedAssemblies = [];
 
         public static string ConvertToString(object value) {
+            if (value == null) {
+                return string.Empty;
+            }
             Type type = value.GetType();
             Type nullableUnderlyingType = Nullable.GetUnderlyingType(type);
             try {
-                return nullableUnderlyingType == null ? GetConverter(type, true).ConvertToString(value) :
-                    (bool)(nullableUnderlyingType.GetProperty("HasValue")?.GetValue(value) ?? false) ? GetConverter(nullableUnderlyingType, true)
-                        .ConvertToString(nullableUnderlyingType.GetProperty("Value")?.GetValue(value)) : string.Empty;
+                return nullableUnderlyingType == null
+                    ? GetConverter(type, true).ConvertToString(value)
+                    : GetConverter(nullableUnderlyingType, true).ConvertToString(value);
             }
             catch (Exception innerException) {
                 throw new InvalidOperationException($"Cannot convert value of type \"{type.FullName}\" to string.", innerException);
@@ -114,13 +118,17 @@ namespace Engine.Serialization {
         static void ScanAssembliesForConverters() {
             foreach (Assembly item in TypeCache.LoadedAssemblies.Where(a => !TypeCache.IsKnownSystemAssembly(a))) {
                 if (!m_scannedAssemblies.Contains(item)) {
+#pragma warning disable IL2026
                     foreach (TypeInfo definedType in item.DefinedTypes) {
+#pragma warning restore IL2026
                         HumanReadableConverterAttribute customAttribute = definedType.GetCustomAttribute<HumanReadableConverterAttribute>();
                         if (customAttribute != null) {
                             Type[] types = customAttribute.Types;
                             foreach (Type key in types) {
                                 if (!m_humanReadableConvertersByType.ContainsKey(key)) {
+#pragma warning disable IL2072
                                     IHumanReadableConverter value = (IHumanReadableConverter)Activator.CreateInstance(definedType.AsType());
+#pragma warning restore IL2072
                                     m_humanReadableConvertersByType.Add(key, value);
                                 }
                             }

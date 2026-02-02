@@ -16,6 +16,8 @@ namespace Game {
         public Subtexture m_needToUpdateIcon;
         public Subtexture m_dontNeedUpdateIcon;
         public RectangleWidget m_updateButtonIcon;
+        public ButtonWidget m_fullscreenButton;
+        public ButtonWidget m_dashboardButton;
         public StackPanelWidget m_leftBottomBar;
         public StackPanelWidget m_rightBottomBar;
 
@@ -34,6 +36,12 @@ namespace Game {
             m_updateButtonIcon = Children.Find<RectangleWidget>("UpdateIcon", false);
             m_needToUpdateIcon = ContentManager.Get<Subtexture>("Textures/Gui/NeedToUpdate");
             m_dontNeedUpdateIcon = ContentManager.Get<Subtexture>("Textures/Gui/UpdateChecking");
+            m_fullscreenButton = Children.Find<ButtonWidget>("FullscreenButton", false);
+            m_dashboardButton = Children.Find<ButtonWidget>("DashboardButton", false);
+#if BROWSER
+            m_fullscreenButton.IsVisible = true;
+            m_dashboardButton.IsVisible = true;
+#endif
             ModsManager.HookAction(
                 "OnMainMenuScreenCreated",
                 loader => {
@@ -126,6 +134,14 @@ namespace Game {
                 //	else DialogsManager.ShowDialog(this,new MessageDialog(LanguageControl.Get(fName,7),LanguageControl.Get(fName,3),LanguageControl.Ok,null,null));
                 //}
             }
+#if BROWSER
+            if (m_fullscreenButton.IsClicked) {
+                Window.WindowMode = Window.WindowMode == WindowMode.Fullscreen ? WindowMode.Fixed : WindowMode.Fullscreen;
+            }
+            if (m_dashboardButton.IsClicked) {
+                WebBrowserManager.LaunchBrowser("./dashboard.html");
+            }
+#endif
             if (Children.Find<ButtonWidget>("Play").IsClicked) {
                 ScreensManager.SwitchScreen("Play");
             }
@@ -166,8 +182,7 @@ namespace Game {
                     );
                 }
             }
-            if ((Input.Back && !Keyboard.BackButtonQuitsApp)
-                || Input.IsKeyDownOnce(Key.Escape)) {
+            if ((Input.Back || Input.IsKeyDownOnce(Key.Escape)) && !Keyboard.BackButtonQuitsApp) {
                 if (MarketplaceManager.IsTrialMode) {
                     ScreensManager.SwitchScreen("Nag");
                 }
@@ -178,10 +193,6 @@ namespace Game {
             /*if (!string.IsNullOrEmpty(ExternalContentManager.openFilePath)) {
                 ScreensManager.SwitchScreen("ExternalContent");
             }*/
-        }
-
-        public class Test : IComparer<ReleaseInfo> {
-            public int Compare(ReleaseInfo x, ReleaseInfo y) => 1;
         }
     }
 }

@@ -1,4 +1,5 @@
 using Engine.Graphics;
+using Engine.Media;
 
 namespace Game.IContentReader {
     public class Texture2DReader : IContentReader {

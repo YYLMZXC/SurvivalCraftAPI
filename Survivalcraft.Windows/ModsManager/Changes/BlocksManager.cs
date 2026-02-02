@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using Engine;
+using Engine.Media;
 using Engine.Graphics;
 using Engine.Serialization;
 using GameEntitySystem;
@@ -99,7 +100,9 @@ namespace Game {
             allocateData.Allocated = true;
             allocateData.Index = Index;
             //修改方块的Index静态字段值
+#pragma warning disable IL2072
             FieldInfo fieldInfo = block.GetType().GetRuntimeFields().FirstOrDefault(p => p.Name == "Index" && p.IsPublic && p.IsStatic);
+#pragma warning restore IL2072
             if (fieldInfo != null
                 && fieldInfo.FieldType == typeof(int)
                 && !fieldInfo.IsLiteral) {
@@ -122,7 +125,9 @@ namespace Game {
 
         public static void ResetBlocks() {
             for (int i = 0; i < m_blocks.Length; i++) {
+#pragma warning disable IL2072
                 m_blocks[i] = Activator.CreateInstance(m_blocks[i].GetType()) as Block;
+#pragma warning restore IL2072
                 if (!(m_blocks[i] is AirBlock)) {
                     m_blocks[i].BlockIndex = i;
                 }
@@ -276,11 +281,13 @@ namespace Game {
             foreach (ModEntity entity in ModsManager.ModList) {
                 for (int i = 0; i < entity.BlockTypes.Count; i++) {
                     Type type = entity.BlockTypes[i];
+#pragma warning disable IL2072
                     Block block = (Block)Activator.CreateInstance(type);
                     if (block == null) {
                         continue;
                     }
                     FieldInfo fieldInfo = type.GetRuntimeFields().FirstOrDefault(p => p.Name == "Index" && p.IsPublic && p.IsStatic);
+#pragma warning restore IL2072
                     if (fieldInfo != null
                         && fieldInfo.FieldType == typeof(int)) {
                         int staticIndex = (int)fieldInfo.GetValue(null)!;
@@ -963,23 +970,22 @@ namespace Game {
             return value;
         }
 
-        public static void LoadBlocksData(string data) {
-            data = data.Replace("\r", string.Empty);
-            string[] array = data.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            string[] firstLine = array[0].Split(';');
-            string[] array2 = new string[firstLine.Length - 1];
-            Array.Copy(firstLine, 1, array2, 0, firstLine.Length - 1);
-            for (int i = 1; i < array.Length; i++) {
-                if (string.IsNullOrEmpty(array[i])) {
+        public static void LoadBlocksData(string blocksDataString) {
+            blocksDataString = blocksDataString.Replace("\r", string.Empty);
+            string[] lines = blocksDataString.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            string[] firstLine = lines[0].Split(';');
+            for (int i = 1; i < lines.Length; i++) {
+                string line = lines[i];
+                if (string.IsNullOrEmpty(line)) {
                     continue;
                 }
-                string[] array3 = array[i].Split(';');
-                if (array3.Length != array2.Length + 1) {
+                string[] array = line.Split(';');
+                if (array.Length != firstLine.Length) {
                     throw new InvalidOperationException(
-                        string.Format(LanguageControl.Get("BlocksManager", 2), array3.Length != 0 ? array3[0] : LanguageControl.Unknown)
+                        $"{string.Format(LanguageControl.Get("BlocksManager", "2"), array.Length > 0 ? array[0] : LanguageControl.Unknown)}{string.Format(LanguageControl.Get("BlocksManager", "7"), firstLine.Length, array.Length)}"
                     );
                 }
-                string typeName = array3[0];
+                string typeName = array[0];
                 if (string.IsNullOrEmpty(typeName)) {
                     continue;
                 }
@@ -988,31 +994,33 @@ namespace Game {
                     Log.Warning(string.Format(LanguageControl.Get("BlocksManager", 3), typeName));
                     continue;
                 }
-                Dictionary<string, FieldInfo> dictionary2 = new();
+                Dictionary<string, FieldInfo> fieldInfos = new();
+#pragma warning disable IL2072
                 foreach (FieldInfo runtimeField in block.GetType().GetRuntimeFields()) {
+#pragma warning disable IL2072
                     if (runtimeField.IsPublic
                         && !runtimeField.IsStatic) {
-                        dictionary2.Add(runtimeField.Name, runtimeField);
+                        fieldInfos.Add(runtimeField.Name, runtimeField);
                     }
                 }
-                for (int j = 1; j < array3.Length; j++) {
-                    string text = array2[j - 1];
-                    string text2 = array3[j];
-                    if (!string.IsNullOrEmpty(text2)) {
-                        if (!dictionary2.TryGetValue(text, out FieldInfo value)) {
-                            throw new InvalidOperationException(string.Format(LanguageControl.Get("BlocksManager", 5), text));
+                for (int j = 1; j < array.Length; j++) {
+                    string fieldName = firstLine[j];
+                    string data = array[j];
+                    if (!string.IsNullOrEmpty(data)) {
+                        if (!fieldInfos.TryGetValue(fieldName, out FieldInfo value)) {
+                            throw new InvalidOperationException(string.Format(LanguageControl.Get("BlocksManager", "8"), fieldName, typeName));
                         }
                         object obj;
-                        if (text2.StartsWith('#')) {
-                            string refTypeName = text2.Substring(1);
+                        if (data.StartsWith('#')) {
+                            string refTypeName = data.Substring(1);
                             obj = !string.IsNullOrEmpty(refTypeName)
                                 ? (m_blocks.FirstOrDefault(v => v.GetType().Name == refTypeName)
-                                    ?? throw new InvalidOperationException(string.Format(LanguageControl.Get("BlocksManager", 6), refTypeName)))
+                                    ?? throw new InvalidOperationException(string.Format(LanguageControl.Get("BlocksManager", "9"), refTypeName, typeName, fieldName)))
                                 .BlockIndex
                                 : (object)block.BlockIndex;
                         }
                         else {
-                            obj = HumanReadableConverter.ConvertFromString(value.FieldType, text2);
+                            obj = HumanReadableConverter.ConvertFromString(value.FieldType, data);
                         }
                         value.SetValue(block, obj);
                     }

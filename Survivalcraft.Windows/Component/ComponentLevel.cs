@@ -372,7 +372,9 @@ namespace Game {
             ModsManager.HookAction(
                 "OnLevelUpdate",
                 modLoader => {
+#pragma warning disable CS0618
                     modLoader.OnLevelUpdate(this);
+#pragma warning restore CS0618
                     return false;
                 }
             );

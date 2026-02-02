@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using Engine;
 using Engine.Input;
 using Engine.Serialization;
 
@@ -98,7 +99,7 @@ namespace Game {
                     IsWaitingForKeyInput = false;
                     return;
                 }
-                foreach (Key key in EnumUtils.GetEnumValues(typeof(Key))) {
+                foreach (Key key in EnumUtils.GetEnumValues<Key>()) {
                     if (key != Key.Null
                         && Input.IsKeyDown(key)) {
                         SetKeyboardMapping(selectedKeyName, key);
@@ -106,7 +107,7 @@ namespace Game {
                         return;
                     }
                 }
-                foreach (MouseButton mouseButton in EnumUtils.GetEnumValues(typeof(MouseButton))) {
+                foreach (MouseButton mouseButton in EnumUtils.GetEnumValues<MouseButton>()) {
                     if (Input.IsMouseButtonDown(mouseButton)) {
                         SetKeyboardMapping(selectedKeyName, mouseButton);
                         IsWaitingForKeyInput = false;

@@ -1,0 +1,101 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <RootNamespace>Game</RootNamespace>
+        <AssemblyName>Survivalcraft</AssemblyName>
+        <TargetFramework>net10.0</TargetFramework>
+        <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+        <ApplicationVersion>2.4.0.0</ApplicationVersion>
+        <AssemblyVersion>2.4.0.0</AssemblyVersion>
+        <FileVersion>2.4.0.0</FileVersion>
+        <LangVersion>preview</LangVersion>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Nullable>disable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <OutputType>Exe</OutputType>
+        <IsAotCompatible>true</IsAotCompatible>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <InvariantTimezone>true</InvariantTimezone>
+        <EmccFlags>-s FULL_ES3=1 -lopenal -lGL -s USE_PTHREADS=1 -s OFFSCREENCANVAS_SUPPORT=1 -s OFFSCREENCANVASES_TO_PTHREAD=#canvas -s OFFSCREEN_FRAMEBUFFER=1 -lopfs.js -s WASMFS -s FORCE_FILESYSTEM -s INITIAL_MEMORY=536870912</EmccFlags>
+        <WasmMainJSPath>wwwroot\main.js</WasmMainJSPath>
+    </PropertyGroup>
+    <PropertyGroup>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
+        <WasmBuildNative>true</WasmBuildNative>
+        <RunAOTCompilation>true</RunAOTCompilation>
+        <WasmEnableThreads>true</WasmEnableThreads>
+        <WasmEnableSIMD>true</WasmEnableSIMD>
+        <!-- Normal,JustInterp,Full,FullInterp,Hybrid,LLVMOnly,LLVMOnlyInterp -->
+        <!-- <AOTMode>LLVMOnly</AOTMode> -->
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Browser' ">
+        <DebugType>none</DebugType>
+        <DefineConstants>TRACE;RELEASE;BROWSER</DefineConstants>
+        <Optimize>true</Optimize>
+        <TrimMode>full</TrimMode>
+        <DebuggerSupport>false</DebuggerSupport>
+        <WasmEnableExceptionHandling>false</WasmEnableExceptionHandling>
+        <WasmStripILAfterAOT>true</WasmStripILAfterAOT>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0" />
+        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net10.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="NuGet.Versioning" Version="7.0.1" />
+        <PackageReference Include="NAudio.Flac.Unknown.Mod" Version="1.0.4" />
+    </ItemGroup>
+    <ItemGroup>
+        <NativeFileReference Include="Native/libEGL.c" ScanForPInvokes="true" />
+        <NativeFileReference Include="Native/openal32.c" ScanForPInvokes="true" />
+        <NativeFileReference Include="Native/emscripten.c" ScanForPInvokes="true" />
+        <NativeFileReference Include="Native/wasmfsHelper.c" ScanForPInvokes="true" />
+    </ItemGroup>
+    <ItemGroup>
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\index.html" TargetPath="%(RecursiveDir)index.html" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\main.js" TargetPath="%(RecursiveDir)main.js" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\favicon.webp" TargetPath="%(RecursiveDir)favicon.webp" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\manifest.json" TargetPath="%(RecursiveDir)manifest.json" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\service-worker.js" TargetPath="%(RecursiveDir)service-worker.js" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_headers" TargetPath="%(RecursiveDir)_headers" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\dashboard.html" TargetPath="%(RecursiveDir)dashboard.html" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\assets\**" TargetPath="%(RecursiveDir)assets\%(Filename)%(Extension)" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\.netlify\**" TargetPath="%(RecursiveDir).netlify\%(Filename)%(Extension)" />
+        <WasmExtraFilesToDeploy Include="..\Survivalcraft.Windows\Content.zip" TargetPath="%(RecursiveDir)assets\Content.zip" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkPublish\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(IsPublishing)' == 'true'" />
+        <WasmExtraFilesToDeploy Include="$(MSBuildThisFileDirectory)wwwroot\_frameworkBuild\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(IsPublishing)' != 'true'" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs"/>
+    </ItemGroup>
+    <ItemGroup>
+        <TrimmerRootAssembly Include="Survivalcraft" />
+        <TrimmerRootAssembly Include="Engine" />
+    </ItemGroup>
+    <UsingTask TaskName="GenerateContentInfo" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <ContentFilePath ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+<![CDATA[
+var info = new FileInfo(ContentFilePath);
+long size = info.Exists ? info.Length : 0;
+string content = $@"namespace Game {{
+    public static class ContentFileInfo {{
+        public const long FileSize = {size};
+    }}
+}}";
+File.WriteAllText("ContentFileInfo.g.cs", content);
+]]>
+            </Code>
+        </Task>
+    </UsingTask>
+    <Target Name="UpdateContentFileSize" BeforeTargets="BeforeBuild">
+        <GenerateContentInfo ContentFilePath="..\Survivalcraft.Windows\Content.zip" />
+        <Message Text="Updated ContentFileInfo.g.cs" Importance="high" />
+    </Target>
+</Project>

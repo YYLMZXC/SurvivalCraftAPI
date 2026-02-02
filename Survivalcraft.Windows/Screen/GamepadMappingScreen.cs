@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using Engine;
 using Engine.Input;
 using Engine.Serialization;
 using TemplatesDatabase;
@@ -138,7 +139,7 @@ namespace Game {
                 else if (Input.IsPadTriggerDown(GamePadTrigger.Right, 0f, SettingsManager.GamepadTriggerThreshold)) {
                     holdingModifierKey = GamePadTrigger.Right;
                 }
-                foreach (GamePadButton button in EnumUtils.GetEnumValues(typeof(GamePadButton)).Select(v => (GamePadButton)v)) {
+                foreach (GamePadButton button in EnumUtils.GetEnumValues<GamePadButton>().Select(v => (GamePadButton)v)) {
                     if (button != GamePadButton.Null
                         && Input.IsPadButtonDownOnce(button)) {
                         if (holdingModifierKey != null
@@ -155,7 +156,7 @@ namespace Game {
                         return;
                     }
                 }
-                foreach (GamePadTrigger trigger in EnumUtils.GetEnumValues(typeof(GamePadTrigger)).Select(v => (GamePadTrigger)v)) {
+                foreach (GamePadTrigger trigger in EnumUtils.GetEnumValues<GamePadTrigger>().Select(v => (GamePadTrigger)v)) {
                     if (Input.IsTriggerDownOnce(trigger)) {
                         SetGamepadMapping(selectedKeyName, trigger);
                         IsWaitingForKeyInput = false;

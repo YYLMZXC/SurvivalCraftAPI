@@ -89,7 +89,9 @@ namespace Game {
                 ModsManager.HookAction(
                     "OnModelAnimate",
                     loader => {
+#pragma warning disable CS0618
                         loader.OnModelAnimate(this, out bool skip);
+#pragma warning restore CS0618
                         flag = flag | skip;
                         return false;
                     }
@@ -98,13 +100,13 @@ namespace Game {
                     AnimateCreature();
                 }
             }
-            float qpacity = m_componentCreature.ComponentSpawn.SpawnDuration > 0f
+            float opacity = m_componentCreature.ComponentSpawn.SpawnDuration > 0f
                 ? (float)MathUtils.Saturate(
                     (m_subsystemGameInfo.TotalElapsedGameTime - m_componentCreature.ComponentSpawn.SpawnTime)
                     / m_componentCreature.ComponentSpawn.SpawnDuration
                 )
                 : 1f;
-            Opacity = MathUtils.Min(qpacity, Transparent);
+            Opacity = MathUtils.Min(opacity, Transparent);
             if (m_componentCreature.ComponentSpawn.DespawnTime.HasValue) {
                 Opacity = MathUtils.Min(
                     Opacity.Value,

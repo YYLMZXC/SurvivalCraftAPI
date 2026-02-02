@@ -52,7 +52,7 @@ namespace Game {
 
         public void Dismiss(bool flag) {
             if (flag) {
-#if !IOS
+#if !IOS && !BROWSER
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 string result = JsInterface.Evaluate(m_inputBox.Text);
                 stopwatch.Stop();

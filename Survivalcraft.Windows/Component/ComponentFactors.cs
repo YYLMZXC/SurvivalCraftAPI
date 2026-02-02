@@ -1,4 +1,3 @@
-using Engine;
 using GameEntitySystem;
 using TemplatesDatabase;
 using static Game.ComponentLevel;
@@ -186,10 +185,12 @@ namespace Game {
         /// </summary>
         /// <param name="dt"></param>
         public virtual void Update(float dt) {
+#pragma warning disable CS0618
             StrengthFactor = CalculateFactorsResult(m_strengthFactors);
             SpeedFactor = CalculateFactorsResult(m_speedFactors);
             HungerFactor = CalculateFactorsResult(m_hungerFactors);
             ResilienceFactor = CalculateFactorsResult(m_resilienceFactors);
+#pragma warning restore CS0618
             CalculateOtherFactorsResult();
             GenerateStrengthFactors();
             GenerateResilienceFactors();
@@ -199,7 +200,9 @@ namespace Game {
             ModsManager.HookAction(
                 "OnFactorsUpdate",
                 Loader => {
+#pragma warning disable CS0618
                     Loader.OnFactorsUpdate(this, dt);
+#pragma warning restore CS0618
                     return false;
                 }
             );

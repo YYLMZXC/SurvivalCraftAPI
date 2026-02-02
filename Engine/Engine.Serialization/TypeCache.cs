@@ -91,7 +91,9 @@ namespace Engine.Serialization {
                     foreach (Assembly loadedAssembly in LoadedAssemblies) {
                         if (!skipSystemAssemblies
                             || !IsKnownSystemAssembly(loadedAssembly)) {
+#pragma warning disable IL2026
                             value = loadedAssembly.GetType(longTypeName);
+#pragma warning restore IL2026
                             if (value != null) {
                                 break;
                             }

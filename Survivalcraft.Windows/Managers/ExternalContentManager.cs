@@ -1,3 +1,4 @@
+using System.Text;
 using Engine;
 
 namespace Game {
@@ -27,7 +28,7 @@ namespace Game {
 
         public static ExternalContentType ExtensionToType(string extension) {
             extension = extension.ToLower();
-            foreach (ExternalContentType value in Enum.GetValues(typeof(ExternalContentType))) {
+            foreach (ExternalContentType value in Enum.GetValues<ExternalContentType>()) {
                 if (GetEntryTypeExtensions(value).FirstOrDefault(e => e == extension) != null) {
                     return value;
                 }
@@ -128,10 +129,10 @@ namespace Game {
             Task.Run(
                 delegate {
                     try {
-                        success(ImportExternalContentSync(stream, type, name));
+                        success?.Invoke(ImportExternalContentSync(stream, type, name));
                     }
                     catch (Exception obj) {
-                        failure(obj);
+                        failure?.Invoke(obj);
                     }
                 }
             );
@@ -145,6 +146,81 @@ namespace Game {
                 case ExternalContentType.FurniturePack: return FurniturePacksManager.ImportFurniturePack(name, stream);
                 case ExternalContentType.Mod: return ModsManager.ImportMod(name, stream);
                 default: throw new InvalidOperationException(LanguageControl.Get(fName, 4));
+            }
+        }
+
+        public static async Task ImportExternalContentsAsync(List<(Stream stream, string fileName)> files, bool showResultDialog) {
+            string successFormat = LanguageControl.Get(fName, 18);
+            string failureFormat = LanguageControl.Get(fName, 19);
+            string unsupportedString = LanguageControl.Get(fName, 12);
+
+            async Task<string> Import(Stream stream, string fileName) {
+                return await Task.Run(() => {
+                        ExternalContentType type = ExtensionToType(Storage.GetExtension(fileName));
+                        if (IsEntryTypeDownloadSupported(type)) {
+                            try {
+                                ImportExternalContentSync(stream, type, fileName);
+                            }
+                            catch (Exception e) {
+                                return string.Format(failureFormat, fileName, e.Message);
+                            }
+                            finally {
+                                stream.Dispose();
+                            }
+                            return string.Format(successFormat, fileName);
+                        }
+                        return string.Format(failureFormat, fileName, unsupportedString);
+                    }
+                );
+            }
+
+            Task<string>[] tasks = new Task<string>[files.Count];
+            for (int i = 0; i < files.Count; i++) {
+                (Stream stream, string fileName) = files[i];
+                tasks[i] = Import(stream, fileName);
+            }
+            string[] results = await Task.WhenAll(tasks);
+            StringBuilder sb = new();
+            foreach (string result in results) {
+                sb.AppendLine(result);
+            }
+            string finalResult = sb.ToString();
+            Log.Information(finalResult);
+            if (showResultDialog) {
+                Dispatcher.Dispatch(() => {
+                        DialogsManager.ShowDialog(
+                            null,
+                            new MessageDialog(LanguageControl.Get(fName, 20), finalResult, LanguageControl.Ok, null, null)
+                        );
+                    }
+                );
+            }
+        }
+
+        public static void ImportExternalContentsSync(List<(Stream stream, string fileName)> files, bool showResultDialog) {
+            string successFormat = LanguageControl.Get(fName, 18);
+            string failureFormat = LanguageControl.Get(fName, 19);
+            string unsupportedString = LanguageControl.Get(fName, 12);
+            StringBuilder sb = new();
+            foreach ((Stream stream, string fileName) in files) {
+                ExternalContentType type = ExtensionToType(Storage.GetExtension(fileName));
+                if (IsEntryTypeDownloadSupported(type)) {
+                    try {
+                        ImportExternalContentSync(stream, type, fileName);
+                        sb.AppendLine(string.Format(successFormat, fileName));
+                    }
+                    catch (Exception e) {
+                        sb.AppendLine(string.Format(failureFormat, fileName, e.Message));
+                    }
+                }
+                else {
+                    sb.AppendLine(string.Format(failureFormat, fileName, unsupportedString));
+                }
+            }
+            string finalResult = sb.ToString();
+            Log.Information(finalResult);
+            if (showResultDialog) {
+                DialogsManager.ShowDialog(null, new MessageDialog(LanguageControl.Get(fName, 20), finalResult, LanguageControl.Ok, null, null));
             }
         }
 
@@ -281,7 +357,7 @@ namespace Game {
                                                             Cleanup();
                                                             DialogsManager.HideDialog(busyDialog);
                                                             if (provider.IsLocalProvider) {
-#if ANDROID
+#if ANDROID || BROWSER
                                                                 DialogsManager.ShowDialog(
                                                                     null,
                                                                     new MessageDialog(
@@ -294,21 +370,24 @@ namespace Game {
                                                                         LanguageControl.Get(fName, "17"),
                                                                         button => {
                                                                             if (button == MessageDialogButton.Button1) {
-                                                                                try {
-                                                                                    Storage.ShareFile(link);
-                                                                                }
-                                                                                catch (Exception e) {
-                                                                                    DialogsManager.ShowDialog(
-                                                                                        null,
-                                                                                        new MessageDialog(
-                                                                                            LanguageControl.Error,
-                                                                                            e.Message,
-                                                                                            LanguageControl.Ok,
-                                                                                            null,
-                                                                                            null
-                                                                                        )
-                                                                                    );
-                                                                                }
+                                                                                Task.Run(async () => {
+                                                                                    try {
+                                                                                        await Storage.ShareFile(link);
+                                                                                    }
+                                                                                    catch (Exception e) {
+                                                                                        Dispatcher.Dispatch(() => DialogsManager.ShowDialog(
+                                                                                                null,
+                                                                                                new MessageDialog(
+                                                                                                    LanguageControl.Error,
+                                                                                                    e.Message,
+                                                                                                    LanguageControl.Ok,
+                                                                                                    null,
+                                                                                                    null
+                                                                                                )
+                                                                                            )
+                                                                                        );
+                                                                                    }
+                                                                                });
                                                                             }
                                                                         }
                                                                     )

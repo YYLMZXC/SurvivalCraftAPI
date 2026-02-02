@@ -4,7 +4,7 @@ namespace Game {
     public class SelectExternalContentTypeDialog : ListSelectionDialog {
         public SelectExternalContentTypeDialog(string title, Action<ExternalContentType> selectionHandler) : base(
             title,
-            from v in EnumUtils.GetEnumValues(typeof(ExternalContentType))
+            from v in EnumUtils.GetEnumValues<ExternalContentType>()
             where ExternalContentManager.IsEntryTypeDownloadSupported((ExternalContentType)v)
             select v,
             64f,

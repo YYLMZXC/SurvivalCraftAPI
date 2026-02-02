@@ -24,8 +24,8 @@
         <DefineConstants>TRACE;LINUX</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Engine\Engine.csproj" />
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" />
+        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0" />
+        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net10.0" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="TextCopy" Version="6.2.1" />

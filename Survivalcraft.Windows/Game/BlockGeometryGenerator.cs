@@ -1170,7 +1170,7 @@ namespace Game {
             if ((block.GenerateFacesForSameNeighbors || Terrain.ExtractContents(cellValueFast) != blockIndex)
                 && block.ShouldGenerateFace(
                     SubsystemTerrain,
-                    4,
+                    5,
                     value,
                     cellValueFast,
                     x,

@@ -117,9 +117,6 @@ namespace Game {
         }
 
         public static void Initialize() {
-#if ANDROID
-            Window.Activity.Paused += delegate { StopMusic(); };
-#endif
             Window.Closed += delegate {
                 try {
                     Utilities.Dispose(ref m_sound);
@@ -158,7 +155,7 @@ namespace Game {
                     m_sound.Play();
                 }
                 catch {
-                    Log.Warning("Error playing music \"{0}\".", name);
+                    Log.Warning($"Error playing music \"{name}\".");
                 }
             }
         }

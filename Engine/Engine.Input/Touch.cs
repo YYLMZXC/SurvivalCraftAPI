@@ -1,11 +1,13 @@
 #if ANDROID
 using System.Collections.Concurrent;
 using Android.Views;
-
+#elif BROWSER
+using System.Collections.Concurrent;
 #endif
 
 namespace Engine.Input {
     public static class Touch {
+#if ANDROID
         public struct TouchInfo {
             public int PointerId;
             public Vector2 Position;
@@ -17,6 +19,7 @@ namespace Engine.Input {
                 ActionMasked = actionMasked;
             }
         }
+#endif
 
         static List<TouchLocation> m_touchLocations = [];
 
@@ -28,13 +31,15 @@ namespace Engine.Input {
 
         public static event Action<TouchLocation> TouchMoved;
 
+        public static bool IsTouched;
+
         internal static void Initialize() { }
 
         internal static void Dispose() { }
 
 #if ANDROID
         public static ConcurrentQueue<TouchInfo> m_cachedTouchEvents = [];
-
+        public static void EnqueueTouchEvent(int pointerId, Vector2 position, int actionMasked) => m_cachedTouchEvents.Enqueue(new TouchInfo(pointerId, position, actionMasked));
         internal static void HandleTouchEvent(MotionEvent e) {
 #pragma warning disable CA1416
             switch (e.ActionMasked) {
@@ -58,12 +63,9 @@ namespace Engine.Input {
             }
 #pragma warning restore CA1416
         }
-
 #endif
 
-        public static void Clear() {
-            m_touchLocations.Clear();
-        }
+        public static void Clear() => m_touchLocations.Clear();
 
         internal static void BeforeFrame() {
 #if ANDROID
@@ -83,30 +85,21 @@ namespace Engine.Input {
         }
 
         internal static void AfterFrame() {
-            int num = 0;
-            while (num < m_touchLocations.Count) {
-                if (m_touchLocations[num].State == TouchLocationState.Released) {
-                    m_touchLocations.RemoveAt(num);
+            for (int i = 0; i < m_touchLocations.Count; i++) {
+                if (m_touchLocations[i].State == TouchLocationState.Released) {
+                    m_touchLocations.RemoveAt(i);
                     continue;
                 }
-                TouchLocation value;
-                if (m_touchLocations[num].ReleaseQueued) {
-                    List<TouchLocation> touchLocations = m_touchLocations;
-                    int index = num;
-                    value = new TouchLocation {
-                        Id = m_touchLocations[num].Id, Position = m_touchLocations[num].Position, State = TouchLocationState.Released
+                if (m_touchLocations[i].ReleaseQueued) {
+                    m_touchLocations[i] = new TouchLocation {
+                        Id = m_touchLocations[i].Id, Position = m_touchLocations[i].Position, State = TouchLocationState.Released
                     };
-                    touchLocations[index] = value;
                 }
-                else if (m_touchLocations[num].State == TouchLocationState.Pressed) {
-                    List<TouchLocation> touchLocations2 = m_touchLocations;
-                    int index2 = num;
-                    value = new TouchLocation {
-                        Id = m_touchLocations[num].Id, Position = m_touchLocations[num].Position, State = TouchLocationState.Moved
+                else if (m_touchLocations[i].State == TouchLocationState.Pressed) {
+                    m_touchLocations[i] = new TouchLocation {
+                        Id = m_touchLocations[i].Id, Position = m_touchLocations[i].Position, State = TouchLocationState.Moved
                     };
-                    touchLocations2[index2] = value;
                 }
-                num++;
             }
         }
 
@@ -119,29 +112,23 @@ namespace Engine.Input {
             return -1;
         }
 
-        public static void ProcessTouchPressed(int id, Vector2 position) {
-            ProcessTouchMoved(id, position);
-        }
+        public static void ProcessTouchPressed(int id, Vector2 position) => ProcessTouchMoved(id, position);
 
         public static void ProcessTouchMoved(int id, Vector2 position) {
             if (!Window.IsActive
                 || Keyboard.IsKeyboardVisible) {
                 return;
             }
+            IsTouched = true;
             int num = FindTouchLocationIndex(id);
-            TouchLocation touchLocation;
             if (num >= 0) {
                 if (m_touchLocations[num].State == TouchLocationState.Moved) {
-                    List<TouchLocation> touchLocations = m_touchLocations;
-                    touchLocation = new TouchLocation { Id = id, Position = position, State = TouchLocationState.Moved };
-                    touchLocations[num] = touchLocation;
+                    m_touchLocations[num] = new TouchLocation { Id = id, Position = position, State = TouchLocationState.Moved };
                 }
                 TouchMoved?.Invoke(m_touchLocations[num]);
             }
             else {
-                List<TouchLocation> touchLocations2 = m_touchLocations;
-                touchLocation = new TouchLocation { Id = id, Position = position, State = TouchLocationState.Pressed };
-                touchLocations2.Add(touchLocation);
+                m_touchLocations.Add(new TouchLocation { Id = id, Position = position, State = TouchLocationState.Pressed });
                 TouchPressed?.Invoke(m_touchLocations[^1]);
             }
         }
@@ -153,16 +140,13 @@ namespace Engine.Input {
             }
             int num = FindTouchLocationIndex(id);
             if (num >= 0) {
-                TouchLocation value;
                 if (m_touchLocations[num].State == TouchLocationState.Pressed) {
-                    List<TouchLocation> touchLocations = m_touchLocations;
-                    value = new TouchLocation { Id = id, Position = position, State = TouchLocationState.Pressed, ReleaseQueued = true };
-                    touchLocations[num] = value;
+                    m_touchLocations[num] = new TouchLocation {
+                        Id = id, Position = position, State = TouchLocationState.Pressed, ReleaseQueued = true
+                    };
                 }
                 else {
-                    List<TouchLocation> touchLocations2 = m_touchLocations;
-                    value = new TouchLocation { Id = id, Position = position, State = TouchLocationState.Released };
-                    touchLocations2[num] = value;
+                    m_touchLocations[num] = new TouchLocation { Id = id, Position = position, State = TouchLocationState.Released };
                 }
                 TouchReleased?.Invoke(m_touchLocations[num]);
             }

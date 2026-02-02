@@ -6,12 +6,16 @@ using Engine;
 namespace Game {
     public static class WebBrowserManager {
         public static void LaunchBrowser(string url) {
+#if !BROWSER
             if (!url.Contains("://")) {
                 url = $"https://{url}";
             }
+#endif
             try {
 #if ANDROID
                 Window.Activity.OpenLink(url);
+#elif BROWSER
+                Engine.Browser.BrowserInterop.OpenUrlInNewTab(url);
 #else
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 #endif

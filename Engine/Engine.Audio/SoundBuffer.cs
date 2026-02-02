@@ -1,6 +1,10 @@
 using System.Runtime.InteropServices;
 using Engine.Media;
+#if BROWSER
+using BufferFormat = Engine.Browser.AL.BufferFormat;
+#else
 using Silk.NET.OpenAL;
+#endif
 
 namespace Engine.Audio {
     public class SoundBuffer : IDisposable {
@@ -39,7 +43,7 @@ namespace Engine.Audio {
             }
         }
 
-        unsafe void CreateBuffer<T>(T[] data, int startIndex, int itemsCount, int channelsCount, int samplingFrequency) {
+        unsafe void CreateBuffer<T>(T[] data, int startIndex, int itemsCount, int channelsCount, int samplingFrequency) where T : unmanaged {
             uint buffer = Mixer.AL.GenBuffer();
             m_buffer = (int)buffer;
             Mixer.CheckALError();
@@ -100,7 +104,7 @@ namespace Engine.Audio {
             SamplesCount = samplesCount;
         }
 
-        void Initialize<T>(T[] data, int startIndex, int itemsCount, int channelsCount, int samplingFrequency) {
+        void Initialize<T>(T[] data, int startIndex, int itemsCount, int channelsCount, int samplingFrequency) where T : unmanaged {
             int num = Utilities.SizeOf<T>();
             InitializeProperties(itemsCount * num / channelsCount / 2, channelsCount, samplingFrequency);
             ArgumentNullException.ThrowIfNull(data);

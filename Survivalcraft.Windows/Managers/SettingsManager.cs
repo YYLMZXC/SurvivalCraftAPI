@@ -86,8 +86,9 @@ namespace Game {
         public static bool ShowLogoInScreenshots { get; set; }
 
         public static ScreenshotSize ScreenshotSize { get; set; }
-
+#pragma warning disable CS0649
         private static Point2 m_screenshotSizeCustom;
+#pragma warning restore CS0649
 
         public static Point2 ScreenshotSizeCustom {
             get { return m_screenshotSizeCustom; }
@@ -99,7 +100,7 @@ namespace Game {
             }
         }
         public static int[] ScreenshotSizeCustomWidths = [
-    80,
+            80,
             160,
             320,
             480,
@@ -117,7 +118,7 @@ namespace Game {
             10240,
             12288,
             15360
-];
+        ];
         private static int m_screenshotSizeCustomWidthIndex;
 
         public static int ScreenshotSizeCustomWidthIndex {
@@ -173,6 +174,14 @@ namespace Game {
         }
 
         public static WindowMode WindowMode {
+#if BROWSER
+            get => Window.WindowMode;
+            set {
+                value = value == WindowMode.Fullscreen ? WindowMode.Fullscreen : WindowMode.Fixed;
+                Window.WindowMode = value;
+                m_windowMode = value;
+            }
+#else
             get => m_windowMode;
             set {
                 if (value != m_windowMode) {
@@ -202,6 +211,7 @@ namespace Game {
                     }
                 );
             }
+#endif
         }
 
         #region 简单设置项
@@ -304,6 +314,7 @@ namespace Game {
                     && Window.WindowMode == WindowMode.Fullscreen) {
                     Window.WindowMode = WindowMode.Resizable;
                 }
+#if !BROWSER
                 ModsManager.HookAction(
                     "WindowModeChanged",
                     loader => {
@@ -311,6 +322,7 @@ namespace Game {
                         return false;
                     }
                 );
+#endif
             }
         }
 
@@ -474,7 +486,11 @@ namespace Game {
                 //MoveWidgetSize = 1f;
                 MoveWidgetMarginX = 0f;
                 MoveWidgetMarginY = 0f;
+#if BROWSER
+                AnimatedTextureRefreshLimit = 2;
+#else
                 AnimatedTextureRefreshLimit = 7;
+#endif
                 FileAssociationEnabled = true;
                 SafeMode = false;
                 AdaptEdgeToEdgeDisplay = Window.HasWideNotch;

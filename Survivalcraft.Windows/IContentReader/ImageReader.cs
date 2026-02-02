@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Engine.Media;
 
 namespace Game.IContentReader {
     public class ImageReader : IContentReader {

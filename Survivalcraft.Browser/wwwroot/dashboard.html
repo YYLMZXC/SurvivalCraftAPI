@@ -460,6 +460,17 @@
         </div>
         <div class="status-row">
             <div class="status-label-wrap" onclick="toggleTooltip(this)">
+                <span class="status-label">OffscreenCanvas</span>
+                <svg class="info-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <div class="tooltip">Essential for rendering the game.</div>
+            </div>
+            <span id="offscreenCanvasStatus" class="status-value">Checking...</span>
+            <div></div>
+        </div>
+        <div class="status-row">
+            <div class="status-label-wrap" onclick="toggleTooltip(this)">
                 <span class="status-label">CacheStorage</span>
                 <svg class="info-icon" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
@@ -563,6 +574,7 @@
         outputContainer: document.getElementById("outputContainer"),
         swStatus: document.getElementById("serviceWorkerStatus"),
         sabStatus: document.getElementById("sharedArrayBufferStatus"),
+        offscreenCanvasStatus: document.getElementById("offscreenCanvasStatus"),
         cacheStorageStatus: document.getElementById("cacheStorageStatus"),
         opfsStatus: document.getElementById("opfsStatus"),
         clearCachesButton: document.getElementById("clearCachesButton"),
@@ -1069,11 +1081,12 @@
                 setStatus(els.opfsStatus, `✔️ ${formatted}`, true);
                 els.manageOpfsButton.disabled = false;
             } catch (error) {
-                output(`OPFS Access Error: ${error}`, 'error');
+                output(`Access OPFS failed: ${error}`, 'error');
                 setStatus(els.opfsStatus, "❌ Error", false);
                 els.manageOpfsButton.disabled = true;
             }
         } else {
+            output("OPFS: Unsupported.");
             setStatus(els.opfsStatus, "❌ Unsupported", false);
             els.manageOpfsButton.disabled = true;
         }
@@ -1084,7 +1097,7 @@
         // 1. Service Worker
         output("Checking Service Worker...");
         if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("./service-worker.js")
+            navigator.serviceWorker.register("./service-worker.js", { scope: "./" })
                 .then(() => {
                     output("Service Worker registered.");
                     setStatus(els.swStatus, "✔️ OK", true);
@@ -1094,6 +1107,7 @@
                     setStatus(els.swStatus, "⚠️ Register Failed", false);
                 });
         } else {
+            output("Service Worker: Unsupported.");
             setStatus(els.swStatus, "❌ Unsupported", false);
         }
 
@@ -1102,15 +1116,34 @@
         if (typeof SharedArrayBuffer === "function") {
             try {
                 new SharedArrayBuffer(1024);
+                output("SharedArrayBuffer: OK.");
                 setStatus(els.sabStatus, "✔️ OK", true);
             } catch (error) {
+                output(`Cannot create SharedArrayBuffer: ${error}`, 'error');
                 setStatus(els.sabStatus, "❌ Error", false);
             }
         } else {
+            output("SharedArrayBuffer: Unsupported.");
             setStatus(els.sabStatus, "❌ Unsupported", false);
         }
 
-        // 3. CacheStorage
+        // 3. OffscreenCanvas
+        output("Checking OffscreenCanvas...");
+        if (typeof OffscreenCanvas === "function") {
+            try {
+                new OffscreenCanvas(1, 1);
+                output("OffscreenCanvas: OK.");
+                setStatus(els.offscreenCanvasStatus, "✔️ OK", true);
+            } catch (error) {
+                output(`Cannot create OffscreenCanvas: ${error}`, 'error');
+                setStatus(els.offscreenCanvasStatus, "❌ Error", false);
+            }
+        } else {
+            output("OffscreenCanvas: Unsupported.");
+            setStatus(els.offscreenCanvasStatus, "❌ Unsupported", false);
+        }
+
+        // 4. CacheStorage
         output("Checking CacheStorage...");
         if (typeof CacheStorage === "function" && globalThis.caches) {
             try {
@@ -1120,15 +1153,18 @@
                     const cache = await caches.open(key);
                     cacheCount += (await cache.keys()).length;
                 }
+                output(`CacheStorage: ${cacheCount} items.`);
                 setStatus(els.cacheStorageStatus, `✔️ ${cacheCount} Items`, true);
             } catch (error) {
+                output(`Access CacheStorage failed: ${error}`, 'error');
                 setStatus(els.cacheStorageStatus, "❌ Error", false);
             }
         } else {
+            output("CacheStorage: Unsupported.");
             setStatus(els.cacheStorageStatus, "❌ Unsupported", false);
         }
 
-        // 4. OPFS
+        // 5. OPFS
         await checkOpfs();
     }
 

@@ -51,6 +51,13 @@
     * 在第 1 步解压出来的目录运行`dotnet Survivalcraft.dll`
     * 同样在解压出来的目录，先运行`chmod +x Survivalcraft`来添加可执行权限（只需要一次），再双击`Survivalcraft`即可
 
+### 网页版看这里
+> 需要支持 SharedArrayBuffer、OffscreenCanvas、Origin Private File System 等现代浏览器特性的浏览器，推荐使用最新版的 Chrome 浏览器。
+
+1. 打开 [https://scapiweb.netlify.app/](https://scapiweb.netlify.app/) 即可游玩
+
+说明：和 IOS 版一样，不支持模组
+
 ### 常见问题
 
 * 如果游戏打开后语言不是您希望的语言，请点击左下角第二个图标，即可切换语言
@@ -62,6 +69,7 @@
 * 安装模组后打不开游戏，或者运行遇到任何错误，请先向模组作者反馈问题，如有必要再由模组作者向本仓库反馈问题
 * 如果 Windows 系统上游戏帧数不低但鼠标调整视角感觉卡顿，关闭系统设置-鼠标设置-增强指针精度，即可解决
 * 要取消 Windows 系统上的文件关联，游戏设置-设备兼容和日志-文件关联，禁用即可
+* 网页版打不开？请尝试更换更好的网络，如果还是不行，请打开 [https://scapiweb.netlify.app/dashboard.html](https://scapiweb.netlify.app/dashboard.html)，检测你的浏览器是否支持网页版所需的功能。这里推荐使用最新版的 Chrome 浏览器。
 
 ## 模组开发者引用
 
@@ -105,9 +113,11 @@
     > 还没有 Git？[官网下载](https://git-scm.com/downloads)
 
 2. 进入此仓库，使用 [Visual Studio](https://visualstudio.microsoft.com/) 或 [Rider](https://www.jetbrains.com/zh-cn/rider/) 打开`SurvivalcraftApi`目录中的`SurvivalCraftApi.sln`
-3. 如果只是在 Windows 系统上进行调试，请右键卸载`Survivalcraft.Android`和`Survivalcraft.Linux`两个项目，之后在`Survivalcraft.Windows`项目上右键，点击`构建所选项目`即可
+3. 如果只是在 Windows 系统上进行调试，请右键卸载`Survivalcraft.Android`、`Survivalcraft.Linux`等非 Windows 的 Survivalcraft 项目，之后在`Survivalcraft.Windows`项目上右键，点击`构建所选项目`即可
 4. 如果需要生成 Android 系统上的`APK`安装包，请在`Survivalcraft.Android`项目上右键，点击`加载项目`，再点击`归档以用于发布`，之后按提示操作
-5. 以上过程中，如果报错未安装相应功能，请按提示完成安装
+5. 如果要生成`nupkg`引用包，请运行项目根目录的`PackNugetPackages.bat`
+6. 如果要生成网页版，请右键卸载非 Browser 的 Survivalcraft 项目，并将配置切换到 Browser，之后在`Survivalcraft.Browser`项目上右键，点击`构建所选项目`即可；如果要生成最终用于发布的网页版，请运行项目根目录的`PublishSurvivalcraftBrowser.bat`
+7. 以上过程中，如果报错未安装相应功能，请按提示完成安装
 
 ## 感谢
 

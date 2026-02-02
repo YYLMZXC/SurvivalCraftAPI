@@ -6,7 +6,7 @@ if (typeof SharedArrayBuffer !== "function") {
 
 if ("serviceWorker" in globalThis.navigator) {
     try {
-        await globalThis.navigator.serviceWorker.register("./service-worker.js");
+        await globalThis.navigator.serviceWorker.register("./service-worker.js", { scope: "./" });
         await globalThis.navigator.serviceWorker.ready;
     } catch (error) {
         console.error(`Register service worker failed: ${error}`);

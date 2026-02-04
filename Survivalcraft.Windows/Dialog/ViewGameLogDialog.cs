@@ -104,7 +104,7 @@ namespace Game {
                     GameLogSink.m_stream.CopyTo(memoryStream);
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     WebManager.Post(
-                        $"{SchubExternalContentProvider.m_redirectUri}/com/files/upload",
+                        $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}/com/files/upload",
                         null,
                         dictionary,
                         memoryStream,

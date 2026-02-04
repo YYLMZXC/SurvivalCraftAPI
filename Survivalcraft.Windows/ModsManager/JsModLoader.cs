@@ -17,6 +17,7 @@ namespace Game {
             Digged = Digged1;
         }
 
+        [Obsolete]
         public override void OnMinerPlace(ComponentMiner miner,
             TerrainRaycastResult raycastResult,
             int x,

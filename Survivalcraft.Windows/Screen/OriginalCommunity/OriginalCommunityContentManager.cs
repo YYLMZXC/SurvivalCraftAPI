@@ -7,11 +7,10 @@ using Game;
 using XmlUtilities;
 
 public static class OriginalCommunityContentManager {
-    const string m_scResDirAddress = "https://scresdir.appspot.com/resource";
 
-    static Dictionary<string, string> m_idToAddressMap = new();
+    public static Dictionary<string, string> m_idToAddressMap = new();
 
-    static Dictionary<string, bool> m_feedbackCache = new();
+    public static Dictionary<string, bool> m_feedbackCache = new();
 
     public const string fName1 = "CommunityContentManager";
 
@@ -67,7 +66,7 @@ public static class OriginalCommunityContentManager {
         dictionary.Add("Platform", VersionsManager.PlatformString);
         dictionary.Add("Version", VersionsManager.Version);
         WebManager.Post(
-            m_scResDirAddress,
+            CommunityServerManager.CurrentOriginalInfo.ApiUrl,
             null,
             null,
             WebManager.UrlParametersToStream(dictionary),
@@ -204,7 +203,7 @@ public static class OriginalCommunityContentManager {
             delegate(byte[] data) {
                 string value = CalculateContentHashString(data);
                 WebManager.Post(
-                    m_scResDirAddress,
+                    CommunityServerManager.CurrentOriginalInfo.ApiUrl,
                     null,
                     null,
                     WebManager.UrlParametersToStream(
@@ -248,7 +247,7 @@ public static class OriginalCommunityContentManager {
         dictionary.Add("Platform", VersionsManager.PlatformString);
         dictionary.Add("Version", VersionsManager.Version);
         WebManager.Post(
-            m_scResDirAddress,
+            CommunityServerManager.CurrentOriginalInfo.ApiUrl,
             null,
             null,
             WebManager.UrlParametersToStream(dictionary),
@@ -386,7 +385,7 @@ public static class OriginalCommunityContentManager {
         dictionary.Add("Platform", VersionsManager.PlatformString);
         dictionary.Add("Version", VersionsManager.Version);
         WebManager.Post(
-            m_scResDirAddress,
+            CommunityServerManager.CurrentOriginalInfo.ApiUrl,
             null,
             null,
             WebManager.UrlParametersToStream(dictionary),

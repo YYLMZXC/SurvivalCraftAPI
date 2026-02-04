@@ -100,7 +100,7 @@ namespace Game {
                         ? new Uri($"{address}?{UrlParametersToString(parameters)}")
                         : new Uri(address);
                     try {
-                        progress = progress ?? new CancellableProgress();
+                        progress ??= new CancellableProgress();
                         if (!IsInternetConnectionAvailable()) {
                             throw new InvalidOperationException("Internet connection is unavailable.");
                         }

@@ -32,9 +32,7 @@ namespace Game {
         }
 
         public void RemoveChildren(Widget widget) {
-            if (Children.IndexOf(widget) >= 0) {
-                Children.Remove(widget);
-            }
+            Children.Remove(widget);
         }
 
         public void ClearChildren() {

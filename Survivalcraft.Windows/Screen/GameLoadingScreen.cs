@@ -106,6 +106,12 @@ namespace Game {
                 screen.m_treePanel.ScrollPosition = 0f;
                 screen.m_contentExpiryTime = 0;
             }
+            OriginalCommunityContentScreen originalCommunityContentScreen = ScreensManager.FindScreen<OriginalCommunityContentScreen>("OriginalCommunityContent");
+            if (originalCommunityContentScreen != null) {
+                originalCommunityContentScreen.m_listPanel.ClearItems();
+                originalCommunityContentScreen.m_listPanel.ScrollPosition = 0f;
+                originalCommunityContentScreen.m_itemsCacheExpiryTime = 0;
+            }
         }
     }
 }

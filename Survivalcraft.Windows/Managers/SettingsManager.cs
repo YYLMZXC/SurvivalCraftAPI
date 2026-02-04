@@ -409,6 +409,41 @@ namespace Game {
         public static ValuesDictionary GamepadMappingSettings { get; set; }
         public static ValuesDictionary CameraManageSettings { get; set; }
 
+        public static string CommunityServerUserInfos {
+            get {
+                if (CommunityServerManager.UserInfos.Count == 0) {
+                    return string.Empty;
+                }
+                List<string> results = [];
+                foreach (CommunityServerManager.Info info in CommunityServerManager.UserInfos) {
+                    results.Add(info.ToString());
+                }
+                return string.Join("||", results);
+            }
+            set {
+                if (string.IsNullOrEmpty(value)) {
+                    return;
+                }
+                string[] array1 = value.Split("||", StringSplitOptions.RemoveEmptyEntries);
+                foreach (string str in array1) {
+                    CommunityServerManager.Info info = CommunityServerManager.Info.FromString(str);
+                    if (info != null) {
+                        CommunityServerManager.UserInfos.Add(info);
+                    }
+                }
+            }
+        }
+
+        public static string LastSelectedOriginalCommunityInfo {
+            get => CommunityServerManager.CurrentOriginalInfo.ToString();
+            set => CommunityServerManager.Info.FromString(value);
+        }
+
+        public static string LastSelectedChineseCommunityInfo {
+            get => CommunityServerManager.CurrentChineseInfo.ToString();
+            set => CommunityServerManager.Info.FromString(value);
+        }
+
         static readonly Lock m_saveLock = new();
 
         public static void Initialize() {
@@ -439,7 +474,7 @@ namespace Game {
                 BlocksTextureFileName = string.Empty;
                 LookControlMode = LookControlMode.EntireScreen;
                 FlipVerticalAxis = false;
-#if ANDROID
+#if ANDROID || BROWSER
                 UIScale = 0.9f;
                 AutoJump = true;
 #else
@@ -458,8 +493,8 @@ namespace Game {
                 HorizontalCreativeFlight = false;
                 DropboxAccessToken = string.Empty;
                 ScpboxAccessToken = string.Empty;
-                MotdUpdateUrl = "https://m.schub.top/com/motd?v={0}&l={1}";
-                MotdUpdateCheckUrl = "https://m.schub.top/com/motd?v={0}&cmd=version_check&platform={1}&apiv={2}&l={3}";
+                MotdUpdateUrl = $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}/com/motd?v={0}&l={1}";
+                MotdUpdateCheckUrl = $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}com/motd?v={0}&cmd=version_check&platform={1}&apiv={2}&l={3}";
                 MotdUpdatePeriodHours = 12.0;
                 MotdLastUpdateTime = DateTime.MinValue;
                 MotdLastDownloadedData = string.Empty;

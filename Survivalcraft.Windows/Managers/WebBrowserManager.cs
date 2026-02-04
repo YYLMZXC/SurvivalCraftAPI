@@ -6,6 +6,9 @@ using Engine;
 namespace Game {
     public static class WebBrowserManager {
         public static void LaunchBrowser(string url) {
+            if (string.IsNullOrEmpty(url)) {
+                return;
+            }
 #if !BROWSER
             if (!url.Contains("://")) {
                 url = $"https://{url}";

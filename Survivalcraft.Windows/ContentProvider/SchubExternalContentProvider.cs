@@ -31,8 +31,6 @@ namespace Game {
 
         public const string m_appSecret = "9aux67wg5z";
 
-        public const string m_redirectUri = "https://m.schub.top";
-
         public LoginProcessData m_loginProcessData;
 
         public string DisplayName => "SC中文社区";
@@ -111,7 +109,7 @@ namespace Game {
                 };
                 MemoryStream data = new(Encoding.UTF8.GetBytes(jsonObject.ToJsonString()));
                 WebManager.Post(
-                    $"{m_redirectUri}/com/files/list_folder",
+                    $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}/com/files/list_folder",
                     null,
                     dictionary,
                     data,
@@ -140,7 +138,7 @@ namespace Game {
                     { "Authorization", $"Bearer {SettingsManager.ScpboxAccessToken}" }, { "Dropbox-API-Arg", jsonObject.ToJsonString() }
                 };
                 WebManager.Get(
-                    $"{m_redirectUri}/com/files/download",
+                    $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}/com/files/download",
                     null,
                     dictionary,
                     progress,
@@ -163,7 +161,7 @@ namespace Game {
                     { "Dropbox-API-Arg", jsonObject.ToJsonString() }
                 };
                 WebManager.Post(
-                    $"{m_redirectUri}/com/files/upload",
+                    $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}/com/files/upload",
                     null,
                     dictionary,
                     stream,
@@ -186,7 +184,7 @@ namespace Game {
                 JsonObject jsonObject = new() { { "path", NormalizePath(path) }, { "short_url", false } };
                 MemoryStream data = new(Encoding.UTF8.GetBytes(jsonObject.ToJsonString()));
                 WebManager.Post(
-                    $"{m_redirectUri}/com/sharing/create_shared_link",
+                    $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}/com/sharing/create_shared_link",
                     null,
                     dictionary,
                     data,

@@ -404,7 +404,7 @@ namespace Game {
                 );
             }
             if (m_webPageButton.IsClicked) {
-                WebBrowserManager.LaunchBrowser("https://www.schub.top/");
+                WebBrowserManager.LaunchBrowser(CommunityServerManager.CurrentChineseInfo.WebsiteUrl);
             }
             if (m_searchTypeButton.IsClicked) {
                 if (m_isAdmin) {

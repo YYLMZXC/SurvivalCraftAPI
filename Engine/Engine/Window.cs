@@ -622,6 +622,7 @@ namespace Engine {
             }
             else if(!m_closingRequested){
                 m_closingRequested = true;
+                ClosedHandler();
 #if ANDROID
                 if (Build.VERSION.SdkInt >= (BuildVersionCodes)21) {
                     Activity.FinishAndRemoveTask();
@@ -631,7 +632,6 @@ namespace Engine {
                 }
 #endif
 #if BROWSER
-                ClosedHandler();
                 if (m_restarting) {
                     BrowserInterop.Reload();
                 }

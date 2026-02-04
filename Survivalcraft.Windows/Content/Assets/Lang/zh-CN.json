@@ -52,8 +52,7 @@
     },
     "CommunityType": {
       "OriginalCommunity": "原版社区",
-      "ChineseCommunity": "中文社区（内置）",
-      "ChineseCommunityWebsite": "中文社区（网页）"
+      "ChineseCommunity": "中文社区"
     }
   },
   "ModsManageContentScreen": {
@@ -3897,6 +3896,24 @@
       "5": "重置",
       "6": "确定",
       "7": "取消"
+    },
+    "SelectCommunityServerDialog": {
+      "1": "选择社区服务器",
+      "2": "打开",
+      "3": "添加",
+      "4": "编辑"
+    },
+    "EditCommunityServerInfoDialog": {
+      "1": "编辑服务器",
+      "2": "类型*: ",
+      "3": "原版",
+      "4": "中文",
+      "5": "名称*: ",
+      "6": "接口网址*: ",
+      "7": "网站网址: ",
+      "8": "确定",
+      "9": "删除",
+      "10": "取消"
     }
   },
   "FireworksBlock": {

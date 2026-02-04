@@ -294,6 +294,7 @@ namespace Game {
                     ModsManager.HookAction(
                         "OnMinerPlace",
                         modLoader => {
+#pragma warning disable CS0618 // 类型或成员已过时
                             modLoader.OnMinerPlace(
                                 this,
                                 raycastResult,
@@ -303,6 +304,7 @@ namespace Game {
                                 value,
                                 out bool Placed
                             );
+#pragma warning restore CS0618 // 类型或成员已过时
                             placed |= Placed;
                             return false;
                         }

@@ -144,7 +144,8 @@ namespace Game {
                 );
             }
             if (m_communityContentButton.IsClicked) {
-                List<CommunityType> items = [];
+                DialogsManager.ShowDialog(null, new SelectCommunityServerDialog());
+                /*List<CommunityType> items = [];
                 if (SettingsManager.OriginalCommunityContentMode != CommunityContentMode.Disabled) {
                     items.Add(CommunityType.OriginalCommunity);
                 }
@@ -175,7 +176,7 @@ namespace Game {
                             }
                         }
                     )
-                );
+                );*/
             }
             if (m_linkButton.IsClicked) {
                 DialogsManager.ShowDialog(null, new DownloadContentFromLinkDialog());

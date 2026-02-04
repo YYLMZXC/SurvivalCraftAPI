@@ -14,13 +14,9 @@ const generateErrorResponse = () => new Response("Network error happened", {
     headers: { "Content-Type": "text/plain" },
 });
 
-const cacheFirst = async ({request, preloadResponsePromise, event}) => {
-    if (request.url.startsWith('chrome-extension://')) {
-        try {
-            return await fetch(request);
-        } catch (error) {
-            return generateErrorResponse();
-        }
+const cacheFirst = async ({request, preloadResponse, event}) => {
+    if (request.method !== 'GET' || request.url.startsWith('chrome-extension://')) {
+        return fetch(request);
     }
     // First try to get the resource from the cache
     const responseFromCache = await caches.match(request);
@@ -44,19 +40,9 @@ const cacheFirst = async ({request, preloadResponsePromise, event}) => {
     }
 
     // Next try to use (and cache) the preloaded response, if it's there
-    if (preloadResponsePromise) {
-        let preloadResponse;
-        event.waitUntil(preloadResponsePromise);
-        try {
-            preloadResponse = await preloadResponsePromise;
-        } catch (e) {
-            console.error("Navigation preload failed", e);
-            preloadResponse = null;
-        }
-        if (preloadResponse) {
-            event.waitUntil(putInCache(request, preloadResponse.clone()));
-            return preloadResponse;
-        }
+    if (preloadResponse) {
+        event.waitUntil(putInCache(request, preloadResponse.clone()));
+        return preloadResponse;
     }
 
     // Next try to get the resource from the network
@@ -93,14 +79,24 @@ const enableNavigationPreloadAndClearOldCache = async () => {
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
 };
 
-self.addEventListener("activate", async (event) => {
+self.addEventListener("activate", (event) => {
     event.waitUntil(enableNavigationPreloadAndClearOldCache());
-    await self.clients.claim();
+    self.clients.claim();
 });
-self.addEventListener("install", async (event) => {
+self.addEventListener("install", (event) => {
     event.waitUntil(addResourcesToCache(["./", "./index.html", "./main.js", "./assets/logo.webp", "./favicon.webp", "./dashboard.html"]));
-    await self.skipWaiting();
+    self.skipWaiting();
 });
 self.addEventListener("fetch", (event) => {
-    event.respondWith(cacheFirst({ request: event.request, preloadResponsePromise: event.preloadResponse, event }));
+    if (event.request.method !== "GET") {
+        return;
+    }
+    const preloadPromise = event.preloadResponse;
+    event.respondWith((async () => {
+        const preloadResponse = await preloadPromise;
+        return cacheFirst({ request: event.request, preloadResponse, event});
+    })());
+    if (preloadPromise) {
+        event.waitUntil(preloadPromise);
+    }
 });

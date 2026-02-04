@@ -52,8 +52,7 @@
     },
     "CommunityType": {
       "OriginalCommunity": "Original Community",
-      "ChineseCommunity": "Chinese Community",
-      "ChineseCommunityWebsite": "Chinese Community (Web Site)"
+      "ChineseCommunity": "Chinese Community"
     }
   },
   "ModsManageContentScreen": {
@@ -3885,6 +3884,24 @@
       "5": "Reset",
       "6": "OK",
       "7": "Cancel"
+    },
+    "SelectCommunityServerDialog": {
+      "1": "Select Community Server",
+      "2": "Open",
+      "3": "Add",
+      "4": "Edit"
+    },
+    "EditCommunityServerInfoDialog": {
+      "1": "Edit Server",
+      "2": "Type*: ",
+      "3": "Original",
+      "4": "Chinese",
+      "5": "Name*: ",
+      "6": "API Url*: ",
+      "7": "Website Url: ",
+      "8": "OK",
+      "9": "Remove",
+      "10": "Cancel"
     }
   },
   "FireworksBlock": {

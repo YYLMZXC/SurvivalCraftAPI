@@ -68,7 +68,7 @@ const interop = engineExports.Engine.Browser.BrowserInterop; // 调用这个特�
 let needPointerLock = false;
 function checkAndRequestPointerLock(){
     if (needPointerLock) {
-        if (document.pointerLockElement !== canvas) {
+        if (document.pointerLockElement !== canvas && canvas.requestPointerLock) {
             return canvas.requestPointerLock({ unadjustedMovement: true }).catch(error => {
                 if (error?.name === "NotSupportedError") {
                     // 有些平台可能不支持未调整的移动，尝试重新请求常规指针锁定。
@@ -77,7 +77,7 @@ function checkAndRequestPointerLock(){
             });
         }
     }
-    else if (document.pointerLockElement === canvas) {
+    else if (document.pointerLockElement === canvas && document.exitPointerLock) {
         document.exitPointerLock();
     }
 }

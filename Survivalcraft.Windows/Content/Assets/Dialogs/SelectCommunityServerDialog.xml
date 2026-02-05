@@ -4,7 +4,7 @@
     <CanvasWidget Size="0, 15" />
     <CanvasWidget>
       <BevelledRectangleWidget Style="{Styles/DialogArea}" />
-      <StackPanelWidget Direction="Vertical" Margin="0, 15">
+      <StackPanelWidget Direction="Vertical" Margin="0, 5">
         <ListPanelWidget Name="SelectCommunityServerDialog.ListPanel" Direction="Vertical" HorizontalAlignment="Center" Margin="5, 0" SelectionColor="10, 70, 0, 90"/>
         <CanvasWidget Size="0, 15" />
         <StackPanelWidget Direction="Horizontal" HorizontalAlignment="Center">

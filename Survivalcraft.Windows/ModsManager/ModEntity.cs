@@ -180,7 +180,7 @@ namespace Game {
                 DisableReason = ModDisableReason.NoModInfo;
                 return;
             }
-            if (modInfo.PackageName.Contains(';')) {
+            if ((ModsManager.ModListAll.Count >= 2 && (modInfo.PackageName == "survivalcraft" || modInfo.PackageName == "fastdebug")) || modInfo.PackageName.Contains(';') || modInfo.PackageName.Contains('\n')) {
                 IsDisabled = true;
                 DisableReason = ModDisableReason.InvalidPackageName;
                 return;

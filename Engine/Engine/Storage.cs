@@ -284,11 +284,15 @@ namespace Engine {
             throw new InvalidOperationException($"Invalid path \"{path}\".");
         }
 #else
+#if BROWSER
+        public static string GetAppDirectory(bool failIfApp) => Path.DirectorySeparatorChar.ToString();
+#else
         public static string GetAppDirectory(bool failIfApp) => failIfApp
             ? throw new InvalidOperationException("Access denied.")
 #pragma warning disable IL3000
             : Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location);
 #pragma warning restore IL3000
+#endif
         public static string GetDataDirectory(bool writeAccess) {
             string text = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -327,6 +331,7 @@ namespace Engine {
             else {
                 if (!path.StartsWith("system:")) {
 #if BROWSER
+                    EnsurePathLinked(path);
                     return path;
 #else
                     throw new InvalidOperationException("Invalid path.");
@@ -409,7 +414,6 @@ namespace Engine {
             path = ProcessPath(path, false, false);
             Window.Activity.ShareFile(path, chooserTitle, mimeType);
 #elif BROWSER
-            Console.WriteLine(path);
             JSObject fileHandle = await BrowserInterop.ShowSaveFilePicker(Storage.GetFileName(path), mimeType);
             Stream stream = OpenFile(path, OpenFileMode.Read);
             byte[] bytes = new byte[stream.Length];
@@ -543,7 +547,7 @@ namespace Engine {
             }
             path = path.Replace('\\', '/');
             string[] parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length <= 1) {
+            if (parts.Length == 0) {
                 return;
             }
             string topDir = parts[0];

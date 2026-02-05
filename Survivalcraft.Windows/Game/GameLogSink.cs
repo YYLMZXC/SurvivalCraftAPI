@@ -13,7 +13,6 @@ namespace Game {
         public static string errorOfInstantiation;
 
         public const string fName = "GameLogSink";
-
         public GameLogSink() {
             try {
                 if (m_stream != null) {
@@ -49,7 +48,7 @@ namespace Game {
                 m_writer = new StreamWriter(m_stream);
             }
             catch (Exception ex) {
-#if !MOBILE
+#if !MOBILE && !BROWSER
 #if WINDOWS
                 AllocConsole();
                 Window.Closed += () => FreeConsole();
@@ -57,8 +56,6 @@ namespace Game {
 #pragma warning disable CA1416
                 Console.Title = "Logs of Survivalcraft API";
 #pragma warning restore CA1416
-                Engine.Log.RemoveAllLogSinks();
-                Engine.Log.AddLogSink(new ConsoleLogSink());
                 errorOfInstantiation = $"Error creating GameLogSink, and a console window for viewing logs is created. Reason: {ex.Message}";
                 Engine.Log.Information(errorOfInstantiation);
 #else
@@ -70,11 +67,7 @@ namespace Game {
 
         public static string GetRecentLog(int bytesCount) {
             if (m_stream == null) {
-#if BROWSER
-                return LanguageControl.Get(fName, "2");
-#else
                 return LanguageControl.Get(fName, "1");
-#endif
             }
             lock (m_stream) {
                 try {
@@ -89,11 +82,7 @@ namespace Game {
 
         public static List<string> GetRecentLogLines(int bytesCount) {
             if (m_stream == null) {
-#if BROWSER
-                return [errorOfInstantiation, LanguageControl.Get(fName, "2")];
-#else
                 return [errorOfInstantiation, LanguageControl.Get(fName, "1")];
-#endif
             }
             lock (m_stream) {
                 try {

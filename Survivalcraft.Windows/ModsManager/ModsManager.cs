@@ -473,11 +473,10 @@ public static class ModsManager {
                     Stream keepOpenStream = GetDecipherStream(stream);
                     ModEntity modEntity = new(ks, ZipArchive.Open(keepOpenStream, true));
                     if (modEntity.modInfo == null) {
-                        LoadingScreen.Warning($"The modinfo.json is missing or broken from [{modEntity.ModFilePath}], and this mod will be disabled.");
+                        LoadingScreen.Warning($"The modinfo.json is missing or broken from [{Storage.GetFileName(modEntity.ModFilePath)}], and this mod will be disabled.");
                     }
-                    else if (modEntity.modInfo.PackageName == "survivalcraft"
-                        || modEntity.modInfo.PackageName == "fastdebug") {
-                        LoadingScreen.Warning($"The package name of [{modEntity.modInfo.PackageName}] is not allowed, and this mod will not be loaded.");
+                    else if (modEntity.IsDisabled && modEntity.DisableReason == ModDisableReason.InvalidPackageName) {
+                        LoadingScreen.Warning($"The package name [{modEntity.modInfo.PackageName}] of [{Storage.GetFileName(modEntity.ModFilePath)}] is not allowed, and this mod will not be loaded.");
                         continue;
                     }
                     ModListAll.Add(modEntity);

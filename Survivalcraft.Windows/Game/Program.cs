@@ -172,13 +172,10 @@ namespace Game {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             string title = $"Survivalcraft {ModsManager.ShortGameVersion} - API {ModsManager.APIVersionString}";
-#if !BROWSER
-            Log.RemoveAllLogSinks();
             Log.AddLogSink(new GameLogSink());
 #if DEBUG
             Log.AddLogSink(new ConsoleLogSink());
             title = $"[DEBUG]{title}";
-#endif
 #endif
             Window.UnhandledException += delegate(UnhandledExceptionInfo e) {
                 ExceptionManager.ReportExceptionToUser("Unhandled exception.", e.Exception);

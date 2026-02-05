@@ -1226,8 +1226,7 @@
     "1": "Make a wooden rake instead"
   },
   "GameLogSink": {
-    "1": "The log file may be occupied by another program, resulting in a failed load.",
-    "2": "The logs are in the Console of the browser DevTools."
+    "1": "The log file may be occupied by another program, resulting in a failed load."
   },
   "BasePumpkinBlock": {
     "1": "Pumpkin",

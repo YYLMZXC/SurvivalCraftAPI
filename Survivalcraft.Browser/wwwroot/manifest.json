@@ -3,7 +3,8 @@
   "short_name": "SC API",
   "description": "",
   "id": "com.candy.survivalcraftAPI1_8",
-  "start_url": "./index.html",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "display_override": ["fullscreen", "standalone"],
   "lang": "en",
@@ -37,14 +38,14 @@
   ],
   "screenshots": [
     {
-      "src": "assets/screenshot-wide.webp",
+      "src": "./assets/screenshot-wide.webp",
       "sizes": "1280x720",
       "type": "image/webp",
       "form_factor": "wide",
       "label": "Wide Screenshot"
     },
     {
-      "src": "assets/screenshot-narrow.webp",
+      "src": "./assets/screenshot-narrow.webp",
       "sizes": "608x1080",
       "type": "image/webp",
       "label": "Narrow Screenshot"

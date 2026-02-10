@@ -387,7 +387,7 @@ namespace Game {
                 ModEntity entity = ModsManager.ModListAll.Find(px => !px.IsDisabled
                     && px.modInfo != null
                     && px.modInfo.PackageName == name
-                    && (range.Satisfies(px.modInfo.NuGetVersion) || px.modInfo.Version == range.OriginalString)
+                    && ((px.modInfo.NuGetVersion != null && range.Satisfies(px.modInfo.NuGetVersion)) || range.Equals(VersionRange.All) || px.modInfo.Version == range.OriginalString)
                 );
                 if (entity != null) {
                     if (!entity.IsDependencyChecked) {

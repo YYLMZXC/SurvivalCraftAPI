@@ -462,12 +462,14 @@ namespace Game {
                         )
                     );
                 }
+#if !BROWSER
                 list.Add(
                     new Tuple<string, Action>(
                         LanguageControl.Get(fName, 95),
                         delegate { DialogsManager.ShowDialog(ParentWidget, new RunJsDialog()); }
                     )
                 );
+#endif
 #if BROWSER
                 list.Add(new Tuple<string, Action>(LanguageControl.Get(fName, "104"), () => Window.WindowMode = Window.WindowMode == WindowMode.Fullscreen ? WindowMode.Fixed : WindowMode.Fullscreen));
 #endif

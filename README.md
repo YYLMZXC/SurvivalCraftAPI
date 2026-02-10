@@ -56,7 +56,7 @@
 
 1. 打开 [https://scapiweb.netlify.app/](https://scapiweb.netlify.app/) 即可游玩
 
-说明：和 IOS 版一样，不支持模组
+说明：完全不支持模组和运行 Javascript
 
 ### 常见问题
 

@@ -46,7 +46,9 @@ namespace Game {
                 Dismiss(false);
             }
             else if (m_serverButton.IsClicked) {
+#if !IOS && !BROWSER
                 DialogsManager.ShowDialog(ParentWidget, new RemoteControlDialog());
+#endif
             }
         }
 

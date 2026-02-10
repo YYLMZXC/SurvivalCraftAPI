@@ -1,4 +1,14 @@
-﻿const CACHE_NAME = "v20260205";
+﻿const CACHE_NAME = "v20260210";
+const BASE = self.registration.scope;
+const ASSETS = [
+    "",
+    "index.html",
+    "main.js",
+    "dashboard.html",
+    "assets/logo.webp",
+    "favicon.webp"
+].map(p => new URL(p, BASE).href);
+
 const addResourcesToCache = async (resources) => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(resources);
@@ -26,12 +36,12 @@ const cacheFirst = async ({request, preloadResponse, event}) => {
 
     // for navigation requests, fallback to cached index.html
     if (request.mode === 'navigate') {
-        let requestUrl = request.url.endsWith('/dashboard.html') ? './dashboard.html' : './index.html';
+        let requestUrl = request.url.endsWith('/dashboard.html') ? new URL("dashboard.html", BASE).href : new URL("index.html", BASE).href;
         let cachedIndex = await caches.match(requestUrl);
         if (cachedIndex) {
             return cachedIndex;
         }
-        await addResourcesToCache(["./", "./index.html", "./main.js", "./assets/logo.webp", "./favicon.webp", "./dashboard.html"]);
+        await addResourcesToCache(ASSETS);
         cachedIndex = await caches.match(requestUrl);
         if (cachedIndex) {
             return cachedIndex;
@@ -57,7 +67,7 @@ const cacheFirst = async ({request, preloadResponse, event}) => {
         return responseFromNetwork;
     } catch (error) {
         if (request.mode === 'navigate') {
-            const cachedIndex = await caches.match('./index.html');
+            const cachedIndex = await caches.match(new URL("index.html", BASE).href);
             if (cachedIndex) {
                 return cachedIndex;
             }
@@ -84,7 +94,7 @@ self.addEventListener("activate", (event) => {
     self.clients.claim();
 });
 self.addEventListener("install", (event) => {
-    event.waitUntil(addResourcesToCache(["./", "./index.html", "./main.js", "./assets/logo.webp", "./favicon.webp", "./dashboard.html"]));
+    event.waitUntil(addResourcesToCache(ASSETS));
     self.skipWaiting();
 });
 self.addEventListener("fetch", (event) => {

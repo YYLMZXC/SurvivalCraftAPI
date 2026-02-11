@@ -29,6 +29,7 @@ namespace Game {
         }
 
         public static void LoadDataBaseFromXml(XElement node) {
+            m_valueDictionaries.Clear();
             m_gameDatabase = new GameDatabase(XmlDatabaseSerializer.LoadDatabase(node));
             foreach (DatabaseObject explicitNestingChild in GameDatabase.Database.Root.GetExplicitNestingChildren(
                     GameDatabase.EntityTemplateType,

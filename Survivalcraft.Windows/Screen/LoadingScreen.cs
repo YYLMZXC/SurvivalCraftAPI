@@ -531,6 +531,7 @@ namespace Game {
             AddLoadAction(delegate { AddScreen("KeyboardMapping", new KeyboardMappingScreen()); });
             AddLoadAction(delegate { AddScreen("GamepadMapping", new GamepadMappingScreen()); });
             AddLoadAction(delegate { AddScreen("CameraManage", new CameraManageScreen()); });
+            AddLoadAction(delegate { AddScreen("ManageClassSubstitutes", new ManageClassSubstitutesScreen()); });
         }
 
         public void AddScreen(string name, Screen screen) {

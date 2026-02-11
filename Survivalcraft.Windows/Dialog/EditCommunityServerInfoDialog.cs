@@ -70,11 +70,13 @@ namespace Game {
                 m_originalCheckbox.IsChecked = true;
                 m_chineseCheckbox.IsChecked = false;
                 m_changed = true;
+                AudioManager.PlaySound("Audio/UI/ButtonClick", 1f, 0f, 0f);
             }
             if (m_chineseCheckbox.IsClicked && !m_chineseCheckbox.IsChecked) {
                 m_originalCheckbox.IsChecked = false;
                 m_chineseCheckbox.IsChecked = true;
                 m_changed = true;
+                AudioManager.PlaySound("Audio/UI/ButtonClick", 1f, 0f, 0f);
             }
             if (m_nameTextBox.Text != m_info.Name) {
                 m_changed = true;

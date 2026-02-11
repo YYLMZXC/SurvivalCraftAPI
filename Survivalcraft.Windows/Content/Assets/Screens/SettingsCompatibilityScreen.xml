@@ -47,6 +47,11 @@
             </UniformSpacingPanelWidget>
 
             <UniformSpacingPanelWidget Direction="Horizontal">
+              <LabelWidget Text="[SettingsCompatibilityScreen:17]" HorizontalAlignment="Far" VerticalAlignment="Center" Margin="20, 0" />
+              <BevelledButtonWidget Text="[SettingsCompatibilityScreen:18]" Name="ManageClassSubstitutesButton" Style="{Styles/ButtonStyle_310x60}" VerticalAlignment="Center" Margin="20, 0"/>
+            </UniformSpacingPanelWidget>
+
+            <UniformSpacingPanelWidget Direction="Horizontal">
               <LabelWidget Text="[SettingsCompatibilityScreen:16]" HorizontalAlignment="Far" VerticalAlignment="Center" Margin="20, 0" />
               <BevelledButtonWidget Name="SafeModeButton" Style="{Styles/ButtonStyle_310x60}" VerticalAlignment="Center" Margin="20, 0"/>
             </UniformSpacingPanelWidget>

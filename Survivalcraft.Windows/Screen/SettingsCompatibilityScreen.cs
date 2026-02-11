@@ -13,6 +13,7 @@ namespace Game {
         public ButtonWidget m_shareGameLogButton;
         public ButtonWidget m_reportButton;
         public ButtonWidget m_fileAssociationEnabledButton;
+        public ButtonWidget m_manageClassSubstitutesButton;
         public ButtonWidget m_safeModeButton;
         public ButtonWidget m_resetDefaultsButton;
         public LabelWidget m_descriptionLabel;
@@ -28,6 +29,7 @@ namespace Game {
             m_shareGameLogButtonPanel = Children.Find<ContainerWidget>("ShareGameLogButtonPanel");
             m_reportButton = Children.Find<ButtonWidget>("ReportButton");
             m_fileAssociationEnabledButton = Children.Find<ButtonWidget>("FileAssociationEnabledButton");
+            m_manageClassSubstitutesButton = Children.Find<ButtonWidget>("ManageClassSubstitutesButton");
             m_safeModeButton = Children.Find<ButtonWidget>("SafeModeButton");
             m_resetDefaultsButton = Children.Find<ButtonWidget>("ResetDefaultsButton");
             m_descriptionLabel = Children.Find<LabelWidget>("Description");
@@ -105,6 +107,9 @@ namespace Game {
                 }
             }
 #endif
+            if (m_manageClassSubstitutesButton.IsClicked) {
+                ScreensManager.SwitchScreen("ManageClassSubstitutes");
+            }
             if (m_safeModeButton.IsClicked) {
                 m_descriptionLabel.Text = LanguageControl.Get(fName, "3");
                 SettingsManager.SafeMode = !SettingsManager.SafeMode;
@@ -123,7 +128,7 @@ namespace Game {
             if (Input.Back
                 || Input.Cancel
                 || Children.Find<ButtonWidget>("TopBar.Back").IsClicked) {
-                ScreensManager.SwitchScreen(ScreensManager.PreviousScreen);
+                ScreensManager.GoBack();
             }
         }
     }

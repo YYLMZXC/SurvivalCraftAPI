@@ -3277,7 +3277,9 @@
       "13": "Open Log File",
       "14": "File Association",
       "15": "Share Log File",
-      "16": "Safe Mode"
+      "16": "Safe Mode",
+      "17": "Mod Compatibility:",
+      "18": "Manage Class Replacement"
     },
     "SettingsControlsScreen": [
       "Adjust Controls Settings",
@@ -3427,6 +3429,9 @@
       "5": " (Current)",
       "6": " (Latest)",
       "20": "Failed to fetch {0} version list. Reason:\n{1}"
+    },
+    "ManageClassSubstitutesScreen": {
+      "1": "Manage Class Replacement"
     },
     "BestiaryItem": {
       "1": "",

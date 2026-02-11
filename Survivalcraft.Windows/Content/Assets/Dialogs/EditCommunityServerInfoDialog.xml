@@ -8,11 +8,9 @@
           <LabelWidget Text="[EditCommunityServerInfoDialog:2]" VerticalAlignment="Center" HorizontalAlignment="Far" />
         </CanvasWidget>
         <CanvasWidget Size="10, 0" />
-        <CheckboxWidget Name="EditCommunityServerInfoDialog.OriginalCheckbox" CheckboxSize="32, 32" VerticalAlignment="Center" IsAutoCheckingEnabled="false" />
-        <LabelWidget Text="[EditCommunityServerInfoDialog:3]" VerticalAlignment="Center" />
+        <CheckboxWidget Name="EditCommunityServerInfoDialog.OriginalCheckbox" Text="[EditCommunityServerInfoDialog:3]" CheckboxSize="32, 32" VerticalAlignment="Center" IsAutoCheckingEnabled="false" />
         <CanvasWidget Size="20, 0" />
-        <CheckboxWidget Name="EditCommunityServerInfoDialog.ChineseCheckbox" CheckboxSize="32, 32" VerticalAlignment="Center" IsAutoCheckingEnabled="false" />
-        <LabelWidget Text="[EditCommunityServerInfoDialog:4]" VerticalAlignment="Center" />
+        <CheckboxWidget Name="EditCommunityServerInfoDialog.ChineseCheckbox" Text="[EditCommunityServerInfoDialog:4]" CheckboxSize="32, 32" VerticalAlignment="Center" IsAutoCheckingEnabled="false" />
       </StackPanelWidget>
       <StackPanelWidget Direction="Horizontal" Margin="10, 10">
         <CanvasWidget Size="160, 50">

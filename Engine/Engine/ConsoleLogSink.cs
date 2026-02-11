@@ -49,9 +49,6 @@ namespace Engine {
                 textWriter.Write(" ");
                 textWriter.Write(value);
                 textWriter.WriteLine(message);
-#if DEBUG
-                Debug.WriteLine($"{value}{message}");
-#endif
             }
         }
 

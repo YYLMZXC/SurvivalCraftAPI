@@ -27,9 +27,6 @@ namespace Engine {
                     }
                 }
             }
-#if MOBILE
-            Console.WriteLine($"SCAPI[{type}]{message}");
-#endif
         }
 
         public static void Debug(object message) {

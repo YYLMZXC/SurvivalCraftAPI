@@ -435,6 +435,10 @@
     "2": "(True seed is edited)",
     "3": "True seed must be a integer between -2147483648 and 2147483647"
   },
+  "SelectClassSubstituteDialog": {
+    "1": "API",
+    "2": "There are {0} mods intended to replace {1} ({2})"
+  },
   "FurnitureDesignWidget": [
     "Front",
     "Side"
@@ -3901,6 +3905,10 @@
       "8": "OK",
       "9": "Remove",
       "10": "Cancel"
+    },
+    "SelectClassSubstituteDialog": {
+      "1": "Select Which Class to use",
+      "2": "Note: Either option may cause the game to malfunction."
     }
   },
   "FireworksBlock": {

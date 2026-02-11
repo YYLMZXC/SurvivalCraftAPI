@@ -1,5 +1,6 @@
 // Game.ModsManager
 
+using System.Collections.Frozen;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -101,8 +102,18 @@ public static class ModsManager {
 
     static bool AllowContinue = true;
     public static Dictionary<string, string> Configs = [];
+    /// <summary>
+    /// 所有模组，含禁用的
+    /// </summary>
     public static List<ModEntity> ModListAll = [];
+    /// <summary>
+    /// 所有已启用的模组
+    /// </summary>
     public static List<ModEntity> ModList = [];
+    /// <summary>
+    /// 含所有已启用的模组
+    /// </summary>
+    public static Dictionary<string, ModEntity> PackageNameToModEntity = [];
     public static List<ModLoader> ModLoaders = [];
 
     //仅手动禁用的
@@ -390,6 +401,8 @@ public static class ModsManager {
         }
         ModHooks.Clear();
         ModListAll.Clear();
+        ModList.Clear();
+        PackageNameToModEntity.Clear();
         ModLoaders.Clear();
         SurvivalCraftModEntity = new SurvivalCraftModEntity();
         ModListAll.Add(SurvivalCraftModEntity);
@@ -684,48 +697,81 @@ public static class ModsManager {
         }
     }
 
-    public static Dictionary<string, string> ModifiedElement = new();
+    public class ClassSubstitute: IEquatable<ClassSubstitute> {
+        public string PackageName;
+        public string ClassName;
 
-    static int collisionsToHandle;
+        public ClassSubstitute(string packageName, string className) {
+            PackageName = packageName;
+            ClassName = className;
+        }
+
+        public bool Equals(ClassSubstitute other) {
+            if (other is null) {
+                return false;
+            }
+            if (ReferenceEquals(this, other)) {
+                return true;
+            }
+            return PackageName == other.PackageName && ClassName == other.ClassName;
+        }
+
+        public override bool Equals(object obj) {
+            return Equals(obj as ClassSubstitute);
+        }
+
+        public override int GetHashCode() => HashCode.Combine(PackageName, ClassName);
+
+        public static bool operator ==(ClassSubstitute left, ClassSubstitute right) => Equals(left, right);
+
+        public static bool operator !=(ClassSubstitute left, ClassSubstitute right) => !Equals(left, right);
+    }
+
+    public static FrozenDictionary<string, string> ImportantDatabaseClasses;
+    public static Dictionary<string, List<ClassSubstitute>> ClassSubstitutes = [];
+    public static Dictionary<string, List<ClassSubstitute>> OldClassSubstitutes = [];
+    public static Dictionary<string, ClassSubstitute> SelectedClassSubstitutes = [];
 
     //对于关键（绑定了API1.7新的ModLoader接口的）组件，对修改行为进行检查报错
     //修饰就是用的internal，不提供其他模组的调用权限
-    internal static void InitModifiedElement() {
+    internal static void InitImportantDatabaseClasses() {
         if (ModList.Count <= 3) {
             return;
         }
-        ModifiedElement["7347a83f-2d46-4fdf-bce2-52677de0b568"] = "Game.ComponentBody";
-        ModifiedElement["4e14ce27-fdef-46ca-8ea0-26af43c215e5"] = "Game.ComponentHealth";
-        ModifiedElement["7ecfafc4-4603-424c-87dd-1df59e7ef413"] = "Game.ComponentPlayer";
-        ModifiedElement["9dc356e5-7dc8-45f6-8779-827ddee9966c"] = "Game.ComponentMiner";
-        ModifiedElement["6f538db3-f1fe-4e91-8ef5-627c0b1a74ba"] = "Game.ComponentRunAwayBehavior";
-        ModifiedElement["8b3d07dc-6498-4691-9686-cf4edabb8f3f"] = "Game.ComponentGui";
-        ModifiedElement["e2636c38-f179-4aa1-b087-ed6920d66e8e"] = "Game.SubsystemTerrain";
-        ModifiedElement["96e79f99-a082-4190-9ab6-835dc49ebbdd"] = "Game.SubsystemExplosions";
-        ModifiedElement["dafb8e14-11b9-44b7-a208-424b770aeaa9"] = "Game.SubsystemProjectiles";
-        ModifiedElement["32d392de-69c1-4d04-9e0b-5c7463201892"] = "Game.SubsystemPickables";
-        ModifiedElement["54a4f6d5-98dd-4dc3-bf6d-04dfd972c6b7"] = "Game.SubsystemTime";
-        ModifiedElement["b2e68ecd-49fc-4c05-b784-424da13f8550"] = "Game.ComponentDispenser";
-        ModifiedElement["f6b020bb-8994-6ae6-289b-a842e3eb9ca5"] = "Game.ComponentFactors";
-        ModifiedElement["a346c456-5087-48c4-835a-5829b3f35c68"] = "Game.ComponentLevel";
-        ModifiedElement["1df4e627-c959-4e6a-bfa2-b7ee3ef08c99"] = "Game.ComponentClothing";
+        ImportantDatabaseClasses = new KeyValuePair<string, string>[] {
+            new("7347a83f-2d46-4fdf-bce2-52677de0b568", "Game.ComponentBody"),
+            new("4e14ce27-fdef-46ca-8ea0-26af43c215e5", "Game.ComponentHealth"),
+            new("7ecfafc4-4603-424c-87dd-1df59e7ef413", "Game.ComponentPlayer"),
+            new("9dc356e5-7dc8-45f6-8779-827ddee9966c", "Game.ComponentMiner"),
+            new("6f538db3-f1fe-4e91-8ef5-627c0b1a74ba", "Game.ComponentRunAwayBehavior"),
+            new("8b3d07dc-6498-4691-9686-cf4edabb8f3f", "Game.ComponentGui"),
+            new("e2636c38-f179-4aa1-b087-ed6920d66e8e", "Game.SubsystemTerrain"),
+            new("96e79f99-a082-4190-9ab6-835dc49ebbdd", "Game.SubsystemExplosions"),
+            new("dafb8e14-11b9-44b7-a208-424b770aeaa9", "Game.SubsystemProjectiles"),
+            new("32d392de-69c1-4d04-9e0b-5c7463201892", "Game.SubsystemPickables"),
+            new("54a4f6d5-98dd-4dc3-bf6d-04dfd972c6b7", "Game.SubsystemTime"),
+            new("b2e68ecd-49fc-4c05-b784-424da13f8550", "Game.ComponentDispenser"),
+            new("f6b020bb-8994-6ae6-289b-a842e3eb9ca5", "Game.ComponentFactors"),
+            new("a346c456-5087-48c4-835a-5829b3f35c68", "Game.ComponentLevel"),
+            new("1df4e627-c959-4e6a-bfa2-b7ee3ef08c99", "Game.ComponentClothing"),
+        }.ToFrozenDictionary();
     }
 
-    public static void CombineDataBase(XElement DataBaseXml, Stream Xdb) {
-        CombineDataBase(DataBaseXml, Xdb, string.Empty);
+    public static void CombineDataBase(XElement databaseRoot, Stream toCombineStream) {
+        CombineDataBase(databaseRoot, toCombineStream, string.Empty);
     }
 
-    public static void CombineDataBase(XElement DataBaseXml, Stream Xdb, string modPackageName) {
-        XElement MergeXml = XmlUtils.LoadXmlFromStream(Xdb, Encoding.UTF8, true);
-        XElement DataObjects = DataBaseXml.Element("DatabaseObjects");
-        foreach (XElement element in MergeXml.Elements()) {
+    public static void CombineDataBase(XElement databaseRoot, Stream toCombineStream, string modPackageName) {
+        XElement toCombineRoot = XmlUtils.LoadXmlFromStream(toCombineStream, Encoding.UTF8, true);
+        XElement databaseObjects = databaseRoot.Element("DatabaseObjects");
+        foreach (XElement element in toCombineRoot.Elements()) {
             // 为实体添加模组来源信息
             if (!string.IsNullOrEmpty(modPackageName)
                 && element.Name.LocalName == "EntityTemplate") {
                 string guid = element.Attribute("Guid")?.Value;
                 bool isNewEntity = true;
                 if (!string.IsNullOrEmpty(guid)) { // 检查是否为新增实体(在原数据库中不存在)
-                    isNewEntity = !FindElementByGuid(DataObjects, guid, out _);
+                    isNewEntity = !FindElementByGuid(databaseObjects, guid, out _);
                 }
                 if (isNewEntity) { // 只为新增的实体添加ModSource
                     XElement parameterElement = new("Parameter");
@@ -736,59 +782,95 @@ public static class ModsManager {
                 }
             }
             //处理修改
-            if (HasAttribute(element, str => str.Contains("new-"), out XAttribute attribute)) {
-                if (HasAttribute(element, str => str == "Guid", out XAttribute attribute1)) {
-                    if (FindElementByGuid(DataObjects, attribute1.Value, out XElement xElement)) {
-                        string[] px = attribute.Name.ToString().Split(["new-"], StringSplitOptions.RemoveEmptyEntries);
-                        if (px.Length == 1) {
-                            if (ModifiedElement.ContainsKey(attribute1.Value)
-                                && ModifiedElement[attribute1.Value] != attribute.Value) {
-                                collisionsToHandle++;
-                                AllowContinue = false;
-                                string warningString = string.Format(
-                                    LanguageControl.Get(fName, "1"),
-                                    attribute1.Value,
-                                    ModifiedElement[attribute1.Value],
-                                    attribute.Value
-                                );
-                                DialogsManager.ShowDialog(
-                                    null,
-                                    new MessageDialog(
-                                        LanguageControl.Warning,
-                                        warningString + LanguageControl.Get(fName, "2"),
-                                        LanguageControl.Yes,
-                                        LanguageControl.No,
-                                        new Vector2(600, 320),
-                                        vt => {
-                                            if (vt == MessageDialogButton.Button1
-                                                || vt == MessageDialogButton.Button2) {
-                                                collisionsToHandle--;
-                                                if (collisionsToHandle == 0) {
-                                                    AllowContinue = true;
-                                                }
-                                                Log.Warning(warningString);
-                                            }
-                                            if (vt == MessageDialogButton.Button1) {
-                                                xElement.SetAttributeValue(px[0], attribute.Value);
-                                                ModifiedElement[attribute1.Value] = attribute.Value;
-                                                Log.Warning(LanguageControl.Get(fName, "3"));
-                                            }
-                                            else {
-                                                Log.Warning(LanguageControl.Get(fName, "4"));
-                                            }
-                                        }
-                                    )
-                                );
-                            }
-                            else {
-                                xElement.SetAttributeValue(px[0], attribute.Value);
-                                ModifiedElement[attribute1.Value] = attribute.Value;
-                            }
+            if (HasAttribute(element, str => str.StartsWith("new-"), out XAttribute newAttribute)) {
+                XAttribute guidAttribute = element.Attribute("Guid");
+                if (guidAttribute == null) {
+                    continue;
+                }
+                string guid = guidAttribute.Value;
+                if (FindElementByGuid(databaseObjects, guid, out XElement oldElement)) {
+                    string newAttributeName = newAttribute.Name.ToString().Substring(4);
+                    if (newAttributeName == "Value"
+                        && oldElement.Attribute("Name")?.Value == "Class") {
+                        if (ClassSubstitutes.TryGetValue(guid, out List<ClassSubstitute> classSubstitutes)) {
+                            classSubstitutes.Add(new ClassSubstitute (modPackageName, newAttribute.Value));
                         }
+                        else {
+                            ClassSubstitutes.Add(
+                                guid,
+                                [new ClassSubstitute("survivalcraft", oldElement.Attribute("Value")!.Value), new ClassSubstitute(modPackageName, newAttribute.Value)]
+                            );
+                        }
+                    }
+                    else {
+                        oldElement.SetAttributeValue(newAttributeName, newAttribute.Value);
                     }
                 }
             }
-            Modify(DataObjects, element);
+            else {
+                Modify(databaseObjects, element);
+            }
+        }
+    }
+
+    public static void DealWithClassSubstitutes() {
+        if (ClassSubstitutes.Count > 0) {
+            Queue<(string, XElement)> needToSolves = [];
+            foreach ((string guid, List<ClassSubstitute> substitutes) in ClassSubstitutes) {
+                // 如果有 2 个或更多候选项
+                if (substitutes.Count >= 2 && FindElementByGuid(DatabaseManager.DatabaseNode, guid, out XElement element)) {
+                    // 如果手动选择过
+                    if (SelectedClassSubstitutes.TryGetValue(guid, out ClassSubstitute selected)) {
+                        // 如果选择项还能从候选项找到
+                        if (substitutes.Any(x => x == selected)) {
+                            if (OldClassSubstitutes.TryGetValue(guid, out List<ClassSubstitute> oldSubstitutes)) {
+                                // 如果候选项与旧候选项一致，则使用选择项
+                                if (substitutes.Count == oldSubstitutes.Count && oldSubstitutes.SequenceEqual(substitutes)) {
+                                    element.SetAttributeValue("Value", selected.ClassName);
+                                }
+                                // 否则需要手动重选
+                                else {
+                                    SelectedClassSubstitutes.Remove(guid);
+                                    needToSolves.Enqueue((guid, element));
+                                }
+                            }
+                            else {
+                                element.SetAttributeValue("Value", selected.ClassName);
+                            }
+                        }
+                        else {
+                            SelectedClassSubstitutes.Remove(guid);
+                            needToSolves.Enqueue((guid, element));
+                        }
+                    }
+                    // 未手动选择过
+                    // 当只有两个候选项，且不重要时，直接使用第二个（第一个是原版的）
+                    else if (substitutes.Count == 2 && !(ImportantDatabaseClasses?.ContainsKey(guid) ?? false)) {
+                        element.SetAttributeValue("Value", substitutes.Last().ClassName);
+                    }
+                    else {
+                        needToSolves.Enqueue((guid, element));
+                    }
+                }
+                else {
+                    SelectedClassSubstitutes.Remove(guid);
+                }
+            }
+            if (needToSolves.Count > 0) {
+                AllowContinue = false;
+                void Handle() {
+                    if (needToSolves.TryDequeue(out (string, XElement) tuple)) {
+                        DialogsManager.ShowDialog(ScreensManager.RootWidget, new SelectClassSubstituteDialog(tuple.Item1, tuple.Item2, Handle));
+                    }
+                    else {
+                        AllowContinue = true;
+                    }
+                };
+                Handle();
+            }
+        }
+        else {
+            SelectedClassSubstitutes.Clear();
         }
     }
 
@@ -978,93 +1060,4 @@ public static class ModsManager {
         fileStream.Dispose();
         return true;
     }
-#if DEBUG
-    /// <summary>
-    ///     将 byte[] 转成 Stream
-    /// </summary>
-    public static Stream BytesToStream(byte[] bytes) => new MemoryStream(bytes);
-
-    /// <summary>
-    ///     将 Stream 写入文件
-    /// </summary>
-    public static void StreamToFile(Stream stream, string fileName) {
-        // 把 Stream 转换成 byte[]
-        byte[] bytes = new byte[stream.Length];
-        stream.Seek(0, SeekOrigin.Begin);
-        stream.ReadExactly(bytes);
-        // 设置当前流的位置为流的开始
-        // 把 byte[] 写入文件
-        FileStream fs = new(fileName, FileMode.Create);
-        BinaryWriter bw = new(fs);
-        bw.Write(bytes);
-        bw.Close();
-        fs.Close();
-    }
-
-    /// <summary>
-    ///     从文件读取 Stream
-    /// </summary>
-    public static Stream FileToStream(string fileName) {
-        // 打开文件
-        FileStream fileStream = new(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-        // 读取文件的 byte[]
-        byte[] bytes = new byte[fileStream.Length];
-        fileStream.ReadExactly(bytes);
-        fileStream.Close();
-        // 把 byte[] 转换成 Stream
-        Stream stream = new MemoryStream(bytes);
-        return stream;
-    }
-
-    public static void StreamCompress(Stream input, MemoryStream data) {
-        byte[] dat = data.ToArray();
-        using GZipStream stream = new(input, CompressionMode.Compress);
-        stream.Write(dat, 0, dat.Length);
-    }
-
-    public static Stream StreamDecompress(Stream input) {
-        MemoryStream outStream = new();
-        using GZipStream zipStream = new(input, CompressionMode.Decompress);
-        zipStream.CopyTo(outStream);
-        zipStream.Close();
-        outStream.Seek(0, SeekOrigin.Begin);
-        return outStream;
-    }
-
-    public enum SourceType {
-        positions,
-        normals,
-        map,
-        vertices,
-        TEXCOORD,
-        VERTEX,
-        NORMAL
-    }
-
-    public static string ObjectsToStr<T>(T[] arr) {
-        if (arr == null) {
-            return string.Empty;
-        }
-        StringBuilder stringBuilder = new();
-        for (int i = 0; i < arr.Length; i++) {
-            stringBuilder.Append(arr[i] + " ");
-        }
-        string res = stringBuilder.ToString();
-        return res.Substring(0, res.Length - 1);
-    }
-
-    /// <summary>
-    ///     计算三点成面的法向量
-    /// </summary>
-    /// <param name="v1"></param>
-    /// <param name="v2"></param>
-    /// <param name="v3"></param>
-    /// <returns></returns>
-    public static Vector3 Cal_Normal_3D(Vector3 v1, Vector3 v2, Vector3 v3) {
-        float na = (v2.Y - v1.Y) * (v3.Z - v1.Z) - (v2.Z - v1.Z) * (v3.Y - v1.Y);
-        float nb = (v2.Z - v1.Z) * (v3.X - v1.X) - (v2.X - v1.Z) * (v3.Z - v1.Z);
-        float nc = (v2.X - v1.X) * (v3.Y - v1.Y) - (v2.Y - v1.Y) * (v3.X - v1.X);
-        return new Vector3(na, nb, nc);
-    }
-#endif
 }

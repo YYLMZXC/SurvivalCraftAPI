@@ -174,7 +174,6 @@ namespace Game {
             string title = $"Survivalcraft {ModsManager.ShortGameVersion} - API {ModsManager.APIVersionString}";
             Log.AddLogSink(new GameLogSink());
 #if DEBUG
-            Log.AddLogSink(new ConsoleLogSink());
             title = $"[DEBUG]{title}";
 #endif
             Window.UnhandledException += delegate(UnhandledExceptionInfo e) {

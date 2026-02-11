@@ -444,6 +444,79 @@ namespace Game {
             set => CommunityServerManager.Info.FromString(value);
         }
 
+        static string m_databaseClassSubstitutes;
+
+        public static string DatabaseClassSubstitutes {
+            get {
+                if (m_databaseClassSubstitutes == null) {
+                    if (ModsManager.ClassSubstitutes.Count > 0) {
+                        StringBuilder sb = new();
+                        foreach ((string guid, List<ModsManager.ClassSubstitute> substitutes) in ModsManager.ClassSubstitutes) {
+                            if (substitutes.Count == 0) {
+                                continue;
+                            }
+                            sb.Append($"{guid},");
+                            foreach (ModsManager.ClassSubstitute substitute in substitutes) {
+                                sb.Append($"{substitute.PackageName},{substitute.ClassName},");
+                            }
+                            sb.Length--;
+                            sb.Append(";");
+                        }
+                        m_databaseClassSubstitutes = sb.ToString();
+                    }
+                    else {
+                        m_databaseClassSubstitutes = string.Empty;
+                    }
+                }
+                return m_databaseClassSubstitutes;
+            }
+            set {
+                ModsManager.OldClassSubstitutes.Clear();
+                if (string.IsNullOrEmpty(value)) {
+                    return;
+                }
+                string[] array1 = value.Split(';');
+                foreach (string str in array1) {
+                    string[] array2 = str.Split(',');
+                    if (array2.Length < 5) {
+                        continue;
+                    }
+                    string guid = array2[0];
+                    List<ModsManager.ClassSubstitute> substitutes = [];
+                    for (int i = 1; i < array2.Length; i += 2) {
+                        substitutes.Add(new ModsManager.ClassSubstitute(array2[i], array2[i + 1]));
+                    }
+                    ModsManager.OldClassSubstitutes.Add(guid, substitutes);
+                }
+            }
+        }
+
+        public static string DatabaseSelectedClassSubstitutes {
+            get {
+                if (ModsManager.SelectedClassSubstitutes.Count > 0) {
+                    StringBuilder sb = new();
+                    foreach ((string guid, ModsManager.ClassSubstitute substitute) in ModsManager.SelectedClassSubstitutes) {
+                        sb.Append($"{guid},{substitute.PackageName},{substitute.ClassName};");
+                    }
+                    sb.Length--;
+                    return sb.ToString();
+                }
+                return string.Empty;
+            }
+            set {
+                if (string.IsNullOrEmpty(value)) {
+                    return;
+                }
+                string[] array = value.Split(';');
+                foreach (string str in array) {
+                    string[] array2 = str.Split(',');
+                    if (array2.Length == 3) {
+                        ModsManager.SelectedClassSubstitutes.Add(array2[0], new ModsManager.ClassSubstitute(array2[1], array2[2]));
+                    }
+                }
+            }
+        }
+
         static readonly Lock m_saveLock = new();
 
         public static void Initialize() {

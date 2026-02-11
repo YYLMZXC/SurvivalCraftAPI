@@ -414,7 +414,9 @@ namespace Game {
                                 SimulateElectricElement(key);
                             }
                             catch (Exception e) {
+#if DEBUG
                                 Console.WriteLine($"Error in simulating {type.Name}: {e}");
+#endif
                                 throw;
                             }
                             finally {

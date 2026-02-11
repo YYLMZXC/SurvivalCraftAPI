@@ -180,7 +180,10 @@ namespace Game {
                 DisableReason = ModDisableReason.NoModInfo;
                 return;
             }
-            if ((ModsManager.ModListAll.Count >= 2 && (modInfo.PackageName == "survivalcraft" || modInfo.PackageName == "fastdebug")) || modInfo.PackageName.Contains(';') || modInfo.PackageName.Contains('\n')) {
+            if (string.IsNullOrEmpty(modInfo.PackageName)
+                || (ModsManager.ModListAll.Count >= 2 && (modInfo.PackageName == "survivalcraft" || modInfo.PackageName == "fastdebug"))
+                || modInfo.PackageName.Contains(';')
+                || modInfo.PackageName.Contains('\n')) {
                 IsDisabled = true;
                 DisableReason = ModDisableReason.InvalidPackageName;
                 return;
@@ -373,13 +376,15 @@ namespace Game {
         /// <summary>
         ///     检查依赖项
         /// </summary>
-        public virtual void CheckDependencies(List<ModEntity> modEntities) {
+        public virtual void CheckDependencies(List<ModEntity> modEntities = null) {
             if (IsDisabled || modInfo == null) {
                 return;
             }
+            modEntities ??= ModsManager.ModList;
             if (modInfo.DependencyRanges.Count == 0) {
                 IsDependencyChecked = true;
                 modEntities.Add(this);
+                ModsManager.PackageNameToModEntity.TryAdd(modInfo.PackageName, this);
                 return;
             }
             LoadingScreen.Info($"[{modInfo.Name}] Checking dependencies.");
@@ -405,6 +410,7 @@ namespace Game {
             }
             IsDependencyChecked = true;
             modEntities.Add(this);
+            ModsManager.PackageNameToModEntity.TryAdd(modInfo.PackageName, this);
         }
 
         /// <summary>

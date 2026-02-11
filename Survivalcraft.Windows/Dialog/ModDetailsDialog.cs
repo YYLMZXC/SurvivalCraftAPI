@@ -132,11 +132,13 @@ namespace Game {
                                     m_screen.m_needRestart = true;
                                     ModsManager.ModListAll.Remove(m_entity);
                                     ModsManager.ModList.Remove(m_entity);
-                                    if (m_entity.modInfo != null
-                                        && ModsManager.DisabledMods.TryGetValue(m_entity.modInfo.PackageName, out HashSet<string> versions)) {
-                                        versions.Remove(m_entity.modInfo.Version);
-                                        if (versions.Count == 0) {
-                                            ModsManager.DisabledMods.Remove(m_entity.modInfo.PackageName);
+                                    if (m_entity.modInfo != null && !string.IsNullOrEmpty(m_entity.modInfo.PackageName)) {
+                                        ModsManager.PackageNameToModEntity.Remove(m_entity.modInfo.PackageName);
+                                        if (ModsManager.DisabledMods.TryGetValue(m_entity.modInfo.PackageName, out HashSet<string> versions)) {
+                                            versions.Remove(m_entity.modInfo.Version);
+                                            if (versions.Count == 0) {
+                                                ModsManager.DisabledMods.Remove(m_entity.modInfo.PackageName);
+                                            }
                                         }
                                     }
                                     m_screen.m_modsContentList.RemoveItem(m_entity);

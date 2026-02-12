@@ -545,71 +545,49 @@ public static class ModsManager {
     }
 
     public static bool FindElement(XElement xElement, Func<XElement, bool> func, out XElement elementout) {
-        foreach (XElement element in xElement.Elements()) {
-            if (func(element)) {
-                elementout = element;
-                return true;
-            }
-            if (FindElement(element, func, out XElement element1)) {
-                elementout = element1;
-                return true;
-            }
-        }
-        elementout = null;
-        return false;
+        elementout = xElement.Descendants().FirstOrDefault(func);
+        return elementout != null;
     }
 
     public static bool FindElementByGuid(XElement xElement, string guid, out XElement elementout) {
-        foreach (XElement element in xElement.Elements()) {
-            foreach (XAttribute xAttribute in element.Attributes()) {
-                if (xAttribute.Name.ToString() == "Guid"
-                    && xAttribute.Value == guid) {
-                    elementout = element;
-                    return true;
-                }
-            }
-            if (FindElementByGuid(element, guid, out XElement element1)) {
-                elementout = element1;
-                return true;
-            }
-        }
-        elementout = null;
-        return false;
+        elementout = xElement.Descendants().FirstOrDefault(e => e.Attribute("Guid")?.Value == guid);
+        return elementout != null;
     }
 
     public static bool HasAttribute(XElement element, Func<string, bool> func, out XAttribute xAttributeout) {
-        foreach (XAttribute xAttribute in element.Attributes()) {
-            if (func(xAttribute.Name.LocalName)) {
-                xAttributeout = xAttribute;
-                return true;
-            }
-        }
-        xAttributeout = null;
-        return false;
+        xAttributeout = element.Attributes()
+            .FirstOrDefault(a => func(a.Name.LocalName));
+        return xAttributeout != null;
     }
 
-    public static void CombineClo(XElement xElement, Stream cloorcr) {
-        XElement MergeXml = XmlUtils.LoadXmlFromStream(cloorcr, Encoding.UTF8, true);
-        foreach (XElement element in MergeXml.Elements()) {
-            if (HasAttribute(element, name => name.StartsWith("new-"), out XAttribute attribute)) {
-                if (HasAttribute(element, name => name == "Index", out XAttribute xAttribute)) {
-                    if (FindElement(xElement, _ => element.Attribute("Index")?.Value == xAttribute.Value, out XElement element1)) {
-                        string[] px = attribute.Name.ToString().Split(["new-"], StringSplitOptions.RemoveEmptyEntries);
-                        if (px.Length == 1) {
-                            element1.SetAttributeValue(px[0], attribute.Value);
-                        }
-                    }
+    public static void CombineClo(XElement clothesRoot, Stream toCombineStream) {
+        XElement toCombineRoot = XmlUtils.LoadXmlFromStream(toCombineStream, Encoding.UTF8, true);
+        foreach (XElement element in toCombineRoot.Elements()) {
+            string indexValue = element.Attribute("Index")?.Value;
+            if (indexValue == null) {
+                clothesRoot.Add(toCombineRoot);
+                continue;
+            }
+            List<XAttribute> newAttributes = [];
+            foreach (XAttribute attribute in element.Attributes()) {
+                if (attribute.Name.LocalName.StartsWith("new-")) {
+                    newAttributes.Add(attribute);
                 }
             }
-            else if (HasAttribute(element, name => name.StartsWith("r-"), out XAttribute _)) {
-                if (HasAttribute(element, name => name == "Index", out XAttribute xAttribute)) {
-                    if (FindElement(xElement, _ => element.Attribute("Index")?.Value == xAttribute.Value, out XElement element1)) {
-                        element1.Remove();
-                        element.Remove();
-                    }
+            if (newAttributes.Count > 0
+                && FindElement(clothesRoot, e => e.Attribute("Index")?.Value == indexValue, out XElement element1)) {
+                foreach (XAttribute newAttribute in newAttributes) {
+                    element1.SetAttributeValue(newAttribute.Name.LocalName.Substring(4), newAttribute.Value);
                 }
             }
-            xElement.Add(MergeXml);
+            else if (HasAttribute(element, name => name.StartsWith("r-"), out XAttribute _)
+                && FindElement(clothesRoot, e => e.Attribute("Index")?.Value == indexValue, out XElement element2)) {
+                element2.Remove();
+                element.Remove();
+            }
+            else {
+                clothesRoot.Add(toCombineRoot);
+            }
         }
     }
 
@@ -620,14 +598,8 @@ public static class ModsManager {
 
     public static void CombineCrLogic(XElement xElement, XElement needCombine) {
         foreach (XElement element in needCombine.Elements()) {
-            if (HasAttribute(element, name => name == "Result", out XAttribute _)) {
+            if (element.Attribute("Result") != null) {
                 if (HasAttribute(element, name => name.StartsWith("new-"), out XAttribute attribute)) {
-                    string[] px = attribute.Name.ToString().Split(["new-"], StringSplitOptions.RemoveEmptyEntries);
-                    /*string editName = "";
-                    if (px.Length == 1)
-                    {
-                        editName = px[0];
-                    }*/
                     if (FindElement(
                             xElement,
                             ele => { //原始标签
@@ -636,7 +608,7 @@ public static class ModsManager {
                                     if (xAttribute.Name == attribute.Name) {
                                         continue;
                                     }
-                                    if (!HasAttribute(ele, tname => tname == xAttribute.Name, out XAttribute _)) {
+                                    if (ele.Attribute(xAttribute.Name) == null) {
                                         return false;
                                     }
                                 }
@@ -644,10 +616,8 @@ public static class ModsManager {
                             },
                             out XElement element1
                         )) {
-                        if (px.Length == 1) {
-                            element1.SetAttributeValue(px[0], attribute.Value);
-                            element1.SetValue(element.Value);
-                        }
+                        element1.SetAttributeValue(attribute.Name.LocalName.Substring(4), attribute.Value);
+                        element1.SetValue(element.Value);
                     }
                 }
                 else if (HasAttribute(element, name => name.StartsWith("r-"), out XAttribute attribute1)) {
@@ -659,7 +629,7 @@ public static class ModsManager {
                                     if (xAttribute.Name == attribute1.Name) {
                                         continue;
                                     }
-                                    if (!HasAttribute(ele, tname => tname == xAttribute.Name, out XAttribute _)) {
+                                    if (ele.Attribute(xAttribute.Name) == null) {
                                         return false;
                                     }
                                 }
@@ -789,7 +759,7 @@ public static class ModsManager {
                 }
                 string guid = guidAttribute.Value;
                 if (FindElementByGuid(databaseObjects, guid, out XElement oldElement)) {
-                    string newAttributeName = newAttribute.Name.ToString().Substring(4);
+                    string newAttributeName = newAttribute.Name.LocalName.Substring(4);
                     if (newAttributeName == "Value"
                         && oldElement.Attribute("Name")?.Value == "Class") {
                         if (ClassSubstitutes.TryGetValue(guid, out List<ClassSubstitute> classSubstitutes)) {

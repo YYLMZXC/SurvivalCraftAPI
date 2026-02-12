@@ -58,7 +58,7 @@ namespace Game {
 
         public static void LoadData(XElement item) {
             try {
-                if (!ModsManager.HasAttribute(item, name => name == "Result", out XAttribute _)) {
+                if (item.Attribute("Result") != null) {
                     foreach (XElement xElement in item.Elements()) {
                         LoadData(xElement);
                     }

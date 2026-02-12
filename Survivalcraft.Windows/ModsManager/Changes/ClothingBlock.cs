@@ -11,7 +11,7 @@ namespace Game {
 
         public BlockMesh m_innerMesh;
 
-        public int num;
+        public int m_displayIndex;
 
         public BlockMesh m_outerMesh;
 
@@ -49,17 +49,16 @@ namespace Game {
                 if (clothingData == null) {
                     return;
                 }
-                clothingData.DisplayIndex = num;
+                clothingData.DisplayIndex = m_displayIndex++;
                 m_clothingData[ClothIndex] = clothingData;
             }
-            num++;
             foreach (XElement xElement1 in item.Elements()) {
                 LoadClothingData(xElement1);
             }
         }
 
         public override void Initialize() {
-            num = 0;
+            m_displayIndex = 0;
             XElement xElement = null;
             ModsManager.ModListAllDo(modEntity => { modEntity.LoadClo(this, ref xElement); });
             LoadClothingData(xElement);

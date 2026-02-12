@@ -23,11 +23,13 @@ namespace Game {
                 AddChildren(
                     new CanvasWidget() {
                         Size = new Vector2(float.PositiveInfinity, 40f),
-                        Children = { new LabelWidget { Text = $"{substitutes[0].ClassName} ({description})", VerticalAlignment = WidgetAlignment.Center, Ellipsis = true} }
+                        Children = {
+                            new LabelWidget { Text = substitutes[0].ClassName, VerticalAlignment = WidgetAlignment.Center },
+                            new LabelWidget { Text = $"({description})", Color = new Color(192, 192, 192), VerticalAlignment = WidgetAlignment.Center, Ellipsis = true}
+                        }
                     }
                 );
-                ModsManager.ClassSubstitute selected;
-                if (!ModsManager.SelectedClassSubstitutes.TryGetValue(guid, out selected)) {
+                if (!ModsManager.SelectedClassSubstitutes.TryGetValue(guid, out ModsManager.ClassSubstitute selected)) {
                     selected = substitutes[0];
                 }
                 for (int i = 0; i < substitutes.Count; i++) {

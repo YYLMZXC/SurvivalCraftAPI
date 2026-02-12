@@ -9,11 +9,8 @@ namespace Game {
     public class DropboxExternalContentProvider : IExternalContentProvider {
         public class LoginProcessData {
             public bool IsTokenFlow;
-
             public Action Success;
-
             public Action<Exception> Failure;
-
             public CancellableProgress Progress;
 
             public void Succeed(DropboxExternalContentProvider provider) {
@@ -28,23 +25,15 @@ namespace Game {
         }
 
         public const string m_appKey = "1unnzwkb8igx70k";
-
         public const string m_appSecret = "3i5u3j3141php7u";
-
         public const string m_redirectUri = "com.candyrufusgames.survivalcraft2://redirect";
+        public const string fName = "DropboxExternalContentProvider";
 
         public LoginProcessData m_loginProcessData;
 
         public string DisplayName => "Dropbox";
 
-        public string Description {
-            get {
-                if (!IsLoggedIn) {
-                    return "Not logged in";
-                }
-                return "Logged in";
-            }
-        }
+        public string Description => LanguageControl.Get(fName, IsLoggedIn ? "1" : "2");
 
         public bool SupportsListing => true;
 
@@ -69,10 +58,10 @@ namespace Game {
         public void Login(CancellableProgress progress, Action success, Action<Exception> failure) {
             try {
                 if (m_loginProcessData != null) {
-                    throw new InvalidOperationException("Login already in progress.");
+                    throw new InvalidOperationException(LanguageControl.Get(fName, "3"));
                 }
                 if (!WebManager.IsInternetConnectionAvailable()) {
-                    throw new InvalidOperationException("Internet connection is unavailable.");
+                    throw new InvalidOperationException(LanguageControl.Get(fName, "4"));
                 }
                 Logout();
                 progress.Cancelled += delegate {
@@ -210,8 +199,8 @@ namespace Game {
                 m_loginProcessData.IsTokenFlow = true;
                 Dictionary<string, string> dictionary = new() {
                     { "response_type", "token" },
-                    { "client_id", "1unnzwkb8igx70k" },
-                    { "redirect_uri", "com.candyrufusgames.survivalcraft2://redirect" }
+                    { "client_id", m_appKey },
+                    { "redirect_uri", m_redirectUri }
                 };
                 WebBrowserManager.LaunchBrowser($"https://www.dropbox.com/oauth2/authorize?{WebManager.UrlParametersToString(dictionary)}");
             }
@@ -226,7 +215,7 @@ namespace Game {
                 LoginProcessData loginProcessData = m_loginProcessData;
                 m_loginProcessData = null;
                 TextBoxDialog dialog = new(
-                    "Enter Dropbox authorization code",
+                    LanguageControl.Get(fName, "5"),
                     "",
                     256,
                     delegate(string s) {
@@ -236,8 +225,8 @@ namespace Game {
                                     "https://api.dropboxapi.com/oauth2/token",
                                     new Dictionary<string, string> {
                                         { "code", s.Trim() },
-                                        { "client_id", "1unnzwkb8igx70k" },
-                                        { "client_secret", "3i5u3j3141php7u" },
+                                        { "client_id", m_appKey },
+                                        { "client_secret", m_appSecret },
                                         { "grant_type", "authorization_code" }
                                     },
                                     null,
@@ -288,7 +277,7 @@ namespace Game {
                     loginProcessData.Succeed(this);
                     goto end_IL_0038;
                     标签:
-                    throw new Exception("Could not retrieve Dropbox access token.");
+                    throw new Exception(LanguageControl.Get(fName, "6"));
                     end_IL_0038: ;
                 }
                 catch (Exception error) {
@@ -299,7 +288,7 @@ namespace Game {
 
         public void VerifyLoggedIn() {
             if (!IsLoggedIn) {
-                throw new InvalidOperationException("Not logged in to Dropbox in this app.");
+                throw new InvalidOperationException(LanguageControl.Get(fName, "7"));
             }
         }
 
@@ -327,7 +316,7 @@ namespace Game {
             if (jsonElement.TryGetProperty("url", out JsonElement url)) {
                 return $"{url.GetString().Replace("www.dropbox.", "dl.dropbox.").Replace("?dl=0", "")}?dl=1";
             }
-            throw new InvalidOperationException("Share information not found.");
+            throw new InvalidOperationException(LanguageControl.Get(fName, "8"));
         }
 
         public static string NormalizePath(string path) {

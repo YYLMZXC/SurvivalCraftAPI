@@ -6,6 +6,16 @@
     "DisplayName": "本地存储",
     "Description": "无需登录；保存到本地存储"
   },
+  "DropboxExternalContentProvider": {
+    "1": "已登录",
+    "2": "未登录",
+    "3": "登录正在进行。",
+    "4": "网络连接不可用。",
+    "5": "请输入 Dropbox 认证码（authorization code）",
+    "6": "无法获取 Dropbox 访问令牌（access token）。",
+    "7": "尚未在此应用中登录 Dropbox。",
+    "8": "未找到共享信息。"
+  },
   "FurnitureBlock": [
     "将家具组合成交互式家具设计",
     "家具设计种类过多"
@@ -198,6 +208,7 @@
     "18": "导入成功: \"{0}\"",
     "19": "导入失败: \"{0}\"，原因：{1}",
     "20": "完成",
+    "21": "路径：",
     "Directory": "目录",
     "World": "世界",
     "Blocks Texture": "方块材质",

@@ -6,6 +6,16 @@
     "DisplayName": "disk",
     "Description": "No login required; Save to disk"
   },
+  "DropboxExternalContentProvider": {
+    "1": "Logged in",
+    "2": "Not logged in",
+    "3": "Login already in progress.",
+    "4": "Internet connection is unavailable.",
+    "5": "Enter Dropbox authorization code",
+    "6": "Could not retrieve Dropbox access token.",
+    "7": "Not logged in to Dropbox in this app.",
+    "8": "Share information not found."
+  },
   "FurnitureBlock": [
     "Combine furniture into interactive design",
     "Too many different furniture designs"
@@ -198,6 +208,7 @@
     "18": "Import successful: \"{0}\"",
     "19": "Import failed: \"{0}\", reason: {1}",
     "20": "Completed",
+    "21": "Path: ",
     "Directory": "Directory",
     "World": "World",
     "Blocks Texture": "Blocks Texture",

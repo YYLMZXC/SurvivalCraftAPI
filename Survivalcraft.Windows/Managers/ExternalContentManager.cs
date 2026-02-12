@@ -362,10 +362,7 @@ namespace Game {
                                                                     null,
                                                                     new MessageDialog(
                                                                         LanguageControl.Success,
-                                                                        string.Format(
-                                                                            LanguageControl.Get(fName, 15),
-                                                                            DataSizeFormatter.Format(length)
-                                                                        ),
+                                                                        $"{string.Format(LanguageControl.Get(fName, 15), DataSizeFormatter.Format(length))}\n{LanguageControl.Get(fName, "21")}{link}",
                                                                         LanguageControl.Get(fName, "16"),
                                                                         LanguageControl.Get(fName, "17"),
                                                                         button => {
@@ -397,10 +394,7 @@ namespace Game {
                                                                     null,
                                                                     new MessageDialog(
                                                                         LanguageControl.Success,
-                                                                        string.Format(
-                                                                            LanguageControl.Get(fName, 15),
-                                                                            DataSizeFormatter.Format(length)
-                                                                        ),
+                                                                        $"{string.Format(LanguageControl.Get(fName, 15), DataSizeFormatter.Format(length))}\n{LanguageControl.Get(fName, "21")}{link}",
                                                                         LanguageControl.Ok,
                                                                         null,
                                                                         null

@@ -20,12 +20,24 @@ namespace Game {
                 string description = ModsManager.FindElementByGuid(DatabaseManager.DatabaseNode, guid, out XElement element)
                     ? element.Parent?.Attribute("Description")?.Value ?? LanguageControl.Unknown
                     : LanguageControl.Unknown;
+                if (description.StartsWith('[')
+                    && description.EndsWith(']')) {
+                    string[] array = description.Substring(1, description.Length - 2).Split(':');
+                    if (array.Length == 2) {
+                        description = LanguageControl.GetDatabase(array[0], array[1]);
+                    }
+                }
                 AddChildren(
                     new CanvasWidget() {
                         Size = new Vector2(float.PositiveInfinity, 40f),
                         Children = {
-                            new LabelWidget { Text = substitutes[0].ClassName, VerticalAlignment = WidgetAlignment.Center },
-                            new LabelWidget { Text = $"({description})", Color = new Color(192, 192, 192), VerticalAlignment = WidgetAlignment.Center, Ellipsis = true}
+                            new StackPanelWidget() {
+                                VerticalAlignment = WidgetAlignment.Center,
+                                Children = {
+                                    new LabelWidget { Text = substitutes[0].ClassName, VerticalAlignment = WidgetAlignment.Center },
+                                    new LabelWidget { Text = $"({description})", Color = new Color(192, 192, 192), VerticalAlignment = WidgetAlignment.Center, MarginLeft = 10f, Ellipsis = true }
+                                }
+                            }
                         }
                     }
                 );

@@ -49,6 +49,13 @@ namespace Game {
             if (ModsManager.ClassSubstitutes.TryGetValue(guid, out List<ModsManager.ClassSubstitute> substitutes)
                 && substitutes.Count > 0) {
                 string description = element.Parent?.Attribute("Description")?.Value ?? LanguageControl.Unknown;
+                if (description.StartsWith('[')
+                    && description.EndsWith(']')) {
+                    string[] array = description.Substring(1, description.Length - 2).Split(':');
+                    if (array.Length == 2) {
+                        description = LanguageControl.GetDatabase(array[0], array[1]);
+                    }
+                }
                 Children.Find<LabelWidget>("SelectClassSubstituteDialog.Description")?.Text = string.Format(
                     LanguageControl.Get(fName, "2"),
                     substitutes.Count - 1,

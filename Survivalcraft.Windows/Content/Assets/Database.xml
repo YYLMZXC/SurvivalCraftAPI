@@ -179,16 +179,16 @@
             <MemberComponentTemplate Name="BehaviorSelector" Guid="947322bc-5300-40c2-aaa1-5f7ef1ea49f1" InheritanceParent="45cd8302-bb36-4c84-abf0-96fba5c2b9df" />
             <MemberComponentTemplate Name="EatPickableBehavior" Guid="a03e6695-1f6a-47eb-b31d-6995ee2d1541" InheritanceParent="f56c7b36-c306-4fa0-af09-c459780e58e1" />
             <MemberComponentTemplate Name="Pathfinding" Guid="da93b9ad-acfa-4b82-83ac-0eb3bb1dfa11" InheritanceParent="125dc475-9340-4137-b694-e003f740ea2d" />
-            <ParameterSet Name="CreatureEggData" Description="Contains data about creature egg" Guid="300ff557-775f-4c7c-a88a-26655369f00b">
-              <Parameter Name="SwapUV" Description="Whether to swap UV of texture coordinates rotating the mapping by 90 deg" Guid="077ef107-b791-41ab-a7ce-2de48a1778a8" Value="False" Type="bool" />
-              <Parameter Name="TextureSlot" Description="Index of texture slot to use in eggs texture" Guid="0c1cf8b0-f2bd-42ae-8416-89fd6a7218aa" Value="147" Type="int" />
-              <Parameter Name="ShowEgg" Description="Whether egg is available in creative inventory" Guid="10aef59e-3086-4d81-b78f-4a5df6dc0aba" Value="True" Type="bool" />
-              <Parameter Name="Color" Description="Color of egg" Guid="36381956-cd1c-42d3-88ea-7b1267c43207" Value="255,255,255" Type="Color" />
-              <Parameter Name="NutritionalValue" Description="Nutritional value of uncooked egg" Guid="50cf0d56-0771-45aa-8bf8-82517506c632" Value="0" Type="float" />
-              <Parameter Name="ScaleUV" Description="Scale to apply to UV coordinates" Guid="5c8c5a07-a728-495b-b4b2-d137e28c7123" Value="1,1" Type="Vector2" />
-              <Parameter Name="DisplayName" Description="Display name of egg item" Guid="6037deae-8b26-4693-a38e-bd065e0f8acf" Value="[DisplayName:1]" Type="string" />
-              <Parameter Name="Scale" Description="Scale of egg" Guid="a299f23f-3fd0-49a0-9f8a-17a841f7968c" Value="1.75" Type="float" />
-              <Parameter Name="EggTypeIndex" Description="Index of the egg, or -1 if creature has no egg" Guid="b4d906ca-d90c-44e1-98f9-c32ea2991fea" Value="-1" Type="int" />
+            <ParameterSet Name="CreatureEggData" Description="[DescriptionAttribute:1]" Guid="300ff557-775f-4c7c-a88a-26655369f00b">
+              <Parameter Name="SwapUV" Description="[DescriptionAttribute:2]" Guid="077ef107-b791-41ab-a7ce-2de48a1778a8" Value="False" Type="bool" />
+              <Parameter Name="TextureSlot" Description="[DescriptionAttribute:3]" Guid="0c1cf8b0-f2bd-42ae-8416-89fd6a7218aa" Value="147" Type="int" />
+              <Parameter Name="ShowEgg" Description="[DescriptionAttribute:4]" Guid="10aef59e-3086-4d81-b78f-4a5df6dc0aba" Value="True" Type="bool" />
+              <Parameter Name="Color" Description="[DescriptionAttribute:5]" Guid="36381956-cd1c-42d3-88ea-7b1267c43207" Value="255,255,255" Type="Color" />
+              <Parameter Name="NutritionalValue" Description="[DescriptionAttribute:6]" Guid="50cf0d56-0771-45aa-8bf8-82517506c632" Value="0" Type="float" />
+              <Parameter Name="ScaleUV" Description="[DescriptionAttribute:7]" Guid="5c8c5a07-a728-495b-b4b2-d137e28c7123" Value="1,1" Type="Vector2" />
+              <Parameter Name="DisplayName" Description="[DescriptionAttribute:8]" Guid="6037deae-8b26-4693-a38e-bd065e0f8acf" Value="[DisplayName:1]" Type="string" />
+              <Parameter Name="Scale" Description="[DescriptionAttribute:9]" Guid="a299f23f-3fd0-49a0-9f8a-17a841f7968c" Value="1.75" Type="float" />
+              <Parameter Name="EggTypeIndex" Description="[DescriptionAttribute:10]" Guid="b4d906ca-d90c-44e1-98f9-c32ea2991fea" Value="-1" Type="int" />
             </ParameterSet>
           </EntityTemplate>
           <EntityTemplate Name="Bear" Guid="437e6af3-ea9f-4f3c-8b96-d81de6223831" InheritanceParent="e4275171-a39f-413f-8888-4c472868364d">
@@ -3414,7 +3414,7 @@
           <Parameter Name="Class" Guid="4407e30b-89ee-40c7-b1d2-eb100c2b8ac4" Value="Game.SubsystemButtonBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="SignBlockBehavior" Guid="039ea51e-c41d-4c93-99ae-a9b5a491c7aa" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
-          <ParameterSet Name="Texts" Description="Contains sign texts" Guid="bdafca01-cf4e-414d-854e-aaaa8a138d0e" />
+          <ParameterSet Name="Texts" Description="[DescriptionAttribute:11]" Guid="bdafca01-cf4e-414d-854e-aaaa8a138d0e" />
           <Parameter Name="Dependencies" Guid="17fb151b-01dd-9391-a789-85d1db5dbdc3" Value="MovingBlocks" Type="string" />
           <Parameter Name="Class" Guid="e62ca7a9-a354-48ee-a504-e7d112d859b9" Value="Game.SubsystemSignBlockBehavior" Type="string" />
         </SubsystemTemplate>
@@ -3455,14 +3455,14 @@
           <Parameter Name="Class" Guid="3c24a026-0ee6-4aca-b4fe-3a926f6e23f0" Value="Game.SubsystemRakeBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="SaplingBlockBehavior" Guid="3830d91c-64fd-4048-ac76-efe4b0e26315" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
-          <ParameterSet Name="Saplings" Description="Contains saplings data" Guid="6743c56e-9e37-411d-ba9b-ad9bf5631201" />
+          <ParameterSet Name="Saplings" Description="[DescriptionAttribute:12]" Guid="6743c56e-9e37-411d-ba9b-ad9bf5631201" />
           <Parameter Name="Class" Guid="6dfdc7f1-530b-4f6d-a7f3-1691f021533d" Value="Game.SubsystemSaplingBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="CactusBlockBehavior" Guid="3858a400-2708-4e12-bccf-0495889fff79" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
           <Parameter Name="Class" Guid="765c87c0-ea8a-4513-9cbd-5cf89c72e2a9" Value="Game.SubsystemCactusBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="WoodBlockBehavior" Guid="41970dce-2f87-4633-ac0a-1ee6a0d6c49e" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
-          <Parameter Name="LeavesToCheck" Description="List of leaves positions to be checked for decay" Guid="628ddd80-5d43-4944-9286-3117feb6cf91" Value="" Type="string" />
+          <Parameter Name="LeavesToCheck" Description="[DescriptionAttribute:13]" Guid="628ddd80-5d43-4944-9286-3117feb6cf91" Value="" Type="string" />
           <Parameter Name="Class" Guid="814c0311-066e-4a75-8c99-0cc0804ace19" Value="Game.SubsystemWoodBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="TrapdoorBlockBehavior" Guid="441ffae0-b085-474c-b309-db17d5cac6b6" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
@@ -3505,8 +3505,8 @@
           <Parameter Name="Class" Guid="9cc7d810-e61d-426e-9248-8c6f00d354c0" Value="Game.SubsystemGrassTrapBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="FurnitureBlockBehavior" Guid="74a7c18a-eb7d-478a-81b5-9113dc2925fd" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
-          <ParameterSet Name="FurnitureSets" Description="Contains information about furniture sets" Guid="5b8ffc52-a3f7-442f-b840-5119ad591acc" />
-          <ParameterSet Name="FurnitureDesigns" Description="Contains information about furniture designs" Guid="ea42db38-dfae-4a98-9483-81488486d65d" />
+          <ParameterSet Name="FurnitureSets" Description="[DescriptionAttribute:14]" Guid="5b8ffc52-a3f7-442f-b840-5119ad591acc" />
+          <ParameterSet Name="FurnitureDesigns" Description="[DescriptionAttribute:15]" Guid="ea42db38-dfae-4a98-9483-81488486d65d" />
           <Parameter Name="Class" Guid="777e2621-fbdf-4fb1-b883-541aa9de6c54" Value="Game.SubsystemFurnitureBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="IvyBlockBehavior" Guid="7aba3213-a92d-46ca-8665-5fe3036314fe" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
@@ -3582,11 +3582,11 @@
           <Parameter Name="Class" Guid="4ecb005a-64f7-4036-b470-cc163fab65c2" Value="Game.SubsystemWaterBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="MagnetBlockBehavior" Guid="cd2693a0-a604-4e47-8ca4-ef9377ec1f6f" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
-          <Parameter Name="Magnets" Description="List of magnet positions in the world" Guid="292653e2-854a-4805-ace9-e64bd00de984" Value="" Type="string" />
+          <Parameter Name="Magnets" Description="[DescriptionAttribute:16]" Guid="292653e2-854a-4805-ace9-e64bd00de984" Value="" Type="string" />
           <Parameter Name="Class" Guid="7f281996-98af-4e8f-b3b5-7fdda8e62405" Value="Game.SubsystemMagnetBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="ExplosivesBlockBehavior" Guid="ced0bc07-bf58-4116-b4c6-19b1499c6ae7" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
-          <ParameterSet Name="Explosives" Description="Contains active explosives" Guid="7216adbf-816d-4f5f-ba86-31a514547762" />
+          <ParameterSet Name="Explosives" Description="[DescriptionAttribute:17]" Guid="7216adbf-816d-4f5f-ba86-31a514547762" />
           <Parameter Name="Class" Guid="11007544-dd02-4e82-8db4-b393689c8b1a" Value="Game.SubsystemExplosivesBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="InWaterBlockBehavior" Guid="d2791711-8246-4aa7-992e-66dd36a14d42" InheritanceParent="cc7a6ce9-9395-42e3-bd56-c21261e96b59">
@@ -3618,7 +3618,7 @@
           <Parameter Name="Class" Guid="62e088f3-fe03-4352-bc0e-50430714379b" Value="Game.SubsystemDoorBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="CollapsingBlockBehavior" Guid="f47a3ccb-3c3d-443d-90fb-0eac53780343" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
-          <ParameterSet Name="CollapsingBlocks" Description="Contains collapsing blocks data" Guid="7ac99186-cb37-426d-b775-11ea320d5b8a" />
+          <ParameterSet Name="CollapsingBlocks" Description="[DescriptionAttribute:18]" Guid="7ac99186-cb37-426d-b775-11ea320d5b8a" />
           <Parameter Name="Class" Guid="2fd5d0fb-7b5a-44bf-92d3-383b1f1b9032" Value="Game.SubsystemCollapsingBlockBehavior" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="HammerBlockBehavior" Guid="f94892a5-b5b5-49b2-a242-8723d5873f0a" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
@@ -3632,164 +3632,164 @@
         </SubsystemTemplate>
       </Folder>
       <Folder Name="Gameplay" Guid="23dd4cdf-442b-4951-b4b1-1043fe4f444e">
-        <SubsystemTemplate Name="Names" Description="Allows searching of entities by name" Guid="1678591a-ffc1-4138-b2ee-d6729286d356" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Names" Description="[DescriptionAttribute:19]" Guid="1678591a-ffc1-4138-b2ee-d6729286d356" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="6c7bbb07-0e6c-4b08-9200-652985616bc6" Value="Game.SubsystemNames" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Palette" Description="Allows access to colors and names of world palette" Guid="1a7137b3-6528-4aa8-8b64-e3ad329bf7f9" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Palette" Description="[DescriptionAttribute:20]" Guid="1a7137b3-6528-4aa8-8b64-e3ad329bf7f9" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="2cc28e1a-8ee8-4373-b21f-42929bba1c37" Value="Game.SubsystemPalette" Type="string" />
           <Parameter Name="Dependencies" Guid="3efcb2f8-31d0-4818-9772-06492753a27d" Value="GameInfo" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Players" Description="Spawns and respawns players, manages spawn positions" Guid="30b8559d-fc03-42cb-b716-e985aaac96c0" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <ParameterSet Name="Players" Description="Contains players data" Guid="dab7078b-7788-46cb-9022-1a95127e0ad7" />
+        <SubsystemTemplate Name="Players" Description="[DescriptionAttribute:21]" Guid="30b8559d-fc03-42cb-b716-e985aaac96c0" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <ParameterSet Name="Players" Description="[DescriptionAttribute:22]" Guid="dab7078b-7788-46cb-9022-1a95127e0ad7" />
           <Parameter Name="Class" Guid="4a38c418-c0da-43e2-bef1-a599caa6bed6" Value="Game.SubsystemPlayers" Type="string" />
-          <Parameter Name="NextPlayerIndex" Description="Next player index to use when adding a new player" Guid="bf962f77-766c-4d0a-b153-9eb1535606d5" Value="1" Type="int" />
-          <Parameter Name="GlobalSpawnPosition" Description="Global spawn position for all players, or 0,0,0 if not set yet" Guid="f220b69c-8627-41b4-b251-24c8ef83c5f4" Value="0,0,0" Type="Vector3" />
+          <Parameter Name="NextPlayerIndex" Description="[DescriptionAttribute:23]" Guid="bf962f77-766c-4d0a-b153-9eb1535606d5" Value="1" Type="int" />
+          <Parameter Name="GlobalSpawnPosition" Description="[DescriptionAttribute:24]" Guid="f220b69c-8627-41b4-b251-24c8ef83c5f4" Value="0,0,0" Type="Vector3" />
           <Parameter Name="Dependencies" Guid="fb87c7e2-8011-4272-bfa3-b464a0a23d14" Value="GameInfo, Terrain" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="CellChangeQueue" Description="Queues cell updates and applies them periodically to avoid continuous chunk updates" Guid="36751293-aade-4618-9412-762e1de60fe2" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="CellChangeQueue" Description="[DescriptionAttribute:25]" Guid="36751293-aade-4618-9412-762e1de60fe2" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="52623009-18a5-4fa4-9297-48a2600d07a1" Value="Game.SubsystemCellChangeQueue" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Pathfinding" Description="Finds paths through terrain" Guid="36854096-5b71-4530-a68d-a8f8ae5422af" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Pathfinding" Description="[DescriptionAttribute:26]" Guid="36854096-5b71-4530-a68d-a8f8ae5422af" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="897c7368-a123-483c-bb62-88743d3384d9" Value="Game.SubsystemPathfinding" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Pickables" Description="Manages pickables (items created when a block is harvested)" Guid="4eeab2d1-c84c-4fa5-a784-5706f5626bf2" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <ParameterSet Name="Pickables" Description="Contains pickables, each one in a separate parameter set" Guid="27fcf1b1-0153-4f93-8379-37c59dcfab12" />
+        <SubsystemTemplate Name="Pickables" Description="[DescriptionAttribute:27]" Guid="4eeab2d1-c84c-4fa5-a784-5706f5626bf2" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <ParameterSet Name="Pickables" Description="[DescriptionAttribute:28]" Guid="27fcf1b1-0153-4f93-8379-37c59dcfab12" />
           <Parameter Name="Class" Guid="32d392de-69c1-4d04-9e0b-5c7463201892" Value="Game.SubsystemPickables" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="ItemsScanner" Description="Periodically scans all items in the entire world and fires an event with the list" Guid="5311584e-80e1-45f1-ab41-d204714643cb" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="ItemsScanner" Description="[DescriptionAttribute:29]" Guid="5311584e-80e1-45f1-ab41-d204714643cb" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="0306bc40-bcb4-4067-8dfb-8dc907b766ed" Value="Game.SubsystemItemsScanner" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Spawn" Description="Automatically spawns and despawns entities around view position" Guid="6bae095b-8129-446e-8a8a-9e2184b442e0" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <ParameterSet Name="Chunks" Description="Contains data of entities which are despawned" Guid="909c09de-1976-4513-94bb-ce481d1128f4" />
+        <SubsystemTemplate Name="Spawn" Description="[DescriptionAttribute:30]" Guid="6bae095b-8129-446e-8a8a-9e2184b442e0" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <ParameterSet Name="Chunks" Description="[DescriptionAttribute:31]" Guid="909c09de-1976-4513-94bb-ce481d1128f4" />
           <Parameter Name="Class" Guid="09091863-1852-4c05-ade0-d57fe04289e3" Value="Game.SubsystemSpawn" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Weather" Description="Manages rain and snow" Guid="7101ee51-9ab5-43cf-93ca-fca178d719cc" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <Parameter Name="LightningIntensity" Description="Lightning intensity of current weather, 0 to 1" Guid="22035e67-3e26-4e2c-aa97-39fde222ab16" Value="0" Type="float" />
-          <Parameter Name="WeatherStartTime" Description="Time when weather will end" Guid="74e5495f-682d-4cbf-9303-445f08b76aa6" Value="0" Type="double" />
-          <Parameter Name="WeatherEndTime" Description="Time when weather started or will start" Guid="af82c1dd-09b6-4aed-abfa-57eb773de683" Value="0" Type="double" />
+        <SubsystemTemplate Name="Weather" Description="[DescriptionAttribute:32]" Guid="7101ee51-9ab5-43cf-93ca-fca178d719cc" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <Parameter Name="LightningIntensity" Description="[DescriptionAttribute:33]" Guid="22035e67-3e26-4e2c-aa97-39fde222ab16" Value="0" Type="float" />
+          <Parameter Name="WeatherStartTime" Description="[DescriptionAttribute:34]" Guid="74e5495f-682d-4cbf-9303-445f08b76aa6" Value="0" Type="double" />
+          <Parameter Name="WeatherEndTime" Description="[DescriptionAttribute:35]" Guid="af82c1dd-09b6-4aed-abfa-57eb773de683" Value="0" Type="double" />
           <Parameter Name="Class" Guid="b4f7e5b0-df22-47ea-a1eb-df191df54f2e" Value="Game.SubsystemWeather" Type="string" />
-          <Parameter Name="FogStartTime" Description="Time when fog will end" Guid="bbf02b89-dfe3-4c93-8058-05fa040e0ee9" Value="0" Type="double" />
-          <Parameter Name="FogEndTime" Description="Time when fog started or will start" Guid="d23c9d31-e2d6-44a2-828f-23e1cb85df7e" Value="0" Type="double" />
+          <Parameter Name="FogStartTime" Description="[DescriptionAttribute:36]" Guid="bbf02b89-dfe3-4c93-8058-05fa040e0ee9" Value="0" Type="double" />
+          <Parameter Name="FogEndTime" Description="[DescriptionAttribute:37]" Guid="d23c9d31-e2d6-44a2-828f-23e1cb85df7e" Value="0" Type="double" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Time" Description="Manages non-persistent game time" Guid="73bbc39a-6cf8-470b-b008-fb9aef611caa" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Time" Description="[DescriptionAttribute:38]" Guid="73bbc39a-6cf8-470b-b008-fb9aef611caa" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="54a4f6d5-98dd-4dc3-bf6d-04dfd972c6b7" Value="Game.SubsystemTime" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Update" Description="Calls Update() on IUpdateables" Guid="743dceeb-03d9-4d12-9c0a-3e9774a6afe6" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Update" Description="[DescriptionAttribute:39]" Guid="743dceeb-03d9-4d12-9c0a-3e9774a6afe6" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="16496c63-ab19-4dd4-91bd-7675ef472df5" Value="Game.SubsystemUpdate" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Noise" Description="Manages noise used by AI" Guid="93d8dc8f-a3cb-4825-a66a-d5ad3b9195dc" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Noise" Description="[DescriptionAttribute:40]" Guid="93d8dc8f-a3cb-4825-a66a-d5ad3b9195dc" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="3bc60bf2-7a1f-42a7-8b7d-a74e1e6b0283" Value="Game.SubsystemNoise" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Terrain" Description="Handles terrain rendering, updating, serialization and collisions" Guid="99ba8fcf-22cd-4adc-97ab-cb7b326ec037" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Terrain" Description="[DescriptionAttribute:41]" Guid="99ba8fcf-22cd-4adc-97ab-cb7b326ec037" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Dependencies" Guid="3ed80da6-fba1-4840-b0e8-a8a7aa24e01e" Value="GameInfo" Type="string" />
           <Parameter Name="Class" Guid="e2636c38-f179-4aa1-b087-ed6920d66e8e" Value="Game.SubsystemTerrain" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="BlocksScanner" Description="Periodically scans all blocks in the terrain and invokes Poll function" Guid="a0a74e2a-ff7c-42a3-a393-9ab0d1c0a398" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <Parameter Name="PollPass" Description="Index of terrain polling pass" Guid="3abe5979-b090-4a35-92a4-048885ab739f" Value="0" Type="int" />
+        <SubsystemTemplate Name="BlocksScanner" Description="[DescriptionAttribute:42]" Guid="a0a74e2a-ff7c-42a3-a393-9ab0d1c0a398" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <Parameter Name="PollPass" Description="[DescriptionAttribute:43]" Guid="3abe5979-b090-4a35-92a4-048885ab739f" Value="0" Type="int" />
           <Parameter Name="Class" Guid="5864dcdb-4a59-419c-b33c-52f0de193aef" Value="Game.SubsystemBlocksScanner" Type="string" />
-          <Parameter Name="PollPoint" Description="Current chunk polling point" Guid="73a4f2c0-5fea-421d-a1fa-880e5a6f9f89" Value="0,0" Type="Point2" />
+          <Parameter Name="PollPoint" Description="[DescriptionAttribute:44]" Guid="73a4f2c0-5fea-421d-a1fa-880e5a6f9f89" Value="0,0" Type="Point2" />
           <Parameter Name="Dependencies" Guid="8e2147e2-6a84-45fe-a080-a957776e7c65" Value="BlockBehaviors" Type="string" />
-          <Parameter Name="PollChunkCoordinates" Description="Current polling chunk coordinates" Guid="91ce1768-41fa-4c15-8814-0648f3451f21" Value="0,0" Type="Point2" />
+          <Parameter Name="PollChunkCoordinates" Description="[DescriptionAttribute:45]" Guid="91ce1768-41fa-4c15-8814-0648f3451f21" Value="0,0" Type="Point2" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="TimeOfDay" Description="Manages time of day" Guid="a41d6893-bc1b-4e4e-b097-c3aebf676d6f" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="TimeOfDay" Description="[DescriptionAttribute:46]" Guid="a41d6893-bc1b-4e4e-b097-c3aebf676d6f" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="1e884b27-fc1d-486a-bd0e-518e554b9734" Value="Game.SubsystemTimeOfDay" Type="string" />
-          <Parameter Name="TimeOfDayOffset" Description="Time of day offset, in days" Guid="291dad2b-078a-4510-aba8-e53e64439f80" Value="0" Type="double" />
+          <Parameter Name="TimeOfDayOffset" Description="[DescriptionAttribute:47]" Guid="291dad2b-078a-4510-aba8-e53e64439f80" Value="0" Type="double" />
           <Parameter Name="Dependencies" Guid="62804e73-f886-4681-923c-ed4bb2fba0eb" Value="Seasons" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="GameInfo" Description="Holds game information, such as total elapsed time, seed and world name" Guid="af753bf7-a952-4222-8507-4289c3b7670b" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <Parameter Name="TerrainGenerationMode" Description="Game mode of the world" Guid="1f272122-3918-49ab-96ed-6cb7df1588df" Value="Continent" Type="Game.TerrainGenerationMode" />
-          <Parameter Name="EnvironmentBehaviorMode" Description="Environment behavior mode of the world" Guid="3369f738-e249-4159-ac72-fd1bcf3b81ce" Value="Living" Type="Game.EnvironmentBehaviorMode" />
-          <Parameter Name="TimeOfDayMode" Description="Time of day mode of the world" Guid="4f952456-98f7-4a81-9848-2d39f37081dd" Value="Changing" Type="Game.TimeOfDayMode" />
+        <SubsystemTemplate Name="GameInfo" Description="[DescriptionAttribute:48]" Guid="af753bf7-a952-4222-8507-4289c3b7670b" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <Parameter Name="TerrainGenerationMode" Description="[DescriptionAttribute:49]" Guid="1f272122-3918-49ab-96ed-6cb7df1588df" Value="Continent" Type="Game.TerrainGenerationMode" />
+          <Parameter Name="EnvironmentBehaviorMode" Description="[DescriptionAttribute:50]" Guid="3369f738-e249-4159-ac72-fd1bcf3b81ce" Value="Living" Type="Game.EnvironmentBehaviorMode" />
+          <Parameter Name="TimeOfDayMode" Description="[DescriptionAttribute:51]" Guid="4f952456-98f7-4a81-9848-2d39f37081dd" Value="Changing" Type="Game.TimeOfDayMode" />
           <Parameter Name="Class" Guid="5d358a77-f64b-4972-81ee-6baa2d348109" Value="Game.SubsystemGameInfo" Type="string" />
-          <Parameter Name="TerrainLevel" Description="Terrain generation level, in blocks" Guid="8973da65-a5ad-4703-8de7-d5395ac00201" Value="64" Type="int" />
-          <Parameter Name="TotalElapsedGameTime" Description="Total time spent in game, in seconds" Guid="b037487c-c521-4da4-b4a6-95c4dbd34e2c" Value="0" Type="double" />
-          <Parameter Name="WorldSeed" Description="Seed of the world" Guid="bd44aafa-752a-411d-baa4-9dbf61bd2e19" Value="0" Type="int" />
-          <Parameter Name="GameMode" Description="Game mode of the world" Guid="c39bc31c-7a39-4b76-8cf4-eb7cd412cf03" Value="Challenging" Type="Game.GameMode" />
-          <Parameter Name="AreWeatherEffectsEnabled" Description="Whether weather effects are enabled" Guid="d00250b7-d95a-4a2d-9cc2-bb4a4321b910" Value="True" Type="bool" />
-          <Parameter Name="WorldName" Description="Name of the world" Guid="d6c88d24-060f-45bf-af7b-f00c6466cec0" Value="" Type="string" />
-          <Parameter Name="WorldSeedString" Description="Seed string of the world" Guid="d8fc12d6-29e4-4583-841f-d3d423c469c4" Value="" Type="string" />
+          <Parameter Name="TerrainLevel" Description="[DescriptionAttribute:52]" Guid="8973da65-a5ad-4703-8de7-d5395ac00201" Value="64" Type="int" />
+          <Parameter Name="TotalElapsedGameTime" Description="[DescriptionAttribute:53]" Guid="b037487c-c521-4da4-b4a6-95c4dbd34e2c" Value="0" Type="double" />
+          <Parameter Name="WorldSeed" Description="[DescriptionAttribute:54]" Guid="bd44aafa-752a-411d-baa4-9dbf61bd2e19" Value="0" Type="int" />
+          <Parameter Name="GameMode" Description="[DescriptionAttribute:55]" Guid="c39bc31c-7a39-4b76-8cf4-eb7cd412cf03" Value="Challenging" Type="Game.GameMode" />
+          <Parameter Name="AreWeatherEffectsEnabled" Description="[DescriptionAttribute:56]" Guid="d00250b7-d95a-4a2d-9cc2-bb4a4321b910" Value="True" Type="bool" />
+          <Parameter Name="WorldName" Description="[DescriptionAttribute:57]" Guid="d6c88d24-060f-45bf-af7b-f00c6466cec0" Value="" Type="string" />
+          <Parameter Name="WorldSeedString" Description="[DescriptionAttribute:58]" Guid="d8fc12d6-29e4-4583-841f-d3d423c469c4" Value="" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="CreatureSpawn" Description="Spawns creatures around view position" Guid="b3f8c7e3-ba45-4ba0-8bc6-ffb20e82b57e" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="CreatureSpawn" Description="[DescriptionAttribute:59]" Guid="b3f8c7e3-ba45-4ba0-8bc6-ffb20e82b57e" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="d3764c71-e1e7-48b1-b12a-17428daad169" Value="Game.SubsystemCreatureSpawn" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="MovingBlocks" Description="Handles moving blocks" Guid="bb01254d-4991-4135-96f2-50ad9262a28e" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="MovingBlocks" Description="[DescriptionAttribute:60]" Guid="bb01254d-4991-4135-96f2-50ad9262a28e" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <ParameterSet Name="MovingBlockSets" Guid="f1b82bdb-c80f-4985-8ad4-e3ee1805bff3" />
           <Parameter Name="Class" Guid="1739995d-79de-4d04-9763-432c22b3f416" Value="Game.SubsystemMovingBlocks" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Bodies" Description="Manages physical bodies and allows spatial queries and raycasts" Guid="c4d99daf-a6ef-4290-8f20-2908e4e6c35e" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Bodies" Description="[DescriptionAttribute:61]" Guid="c4d99daf-a6ef-4290-8f20-2908e4e6c35e" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="ee3b5830-8ad9-4512-9045-e145b1d859bd" Value="Game.SubsystemBodies" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Sky" Description="Renders sky and celestial objects" Guid="c5722262-a4f6-42de-afe7-ce272092f2d8" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Sky" Description="[DescriptionAttribute:62]" Guid="c5722262-a4f6-42de-afe7-ce272092f2d8" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Dependencies" Guid="1ec91ae3-5784-483f-b3d8-7ba3a61fca11" Value="TimeOfDay, Seasons" Type="string" />
           <Parameter Name="Class" Guid="3c28d383-dc6e-4d55-8084-5d914abd4d79" Value="Game.SubsystemSky" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="PlayerStats" Description="Manages player statistics" Guid="c829cb1d-879e-47c4-8597-1507cdac7629" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="PlayerStats" Description="[DescriptionAttribute:63]" Guid="c829cb1d-879e-47c4-8597-1507cdac7629" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <ParameterSet Name="Stats" Guid="a5ca06a7-6644-4f5f-9cb6-ec9d89a947e1" />
           <Parameter Name="Class" Guid="93ecf94c-074c-4598-81eb-4dd9b0d1b2f1" Value="Game.SubsystemPlayerStats" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="BlockEntities" Description="Manages entities associated with terrain blocks" Guid="ccd8d745-1802-4dc7-80ed-8e01712fe611" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="BlockEntities" Description="[DescriptionAttribute:64]" Guid="ccd8d745-1802-4dc7-80ed-8e01712fe611" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="eee3dcbd-2520-4868-ab8b-895491f05bdc" Value="Game.SubsystemBlockEntities" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Projectiles" Description="Manages projectiles" Guid="ce0db76f-3990-43be-b3ec-3a71bbe1d4e1" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <ParameterSet Name="Projectiles" Description="Contains projectiles, each one in a separate parameter set" Guid="d27d4103-cefd-4361-872d-d7760162f50d" />
+        <SubsystemTemplate Name="Projectiles" Description="[DescriptionAttribute:65]" Guid="ce0db76f-3990-43be-b3ec-3a71bbe1d4e1" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <ParameterSet Name="Projectiles" Description="[DescriptionAttribute:66]" Guid="d27d4103-cefd-4361-872d-d7760162f50d" />
           <Parameter Name="Class" Guid="dafb8e14-11b9-44b7-a208-424b770aeaa9" Value="Game.SubsystemProjectiles" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Electricity" Description="Manages electric elements and wires" Guid="dbcd53c2-b8b7-44a4-ad54-5e4859ca8c27" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <Parameter Name="VoltagesByCell" Description="A list of electric elements voltages, by cell. Semicolon separated." Guid="3134e9c7-aa53-4598-b631-21c182d2a832" Value="" Type="string" />
+        <SubsystemTemplate Name="Electricity" Description="[DescriptionAttribute:67]" Guid="dbcd53c2-b8b7-44a4-ad54-5e4859ca8c27" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <Parameter Name="VoltagesByCell" Description="[DescriptionAttribute:68]" Guid="3134e9c7-aa53-4598-b631-21c182d2a832" Value="" Type="string" />
           <Parameter Name="Class" Guid="8b87d997-935b-45ee-8997-0c59c141c83e" Value="Game.SubsystemElectricity" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Seasons" Description="Manages seasons" Guid="ea787ac6-0207-4bbf-af0f-3e81a30d58c1" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Seasons" Description="[DescriptionAttribute:69]" Guid="ea787ac6-0207-4bbf-af0f-3e81a30d58c1" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="bda673cd-8ab3-45a6-90b0-b540a0f5c4d5" Value="Game.SubsystemSeasons" Type="string" />
           <Parameter Name="Dependencies" Guid="ed544d03-1b4d-437a-9ac9-e5a734f51cdb" Value="GameInfo" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="BlockBehaviors" Description="Plays audio and manages audio congestion" Guid="ebfc88a1-2c29-441a-8a08-72f44daf0604" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="BlockBehaviors" Description="[DescriptionAttribute:70]" Guid="ebfc88a1-2c29-441a-8a08-72f44daf0604" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="4b656a0c-515b-4e6e-91ec-e3d07c2351f9" Value="Game.SubsystemBlockBehaviors" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Explosions" Description="Plays audio and manages audio congestion" Guid="f2149216-75c1-4a5d-b385-0038d60ba9fe" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Explosions" Description="[DescriptionAttribute:71]" Guid="f2149216-75c1-4a5d-b385-0038d60ba9fe" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="96e79f99-a082-4190-9ab6-835dc49ebbdd" Value="Game.SubsystemExplosions" Type="string" />
         </SubsystemTemplate>
       </Folder>
       <Folder Name="Rendering" Guid="739164ab-9212-4610-aa8e-133159750b89">
-        <SubsystemTemplate Name="AnimatedTextures" Description="Renders animated textures" Guid="23271fad-714e-49b7-a01d-9301a9e4588b" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="AnimatedTextures" Description="[DescriptionAttribute:72]" Guid="23271fad-714e-49b7-a01d-9301a9e4588b" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="ee70e68e-4884-45f7-b8b5-a3a46756e195" Value="Game.SubsystemAnimatedTextures" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Glow" Description="Renders shadows of objects" Guid="2871b57d-58c2-4c7d-80fd-ddce2b50a03b" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Glow" Description="[DescriptionAttribute:73]" Guid="2871b57d-58c2-4c7d-80fd-ddce2b50a03b" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="3009b6f8-7012-4a04-89cf-6b43ced8ecf7" Value="Game.SubsystemGlow" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="GameWidgets" Description="Manages GameViewWidget and cameras" Guid="2e35e78b-680f-4eba-b8a4-fe7c186ae969" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="GameWidgets" Description="[DescriptionAttribute:74]" Guid="2e35e78b-680f-4eba-b8a4-fe7c186ae969" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="6bf14dc6-32e7-4e8c-b3c4-438e0eee13ad" Value="Game.SubsystemGameWidgets" Type="string" />
           <Parameter Name="Dependencies" Guid="a9c5f123-1ed0-4728-988b-c6327089a13c" Value="Players" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="ModelsRenderer" Description="Renders all ComponentModels in project" Guid="500c38fb-fb7f-4074-9cc7-9a4a0a79ef09" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="ModelsRenderer" Description="[DescriptionAttribute:75]" Guid="500c38fb-fb7f-4074-9cc7-9a4a0a79ef09" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="83c48cb5-353c-4e6b-876f-f5f41f9afe50" Value="Game.SubsystemModelsRenderer" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Postprocessor" Description="Applies postprocessing effects" Guid="7da47c66-2c8d-4b54-90ac-c270b42c333f" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <Parameter Name="Postprocessor" Description="Name of postprocessor to use, or empty string if none" Guid="e18c7827-d10f-440b-b1ea-8db9ade5ec4b" Value="" Type="string" />
+        <SubsystemTemplate Name="Postprocessor" Description="[DescriptionAttribute:76]" Guid="7da47c66-2c8d-4b54-90ac-c270b42c333f" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <Parameter Name="Postprocessor" Description="[DescriptionAttribute:77]" Guid="e18c7827-d10f-440b-b1ea-8db9ade5ec4b" Value="" Type="string" />
           <Parameter Name="Class" Guid="ede66f8b-995b-4158-b20d-17c7b4010f2b" Value="Game.SubsystemPostprocessor" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="BlocksTexture" Description="Manages blocks texture" Guid="959b7b8c-35b6-47c7-ab04-7bc6469cddad" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="BlocksTexture" Description="[DescriptionAttribute:78]" Guid="959b7b8c-35b6-47c7-ab04-7bc6469cddad" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Dependencies" Guid="69148618-1aca-4f9d-8639-d960139a7f2f" Value="GameInfo" Type="string" />
           <Parameter Name="Class" Guid="cabc985a-92c8-4674-bf68-6793969a23d0" Value="Game.SubsystemBlocksTexture" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Drawing" Description="Calls Draw() on IDrawables, stores view position, orientation and projection parameters" Guid="9d9f5cfd-17e8-461b-91aa-78bf6fe0cfde" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Drawing" Description="[DescriptionAttribute:79]" Guid="9d9f5cfd-17e8-461b-91aa-78bf6fe0cfde" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="5e2f0374-15f7-48bf-926b-a59c3932df4c" Value="Game.SubsystemDrawing" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Particles" Description="Creates, draws and updates particle systems" Guid="f3929cef-b001-4354-8dbb-8d293ac81c8f" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Particles" Description="[DescriptionAttribute:80]" Guid="f3929cef-b001-4354-8dbb-8d293ac81c8f" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="43248114-53fc-4c9f-be35-ef145940c06c" Value="Game.SubsystemParticles" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="Shadows" Description="Renders shadows of objects" Guid="f9bc658e-d0cc-4b74-8a20-b8f1c244de44" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Shadows" Description="[DescriptionAttribute:81]" Guid="f9bc658e-d0cc-4b74-8a20-b8f1c244de44" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="ab1b3c22-b3b7-48a2-8a2a-90ee4086793b" Value="Game.SubsystemShadows" Type="string" />
         </SubsystemTemplate>
       </Folder>
       <Folder Name="Audio" Guid="a7796e6d-2af2-4fb5-ae6c-314dc43a91ff">
-        <SubsystemTemplate Name="Audio" Description="Plays audio and manages audio congestion" Guid="1a7dc615-f95f-46b1-916e-4a05d502527d" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="Audio" Description="[DescriptionAttribute:82]" Guid="1a7dc615-f95f-46b1-916e-4a05d502527d" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="1d287846-45b2-4aa3-9c02-ee519a9310ed" Value="Game.SubsystemAudio" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="AmbientSounds" Description="Plays ambient audio" Guid="45d23322-efe4-4c7a-8e89-05d270ecf5ba" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+        <SubsystemTemplate Name="AmbientSounds" Description="[DescriptionAttribute:83]" Guid="45d23322-efe4-4c7a-8e89-05d270ecf5ba" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
           <Parameter Name="Class" Guid="c579d8b3-ccef-4309-9e1f-27e039e8f1aa" Value="Game.SubsystemAmbientSounds" Type="string" />
         </SubsystemTemplate>
-        <SubsystemTemplate Name="SoundMaterials" Description="Plays sounds based on material" Guid="5f06f071-e061-4554-a0ee-851c7cfb84dd" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-          <ParameterSet Name="FootstepSounds" Description="Sound folders to play when creature is walking on different surface types" Guid="4215c3ba-ec1c-469d-9c46-43d12da35b42">
+        <SubsystemTemplate Name="SoundMaterials" Description="[DescriptionAttribute:84]" Guid="5f06f071-e061-4554-a0ee-851c7cfb84dd" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <ParameterSet Name="FootstepSounds" Description="[DescriptionAttribute:85]" Guid="4215c3ba-ec1c-469d-9c46-43d12da35b42">
             <Parameter Name="MetalLadder" Guid="10ad6326-5b2f-4e4f-80e7-22ef914c992a" Value="Audio/Footsteps/MetalLadder" Type="string" />
             <Parameter Name="WoodenLadder" Guid="58b0507d-f6f4-420f-a8fb-60ec0723bdd4" Value="Audio/Footsteps/WoodenLadder" Type="string" />
             <Parameter Name="Soft" Guid="6c26e558-e21d-4d4a-9e8e-ee23d0d4dcb1" Value="Audio/Footsteps/Soft" Type="string" />
@@ -3822,8 +3822,8 @@
       </Folder>
       <Folder Name="Abstract" Guid="e6fcac21-922d-4234-97c0-fe6feb5a0697">
         <SubsystemTemplate Name="EditableItemBlockBehavior" Guid="aea46453-65b5-463a-9e0b-45f80bc41285" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745">
-          <ParameterSet Name="Items" Description="Contains memory banks associated with items" Guid="b04ad8b3-485d-445c-b02c-ca516d48241f" />
-          <ParameterSet Name="Blocks" Description="Contains memory banks associated with blocks" Guid="b1936acd-e9cf-42ec-ba48-2640daf1db47" />
+          <ParameterSet Name="Items" Description="[DescriptionAttribute:86]" Guid="b04ad8b3-485d-445c-b02c-ca516d48241f" />
+          <ParameterSet Name="Blocks" Description="[DescriptionAttribute:87]" Guid="b1936acd-e9cf-42ec-ba48-2640daf1db47" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="FluidBlockBehavior" Guid="f84d81fb-ee41-4908-b935-abce190ed017" InheritanceParent="fefb9590-4972-4893-b02a-76063611b745" />
         <SubsystemTemplate Name="BlockBehavior" Guid="fefb9590-4972-4893-b02a-76063611b745" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb" />
@@ -3831,485 +3831,485 @@
     </Folder>
     <Folder Name="Components" Guid="766da18a-636a-4a88-803c-4462aed106f3">
       <Folder Name="AI" Guid="33dfd132-3c41-4dfa-a385-af3ba34ff86b">
-        <ComponentTemplate Name="SteedBehavior" Description="Behavior that makes a creature obey rider's orders" Guid="00cb9da1-b959-4cbf-bfff-ea28fa8c37c8" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="SteedBehavior" Description="[DescriptionAttribute:88]" Guid="00cb9da1-b959-4cbf-bfff-ea28fa8c37c8" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="77116651-9103-457c-9727-ed71b742b6c4" Value="Game.ComponentSteedBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="DumpRiderBehavior" Description="Behavior that dumps an unwanted rider" Guid="0ceada0a-8d0d-4442-a251-021beb0c9608" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="DumpRiderBehavior" Description="[DescriptionAttribute:89]" Guid="0ceada0a-8d0d-4442-a251-021beb0c9608" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="bc7dacc6-607f-4213-a7d0-2335894d50ed" Value="Game.ComponentDumpRiderBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="CattleDriveBehavior" Description="Behavior that makes a creature run along with other animals in response to noise" Guid="106abfad-57fb-46e2-adb1-7d16c8182b62" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="CattleDriveBehavior" Description="[DescriptionAttribute:90]" Guid="106abfad-57fb-46e2-adb1-7d16c8182b62" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="5f7e85fb-1311-4391-a373-f74084382a60" Value="Game.ComponentCattleDriveBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FlyAroundBehavior" Description="Behavior that flies a bird around in circles" Guid="10711049-8dde-4762-bb48-e5ff91958884" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="FlyAroundBehavior" Description="[DescriptionAttribute:91]" Guid="10711049-8dde-4762-bb48-e5ff91958884" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="cfbae175-d5f2-40f6-9dbd-b034904ac94a" Value="Game.ComponentFlyAroundBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Pathfinding" Description="Pathfinds to a destination and uses Pilot to reach it" Guid="125dc475-9340-4137-b694-e003f740ea2d" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Pathfinding" Description="[DescriptionAttribute:92]" Guid="125dc475-9340-4137-b694-e003f740ea2d" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="228e5473-8ca6-483f-9825-2d4fa0d17856" Value="Game.ComponentPathfinding" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="SwimAwayBehavior" Description="Behavior that makes a fish swim away from attacker or danger" Guid="2e0632aa-8235-4adc-80fa-37d497ca8449" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="SwimAwayBehavior" Description="[DescriptionAttribute:93]" Guid="2e0632aa-8235-4adc-80fa-37d497ca8449" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="07eedb10-9a38-47ad-8aae-af3553bfab3c" Value="Game.ComponentSwimAwayBehavior" Type="string" />
-          <Parameter Name="LowHealthToEscape" Description="Escape when its health is lower than the value" Guid="faafd2e5-c92b-86dd-ea9e-1686d55cd9df" Value="0.33" Type="float" />
+          <Parameter Name="LowHealthToEscape" Description="[DescriptionAttribute:94]" Guid="faafd2e5-c92b-86dd-ea9e-1686d55cd9df" Value="0.33" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="ChaseBehavior" Description="Behavior that makes a creature chase the intruder" Guid="31894441-d90a-4549-9264-db9dbe20e234" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="ChaseBehavior" Description="[DescriptionAttribute:95]" Guid="31894441-d90a-4549-9264-db9dbe20e234" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="0bb9a8b6-796f-4aa7-bb73-543259efe513" Value="Game.ComponentChaseBehavior" Type="string" />
-          <Parameter Name="ChaseWhenAttackedProbability" Description="Probability that creature will chase when attacked" Guid="70b1024a-acd0-4536-bba4-9a510286a396" Value="1" Type="float" />
-          <Parameter Name="NightChaseTime" Description="Chase time when creature starts to chase during the night, in seconds" Guid="759c6b1d-fd0a-4edf-bf34-7fb62ca2c92b" Value="10" Type="float" />
-          <Parameter Name="DayChaseRange" Description="Range when creature starts to chase during the day" Guid="78ff8af6-399c-4d1c-885d-86930f350c80" Value="1.5" Type="float" />
-          <Parameter Name="ChaseOnTouchProbability" Description="Whether creature should chase if touched by AutoChaseMask creature" Guid="b2bd37c2-f5b7-4be5-94a5-810388bfcfdd" Value="1" Type="float" />
-          <Parameter Name="DayChaseTime" Description="Chase time when creature starts to chase during the day, in seconds" Guid="bf9e09ac-89d4-4c6f-97f2-3184a5fde95c" Value="10" Type="float" />
-          <Parameter Name="NightChaseRange" Description="Range when creature starts to chase during the night" Guid="c5f8be48-0c8c-4d92-a5fe-af7c5e3a8370" Value="1.5" Type="float" />
-          <Parameter Name="AutoChaseMask" Description="Creature categories to chase" Guid="fdf593ec-ea38-463f-bb81-15cbf66a631e" Value="LandOther, Bird" Type="Game.CreatureCategory" />
-          <Parameter Name="ChaseNonPlayerProbability" Description="Probability of creature chasing a non-player target when in range, 0 to 1" Guid="ffbada42-c15c-48e3-bdf0-7e9a20de4a0e" Value="0" Type="float" />
+          <Parameter Name="ChaseWhenAttackedProbability" Description="[DescriptionAttribute:96]" Guid="70b1024a-acd0-4536-bba4-9a510286a396" Value="1" Type="float" />
+          <Parameter Name="NightChaseTime" Description="[DescriptionAttribute:97]" Guid="759c6b1d-fd0a-4edf-bf34-7fb62ca2c92b" Value="10" Type="float" />
+          <Parameter Name="DayChaseRange" Description="[DescriptionAttribute:98]" Guid="78ff8af6-399c-4d1c-885d-86930f350c80" Value="1.5" Type="float" />
+          <Parameter Name="ChaseOnTouchProbability" Description="[DescriptionAttribute:99]" Guid="b2bd37c2-f5b7-4be5-94a5-810388bfcfdd" Value="1" Type="float" />
+          <Parameter Name="DayChaseTime" Description="[DescriptionAttribute:100]" Guid="bf9e09ac-89d4-4c6f-97f2-3184a5fde95c" Value="10" Type="float" />
+          <Parameter Name="NightChaseRange" Description="[DescriptionAttribute:101]" Guid="c5f8be48-0c8c-4d92-a5fe-af7c5e3a8370" Value="1.5" Type="float" />
+          <Parameter Name="AutoChaseMask" Description="[DescriptionAttribute:102]" Guid="fdf593ec-ea38-463f-bb81-15cbf66a631e" Value="LandOther, Bird" Type="Game.CreatureCategory" />
+          <Parameter Name="ChaseNonPlayerProbability" Description="[DescriptionAttribute:103]" Guid="ffbada42-c15c-48e3-bdf0-7e9a20de4a0e" Value="0" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="AvoidPlayerBehavior" Description="Behavior that makes a creature move further away from player" Guid="3942e891-6b50-467c-8da5-a15bc63e59e0" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="AvoidPlayerBehavior" Description="[DescriptionAttribute:104]" Guid="3942e891-6b50-467c-8da5-a15bc63e59e0" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="DayRange" Guid="06a9df3f-01d2-4d65-911e-6d8a6a2c763c" Value="16" Type="float" />
           <Parameter Name="Class" Guid="4d994cdc-05e2-4ee5-b1b6-59d450c4fede" Value="Game.ComponentAvoidPlayerBehavior" Type="string" />
           <Parameter Name="NightRange" Guid="bcc95b19-7157-4046-ba05-bf72d642f365" Value="8" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="RandomFeedBehavior" Description="Behavior that makes a creature feed randomly" Guid="3d5c9b46-1592-45de-ae90-9d050021a5ad" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="RandomFeedBehavior" Description="[DescriptionAttribute:105]" Guid="3d5c9b46-1592-45de-ae90-9d050021a5ad" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="6919d04b-1862-4ad1-9d86-88d99378f312" Value="Game.ComponentRandomFeedBehavior" Type="string" />
-          <Parameter Name="AutoFeed" Description="If true the creature will feed randomly on its own" Guid="fb99a570-690d-4719-87ba-ab4227605795" Value="True" Type="bool" />
+          <Parameter Name="AutoFeed" Description="[DescriptionAttribute:106]" Guid="fb99a570-690d-4719-87ba-ab4227605795" Value="True" Type="bool" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FishOutOfWaterBehavior" Description="Behavior that jumps a fish around" Guid="401266cf-21ed-4a73-9855-19eb6d09020b" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="FishOutOfWaterBehavior" Description="[DescriptionAttribute:107]" Guid="401266cf-21ed-4a73-9855-19eb6d09020b" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="5a4a1641-acc6-40e9-8fdd-7ee0101d3e66" Value="Game.ComponentFishOutOfWaterBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FindPlayerBehavior" Description="Behavior that makes a creature move closer to player" Guid="44c9a961-258c-4eb3-81d1-d3ae249ae031" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="FindPlayerBehavior" Description="[DescriptionAttribute:108]" Guid="44c9a961-258c-4eb3-81d1-d3ae249ae031" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="DayRange" Guid="191a3c19-8119-4bac-bcb5-147a93d9f982" Value="0" Type="float" />
           <Parameter Name="Class" Guid="47c1f02c-0ff4-4005-90d0-c348a9adb299" Value="Game.ComponentFindPlayerBehavior" Type="string" />
           <Parameter Name="MinRange" Guid="b4588d67-c255-4878-94f3-e5482c407be1" Value="8" Type="float" />
           <Parameter Name="NightRange" Guid="c698df14-2139-4cbc-b750-a2f3b5f8ae52" Value="64" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="BehaviorSelector" Description="Selects active behavior based on importance value" Guid="45cd8302-bb36-4c84-abf0-96fba5c2b9df" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="BehaviorSelector" Description="[DescriptionAttribute:109]" Guid="45cd8302-bb36-4c84-abf0-96fba5c2b9df" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="d110a2fa-e8a4-4dcb-974f-2ef827d91b68" Value="Game.ComponentBehaviorSelector" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="SwimAroundBehavior" Description="Behavior that swims a fish randomly" Guid="4a21d83b-8741-42e7-87a4-853ddc59d201" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="SwimAroundBehavior" Description="[DescriptionAttribute:110]" Guid="4a21d83b-8741-42e7-87a4-853ddc59d201" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="427cdc11-3881-4805-a932-5e2c625dbc91" Value="Game.ComponentSwimAroundBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Pilot" Description="Takes a destination position and controls the creature to reach it" Guid="53510bee-16d1-4245-9b55-05cf26064cfc" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Pilot" Description="[DescriptionAttribute:111]" Guid="53510bee-16d1-4245-9b55-05cf26064cfc" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="57b5c3e0-de5e-4229-a9a2-b994b7af6aa7" Value="Game.ComponentPilot" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FlyAwayBehavior" Description="Behavior that makes a bird fly away to safe place" Guid="6c05a3f7-0660-4527-be83-1ce82fed66d8" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="FlyAwayBehavior" Description="[DescriptionAttribute:112]" Guid="6c05a3f7-0660-4527-be83-1ce82fed66d8" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="133f654f-836f-4caa-9848-b46b53d50f01" Value="Game.ComponentFlyAwayBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Behavior" Description="Base component for all behaviors" Guid="6cc7245f-56f2-4a77-a3db-5f628b6369b3" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b" />
-        <ComponentTemplate Name="AvoidFireBehavior" Description="Behavior that makes a creature move further away from fire" Guid="885b2df5-b47b-4c53-bda0-5c1a0c988a3c" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="Behavior" Description="[DescriptionAttribute:113]" Guid="6cc7245f-56f2-4a77-a3db-5f628b6369b3" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b" />
+        <ComponentTemplate Name="AvoidFireBehavior" Description="[DescriptionAttribute:114]" Guid="885b2df5-b47b-4c53-bda0-5c1a0c988a3c" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="3b17a9e1-4b42-4496-af2c-5e3265237b46" Value="Game.ComponentAvoidFireBehavior" Type="string" />
           <Parameter Name="DayRange" Guid="8d18ab75-e453-4600-8d44-d124bed097e7" Value="0" Type="float" />
           <Parameter Name="NightRange" Guid="90dc84be-d05c-4d9b-b4e1-522ab0ec86bc" Value="20" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="SummonBehavior" Description="Behavior that makes a creature come to summoner" Guid="8ff32cf0-32b0-4517-a9b7-16cceba7276a" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="SummonBehavior" Description="[DescriptionAttribute:115]" Guid="8ff32cf0-32b0-4517-a9b7-16cceba7276a" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="2bcfba78-99b0-46fe-a8c5-7b6d04ee492e" Value="Game.ComponentSummonBehavior" Type="string" />
-          <Parameter Name="IsEnabled" Description="Whether summoning is enabled" Guid="4349e48f-10b2-481a-ab5e-e67445a66ec3" Value="False" Type="bool" />
+          <Parameter Name="IsEnabled" Description="[DescriptionAttribute:116]" Guid="4349e48f-10b2-481a-ab5e-e67445a66ec3" Value="False" Type="bool" />
         </ComponentTemplate>
-        <ComponentTemplate Name="LayEggBehavior" Description="Behavior that makes a bird lay an egg nearby" Guid="9c8f236d-7a27-4cf4-b223-47a87cad977d" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
-          <Parameter Name="LayFrequency" Description="Approximate frequency of laying eggs, in 1/s" Guid="5951f75e-f006-4b6b-8cc5-fec6036d3574" Value="0.004" Type="float" />
+        <ComponentTemplate Name="LayEggBehavior" Description="[DescriptionAttribute:117]" Guid="9c8f236d-7a27-4cf4-b223-47a87cad977d" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+          <Parameter Name="LayFrequency" Description="[DescriptionAttribute:118]" Guid="5951f75e-f006-4b6b-8cc5-fec6036d3574" Value="0.004" Type="float" />
           <Parameter Name="Class" Guid="6b7aeb21-5c9f-429a-b805-d7fc757baafa" Value="Game.ComponentLayEggBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="WalkAroundBehavior" Description="Behavior that walks a creature randomly" Guid="aebb86ce-4ee6-4ca0-850d-cd60051e1d71" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="WalkAroundBehavior" Description="[DescriptionAttribute:119]" Guid="aebb86ce-4ee6-4ca0-850d-cd60051e1d71" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="c24588fb-47e3-453c-b63a-ede3b6b39651" Value="Game.ComponentWalkAroundBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="RunAwayBehavior" Description="Behavior that makes a creature run away from attacker or danger" Guid="b138cc15-930c-4805-8cfc-b91bfa7f767a" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="RunAwayBehavior" Description="[DescriptionAttribute:120]" Guid="b138cc15-930c-4805-8cfc-b91bfa7f767a" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="6f538db3-f1fe-4e91-8ef5-627c0b1a74ba" Value="Game.ComponentRunAwayBehavior" Type="string" />
-          <Parameter Name="LowHealthToEscape" Description="Escape when its health is lower than the value" Guid="79c85243-9b3b-aca9-28fb-1a9fce27518c" Value="0.33" Type="float" />
+          <Parameter Name="LowHealthToEscape" Description="[DescriptionAttribute:121]" Guid="79c85243-9b3b-aca9-28fb-1a9fce27518c" Value="0.33" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="DigInMudBehavior" Description="Behavior that digs in a fish in mud" Guid="b5d86d17-aa62-403c-b004-87d764980dee" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
-          <Parameter Name="DigInBlockName" Description="Name of block where the creature can dig in, or empty to not dig in" Guid="8a3155e0-9d50-4fd0-ad0b-b423fc128b8a" Value="" Type="string" />
-          <Parameter Name="MaxDigInDepth" Description="Maximum depth of dig in" Guid="95d36363-a281-4ead-92a0-95db5641d5d6" Value="0" Type="float" />
+        <ComponentTemplate Name="DigInMudBehavior" Description="[DescriptionAttribute:122]" Guid="b5d86d17-aa62-403c-b004-87d764980dee" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+          <Parameter Name="DigInBlockName" Description="[DescriptionAttribute:123]" Guid="8a3155e0-9d50-4fd0-ad0b-b423fc128b8a" Value="" Type="string" />
+          <Parameter Name="MaxDigInDepth" Description="[DescriptionAttribute:124]" Guid="95d36363-a281-4ead-92a0-95db5641d5d6" Value="0" Type="float" />
           <Parameter Name="Class" Guid="d15837c1-4f1b-4979-91a9-03c5afbfbb13" Value="Game.ComponentDigInMudBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="StubbornSteedBehavior" Description="Behavior that makes a creature obey rider's orders" Guid="cd433c59-2fac-439a-b427-9e8ddeb88bd7" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
-          <Parameter Name="StubbornProbability" Description="Probability of steed turning stubborn in saddled state, 1/s" Guid="062aa415-95a3-4d1f-b20e-e9f81aec7f5c" Value="0.005" Type="float" />
+        <ComponentTemplate Name="StubbornSteedBehavior" Description="[DescriptionAttribute:125]" Guid="cd433c59-2fac-439a-b427-9e8ddeb88bd7" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+          <Parameter Name="StubbornProbability" Description="[DescriptionAttribute:126]" Guid="062aa415-95a3-4d1f-b20e-e9f81aec7f5c" Value="0.005" Type="float" />
           <Parameter Name="Class" Guid="66d6b9e1-3125-4c17-80fb-0f5b76889d4b" Value="Game.ComponentStubbornSteedBehavior" Type="string" />
-          <Parameter Name="StubbornEndTime" Description="Time to end stubbornness" Guid="f9696b33-bc33-4c0a-89a5-a8d6f4368bed" Value="0" Type="double" />
+          <Parameter Name="StubbornEndTime" Description="[DescriptionAttribute:127]" Guid="f9696b33-bc33-4c0a-89a5-a8d6f4368bed" Value="0" Type="double" />
         </ComponentTemplate>
-        <ComponentTemplate Name="HowlBehavior" Description="Behavior that makes a wolf howl" Guid="d61fc062-ec8f-4b47-a34d-f0ad2ad67bae" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
-          <Parameter Name="HowlSoundName" Description="Name of howl sound folder" Guid="3f8c39d6-4a85-4bc3-a051-e72e3d01ff64" Value="" Type="string" />
+        <ComponentTemplate Name="HowlBehavior" Description="[DescriptionAttribute:128]" Guid="d61fc062-ec8f-4b47-a34d-f0ad2ad67bae" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+          <Parameter Name="HowlSoundName" Description="[DescriptionAttribute:129]" Guid="3f8c39d6-4a85-4bc3-a051-e72e3d01ff64" Value="" Type="string" />
           <Parameter Name="Class" Guid="818db5e5-c374-40bc-bdd7-c269a648ca4c" Value="Game.ComponentHowlBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="HerdBehavior" Description="Behavior that makes a creature stay close to similar creatures" Guid="dfe7218e-ce14-4bde-8dac-f919c38e9efe" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
-          <Parameter Name="AutoNearbyCreaturesHelp" Description="If true, when a nearby creature from the same herd is attacked will automatically attack its attacker" Guid="0d7915bd-5933-44aa-994d-a5a9638d2c8f" Value="False" Type="bool" />
-          <Parameter Name="HerdName" Description="Identifier used to find members of the same species for herding purposes" Guid="8d6ba257-8360-4b22-bd15-165e440b8644" Value="KaalusGlitch" Type="string" />
+        <ComponentTemplate Name="HerdBehavior" Description="[DescriptionAttribute:130]" Guid="dfe7218e-ce14-4bde-8dac-f919c38e9efe" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+          <Parameter Name="AutoNearbyCreaturesHelp" Description="[DescriptionAttribute:131]" Guid="0d7915bd-5933-44aa-994d-a5a9638d2c8f" Value="False" Type="bool" />
+          <Parameter Name="HerdName" Description="[DescriptionAttribute:132]" Guid="8d6ba257-8360-4b22-bd15-165e440b8644" Value="KaalusGlitch" Type="string" />
           <Parameter Name="Class" Guid="b66ad5ac-f597-43b4-95cf-218e9955332b" Value="Game.ComponentHerdBehavior" Type="string" />
-          <Parameter Name="HerdingRange" Description="Maximum distance to search for herd members when determining herd center" Guid="ddc3be68-4581-4100-ba02-5f31277267ac" Value="32" Type="float" />
+          <Parameter Name="HerdingRange" Description="[DescriptionAttribute:133]" Guid="ddc3be68-4581-4100-ba02-5f31277267ac" Value="32" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="RandomPeckBehavior" Description="Behavior that makes a bird peck and move small distances randomly" Guid="e193cb0f-3adf-43e4-b5a0-9ec70caee9b8" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="RandomPeckBehavior" Description="[DescriptionAttribute:134]" Guid="e193cb0f-3adf-43e4-b5a0-9ec70caee9b8" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="3350cf52-c47d-4ee0-b7a8-039f7f1f6acd" Value="Game.ComponentRandomPeckBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="StareBehavior" Description="Behavior that stares at nearby creatures" Guid="e4fdbb74-183f-4075-9d92-c67f58d700b9" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
-          <Parameter Name="StareRange" Description="Maximum range to stare target" Guid="49c420b8-cc06-439b-9226-6083f9602ec2" Value="12" Type="float" />
+        <ComponentTemplate Name="StareBehavior" Description="[DescriptionAttribute:135]" Guid="e4fdbb74-183f-4075-9d92-c67f58d700b9" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+          <Parameter Name="StareRange" Description="[DescriptionAttribute:136]" Guid="49c420b8-cc06-439b-9226-6083f9602ec2" Value="12" Type="float" />
           <Parameter Name="Class" Guid="5c59b331-c197-45a0-8a28-7627d2391559" Value="Game.ComponentStareBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="CetaceanBreatheBehavior" Description="Behavior that surfaces a fish and breathes" Guid="ea415063-d7a7-462d-a011-9d8bd17a2107" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="CetaceanBreatheBehavior" Description="[DescriptionAttribute:137]" Guid="ea415063-d7a7-462d-a011-9d8bd17a2107" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="f10caeaf-755c-4131-b854-93cbd9cad242" Value="Game.ComponentCetaceanBreatheBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="MoveAwayBehavior" Description="Behavior that makes a creature move further away from player" Guid="ea5c25d3-2179-494b-b6e3-0534f08aee36" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="MoveAwayBehavior" Description="[DescriptionAttribute:138]" Guid="ea5c25d3-2179-494b-b6e3-0534f08aee36" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="855378e1-408e-45e5-8a00-e4b649ae6250" Value="Game.ComponentMoveAwayBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="EatPickableBehavior" Description="Behavior that makes a creature eat certain pickables" Guid="f56c7b36-c306-4fa0-af09-c459780e58e1" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="EatPickableBehavior" Description="[DescriptionAttribute:139]" Guid="f56c7b36-c306-4fa0-af09-c459780e58e1" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <ParameterSet Name="FoodFactors" Guid="d626e77c-fe73-4591-8650-07d2d8c509e5">
-            <Parameter Name="Fruit" Description="How much creature likes fruit and vegetables, 0 to infinity" Guid="5a8482e1-57e8-4e4d-8fdf-22581b429afd" Value="0" Type="float" />
-            <Parameter Name="Fish" Description="How much creature likes fish, 0 to infinity" Guid="9d3a5d00-866a-4b68-8a4c-1d8c711fc5b7" Value="0" Type="float" />
-            <Parameter Name="Meat" Description="How much creature likes meat, 0 to infinity" Guid="de70139d-5b63-4523-8a30-d7bec8cfe7cb" Value="0" Type="float" />
-            <Parameter Name="Bread" Description="Hum much creature likes bread, 0 to infinity" Guid="e792a45c-094a-45c9-bf1b-987ee84ef125" Value="0" Type="float" />
-            <Parameter Name="Grass" Description="How much creature likes grass and flowers, 0 to infinity" Guid="fe62d375-36da-4d00-9eac-981cd898d537" Value="0" Type="float" />
+            <Parameter Name="Fruit" Description="[DescriptionAttribute:140]" Guid="5a8482e1-57e8-4e4d-8fdf-22581b429afd" Value="0" Type="float" />
+            <Parameter Name="Fish" Description="[DescriptionAttribute:141]" Guid="9d3a5d00-866a-4b68-8a4c-1d8c711fc5b7" Value="0" Type="float" />
+            <Parameter Name="Meat" Description="[DescriptionAttribute:142]" Guid="de70139d-5b63-4523-8a30-d7bec8cfe7cb" Value="0" Type="float" />
+            <Parameter Name="Bread" Description="[DescriptionAttribute:143]" Guid="e792a45c-094a-45c9-bf1b-987ee84ef125" Value="0" Type="float" />
+            <Parameter Name="Grass" Description="[DescriptionAttribute:144]" Guid="fe62d375-36da-4d00-9eac-981cd898d537" Value="0" Type="float" />
           </ParameterSet>
           <Parameter Name="Class" Guid="8cf4c8f9-fda2-42ef-9b29-5aabe03a3de7" Value="Game.ComponentEatPickableBehavior" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="LookAroundBehavior" Description="Behavior that makes a creature look around randomly" Guid="faf5cd07-6752-4720-8761-a666831281e0" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
+        <ComponentTemplate Name="LookAroundBehavior" Description="[DescriptionAttribute:145]" Guid="faf5cd07-6752-4720-8761-a666831281e0" InheritanceParent="6cc7245f-56f2-4a77-a3db-5f628b6369b3">
           <Parameter Name="Class" Guid="a2c5fb42-ad96-46dc-9e37-20c0b7744720" Value="Game.ComponentLookAroundBehavior" Type="string" />
         </ComponentTemplate>
       </Folder>
       <Folder Name="Gameplay" Guid="d3d4b692-acc9-4128-9b99-a5acf1de1fbb">
-        <ComponentTemplate Name="BlockEntity" Description="Represents an entity that is a part of terrain as a single block" Guid="09a85cba-d94e-41b8-9497-f20ed942c17e" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="BlockEntity" Description="[DescriptionAttribute:146]" Guid="09a85cba-d94e-41b8-9497-f20ed942c17e" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="5d97eae3-490b-4028-ba4d-bc9ef72eb069" Value="Game.ComponentBlockEntity" Type="string" />
-          <Parameter Name="Coordinates" Description="Block coordinates of entity" Guid="617a435a-514a-4177-b8d9-069ac586e6a8" Value="0,0,0" Type="Point3" />
+          <Parameter Name="Coordinates" Description="[DescriptionAttribute:147]" Guid="617a435a-514a-4177-b8d9-069ac586e6a8" Value="0,0,0" Type="Point3" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Gui" Description="Manages on-screen UI for the game" Guid="12fc0405-dbcc-417c-8ec8-005de26e670d" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="GamepadHelpMessageShown" Description="Whether gamepad help message was shown" Guid="2c73a407-845f-4326-9c5e-066f50909807" Value="False" Type="bool" />
+        <ComponentTemplate Name="Gui" Description="[DescriptionAttribute:148]" Guid="12fc0405-dbcc-417c-8ec8-005de26e670d" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="GamepadHelpMessageShown" Description="[DescriptionAttribute:149]" Guid="2c73a407-845f-4326-9c5e-066f50909807" Value="False" Type="bool" />
           <Parameter Name="Class" Guid="8b3d07dc-6498-4691-9686-cf4edabb8f3f" Value="Game.ComponentGui" Type="string" />
-          <Parameter Name="KeyboardHelpMessageShown" Description="Whether keyboard help message was shown" Guid="8ee44851-7d83-4249-8a92-9415af094eae" Value="False" Type="bool" />
+          <Parameter Name="KeyboardHelpMessageShown" Description="[DescriptionAttribute:150]" Guid="8ee44851-7d83-4249-8a92-9415af094eae" Value="False" Type="bool" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Damage" Description="Handles body damage" Guid="17bb7b53-159c-4eb3-b4bc-137b10bba88a" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="FallResilience" Description="Resilience of body to fall, in m/s. Any fall below that speed will not cause damage." Guid="3520ac5f-492d-468f-a295-442dca639c85" Value="7.5" Type="float" />
-          <Parameter Name="Hitpoints" Description="Hitpoints value, 0 to 1" Guid="5d87c2b3-e047-466c-a4d5-458d373ad23f" Value="1" Type="float" />
-          <Parameter Name="DebrisTextureSlot" Description="Index of texture slot to use for destruction debris" Guid="5eecec1b-1be8-4574-b3d4-895acf178a47" Value="4" Type="int" />
+        <ComponentTemplate Name="Damage" Description="[DescriptionAttribute:151]" Guid="17bb7b53-159c-4eb3-b4bc-137b10bba88a" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="FallResilience" Description="[DescriptionAttribute:152]" Guid="3520ac5f-492d-468f-a295-442dca639c85" Value="7.5" Type="float" />
+          <Parameter Name="Hitpoints" Description="[DescriptionAttribute:153]" Guid="5d87c2b3-e047-466c-a4d5-458d373ad23f" Value="1" Type="float" />
+          <Parameter Name="DebrisTextureSlot" Description="[DescriptionAttribute:154]" Guid="5eecec1b-1be8-4574-b3d4-895acf178a47" Value="4" Type="int" />
           <Parameter Name="Class" Guid="7ad857be-6874-4ef3-b9cc-f70a79ef3dc4" Value="Game.ComponentDamage" Type="string" />
-          <Parameter Name="AttackResilience" Description="Resilience of body to attack. Damage = weapon power / resilience" Guid="b08b5252-5e7a-4a94-9839-3a8763c17c44" Value="10" Type="float" />
-          <Parameter Name="DestructionSoundName" Description="Name of destruction sound" Guid="b6d6d506-be97-476c-aedd-50d86f08f3e5" Value="Audio/Impacts/Wood" Type="string" />
-          <Parameter Name="FireResilience" Description="Resilience of body to fire. Damage per second = 1 / resilience" Guid="ca185b16-0edb-485c-a186-19bd40a7cf60" Value="20" Type="float" />
-          <Parameter Name="DebrisStrength" Description="Strength of destruction debris" Guid="ce69d844-bf7a-4418-851d-fa4224775590" Value="1.5" Type="float" />
-          <Parameter Name="DebrisScale" Description="Scale of destruction debris" Guid="fc2a0536-f8fe-4466-9ffc-096808e37e05" Value="1.5" Type="float" />
+          <Parameter Name="AttackResilience" Description="[DescriptionAttribute:155]" Guid="b08b5252-5e7a-4a94-9839-3a8763c17c44" Value="10" Type="float" />
+          <Parameter Name="DestructionSoundName" Description="[DescriptionAttribute:156]" Guid="b6d6d506-be97-476c-aedd-50d86f08f3e5" Value="Audio/Impacts/Wood" Type="string" />
+          <Parameter Name="FireResilience" Description="[DescriptionAttribute:157]" Guid="ca185b16-0edb-485c-a186-19bd40a7cf60" Value="20" Type="float" />
+          <Parameter Name="DebrisStrength" Description="[DescriptionAttribute:158]" Guid="ce69d844-bf7a-4418-851d-fa4224775590" Value="1.5" Type="float" />
+          <Parameter Name="DebrisScale" Description="[DescriptionAttribute:159]" Guid="fc2a0536-f8fe-4466-9ffc-096808e37e05" Value="1.5" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="CreativeTools" Description="Handles creative tools" Guid="17f412c1-3b2f-4162-b554-f48a1236bfd7" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="CreativeTools" Description="[DescriptionAttribute:160]" Guid="17f412c1-3b2f-4162-b554-f48a1236bfd7" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="d448af3a-51b2-4767-8b9c-670e72c31ae1" Value="Game.ComponentCreativeTools" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Sleep" Description="Handles sleeping of the creature entity" Guid="188816b9-23bd-4fb2-9a3b-ac78540b5e6b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="SleepStartTime" Description="Time when creature went to sleep, or 0 if not sleeping" Guid="149cbf43-fe24-4260-b946-b4f896b29b14" Value="0" Type="double" />
+        <ComponentTemplate Name="Sleep" Description="[DescriptionAttribute:161]" Guid="188816b9-23bd-4fb2-9a3b-ac78540b5e6b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="SleepStartTime" Description="[DescriptionAttribute:162]" Guid="149cbf43-fe24-4260-b946-b4f896b29b14" Value="0" Type="double" />
           <Parameter Name="Class" Guid="46dd5d8f-8a84-4bb6-bb7c-bc42afe926d4" Value="Game.ComponentSleep" Type="string" />
-          <Parameter Name="AllowManualWakeUp" Description="Whether manual wakeup is allowed" Guid="c8e25973-c8da-4aa6-a6bf-5a08c78972cf" Value="False" Type="bool" />
+          <Parameter Name="AllowManualWakeUp" Description="[DescriptionAttribute:163]" Guid="c8e25973-c8da-4aa6-a6bf-5a08c78972cf" Value="False" Type="bool" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Udder" Description="Handles milking" Guid="32c8be61-7eca-4c96-98b3-5c5e7479129a" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Udder" Description="[DescriptionAttribute:164]" Guid="32c8be61-7eca-4c96-98b3-5c5e7479129a" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="08425007-e131-472e-9746-78f493091c58" Value="Game.ComponentUdder" Type="string" />
-          <Parameter Name="MilkRegenerationTime" Description="Time to regenerate milk after milking, in seconds" Guid="23c5b42f-a0cc-4cb8-bb67-fc5b06bbdeae" Value="300" Type="float" />
-          <Parameter Name="LastMilkingTime" Description="Last milking time of udder, or -1 if not milked yet" Guid="f4ee9c68-02ca-4264-8c6b-03250866092e" Value="-1" Type="double" />
+          <Parameter Name="MilkRegenerationTime" Description="[DescriptionAttribute:165]" Guid="23c5b42f-a0cc-4cb8-bb67-fc5b06bbdeae" Value="300" Type="float" />
+          <Parameter Name="LastMilkingTime" Description="[DescriptionAttribute:166]" Guid="f4ee9c68-02ca-4264-8c6b-03250866092e" Value="-1" Type="double" />
         </ComponentTemplate>
-        <ComponentTemplate Name="VitalStats" Description="Handles creature vital stats, such as hunger" Guid="351c0abe-45ca-48fa-82e9-5f293c17e1f4" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <ParameterSet Name="Satiation" Description="Contains satiation for each food item index" Guid="6428c714-13c1-4f66-8acf-e03539944275" />
-          <Parameter Name="Stamina" Description="Stamina level, 0 to 1" Guid="0b6690a0-8bcc-4a26-95fb-b6c93fb5f71f" Value="1" Type="float" />
-          <Parameter Name="Wetness" Description="Wetness, 0 to 1" Guid="68fbc96f-32c6-494c-89f3-960d7e52d135" Value="0" Type="float" />
-          <Parameter Name="Food" Description="Amount of food, 0 to 1" Guid="8990a805-0a1f-4891-b16b-d67e003a5022" Value="1" Type="float" />
+        <ComponentTemplate Name="VitalStats" Description="[DescriptionAttribute:167]" Guid="351c0abe-45ca-48fa-82e9-5f293c17e1f4" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <ParameterSet Name="Satiation" Description="[DescriptionAttribute:168]" Guid="6428c714-13c1-4f66-8acf-e03539944275" />
+          <Parameter Name="Stamina" Description="[DescriptionAttribute:169]" Guid="0b6690a0-8bcc-4a26-95fb-b6c93fb5f71f" Value="1" Type="float" />
+          <Parameter Name="Wetness" Description="[DescriptionAttribute:170]" Guid="68fbc96f-32c6-494c-89f3-960d7e52d135" Value="0" Type="float" />
+          <Parameter Name="Food" Description="[DescriptionAttribute:171]" Guid="8990a805-0a1f-4891-b16b-d67e003a5022" Value="1" Type="float" />
           <Parameter Name="Class" Guid="aa7f845d-165e-4fff-95f0-453cd4e14cea" Value="Game.ComponentVitalStats" Type="string" />
-          <Parameter Name="Sleep" Description="Sleep level, 0 to 1" Guid="c86afb56-dca6-4feb-8f80-1de8c3cbfac1" Value="1" Type="float" />
-          <Parameter Name="Temperature" Description="Body temperature, in world temperature units" Guid="ca3b2eec-d485-4ca4-8d13-1225dc9aafbb" Value="12" Type="float" />
+          <Parameter Name="Sleep" Description="[DescriptionAttribute:172]" Guid="c86afb56-dca6-4feb-8f80-1de8c3cbfac1" Value="1" Type="float" />
+          <Parameter Name="Temperature" Description="[DescriptionAttribute:173]" Guid="ca3b2eec-d485-4ca4-8d13-1225dc9aafbb" Value="12" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Boat" Description="Takes player inputs and controls a creature with them" Guid="472b36f3-6ee6-442a-900f-b4caba94be39" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Boat" Description="[DescriptionAttribute:174]" Guid="472b36f3-6ee6-442a-900f-b4caba94be39" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="547229b2-7adc-4d13-8889-d94503c52184" Value="Game.ComponentBoat" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="CraftingTable" Description="A workbench" Guid="48fdc8bb-8ca8-4d0f-af8d-25bfe9b56a19" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
+        <ComponentTemplate Name="CraftingTable" Description="[DescriptionAttribute:175]" Guid="48fdc8bb-8ca8-4d0f-af8d-25bfe9b56a19" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
           <Parameter Name="Class" Guid="566663a5-0480-45c8-9266-18c8060a236c" Value="Game.ComponentCraftingTable" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Creature" Description="Has references to other components that make up the creature entity" Guid="4c6556e2-af4a-42ae-9543-4f27f9df6f39" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Creature" Description="[DescriptionAttribute:176]" Guid="4c6556e2-af4a-42ae-9543-4f27f9df6f39" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="LoadOrder" Guid="5613c655-47f9-4677-8f98-e509005712cb" Value="-1" Type="int" />
-          <Parameter Name="Description" Description="Description of creature" Guid="58bdf301-65b5-4418-9d17-45903de29a28" Value="[Description:45]" Type="string" />
+          <Parameter Name="Description" Description="[DescriptionAttribute:177]" Guid="58bdf301-65b5-4418-9d17-45903de29a28" Value="[Description:45]" Type="string" />
           <Parameter Name="Category" Guid="61947601-f041-4d1c-b7a4-988bedff5fd3" Value="0" Type="Game.CreatureCategory" />
-          <Parameter Name="DisplayName" Description="Name of creature" Guid="715ff548-ef2b-430e-8e6b-51b934e5da1d" Value="[DisplayName:99]" Type="string" />
-          <Parameter Name="ConstantSpawn" Description="Whether creature was spawned using constant spawn mechanics" Guid="98bda37f-1333-4ab4-8fc0-da09ac9bdb21" Value="False" Type="bool" />
-          <Parameter Name="KillVerbs" Description="Comma delimited verbs used as kill cause when attacked by the animal" Guid="e65a8612-16c6-4298-b782-93112d0cd082" Value="killed" Type="string" />
+          <Parameter Name="DisplayName" Description="[DescriptionAttribute:178]" Guid="715ff548-ef2b-430e-8e6b-51b934e5da1d" Value="[DisplayName:99]" Type="string" />
+          <Parameter Name="ConstantSpawn" Description="[DescriptionAttribute:179]" Guid="98bda37f-1333-4ab4-8fc0-da09ac9bdb21" Value="False" Type="bool" />
+          <Parameter Name="KillVerbs" Description="[DescriptionAttribute:180]" Guid="e65a8612-16c6-4298-b782-93112d0cd082" Value="killed" Type="string" />
           <Parameter Name="Class" Guid="ed206458-a637-4a7a-955d-47924b113c35" Value="Game.ComponentCreature" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Intro" Description="Plays intro sequence at game start" Guid="50f03b82-0a64-401f-8afa-0c0ea0017051" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="PlayIntro" Description="Whether to play intro" Guid="9f6b6785-60d7-46fb-ad3a-53b3d3867b6e" Value="False" Type="bool" />
+        <ComponentTemplate Name="Intro" Description="[DescriptionAttribute:181]" Guid="50f03b82-0a64-401f-8afa-0c0ea0017051" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="PlayIntro" Description="[DescriptionAttribute:182]" Guid="9f6b6785-60d7-46fb-ad3a-53b3d3867b6e" Value="False" Type="bool" />
           <Parameter Name="Class" Guid="f9a936d9-bf05-4197-908a-1ff45a461488" Value="Game.ComponentIntro" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="CreatureSounds" Description="Manages sounds emitted by a creature" Guid="514ed767-c2ba-4572-beae-6e6f285854b9" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <ParameterSet Name="CustomFootstepSounds" Description="Custom sound folders to play when creature is walking on different surface types" Guid="420915a2-d6b8-461f-a864-727fd1941da0" />
-          <Parameter Name="PukeSound" Description="Sound folder to play when creature is puking, or empty if none" Guid="0a8d0c50-79d1-4167-ac9e-7ffb1c32fc2a" Value="" Type="string" />
-          <Parameter Name="PainSound" Description="Sound folder to play when creature is in pain, or empty if none" Guid="1cb7d7ad-d9d9-49ff-a33a-2deec64ddae3" Value="" Type="string" />
-          <Parameter Name="PainSoundMinDistance" Description="Mindistance of pain sound" Guid="24b51a16-84a4-4dde-b7c6-4028ca883074" Value="4" Type="float" />
-          <Parameter Name="IdleSoundMinDistance" Description="Mindistance of idle sound" Guid="2ac96afc-6f46-4883-b4e9-e77e715f2d85" Value="2.5" Type="float" />
-          <Parameter Name="MoanSound" Description="Sound folder to play when creature is moaning, or empty if none" Guid="39f8e70c-2327-4c7f-8824-dad6ee932d0b" Value="" Type="string" />
-          <Parameter Name="CoughSound" Description="Sound folder to play when creature is coughing, or empty if none" Guid="3f9f4ec4-8762-47f9-9acf-2584a6c0a806" Value="" Type="string" />
-          <Parameter Name="RareIdleSoundMinDistance" Description="Mindistance of rare idle sound" Guid="3fe9ecc3-4680-43f0-b2a7-999c6ab46fcf" Value="2.5" Type="float" />
-          <Parameter Name="PukeSoundMinDistance" Description="Mindistance of puke sound" Guid="40f7509a-7f59-4156-b478-21e76fc9d12b" Value="4" Type="float" />
-          <Parameter Name="SneezeSound" Description="Sound folder to play when creature is sneezing, or empty if none" Guid="4e347007-7a6f-408e-9483-dab58d8fe8dd" Value="" Type="string" />
+        <ComponentTemplate Name="CreatureSounds" Description="[DescriptionAttribute:183]" Guid="514ed767-c2ba-4572-beae-6e6f285854b9" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <ParameterSet Name="CustomFootstepSounds" Description="[DescriptionAttribute:184]" Guid="420915a2-d6b8-461f-a864-727fd1941da0" />
+          <Parameter Name="PukeSound" Description="[DescriptionAttribute:185]" Guid="0a8d0c50-79d1-4167-ac9e-7ffb1c32fc2a" Value="" Type="string" />
+          <Parameter Name="PainSound" Description="[DescriptionAttribute:186]" Guid="1cb7d7ad-d9d9-49ff-a33a-2deec64ddae3" Value="" Type="string" />
+          <Parameter Name="PainSoundMinDistance" Description="[DescriptionAttribute:187]" Guid="24b51a16-84a4-4dde-b7c6-4028ca883074" Value="4" Type="float" />
+          <Parameter Name="IdleSoundMinDistance" Description="[DescriptionAttribute:188]" Guid="2ac96afc-6f46-4883-b4e9-e77e715f2d85" Value="2.5" Type="float" />
+          <Parameter Name="MoanSound" Description="[DescriptionAttribute:189]" Guid="39f8e70c-2327-4c7f-8824-dad6ee932d0b" Value="" Type="string" />
+          <Parameter Name="CoughSound" Description="[DescriptionAttribute:190]" Guid="3f9f4ec4-8762-47f9-9acf-2584a6c0a806" Value="" Type="string" />
+          <Parameter Name="RareIdleSoundMinDistance" Description="[DescriptionAttribute:191]" Guid="3fe9ecc3-4680-43f0-b2a7-999c6ab46fcf" Value="2.5" Type="float" />
+          <Parameter Name="PukeSoundMinDistance" Description="[DescriptionAttribute:192]" Guid="40f7509a-7f59-4156-b478-21e76fc9d12b" Value="4" Type="float" />
+          <Parameter Name="SneezeSound" Description="[DescriptionAttribute:193]" Guid="4e347007-7a6f-408e-9483-dab58d8fe8dd" Value="" Type="string" />
           <Parameter Name="Class" Guid="638c61dd-3536-4c3a-bdd0-d1bc9a4f4777" Value="Game.ComponentCreatureSounds" Type="string" />
-          <Parameter Name="MoanSoundMinDistance" Description="Mindistance of moan sound" Guid="6a3f0a30-d829-49c3-a6ad-4d652d44e8ab" Value="4" Type="float" />
-          <Parameter Name="SneezeSoundMinDistance" Description="Mindistance of sneezing sound" Guid="7a4c4fd0-8fed-4164-8b86-4b9741e227a6" Value="4" Type="float" />
-          <Parameter Name="RareIdleSound" Description="Sound folder to play to emit rare idle sound of creature, or empty if none" Guid="a4be10fb-5aaf-44c5-b173-31a9b40d0efd" Value="" Type="string" />
-          <Parameter Name="CoughSoundMinDistance" Description="Mindistance of coughing sound" Guid="ba0bf4e3-45d9-44e6-bbd5-fff869d83242" Value="4" Type="float" />
-          <Parameter Name="IdleSound" Description="Sound folder to play to emit idle sound of creature, or empty if none" Guid="d42b8629-119b-43f3-9a51-0db39c3136ae" Value="" Type="string" />
-          <Parameter Name="AttackSound" Description="Sound folder to play when creature is attacking, or empty if none" Guid="dab4845e-4b8a-45d7-83ca-19a618365d51" Value="" Type="string" />
-          <Parameter Name="AttackSoundMinDistance" Description="Mindistance of attack sound" Guid="ec1757af-211b-4935-9039-600f5cbbe5a3" Value="4" Type="float" />
-          <Parameter Name="RareIdleSoundProbability" Description="Probability to emit rare idle sound instead of normal idle" Guid="ec6120a1-519d-4c0c-a46e-a2bbcbbf6974" Value="0.1" Type="float" />
+          <Parameter Name="MoanSoundMinDistance" Description="[DescriptionAttribute:194]" Guid="6a3f0a30-d829-49c3-a6ad-4d652d44e8ab" Value="4" Type="float" />
+          <Parameter Name="SneezeSoundMinDistance" Description="[DescriptionAttribute:195]" Guid="7a4c4fd0-8fed-4164-8b86-4b9741e227a6" Value="4" Type="float" />
+          <Parameter Name="RareIdleSound" Description="[DescriptionAttribute:196]" Guid="a4be10fb-5aaf-44c5-b173-31a9b40d0efd" Value="" Type="string" />
+          <Parameter Name="CoughSoundMinDistance" Description="[DescriptionAttribute:197]" Guid="ba0bf4e3-45d9-44e6-bbd5-fff869d83242" Value="4" Type="float" />
+          <Parameter Name="IdleSound" Description="[DescriptionAttribute:198]" Guid="d42b8629-119b-43f3-9a51-0db39c3136ae" Value="" Type="string" />
+          <Parameter Name="AttackSound" Description="[DescriptionAttribute:199]" Guid="dab4845e-4b8a-45d7-83ca-19a618365d51" Value="" Type="string" />
+          <Parameter Name="AttackSoundMinDistance" Description="[DescriptionAttribute:200]" Guid="ec1757af-211b-4935-9039-600f5cbbe5a3" Value="4" Type="float" />
+          <Parameter Name="RareIdleSoundProbability" Description="[DescriptionAttribute:201]" Guid="ec6120a1-519d-4c0c-a46e-a2bbcbbf6974" Value="0.1" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Spawn" Description="Handles spawning and despawning of the creature entity" Guid="65268743-4076-4ee3-aefe-f02a54d16b36" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="AutoDespawn" Description="Whether entity should be automatically despawned" Guid="20547a7b-0a5a-4227-960f-f39dc56f6d1e" Value="True" Type="bool" />
+        <ComponentTemplate Name="Spawn" Description="[DescriptionAttribute:202]" Guid="65268743-4076-4ee3-aefe-f02a54d16b36" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="AutoDespawn" Description="[DescriptionAttribute:203]" Guid="20547a7b-0a5a-4227-960f-f39dc56f6d1e" Value="True" Type="bool" />
           <Parameter Name="Class" Guid="27be726d-dbde-4da0-953e-98c1886b683e" Value="Game.ComponentSpawn" Type="string" />
-          <Parameter Name="DespawnTime" Description="Time of despawn start, or -1 if not despawning" Guid="c182c082-9d7d-4524-9f48-9821fc9191f8" Value="-1" Type="double" />
-          <Parameter Name="SpawnTime" Description="Time of spawn, or -1 if not spawned yet" Guid="d23e203e-5faa-4e7c-be76-9c7cae68058b" Value="-1" Type="double" />
+          <Parameter Name="DespawnTime" Description="[DescriptionAttribute:204]" Guid="c182c082-9d7d-4524-9f48-9821fc9191f8" Value="-1" Type="double" />
+          <Parameter Name="SpawnTime" Description="[DescriptionAttribute:205]" Guid="d23e203e-5faa-4e7c-be76-9c7cae68058b" Value="-1" Type="double" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Chest" Description="A chest that you can store items in" Guid="7312ec8c-10c7-4133-85b4-4a35bd44c956" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
+        <ComponentTemplate Name="Chest" Description="[DescriptionAttribute:206]" Guid="7312ec8c-10c7-4133-85b4-4a35bd44c956" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
           <Parameter Name="SlotsCount" Guid="0b7d464d-f972-431b-9828-d30e0fbf33f1" Value="16" Type="int" />
           <Parameter Name="Class" Guid="1caa89de-22f9-45aa-aae3-039ba73b12b6" Value="Game.ComponentChest" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Player" Description="Takes player inputs and controls a creature with them" Guid="74a31f2d-3241-4f2e-a6ef-3add252691a7" InheritanceParent="4c6556e2-af4a-42ae-9543-4f27f9df6f39">
-          <Parameter Name="PlayerIndex" Description="Index of player" Guid="03b8fd92-8a23-4c8e-b875-6c1e86638585" Value="1" Type="int" />
+        <ComponentTemplate Name="Player" Description="[DescriptionAttribute:207]" Guid="74a31f2d-3241-4f2e-a6ef-3add252691a7" InheritanceParent="4c6556e2-af4a-42ae-9543-4f27f9df6f39">
+          <Parameter Name="PlayerIndex" Description="[DescriptionAttribute:208]" Guid="03b8fd92-8a23-4c8e-b875-6c1e86638585" Value="1" Type="int" />
           <Parameter Name="KillVerbs" Guid="5dc4375c-d47e-4eac-9da0-e30fc2792776" Value="murdered,killed" Type="string" />
           <Parameter Name="Class" Guid="7ecfafc4-4603-424c-87dd-1df59e7ef413" Value="Game.ComponentPlayer" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Input" Description="Collects input for the player" Guid="74f93359-4e79-43ab-8cce-ff85a3ddedb3" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Input" Description="[DescriptionAttribute:209]" Guid="74f93359-4e79-43ab-8cce-ff85a3ddedb3" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="ec809766-ba61-434e-bfde-e677f506b887" Value="Game.ComponentInput" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="CreativeInventory" Description="Player's inventory in creative mode" Guid="7d1b4260-39c0-4f23-b9f5-9ecf6d046396" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="ActiveSlotIndex" Description="Index of active slot" Guid="04cfba09-f421-4307-b7f4-d07d47d6efaa" Value="0" Type="int" />
-          <Parameter Name="CategoryIndex" Description="Active category index of creative inventory" Guid="0b626a24-73fd-401a-b05b-8c883548102b" Value="0" Type="int" />
+        <ComponentTemplate Name="CreativeInventory" Description="[DescriptionAttribute:210]" Guid="7d1b4260-39c0-4f23-b9f5-9ecf6d046396" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="ActiveSlotIndex" Description="[DescriptionAttribute:211]" Guid="04cfba09-f421-4307-b7f4-d07d47d6efaa" Value="0" Type="int" />
+          <Parameter Name="CategoryIndex" Description="[DescriptionAttribute:212]" Guid="0b626a24-73fd-401a-b05b-8c883548102b" Value="0" Type="int" />
           <Parameter Name="Class" Guid="412eb397-e85b-4b01-be86-a0cb3a4f83df" Value="Game.ComponentCreativeInventory" Type="string" />
-          <Parameter Name="OpenSlotsCount" Description="Number of open slots" Guid="8c86a02f-99c7-4b97-8f78-cd6037660be2" Value="26" Type="int" />
-          <Parameter Name="PageIndex" Description="Active page of creative inventory" Guid="8ebc611d-a9ac-4c70-8edc-a35ee63832ea" Value="0" Type="int" />
+          <Parameter Name="OpenSlotsCount" Description="[DescriptionAttribute:213]" Guid="8c86a02f-99c7-4b97-8f78-cd6037660be2" Value="26" Type="int" />
+          <Parameter Name="PageIndex" Description="[DescriptionAttribute:214]" Guid="8ebc611d-a9ac-4c70-8edc-a35ee63832ea" Value="0" Type="int" />
         </ComponentTemplate>
-        <ComponentTemplate Name="InventoryBase" Description="Base component for all inventory-containing components" Guid="81a44c6a-c30a-4f53-8d64-0c30aabab8f9" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <ParameterSet Name="Slots" Description="Contains inventory slots contents, one parameter set per slot" Guid="ab4f2d01-ac8c-4943-841d-064726122409" />
-          <Parameter Name="SlotsCount" Description="Number of inventory slots" Guid="db0f852e-38b4-4a74-a166-874fbe0c72c1" Value="0" Type="int" />
+        <ComponentTemplate Name="InventoryBase" Description="[DescriptionAttribute:215]" Guid="81a44c6a-c30a-4f53-8d64-0c30aabab8f9" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <ParameterSet Name="Slots" Description="[DescriptionAttribute:216]" Guid="ab4f2d01-ac8c-4943-841d-064726122409" />
+          <Parameter Name="SlotsCount" Description="[DescriptionAttribute:217]" Guid="db0f852e-38b4-4a74-a166-874fbe0c72c1" Value="0" Type="int" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Loot" Description="Defines what items drop when you kill a creature" Guid="8547d74d-d347-4744-a839-14adf11731d0" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <ParameterSet Name="LootOnFire" Description="The same as Loot, but used when entity is on fire" Guid="43714cc2-a990-4dcc-8ac7-12f617e38163" />
-          <ParameterSet Name="Loot" Description="Contains parameters in format &quot;ItemName;MinCount;MaxCount;[Probability]&quot;, e.g. &quot;Dirt;1;3;0.1&quot;" Guid="4f8e4d43-e9bc-4100-9dd1-726a26fc792a" />
+        <ComponentTemplate Name="Loot" Description="[DescriptionAttribute:218]" Guid="8547d74d-d347-4744-a839-14adf11731d0" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <ParameterSet Name="LootOnFire" Description="[DescriptionAttribute:219]" Guid="43714cc2-a990-4dcc-8ac7-12f617e38163" />
+          <ParameterSet Name="Loot" Description="[DescriptionAttribute:220]" Guid="4f8e4d43-e9bc-4100-9dd1-726a26fc792a" />
           <Parameter Name="Class" Guid="1bbdd35e-8db2-4ed0-a99a-7f3c05513941" Value="Game.ComponentLoot" Type="string" />
-          <Parameter Name="LootDropped" Description="Whether the loot was already dropped" Guid="fb09baff-cfbc-49dd-9db8-a68c34b66cea" Value="False" Type="bool" />
+          <Parameter Name="LootDropped" Description="[DescriptionAttribute:221]" Guid="fb09baff-cfbc-49dd-9db8-a68c34b66cea" Value="False" Type="bool" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Rider" Description="Handles riding on animals" Guid="894cdf33-9691-4320-a342-3aba1fd1c746" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="RiderOffset" Description="Offset of rider body position from mount position" Guid="706cbab7-673d-4ed1-8bbf-071c73ef4e7d" Value="0,0,0" Type="Vector3" />
+        <ComponentTemplate Name="Rider" Description="[DescriptionAttribute:222]" Guid="894cdf33-9691-4320-a342-3aba1fd1c746" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="RiderOffset" Description="[DescriptionAttribute:223]" Guid="706cbab7-673d-4ed1-8bbf-071c73ef4e7d" Value="0,0,0" Type="Vector3" />
           <Parameter Name="Class" Guid="7ff0c501-812c-4376-94ae-f145de0cfd64" Value="Game.ComponentRider" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Miner" Description="Handles digging, placement, interaction and hitting" Guid="8acca888-ba39-464f-bcf5-6ae15e448c62" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="AutoInteractRate" Description="How many times per second, on average, miner is automatically interacting with surrounding blocks" Guid="5c13f738-698a-44f9-ac48-3d2e084f750b" Value="0" Type="float" />
-          <Parameter Name="AttackPower" Description="Attack power when using no weapon" Guid="674e7380-0763-49f6-a5f1-5791055a1966" Value="1" Type="float" />
-          <Parameter Name="HitInterval" Description="Attack interval" Guid="af6b9802-f394-de7a-324d-a623f4f2c6c6" Value="0.66" Type="float" />
+        <ComponentTemplate Name="Miner" Description="[DescriptionAttribute:224]" Guid="8acca888-ba39-464f-bcf5-6ae15e448c62" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="AutoInteractRate" Description="[DescriptionAttribute:225]" Guid="5c13f738-698a-44f9-ac48-3d2e084f750b" Value="0" Type="float" />
+          <Parameter Name="AttackPower" Description="[DescriptionAttribute:226]" Guid="674e7380-0763-49f6-a5f1-5791055a1966" Value="1" Type="float" />
+          <Parameter Name="HitInterval" Description="[DescriptionAttribute:227]" Guid="af6b9802-f394-de7a-324d-a623f4f2c6c6" Value="0.66" Type="float" />
           <Parameter Name="Class" Guid="9dc356e5-7dc8-45f6-8779-827ddee9966c" Value="Game.ComponentMiner" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Body" Description="Physical body, handles collisions, gravity, drag, buoyancy, attaching" Guid="8edd1986-0dcc-424f-893a-491c089b821e" InheritanceParent="d981b2a9-4bf4-4b0d-ae4f-a088b3e19e8c">
-          <Parameter Name="CanCrouch" Description="Whether a body can crouch reducing its collision box height" Guid="1908dbe1-4b18-49ad-a4ec-cc3cb698eff2" Value="False" Type="bool" />
-          <Parameter Name="Mass" Description="Mass of body, in kg, used for collisions" Guid="2f640b28-1d73-4add-9f2c-f73d869666f4" Value="10" Type="float" />
-          <Parameter Name="MaxSmoothRiseHeight" Description="Maximum height of smooth rise" Guid="475b054f-35cb-4ce5-902a-97507c6fbdf5" Value="0.51" Type="float" />
-          <Parameter Name="WaterTurnSpeed" Description="How much a body is turning due to current when immersed in water, in approx radians/s" Guid="4bfce00f-b9c6-4420-afa9-9664a094be44" Value="0.05" Type="float" />
-          <Parameter Name="Velocity" Description="Velocity of body" Guid="6dc4fb53-4ea1-4c61-8d8a-3b8c46819652" Value="0,0,0" Type="Vector3" />
-          <Parameter Name="WaterDrag" Description="Water drag coefficient, in 1/s, separate for horizontal and vertical movement" Guid="6f110dcd-64e4-47a5-9416-f8f243875d41" Value="5,4" Type="Vector2" />
+        <ComponentTemplate Name="Body" Description="[DescriptionAttribute:228]" Guid="8edd1986-0dcc-424f-893a-491c089b821e" InheritanceParent="d981b2a9-4bf4-4b0d-ae4f-a088b3e19e8c">
+          <Parameter Name="CanCrouch" Description="[DescriptionAttribute:229]" Guid="1908dbe1-4b18-49ad-a4ec-cc3cb698eff2" Value="False" Type="bool" />
+          <Parameter Name="Mass" Description="[DescriptionAttribute:230]" Guid="2f640b28-1d73-4add-9f2c-f73d869666f4" Value="10" Type="float" />
+          <Parameter Name="MaxSmoothRiseHeight" Description="[DescriptionAttribute:231]" Guid="475b054f-35cb-4ce5-902a-97507c6fbdf5" Value="0.51" Type="float" />
+          <Parameter Name="WaterTurnSpeed" Description="[DescriptionAttribute:232]" Guid="4bfce00f-b9c6-4420-afa9-9664a094be44" Value="0.05" Type="float" />
+          <Parameter Name="Velocity" Description="[DescriptionAttribute:233]" Guid="6dc4fb53-4ea1-4c61-8d8a-3b8c46819652" Value="0,0,0" Type="Vector3" />
+          <Parameter Name="WaterDrag" Description="[DescriptionAttribute:234]" Guid="6f110dcd-64e4-47a5-9416-f8f243875d41" Value="5,4" Type="Vector2" />
           <Parameter Name="Class" Guid="7347a83f-2d46-4fdf-bce2-52677de0b568" Value="Game.ComponentBody" Type="string" />
-          <Parameter Name="WaterSwayAngle" Description="How much a body is swaying when immersed in water, in radians" Guid="739cec60-7d40-429a-a36f-2e8d7f7ace47" Value="0.025" Type="float" />
-          <Parameter Name="CanEmbedInIce" Description="Can body get embedded in ice" Guid="7a09bf66-5f99-4732-a861-c8a43ec34307" Value="False" Type="bool" />
-          <Parameter Name="BoxSize" Description="Size of collision box of body" Guid="8cd981be-a456-44a2-a3d5-4f9657713159" Value="1,1,1" Type="Vector3" />
-          <Parameter Name="ParentBodyRotationOffset" Description="Body attachment rotation offset" Guid="8eaf3a25-96a7-45fc-a98b-ae304134d8e6" Value="0,0,0,1" Type="Quaternion" />
-          <Parameter Name="Density" Description="Density, in g/cm^3, used for buoyancy calculations (water density is 1)" Guid="9d2eb8af-b841-4df4-8af8-754c4372c24d" Value="0.8" Type="float" />
-          <Parameter Name="ParentBodyPositionOffset" Description="Body attachment position offset" Guid="b69f3f30-04bf-4038-b678-a43dd952c787" Value="0,0,0" Type="Vector3" />
-          <Parameter Name="ParentBody" Description="Reference to body to which this body is attached, or null if not attached" Guid="ebf95053-93be-439d-87e8-08a39da937e9" Value="null:" Type="Game.EntityReference" />
-          <Parameter Name="AirDrag" Description="Air drag coefficient, in 1/s, separate for horizontal and vertical movement" Guid="fcaf98a9-9607-4d21-ada7-8f1ee3bdb393" Value="0.25,0.25" Type="Vector2" />
+          <Parameter Name="WaterSwayAngle" Description="[DescriptionAttribute:235]" Guid="739cec60-7d40-429a-a36f-2e8d7f7ace47" Value="0.025" Type="float" />
+          <Parameter Name="CanEmbedInIce" Description="[DescriptionAttribute:236]" Guid="7a09bf66-5f99-4732-a861-c8a43ec34307" Value="False" Type="bool" />
+          <Parameter Name="BoxSize" Description="[DescriptionAttribute:237]" Guid="8cd981be-a456-44a2-a3d5-4f9657713159" Value="1,1,1" Type="Vector3" />
+          <Parameter Name="ParentBodyRotationOffset" Description="[DescriptionAttribute:238]" Guid="8eaf3a25-96a7-45fc-a98b-ae304134d8e6" Value="0,0,0,1" Type="Quaternion" />
+          <Parameter Name="Density" Description="[DescriptionAttribute:239]" Guid="9d2eb8af-b841-4df4-8af8-754c4372c24d" Value="0.8" Type="float" />
+          <Parameter Name="ParentBodyPositionOffset" Description="[DescriptionAttribute:240]" Guid="b69f3f30-04bf-4038-b678-a43dd952c787" Value="0,0,0" Type="Vector3" />
+          <Parameter Name="ParentBody" Description="[DescriptionAttribute:241]" Guid="ebf95053-93be-439d-87e8-08a39da937e9" Value="null:" Type="Game.EntityReference" />
+          <Parameter Name="AirDrag" Description="[DescriptionAttribute:242]" Guid="fcaf98a9-9607-4d21-ada7-8f1ee3bdb393" Value="0.25,0.25" Type="Vector2" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Shapeshifter" Description="Handles shapeshifting into another creature entity" Guid="92e52f46-5d88-4273-80d2-1b5bfb7fdee8" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="NightEntityTemplateName" Description="Name of entity template to switch to during the night, or empty string to not switch" Guid="3297e817-2b19-4366-b06d-a470edafa1aa" Value="" Type="string" />
+        <ComponentTemplate Name="Shapeshifter" Description="[DescriptionAttribute:243]" Guid="92e52f46-5d88-4273-80d2-1b5bfb7fdee8" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="NightEntityTemplateName" Description="[DescriptionAttribute:244]" Guid="3297e817-2b19-4366-b06d-a470edafa1aa" Value="" Type="string" />
           <Parameter Name="Class" Guid="425a3c67-908b-4b2a-b6dd-9965b57b8a75" Value="Game.ComponentShapeshifter" Type="string" />
-          <Parameter Name="DayEntityTemplateName" Description="Name of entity template to switch to during the day, or empty string to not switch" Guid="b357227b-d9b6-464f-9d93-144f2742a4f5" Value="" Type="string" />
-          <Parameter Name="Probability" Description="Probability of shapeshifting being enabled for this entity (evaluated once at spawn)" Guid="d029069d-6e4c-4be0-931a-b733a7ecf56b" Value="0" Type="float" />
+          <Parameter Name="DayEntityTemplateName" Description="[DescriptionAttribute:245]" Guid="b357227b-d9b6-464f-9d93-144f2742a4f5" Value="" Type="string" />
+          <Parameter Name="Probability" Description="[DescriptionAttribute:246]" Guid="d029069d-6e4c-4be0-931a-b733a7ecf56b" Value="0" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="OnFire" Description="Allows entity to be set on fire" Guid="93590d78-63b9-4cd6-bc41-e66864cbb050" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="OnFire" Description="[DescriptionAttribute:247]" Guid="93590d78-63b9-4cd6-bc41-e66864cbb050" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="70e6fe52-8205-464a-88d9-40d4faf39d74" Value="Game.ComponentOnFire" Type="string" />
-          <Parameter Name="FireDuration" Description="Remaining fire time in seconds, or 0 if not on fire" Guid="cb78656d-b3e0-4a41-97c5-0bf955fffdcc" Value="0" Type="float" />
+          <Parameter Name="FireDuration" Description="[DescriptionAttribute:248]" Guid="cb78656d-b3e0-4a41-97c5-0bf955fffdcc" Value="0" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="IntroShip" Description="Ship visible during the intro" Guid="9d970192-07d5-4265-a867-b5a2a8206bb4" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="Heading" Description="Heading of the ship" Guid="3a661569-9c89-4d2f-b533-f889ef12c731" Value="0" Type="float" />
+        <ComponentTemplate Name="IntroShip" Description="[DescriptionAttribute:249]" Guid="9d970192-07d5-4265-a867-b5a2a8206bb4" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="Heading" Description="[DescriptionAttribute:250]" Guid="3a661569-9c89-4d2f-b533-f889ef12c731" Value="0" Type="float" />
           <Parameter Name="Class" Guid="928ccb9d-27a3-4364-bdfd-80242346951b" Value="Game.ComponentIntroShip" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Sickness" Description="Handles creature sickness" Guid="a753aca6-3dcb-4667-a655-70f4bfd875f6" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="SicknessDuration" Description="Remaining duration of sickness, in seconds" Guid="0ee19469-0ec6-44dd-9dab-3e66849621ef" Value="0" Type="float" />
+        <ComponentTemplate Name="Sickness" Description="[DescriptionAttribute:251]" Guid="a753aca6-3dcb-4667-a655-70f4bfd875f6" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="SicknessDuration" Description="[DescriptionAttribute:252]" Guid="0ee19469-0ec6-44dd-9dab-3e66849621ef" Value="0" Type="float" />
           <Parameter Name="Class" Guid="2ecdc324-1a9e-444f-941d-f313447c00a5" Value="Game.ComponentSickness" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Clothing" Description="Handles clothes and skin of player" Guid="b7d5ba34-de1b-4f62-a24c-314e4e1b25ca" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <ParameterSet Name="Clothes" Description="Contains clothes worn by creature" Guid="1478d9a5-62e0-4810-820f-104230d9fb67">
-            <Parameter Name="Legs" Description="List of legs clothes" Guid="510a8ca1-1075-4369-81c6-24dc2a39a74f" Value="" Type="string" />
-            <Parameter Name="Feet" Description="List of feet clothes" Guid="a131fed9-1e61-40e5-90fa-c630b3ede938" Value="" Type="string" />
-            <Parameter Name="Torso" Description="List of torso clothes" Guid="d2e513e4-c3ab-419d-9168-ced1f8abc775" Value="" Type="string" />
-            <Parameter Name="Head" Description="List of head clothes" Guid="d2e8538f-51c0-42f9-8e34-8f31ffef9b0d" Value="" Type="string" />
+        <ComponentTemplate Name="Clothing" Description="[DescriptionAttribute:253]" Guid="b7d5ba34-de1b-4f62-a24c-314e4e1b25ca" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <ParameterSet Name="Clothes" Description="[DescriptionAttribute:254]" Guid="1478d9a5-62e0-4810-820f-104230d9fb67">
+            <Parameter Name="Legs" Description="[DescriptionAttribute:255]" Guid="510a8ca1-1075-4369-81c6-24dc2a39a74f" Value="" Type="string" />
+            <Parameter Name="Feet" Description="[DescriptionAttribute:256]" Guid="a131fed9-1e61-40e5-90fa-c630b3ede938" Value="" Type="string" />
+            <Parameter Name="Torso" Description="[DescriptionAttribute:257]" Guid="d2e513e4-c3ab-419d-9168-ced1f8abc775" Value="" Type="string" />
+            <Parameter Name="Head" Description="[DescriptionAttribute:258]" Guid="d2e8538f-51c0-42f9-8e34-8f31ffef9b0d" Value="" Type="string" />
           </ParameterSet>
           <Parameter Name="Class" Guid="1df4e627-c959-4e6a-bfa2-b7ee3ef08c99" Value="Game.ComponentClothing" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Name" Description="Stores a name" Guid="be9d5f51-94da-4d6f-b14d-fb96061584da" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Name" Description="[DescriptionAttribute:259]" Guid="be9d5f51-94da-4d6f-b14d-fb96061584da" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="224c3372-9bd3-4339-90ed-c4d8b3510cb5" Value="Game.ComponentName" Type="string" />
           <Parameter Name="Name" Guid="62b2d180-3a3a-4df0-ba71-041e7e53bee9" Value="" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Factors" Description="Handles creature performance factors" Guid="78b4c0b4-8bea-d601-b589-812d7c982e5f" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Factors" Description="[DescriptionAttribute:260]" Guid="78b4c0b4-8bea-d601-b589-812d7c982e5f" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="f6b020bb-8994-6ae6-289b-a842e3eb9ca5" Value="Game.ComponentFactors" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Level" Description="Handles creature level and performance factors" Guid="c2473662-5d67-4116-9d77-1d12fdb2935a" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Level" Description="[DescriptionAttribute:261]" Guid="c2473662-5d67-4116-9d77-1d12fdb2935a" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="a346c456-5087-48c4-835a-5829b3f35c68" Value="Game.ComponentLevel" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FurnitureInventory" Description="Furniture inventory" Guid="c4b4f7d0-8439-4cb8-b316-cdd4342ee2ed" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="FurnitureSet" Description="Selected furniture set" Guid="95451ce8-eb15-4568-b42e-1c766fc48b7d" Value="" Type="string" />
+        <ComponentTemplate Name="FurnitureInventory" Description="[DescriptionAttribute:262]" Guid="c4b4f7d0-8439-4cb8-b316-cdd4342ee2ed" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="FurnitureSet" Description="[DescriptionAttribute:263]" Guid="95451ce8-eb15-4568-b42e-1c766fc48b7d" Value="" Type="string" />
           <Parameter Name="Class" Guid="bbc4dbdd-e978-4527-ad22-9f12b1fdd9b9" Value="Game.ComponentFurnitureInventory" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Furnace" Description="A furnace" Guid="c91f7906-de35-4e94-ba6e-90cd55cd19d4" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
-          <Parameter Name="FireTimeRemaining" Description="Fire time remaining, in seconds" Guid="2830cd84-3ff3-4165-aad1-19685e751850" Value="0" Type="float" />
-          <Parameter Name="HeatLevel" Description="Current heat level in furnace" Guid="b4667084-79c4-409e-b043-f9d3010d7e95" Value="0" Type="float" />
+        <ComponentTemplate Name="Furnace" Description="[DescriptionAttribute:264]" Guid="c91f7906-de35-4e94-ba6e-90cd55cd19d4" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
+          <Parameter Name="FireTimeRemaining" Description="[DescriptionAttribute:265]" Guid="2830cd84-3ff3-4165-aad1-19685e751850" Value="0" Type="float" />
+          <Parameter Name="HeatLevel" Description="[DescriptionAttribute:266]" Guid="b4667084-79c4-409e-b043-f9d3010d7e95" Value="0" Type="float" />
           <Parameter Name="Class" Guid="f04c23fe-1d3c-467e-81bc-1796f686be51" Value="Game.ComponentFurnace" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Mount" Description="Handles riding" Guid="d0b14127-39ce-4490-af00-fb4111e9c51e" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="DismountOffset" Description="Offset of dismounting position from mount position, X axis is mirrored to both sides" Guid="15a46491-82f9-412c-a21d-e94fe27df576" Value="0,0,0" Type="Vector3" />
-          <Parameter Name="MountOffset" Description="Offset of the mount point" Guid="34f0ee46-c599-403e-9626-87ba55b52f67" Value="0,0,0" Type="Vector3" />
+        <ComponentTemplate Name="Mount" Description="[DescriptionAttribute:267]" Guid="d0b14127-39ce-4490-af00-fb4111e9c51e" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="DismountOffset" Description="[DescriptionAttribute:268]" Guid="15a46491-82f9-412c-a21d-e94fe27df576" Value="0,0,0" Type="Vector3" />
+          <Parameter Name="MountOffset" Description="[DescriptionAttribute:269]" Guid="34f0ee46-c599-403e-9626-87ba55b52f67" Value="0,0,0" Type="Vector3" />
           <Parameter Name="Class" Guid="63d38a64-4e31-4d9c-9a25-8ce158a3e8b9" Value="Game.ComponentMount" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Flu" Description="Handles creature flu" Guid="d0e949e1-b8d6-450a-9931-78a4284c77bb" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="FluDuration" Description="Remaining duration of flu, in seconds" Guid="1feb1b5a-08ba-43ef-8417-4e0887ee5cd0" Value="0" Type="float" />
+        <ComponentTemplate Name="Flu" Description="[DescriptionAttribute:270]" Guid="d0e949e1-b8d6-450a-9931-78a4284c77bb" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="FluDuration" Description="[DescriptionAttribute:271]" Guid="1feb1b5a-08ba-43ef-8417-4e0887ee5cd0" Value="0" Type="float" />
           <Parameter Name="Class" Guid="88c778ff-b238-4303-b1c5-468cb0f6c73a" Value="Game.ComponentFlu" Type="string" />
-          <Parameter Name="FluOnset" Description="Onset of flu, in seconds" Guid="e899dff7-6944-4bc9-aac9-b655fb029d14" Value="0" Type="float" />
+          <Parameter Name="FluOnset" Description="[DescriptionAttribute:272]" Guid="e899dff7-6944-4bc9-aac9-b655fb029d14" Value="0" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Health" Description="Handles creature health" Guid="d7a50718-e128-4d0e-bac1-16f789d50ddd" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="Health" Description="Health value, 0 to 1" Guid="04c98c5b-7276-47c6-8de8-386571d405b1" Value="1" Type="float" />
-          <Parameter Name="DeathTime" Description="Time of death, or -1 if not dead yet" Guid="21e42d7a-de00-4aa4-9edc-f8167943c00a" Value="-1" Type="double" />
-          <Parameter Name="AttackResilience" Description="Resilience of creature to attack. Injury = weapon power / resilience" Guid="3411b624-9674-450d-afee-f04f5a9dea3b" Value="10" Type="float" />
+        <ComponentTemplate Name="Health" Description="[DescriptionAttribute:273]" Guid="d7a50718-e128-4d0e-bac1-16f789d50ddd" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="Health" Description="[DescriptionAttribute:274]" Guid="04c98c5b-7276-47c6-8de8-386571d405b1" Value="1" Type="float" />
+          <Parameter Name="DeathTime" Description="[DescriptionAttribute:275]" Guid="21e42d7a-de00-4aa4-9edc-f8167943c00a" Value="-1" Type="double" />
+          <Parameter Name="AttackResilience" Description="[DescriptionAttribute:276]" Guid="3411b624-9674-450d-afee-f04f5a9dea3b" Value="10" Type="float" />
           <Parameter Name="Class" Guid="4e14ce27-fdef-46ca-8ea0-26af43c215e5" Value="Game.ComponentHealth" Type="string" />
-          <Parameter Name="FallResilience" Description="Resilience of creature to fall, in m/s. Any fall below that speed will not cause injury." Guid="4fd10c5a-8c06-4b4e-a556-512cc8c18f43" Value="7.5" Type="float" />
-          <Parameter Name="CorpseDuration" Description="Time after which corpse disappears, or 0 to never disappear" Guid="6b6254f2-2e38-45af-b358-3ce5bb54fd87" Value="8" Type="float" />
-          <Parameter Name="Air" Description="Amount of air, 0 to 1" Guid="b1200714-6145-4744-8e8b-03376e40e1eb" Value="1" Type="float" />
-          <Parameter Name="BreathingMode" Description="Breathing mode of creature" Guid="b7b7a44e-7638-43ff-823e-758c07bb9bc6" Value="Air" Type="Game.BreathingMode" />
-          <Parameter Name="CanStrand" Description="Whether creature will take damage when on land" Guid="c83a6ce6-8320-4426-8944-2ec31289aeb5" Value="False" Type="bool" />
-          <Parameter Name="FireResilience" Description="Resilience of creature to fire. Injury per second = 1 / resilience" Guid="d6e105a0-8950-4550-81ea-5726afca17e9" Value="20" Type="float" />
-          <Parameter Name="CauseOfDeath" Description="Cause of death of creature" Guid="d80ab9ad-9782-49ff-9ee6-b1ad2ee7323c" Value="" Type="string" />
-          <Parameter Name="AirCapacity" Description="Time a creature can last on a single breath, in seconds" Guid="ef78e617-f31e-4940-9590-09837d0036dc" Value="10" Type="float" />
-          <Parameter Name="HealFactor" Description="The speed of the heal for a creature" Guid="400b6f37-bb76-79d7-cd2a-28a5bbdebc8e" Value="1" Type="float" />
-          <Parameter Name="VoidDamageFactor" Description="Controls the damage taken when the creature position is too high or too low" Guid="59028bf3-0003-41c1-2c02-f3196294fe40" Value="1" Type="float" />
-          <Parameter Name="AirLackResilience" Description="Time to die when the creature cannot breathe" Guid="e76def38-d79c-0760-58cc-76a408f03508" Value="8.333" Type="float" />
-          <Parameter Name="MagmaResilience" Description="Time to die when the creature is in magma" Guid="09385792-004e-7f5f-b989-3952e449dfba" Value="0.5" Type="float" />
-          <Parameter Name="CrushResilience" Description="controls the damage taken when the creature is crushed" Guid="cacf3868-e0df-c47f-462d-a647731ffa32" Value="5" Type="float" />
-          <Parameter Name="SpikeResilience" Description="Controls the damage taken when the creature is getting spiked by spikes, cactus and sea urchin" Guid="bc9fa077-d6c1-9101-91d1-b0c88fc481c8" Value="10" Type="float" />
-          <Parameter Name="ExplosionResilience" Description="Controls the damage taken when the creature is exploded" Guid="959d00cd-5e66-1db7-d763-c0d8dd2875e5" Value="1" Type="float" />
+          <Parameter Name="FallResilience" Description="[DescriptionAttribute:277]" Guid="4fd10c5a-8c06-4b4e-a556-512cc8c18f43" Value="7.5" Type="float" />
+          <Parameter Name="CorpseDuration" Description="[DescriptionAttribute:278]" Guid="6b6254f2-2e38-45af-b358-3ce5bb54fd87" Value="8" Type="float" />
+          <Parameter Name="Air" Description="[DescriptionAttribute:279]" Guid="b1200714-6145-4744-8e8b-03376e40e1eb" Value="1" Type="float" />
+          <Parameter Name="BreathingMode" Description="[DescriptionAttribute:280]" Guid="b7b7a44e-7638-43ff-823e-758c07bb9bc6" Value="Air" Type="Game.BreathingMode" />
+          <Parameter Name="CanStrand" Description="[DescriptionAttribute:281]" Guid="c83a6ce6-8320-4426-8944-2ec31289aeb5" Value="False" Type="bool" />
+          <Parameter Name="FireResilience" Description="[DescriptionAttribute:282]" Guid="d6e105a0-8950-4550-81ea-5726afca17e9" Value="20" Type="float" />
+          <Parameter Name="CauseOfDeath" Description="[DescriptionAttribute:283]" Guid="d80ab9ad-9782-49ff-9ee6-b1ad2ee7323c" Value="" Type="string" />
+          <Parameter Name="AirCapacity" Description="[DescriptionAttribute:284]" Guid="ef78e617-f31e-4940-9590-09837d0036dc" Value="10" Type="float" />
+          <Parameter Name="HealFactor" Description="[DescriptionAttribute:285]" Guid="400b6f37-bb76-79d7-cd2a-28a5bbdebc8e" Value="1" Type="float" />
+          <Parameter Name="VoidDamageFactor" Description="[DescriptionAttribute:286]" Guid="59028bf3-0003-41c1-2c02-f3196294fe40" Value="1" Type="float" />
+          <Parameter Name="AirLackResilience" Description="[DescriptionAttribute:287]" Guid="e76def38-d79c-0760-58cc-76a408f03508" Value="8.333" Type="float" />
+          <Parameter Name="MagmaResilience" Description="[DescriptionAttribute:288]" Guid="09385792-004e-7f5f-b989-3952e449dfba" Value="0.5" Type="float" />
+          <Parameter Name="CrushResilience" Description="[DescriptionAttribute:289]" Guid="cacf3868-e0df-c47f-462d-a647731ffa32" Value="5" Type="float" />
+          <Parameter Name="SpikeResilience" Description="[DescriptionAttribute:290]" Guid="bc9fa077-d6c1-9101-91d1-b0c88fc481c8" Value="10" Type="float" />
+          <Parameter Name="ExplosionResilience" Description="[DescriptionAttribute:291]" Guid="959d00cd-5e66-1db7-d763-c0d8dd2875e5" Value="1" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Frame" Description="Contains position and rotation Quaternion to orient entity in the world" Guid="d981b2a9-4bf4-4b0d-ae4f-a088b3e19e8c" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="Frame" Description="[DescriptionAttribute:292]" Guid="d981b2a9-4bf4-4b0d-ae4f-a088b3e19e8c" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="1173344e-f6df-49fa-845a-545c27a66435" Value="Game.ComponentFrame" Type="string" />
-          <Parameter Name="Rotation" Description="Rotation of frame" Guid="4593a63e-9ca8-4a22-8cd0-78c81d8dfec8" Value="0,0,0,1" Type="Quaternion" />
-          <Parameter Name="Position" Description="Position of frame" Guid="622de328-a99c-45ca-b83c-fd0bbb3fc279" Value="0,0,0" Type="Vector3" />
+          <Parameter Name="Rotation" Description="[DescriptionAttribute:293]" Guid="4593a63e-9ca8-4a22-8cd0-78c81d8dfec8" Value="0,0,0,1" Type="Quaternion" />
+          <Parameter Name="Position" Description="[DescriptionAttribute:294]" Guid="622de328-a99c-45ca-b83c-fd0bbb3fc279" Value="0,0,0" Type="Vector3" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Inventory" Description="Player's inventory" Guid="de5c0cb9-42d1-4ee4-b58f-bb9bb668b890" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
+        <ComponentTemplate Name="Inventory" Description="[DescriptionAttribute:295]" Guid="de5c0cb9-42d1-4ee4-b58f-bb9bb668b890" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
           <Parameter Name="Class" Guid="b4723611-8b4e-4763-a11d-b4ff19c6109f" Value="Game.ComponentInventory" Type="string" />
           <Parameter Name="SlotsCount" Guid="c3a21e8b-d503-4c6d-af0f-67a67afaad96" Value="26" Type="int" />
-          <Parameter Name="ActiveSlotIndex" Description="Index of active slot" Guid="f4215298-f311-4bbc-932d-9f783e5a6e66" Value="0" Type="int" />
+          <Parameter Name="ActiveSlotIndex" Description="[DescriptionAttribute:296]" Guid="f4215298-f311-4bbc-932d-9f783e5a6e66" Value="0" Type="int" />
         </ComponentTemplate>
-        <ComponentTemplate Name="AutoJump" Description="Makes the creature jump when it encounters a jumpable obstacle" Guid="ef94c9db-75b0-4e0f-9971-f575ac88661b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="JumpStrength" Description="Strength of jump to make" Guid="5cb36296-c722-4e7b-bd6d-314539961d17" Value="1" Type="float" />
+        <ComponentTemplate Name="AutoJump" Description="[DescriptionAttribute:297]" Guid="ef94c9db-75b0-4e0f-9971-f575ac88661b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="JumpStrength" Description="[DescriptionAttribute:298]" Guid="5cb36296-c722-4e7b-bd6d-314539961d17" Value="1" Type="float" />
           <Parameter Name="Class" Guid="e301e8ff-fc97-4f0e-bd82-9769aa5ae157" Value="Game.ComponentAutoJump" Type="string" />
-          <Parameter Name="AlwaysEnabled" Description="Whether autojump is always enabled, or uses value from the settings" Guid="efc0d959-118a-4d18-b438-bf950db6a9c6" Value="True" Type="bool" />
+          <Parameter Name="AlwaysEnabled" Description="[DescriptionAttribute:299]" Guid="efc0d959-118a-4d18-b438-bf950db6a9c6" Value="True" Type="bool" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Locomotion" Description="Handles creature movement" Guid="f800ca88-e13e-455d-8def-849c99c615fa" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="FlySpeed" Description="Flying speed, in m/s, or 0 if creature cannot fly" Guid="2972317a-087a-44e3-9c1c-4b70bde47722" Value="6" Type="float" />
-          <Parameter Name="WalkSpeedWhenTurning" Description="Speed to force creature to walk when turning, or 0 to not force" Guid="51640769-fdd6-4db6-b176-80a9a52cb593" Value="0.3" Type="float" />
-          <Parameter Name="LookAutoLevelY" Description="Whether vertical look angle should be automatically levelled" Guid="8c8f7779-2344-40a4-b375-3f9e366a9916" Value="True" Type="bool" />
+        <ComponentTemplate Name="Locomotion" Description="[DescriptionAttribute:300]" Guid="f800ca88-e13e-455d-8def-849c99c615fa" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="FlySpeed" Description="[DescriptionAttribute:301]" Guid="2972317a-087a-44e3-9c1c-4b70bde47722" Value="6" Type="float" />
+          <Parameter Name="WalkSpeedWhenTurning" Description="[DescriptionAttribute:302]" Guid="51640769-fdd6-4db6-b176-80a9a52cb593" Value="0.3" Type="float" />
+          <Parameter Name="LookAutoLevelY" Description="[DescriptionAttribute:303]" Guid="8c8f7779-2344-40a4-b375-3f9e366a9916" Value="True" Type="bool" />
           <Parameter Name="LoadOrder" Guid="960ebbe9-3a14-4ea2-8965-5e2b2780cc50" Value="-1" Type="int" />
-          <Parameter Name="Roll" Description="Roll, in radians" Guid="a5715fd6-70c9-4f9e-ade6-81e68e8e1234" Value="0" Type="float" />
+          <Parameter Name="Roll" Description="[DescriptionAttribute:304]" Guid="a5715fd6-70c9-4f9e-ade6-81e68e8e1234" Value="0" Type="float" />
           <Parameter Name="Class" Guid="a86d419e-fbd2-4688-9046-a9d08d3f4316" Value="Game.ComponentLocomotion" Type="string" />
-          <Parameter Name="LookAutoLevelX" Description="Whether horizontal look angle should be automatically levelled" Guid="ab0014ed-fcff-4d3e-94c1-f8f919456264" Value="True" Type="bool" />
-          <Parameter Name="LadderSpeed" Description="Ladder move speed, or 0 to disable ladder entry, in m/s" Guid="b974b9f4-a94a-40dd-bc81-d6c15e7e0f6b" Value="2.5" Type="float" />
-          <Parameter Name="MinFrictionFactor" Description="Minimum friction factor, irrespective of terrain" Guid="bce87a11-44f4-4b36-a4a0-ca42d208f0f1" Value="0" Type="float" />
-          <Parameter Name="SwimSpeed" Description="Swimming speed, in m/s, or 0 if creature cannot swim" Guid="c3983f50-48a2-46ca-a102-feb07bdb3947" Value="5" Type="float" />
-          <Parameter Name="Heading" Description="Heading, in radians" Guid="ccf045dd-8b9b-4a8b-9982-e279c4979aa3" Value="0" Type="float" />
-          <Parameter Name="LookSpeed" Description="Looking speed, in rad/s" Guid="deb68c46-65d4-48ce-af71-9014206f5ae0" Value="8" Type="float" />
-          <Parameter Name="InAirWalkFactor" Description="How much a creature can control its movement by walking when in air (1 - the same as normal walk)" Guid="e40efa04-8bb0-488b-b0a8-4659a62ce530" Value="0.4" Type="float" />
-          <Parameter Name="WalkSpeed" Description="Maximum walking speed, in m/s" Guid="e4d9fdb1-69ce-4b87-adbd-c1dd8763a896" Value="4" Type="float" />
-          <Parameter Name="TurnSpeed" Description="Turning speed, in rad/s" Guid="f176aca2-7612-404d-8aa9-6cbba43ff77a" Value="4.5" Type="float" />
-          <Parameter Name="Pitch" Description="Pitch, in radians" Guid="f3a04690-8a31-4114-b9a3-6c05b42f9574" Value="0" Type="float" />
-          <Parameter Name="IsCreativeFlyEnabled" Description="Whether creative mode flight is enabled for creature" Guid="f3c0e985-2621-400f-ad0c-96ea95e88a93" Value="False" Type="bool" />
-          <Parameter Name="CreativeFlySpeed" Description="Creative mode flying speed, in m/s or 0 if cannot creative-fly" Guid="f51c8712-bd0d-43e8-810a-5abfd47db767" Value="16" Type="float" />
-          <Parameter Name="AccelerationFactor" Description="Acceleration factor for all types of movements, human is 1" Guid="f52735a6-fdc6-49e0-88fa-be192a88ce66" Value="1" Type="float" />
-          <Parameter Name="JumpSpeed" Description="Jump speed, in m/s" Guid="f6b501f7-a73b-4dcf-9b45-96babdabed98" Value="4.5" Type="float" />
+          <Parameter Name="LookAutoLevelX" Description="[DescriptionAttribute:305]" Guid="ab0014ed-fcff-4d3e-94c1-f8f919456264" Value="True" Type="bool" />
+          <Parameter Name="LadderSpeed" Description="[DescriptionAttribute:306]" Guid="b974b9f4-a94a-40dd-bc81-d6c15e7e0f6b" Value="2.5" Type="float" />
+          <Parameter Name="MinFrictionFactor" Description="[DescriptionAttribute:307]" Guid="bce87a11-44f4-4b36-a4a0-ca42d208f0f1" Value="0" Type="float" />
+          <Parameter Name="SwimSpeed" Description="[DescriptionAttribute:308]" Guid="c3983f50-48a2-46ca-a102-feb07bdb3947" Value="5" Type="float" />
+          <Parameter Name="Heading" Description="[DescriptionAttribute:309]" Guid="ccf045dd-8b9b-4a8b-9982-e279c4979aa3" Value="0" Type="float" />
+          <Parameter Name="LookSpeed" Description="[DescriptionAttribute:310]" Guid="deb68c46-65d4-48ce-af71-9014206f5ae0" Value="8" Type="float" />
+          <Parameter Name="InAirWalkFactor" Description="[DescriptionAttribute:311]" Guid="e40efa04-8bb0-488b-b0a8-4659a62ce530" Value="0.4" Type="float" />
+          <Parameter Name="WalkSpeed" Description="[DescriptionAttribute:312]" Guid="e4d9fdb1-69ce-4b87-adbd-c1dd8763a896" Value="4" Type="float" />
+          <Parameter Name="TurnSpeed" Description="[DescriptionAttribute:313]" Guid="f176aca2-7612-404d-8aa9-6cbba43ff77a" Value="4.5" Type="float" />
+          <Parameter Name="Pitch" Description="[DescriptionAttribute:314]" Guid="f3a04690-8a31-4114-b9a3-6c05b42f9574" Value="0" Type="float" />
+          <Parameter Name="IsCreativeFlyEnabled" Description="[DescriptionAttribute:315]" Guid="f3c0e985-2621-400f-ad0c-96ea95e88a93" Value="False" Type="bool" />
+          <Parameter Name="CreativeFlySpeed" Description="[DescriptionAttribute:316]" Guid="f51c8712-bd0d-43e8-810a-5abfd47db767" Value="16" Type="float" />
+          <Parameter Name="AccelerationFactor" Description="[DescriptionAttribute:317]" Guid="f52735a6-fdc6-49e0-88fa-be192a88ce66" Value="1" Type="float" />
+          <Parameter Name="JumpSpeed" Description="[DescriptionAttribute:318]" Guid="f6b501f7-a73b-4dcf-9b45-96babdabed98" Value="4.5" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Dispenser" Description="A dispenser that dispenses items" Guid="fa15e6eb-9078-4abf-873f-4a8da609e287" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
+        <ComponentTemplate Name="Dispenser" Description="[DescriptionAttribute:319]" Guid="fa15e6eb-9078-4abf-873f-4a8da609e287" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
           <Parameter Name="SlotsCount" Guid="8bc760a1-06f0-4313-9162-480eaee2be4c" Value="8" Type="int" />
           <Parameter Name="Class" Guid="b2e68ecd-49fc-4c05-b784-424da13f8550" Value="Game.ComponentDispenser" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="PickableGathererPlayer" Description="Component that controls player to get pickables" Guid="fa2bb746-b851-8b94-c3f5-bf09ead351a6" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
+        <ComponentTemplate Name="PickableGathererPlayer" Description="[DescriptionAttribute:320]" Guid="fa2bb746-b851-8b94-c3f5-bf09ead351a6" InheritanceParent="81a44c6a-c30a-4f53-8d64-0c30aabab8f9">
           <Parameter Name="Class" Guid="dcb1a27b-64ab-dcc7-3a34-8e8097873d23" Value="Game.ComponentPickableGathererPlayer" Type="string" />
         </ComponentTemplate>
       </Folder>
       <Folder Name="Rendering" Guid="dec469ce-9b77-465f-a2a8-36d2640424db">
-        <ComponentTemplate Name="HumanModel" Description="Human model behavior and animation" Guid="0566662e-bb24-45f9-84d8-f3c1e5d083df" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
-          <Parameter Name="WalkAnimationSpeed" Description="Walking animation speed, in cycles per meter" Guid="1c664258-47cb-4ebf-b7c2-3fac0430a24e" Value="1" Type="float" />
-          <Parameter Name="WalkLegsAngle" Description="Animation angle of legs, in radians" Guid="21eed3c6-cf56-4068-b79e-653fe740f495" Value="0.5" Type="float" />
-          <Parameter Name="WalkBobHeight" Description="Height of bobbing when creature walks, in meters" Guid="2929455d-85a4-445e-a101-e33b75eb8959" Value="0.05" Type="float" />
+        <ComponentTemplate Name="HumanModel" Description="[DescriptionAttribute:321]" Guid="0566662e-bb24-45f9-84d8-f3c1e5d083df" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
+          <Parameter Name="WalkAnimationSpeed" Description="[DescriptionAttribute:322]" Guid="1c664258-47cb-4ebf-b7c2-3fac0430a24e" Value="1" Type="float" />
+          <Parameter Name="WalkLegsAngle" Description="[DescriptionAttribute:323]" Guid="21eed3c6-cf56-4068-b79e-653fe740f495" Value="0.5" Type="float" />
+          <Parameter Name="WalkBobHeight" Description="[DescriptionAttribute:324]" Guid="2929455d-85a4-445e-a101-e33b75eb8959" Value="0.05" Type="float" />
           <Parameter Name="Class" Guid="fde7895d-e080-4bb6-876a-36d582f5eda2" Value="Game.ComponentHumanModel" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="BirdModel" Description="Bird model behavior and animation" Guid="0cf15b57-00ff-422e-bb97-9dab5354d83b" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
+        <ComponentTemplate Name="BirdModel" Description="[DescriptionAttribute:325]" Guid="0cf15b57-00ff-422e-bb97-9dab5354d83b" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
           <Parameter Name="BoundingSphereRadius" Guid="5f901b7b-9fab-475d-be36-6c66dc4b2b2f" Value="1" Type="float" />
           <Parameter Name="Class" Guid="7168e4e6-6c8d-4959-b419-19b70e96a443" Value="Game.ComponentBirdModel" Type="string" />
-          <Parameter Name="WalkAnimationSpeed" Description="Walking animation speed, in cycles/meter" Guid="904ac951-ba53-46a4-8744-152547544e4b" Value="1" Type="float" />
-          <Parameter Name="FlyAnimationSpeed" Description="Flying animation speed" Guid="a58ccff6-c391-45ce-815d-edd194717aed" Value="1" Type="float" />
-          <Parameter Name="PeckAnimationSpeed" Description="Pecking animation speed, in cycles/second" Guid="ae7c2d6d-3377-4a42-9097-8231918f5265" Value="2" Type="float" />
-          <Parameter Name="WalkBobHeight" Description="Height of bobbing when creature walks, in meters" Guid="b2086e51-f5d8-40d9-9409-e2690bdb5270" Value="0" Type="float" />
+          <Parameter Name="WalkAnimationSpeed" Description="[DescriptionAttribute:326]" Guid="904ac951-ba53-46a4-8744-152547544e4b" Value="1" Type="float" />
+          <Parameter Name="FlyAnimationSpeed" Description="[DescriptionAttribute:327]" Guid="a58ccff6-c391-45ce-815d-edd194717aed" Value="1" Type="float" />
+          <Parameter Name="PeckAnimationSpeed" Description="[DescriptionAttribute:328]" Guid="ae7c2d6d-3377-4a42-9097-8231918f5265" Value="2" Type="float" />
+          <Parameter Name="WalkBobHeight" Description="[DescriptionAttribute:329]" Guid="b2086e51-f5d8-40d9-9409-e2690bdb5270" Value="0" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FishModel" Description="Fish model behavior and animation" Guid="210eecbb-7833-4a6b-b3d6-884e8baa6683" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
-          <Parameter Name="HasVerticalTail" Description="Whether fish has a tail that beats vertically" Guid="1d6ef613-224a-4639-b461-750775e2ca75" Value="False" Type="bool" />
+        <ComponentTemplate Name="FishModel" Description="[DescriptionAttribute:330]" Guid="210eecbb-7833-4a6b-b3d6-884e8baa6683" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
+          <Parameter Name="HasVerticalTail" Description="[DescriptionAttribute:331]" Guid="1d6ef613-224a-4639-b461-750775e2ca75" Value="False" Type="bool" />
           <Parameter Name="Class" Guid="784d4fb2-8fbb-47ee-b066-b445e947834b" Value="Game.ComponentFishModel" Type="string" />
-          <Parameter Name="SwimAnimationSpeed" Description="Swimming animation speed" Guid="94b8c34f-0208-4a3d-8a21-a2d0480426f7" Value="1" Type="float" />
+          <Parameter Name="SwimAnimationSpeed" Description="[DescriptionAttribute:332]" Guid="94b8c34f-0208-4a3d-8a21-a2d0480426f7" Value="1" Type="float" />
           <Parameter Name="BoundingSphereRadius" Guid="dfaddf0f-b94e-41b0-8ed5-5dabe3fdadd1" Value="1" Type="float" />
         </ComponentTemplate>
-        <ComponentTemplate Name="BlockHighlight" Description="Draws block highlight when player is pointing at it" Guid="3a86f5a6-1d85-4f4c-8c3b-de5bdcbd1505" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="BlockHighlight" Description="[DescriptionAttribute:333]" Guid="3a86f5a6-1d85-4f4c-8c3b-de5bdcbd1505" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="5103b421-e482-4625-9ae1-e9b9e61fdf38" Value="Game.ComponentBlockHighlight" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FirstPersonModel" Description="Player's first person model (hand and held items)" Guid="3d4a5ce2-b578-4d90-b365-ce5a3cc693f1" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="HandModelName" Description="Name of hand model" Guid="3e6cc102-3ab7-47da-b402-51ec439004d6" Value="" Type="string" />
+        <ComponentTemplate Name="FirstPersonModel" Description="[DescriptionAttribute:334]" Guid="3d4a5ce2-b578-4d90-b365-ce5a3cc693f1" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="HandModelName" Description="[DescriptionAttribute:335]" Guid="3e6cc102-3ab7-47da-b402-51ec439004d6" Value="" Type="string" />
           <Parameter Name="Class" Guid="bb0d545a-b76e-48a9-8966-022d79b4769a" Value="Game.ComponentFirstPersonModel" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="AimingSights" Description="Draws aiming sights" Guid="5a459021-1d51-407c-8d55-03c73fb55210" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="AimingSights" Description="[DescriptionAttribute:336]" Guid="5a459021-1d51-407c-8d55-03c73fb55210" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="59f9c747-fe98-4b8a-9d12-435eab6843a1" Value="Game.ComponentAimingSights" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="CreatureModel" Description="Base component for all creature models" Guid="681a5886-5bff-418a-bf5f-ac84f290a311" InheritanceParent="79f776b5-94f4-4bce-b119-971a9cf6255c">
+        <ComponentTemplate Name="CreatureModel" Description="[DescriptionAttribute:337]" Guid="681a5886-5bff-418a-bf5f-ac84f290a311" InheritanceParent="79f776b5-94f4-4bce-b119-971a9cf6255c">
           <Parameter Name="Class" Guid="a7690b4e-1c92-4cae-8894-028d301faa17" Value="" Type="string" />
           <Parameter Name="CastsShadow" Guid="d5b01713-aa32-48b9-b0b6-1713e8f41d50" Value="True" Type="bool" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FourLeggedModel" Description="Four legged model behavior and animation" Guid="76d24f74-5f25-4d30-92ef-658c1a4d66c8" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
+        <ComponentTemplate Name="FourLeggedModel" Description="[DescriptionAttribute:338]" Guid="76d24f74-5f25-4d30-92ef-658c1a4d66c8" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
           <Parameter Name="CanterLegsAngleFactor" Guid="51ffcd51-4814-4be3-9b40-84973db48b2a" Value="1.5" Type="float" />
-          <Parameter Name="CanCanter" Description="Whether a creature can canter" Guid="62a16cf8-1af8-4a45-a275-54f2b35dddef" Value="True" Type="bool" />
-          <Parameter Name="UseCanterSound" Description="Whether to use canter sound or normal steps sound when cantering" Guid="88f7a06d-6e20-4dba-9adf-ff029a40190a" Value="True" Type="bool" />
-          <Parameter Name="WalkFrontLegsAngle" Description="Animation angle of front legs, in radians" Guid="aa6d7809-ce9c-43ad-b590-340efb766eda" Value="0.55" Type="float" />
-          <Parameter Name="WalkHindLegsAngle" Description="Animation angle of hind legs, in radians" Guid="ad945b6b-421e-4448-a9b6-5ff626fda26c" Value="0.4" Type="float" />
-          <Parameter Name="WalkBobHeight" Description="Height of bobbing when creature walks, in meters" Guid="d1e6352e-14d3-42a3-8e13-634bc3efdfbd" Value="0.025" Type="float" />
-          <Parameter Name="WalkAnimationSpeed" Description="Walking animation speed, in cycles/meter" Guid="e8d69ded-5c48-451c-8de9-0b7cc3a1f27c" Value="1" Type="float" />
-          <Parameter Name="CanTrot" Description="Whether a creature can trot" Guid="f0aa73f5-4105-4082-9948-dd827aa3c2ac" Value="False" Type="bool" />
-          <Parameter Name="MoveLegWhenFeeding" Description="Whether model should move front leg when feeding" Guid="f13387d5-0487-4052-9ab5-54def3956e8a" Value="False" Type="bool" />
+          <Parameter Name="CanCanter" Description="[DescriptionAttribute:339]" Guid="62a16cf8-1af8-4a45-a275-54f2b35dddef" Value="True" Type="bool" />
+          <Parameter Name="UseCanterSound" Description="[DescriptionAttribute:340]" Guid="88f7a06d-6e20-4dba-9adf-ff029a40190a" Value="True" Type="bool" />
+          <Parameter Name="WalkFrontLegsAngle" Description="[DescriptionAttribute:341]" Guid="aa6d7809-ce9c-43ad-b590-340efb766eda" Value="0.55" Type="float" />
+          <Parameter Name="WalkHindLegsAngle" Description="[DescriptionAttribute:342]" Guid="ad945b6b-421e-4448-a9b6-5ff626fda26c" Value="0.4" Type="float" />
+          <Parameter Name="WalkBobHeight" Description="[DescriptionAttribute:343]" Guid="d1e6352e-14d3-42a3-8e13-634bc3efdfbd" Value="0.025" Type="float" />
+          <Parameter Name="WalkAnimationSpeed" Description="[DescriptionAttribute:344]" Guid="e8d69ded-5c48-451c-8de9-0b7cc3a1f27c" Value="1" Type="float" />
+          <Parameter Name="CanTrot" Description="[DescriptionAttribute:345]" Guid="f0aa73f5-4105-4082-9948-dd827aa3c2ac" Value="False" Type="bool" />
+          <Parameter Name="MoveLegWhenFeeding" Description="[DescriptionAttribute:346]" Guid="f13387d5-0487-4052-9ab5-54def3956e8a" Value="False" Type="bool" />
           <Parameter Name="Class" Guid="f99bcc68-0362-4509-aba1-29e68b44372a" Value="Game.ComponentFourLeggedModel" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="Model" Description="Manages a 3D model and allows to animate it by changing bone matrices (models are drawn by SubsystemModelsRenderer)" Guid="79f776b5-94f4-4bce-b119-971a9cf6255c" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="PrepareOrder" Description="Order in which models will be prepared for drawing" Guid="0d918779-99d1-45de-aaf5-d1b706213853" Value="0" Type="int" />
-          <Parameter Name="BoundingSphereRadius" Description="Radius of bounding sphere used for visibility culling" Guid="63d3e786-7ee2-4bdd-afa6-e2c64bcbb9d7" Value="2" Type="float" />
+        <ComponentTemplate Name="Model" Description="[DescriptionAttribute:347]" Guid="79f776b5-94f4-4bce-b119-971a9cf6255c" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="PrepareOrder" Description="[DescriptionAttribute:348]" Guid="0d918779-99d1-45de-aaf5-d1b706213853" Value="0" Type="int" />
+          <Parameter Name="BoundingSphereRadius" Description="[DescriptionAttribute:349]" Guid="63d3e786-7ee2-4bdd-afa6-e2c64bcbb9d7" Value="2" Type="float" />
           <Parameter Name="ModelScale" Guid="63d3e786-8ee2-4bdd-afa6-e2c64bcbb9d7" Value="1" Type="float" />
           <Parameter Name="Transparent" Guid="63d3e786-9ee2-4bdd-afa6-e2c64bcbb9d7" Value="1" Type="float" />
           <Parameter Name="Class" Guid="6c11bcce-b6f8-47d8-bf70-8b05d44208a2" Value="Game.ComponentModel" Type="string" />
-          <Parameter Name="ModelName" Description="Name of model" Guid="b218aefe-9a39-4dda-b3a7-20fd2488b70f" Value="" Type="string" />
-          <Parameter Name="CastsShadow" Description="Whether model casts shadow on the terrain (ComponentBody must also be present in entity)" Guid="db4beb73-f071-49e3-9a46-8feb09c8f13d" Value="False" Type="bool" />
-          <Parameter Name="TextureOverride" Description="Texture to use on the model, or empty string to use model texture" Guid="e7a927a4-a52a-4cbf-8170-d5eed845cea8" Value="" Type="string" />
+          <Parameter Name="ModelName" Description="[DescriptionAttribute:350]" Guid="b218aefe-9a39-4dda-b3a7-20fd2488b70f" Value="" Type="string" />
+          <Parameter Name="CastsShadow" Description="[DescriptionAttribute:351]" Guid="db4beb73-f071-49e3-9a46-8feb09c8f13d" Value="False" Type="bool" />
+          <Parameter Name="TextureOverride" Description="[DescriptionAttribute:352]" Guid="e7a927a4-a52a-4cbf-8170-d5eed845cea8" Value="" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="DiggingCracks" Description="Draws cracks when a miner is digging" Guid="7ea6062c-28be-4e76-8765-39b7a1f5be9b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="DiggingCracks" Description="[DescriptionAttribute:353]" Guid="7ea6062c-28be-4e76-8765-39b7a1f5be9b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="239a3460-544e-49d1-832b-364f1fe2799c" Value="Game.ComponentDiggingCracks" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="ScreenOverlays" Description="Renders screen overlays" Guid="a37b6ac4-185a-4df8-99d0-4daee61df71d" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+        <ComponentTemplate Name="ScreenOverlays" Description="[DescriptionAttribute:354]" Guid="a37b6ac4-185a-4df8-99d0-4daee61df71d" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="5bdf979f-df04-4ef1-b367-743533acabb4" Value="Game.ComponentScreenOverlays" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="GlowingEyes" Description="Draws glowing eyes for a creature" Guid="bb8701d3-3a4f-44f7-8a1f-3a455533f632" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="GlowingEyesOffset" Description="Glowing eyes offset from head" Guid="17285109-ace1-4312-bb0a-bfceeb50cbac" Value="0,0,0" Type="Vector3" />
-          <Parameter Name="GlowingEyesColor" Description="Glowing eyes color, or transparent if no glowing eyes" Guid="67ab35b1-7f8d-47ec-832b-313ff4bbecdd" Value="0,0,0,0" Type="Color" />
+        <ComponentTemplate Name="GlowingEyes" Description="[DescriptionAttribute:355]" Guid="bb8701d3-3a4f-44f7-8a1f-3a455533f632" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="GlowingEyesOffset" Description="[DescriptionAttribute:356]" Guid="17285109-ace1-4312-bb0a-bfceeb50cbac" Value="0,0,0" Type="Vector3" />
+          <Parameter Name="GlowingEyesColor" Description="[DescriptionAttribute:357]" Guid="67ab35b1-7f8d-47ec-832b-313ff4bbecdd" Value="0,0,0,0" Type="Color" />
           <Parameter Name="Class" Guid="6ac22c72-6c7e-46b3-b4f0-8f681a09d92d" Value="Game.ComponentGlowingEyes" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="OuterClothingModel" Description="Draws outer clothing model for human" Guid="c2429b7f-55e0-4ca7-b435-2c569f112229" InheritanceParent="79f776b5-94f4-4bce-b119-971a9cf6255c">
+        <ComponentTemplate Name="OuterClothingModel" Description="[DescriptionAttribute:358]" Guid="c2429b7f-55e0-4ca7-b435-2c569f112229" InheritanceParent="79f776b5-94f4-4bce-b119-971a9cf6255c">
           <Parameter Name="PrepareOrder" Guid="2f3d6d31-5a74-45f1-a199-0114f9a694e1" Value="1" Type="int" />
           <Parameter Name="Class" Guid="7b5f6c9a-cdb3-4d2b-99a1-bcaff3862a52" Value="Game.ComponentOuterClothingModel" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="SimpleModel" Description="Model that takes it's root bone transformation from attached frame" Guid="cc5a4e72-0df9-4acf-a42e-ecb5a2a7baf4" InheritanceParent="79f776b5-94f4-4bce-b119-971a9cf6255c">
+        <ComponentTemplate Name="SimpleModel" Description="[DescriptionAttribute:359]" Guid="cc5a4e72-0df9-4acf-a42e-ecb5a2a7baf4" InheritanceParent="79f776b5-94f4-4bce-b119-971a9cf6255c">
           <Parameter Name="Class" Guid="d5c76952-d156-4d4e-a250-9e88644e5e77" Value="Game.ComponentSimpleModel" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="FlightlessBirdModel" Description="Flightless bird model behavior and animation" Guid="f0e56b9e-befc-453b-ba44-064fcd341bdc" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
-          <Parameter Name="WalkLegsAngle" Description="Animation angle of legs, in radians" Guid="0161a707-130c-4685-95fe-f8a9d924153b" Value="0.55" Type="float" />
-          <Parameter Name="WalkAnimationSpeed" Description="Walking animation speed, in cycles/meter" Guid="544396be-20d8-4f8b-8cf6-b1e48f35b40c" Value="1" Type="float" />
-          <Parameter Name="WalkBobHeight" Description="Height of bobbing when creature walks, in meters" Guid="ad1a0716-5ac5-4d32-ac26-204dd99ddbf6" Value="0.025" Type="float" />
+        <ComponentTemplate Name="FlightlessBirdModel" Description="[DescriptionAttribute:360]" Guid="f0e56b9e-befc-453b-ba44-064fcd341bdc" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
+          <Parameter Name="WalkLegsAngle" Description="[DescriptionAttribute:361]" Guid="0161a707-130c-4685-95fe-f8a9d924153b" Value="0.55" Type="float" />
+          <Parameter Name="WalkAnimationSpeed" Description="[DescriptionAttribute:362]" Guid="544396be-20d8-4f8b-8cf6-b1e48f35b40c" Value="1" Type="float" />
+          <Parameter Name="WalkBobHeight" Description="[DescriptionAttribute:363]" Guid="ad1a0716-5ac5-4d32-ac26-204dd99ddbf6" Value="0.025" Type="float" />
           <Parameter Name="Class" Guid="d79645f5-0b54-4d68-ad53-228665b66dff" Value="Game.ComponentFlightlessBirdModel" Type="string" />
         </ComponentTemplate>
-        <ComponentTemplate Name="VrHandsModel" Description="Player's first person model (hand and held items)" Guid="f887d193-4c25-41a7-9d3b-ea4acb462e8c" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
-          <Parameter Name="VrHandModelName" Description="Name of hand model" Guid="1134396a-490f-4bb2-9f01-9fa8212e25d4" Value="" Type="string" />
-          <Parameter Name="Class" Description="Player's VR hands (and held items)" Guid="8da66911-b474-4492-bb71-ddd23bc12233" Value="Game.ComponentVrHandsModel" Type="string" />
+        <ComponentTemplate Name="VrHandsModel" Description="[DescriptionAttribute:364]" Guid="f887d193-4c25-41a7-9d3b-ea4acb462e8c" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="VrHandModelName" Description="[DescriptionAttribute:365]" Guid="1134396a-490f-4bb2-9f01-9fa8212e25d4" Value="" Type="string" />
+          <Parameter Name="Class" Description="[DescriptionAttribute:366]" Guid="8da66911-b474-4492-bb71-ddd23bc12233" Value="Game.ComponentVrHandsModel" Type="string" />
         </ComponentTemplate>
       </Folder>
     </Folder>
@@ -4431,14 +4431,14 @@
         <MemberSubsystemTemplate Name="ExperienceBlockBehavior" Guid="844d7154-d14f-1441-eff9-2f654ed975c4" InheritanceParent="eb0f68d3-9790-b0d0-706f-cb0af24fabcd" />
       </ProjectTemplate>
       <SubsystemTemplate Name="Subsystem" Guid="a3914c13-7801-46a6-b23a-9e2b36e9defb">
-        <Parameter Name="IsOptional" Description="If true, subsystem type does not have to be present when creating project" Guid="3494e306-ec62-44ee-97e7-6a2937183891" Value="False" Type="bool" />
-        <Parameter Name="Class" Description="Name of .NET class used to create subsystem" Guid="708ed107-7848-41bc-a7a7-97b1e6684207" Value="" Type="string" />
-        <Parameter Name="Dependencies" Description="Names of subsystems which have to be loaded before this subsystem, comma separated" Guid="d89cc06f-973a-423f-af9f-dc590c8d13a5" Value="" Type="string" />
+        <Parameter Name="IsOptional" Description="[DescriptionAttribute:367]" Guid="3494e306-ec62-44ee-97e7-6a2937183891" Value="False" Type="bool" />
+        <Parameter Name="Class" Description="[DescriptionAttribute:368]" Guid="708ed107-7848-41bc-a7a7-97b1e6684207" Value="" Type="string" />
+        <Parameter Name="Dependencies" Description="[DescriptionAttribute:369]" Guid="d89cc06f-973a-423f-af9f-dc590c8d13a5" Value="" Type="string" />
       </SubsystemTemplate>
       <ComponentTemplate Name="Component" Guid="b05700ed-7e4e-4679-98f5-b597f421496b">
-        <Parameter Name="LoadOrder" Description="Components with lower load order are loaded before components with higher load order" Guid="159a738a-dd51-43ae-b3df-16ebdcab85d1" Value="0" Type="int" />
-        <Parameter Name="IsOptional" Description="If true, component type does not have to be present in code when creating entity" Guid="9444b77f-0c70-4750-a17b-ed0407d48295" Value="False" Type="bool" />
-        <Parameter Name="Class" Description="Name of .NET class used to create component" Guid="9bed65ad-a455-4e11-af6d-375175f91144" Value="" Type="string" />
+        <Parameter Name="LoadOrder" Description="[DescriptionAttribute:370]" Guid="159a738a-dd51-43ae-b3df-16ebdcab85d1" Value="0" Type="int" />
+        <Parameter Name="IsOptional" Description="[DescriptionAttribute:371]" Guid="9444b77f-0c70-4750-a17b-ed0407d48295" Value="False" Type="bool" />
+        <Parameter Name="Class" Description="[DescriptionAttribute:372]" Guid="9bed65ad-a455-4e11-af6d-375175f91144" Value="" Type="string" />
       </ComponentTemplate>
     </Folder>
   </DatabaseObjects>

@@ -39,11 +39,11 @@
         <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <DefineConstants>DEBUG</DefineConstants>
+        <DefineConstants>DEBUG;MOBILE</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <DebugType>none</DebugType>
-        <DefineConstants>TRACE</DefineConstants>
+        <DefineConstants>TRACE;MOBILE</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
         <AndroidAsset Include="..\Engine\Resources\Lit.psh" Link="Assets\Lit.psh">

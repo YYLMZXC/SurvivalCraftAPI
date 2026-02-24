@@ -425,18 +425,8 @@ namespace Game {
                 && m_componentPlayer.GameWidget.ActiveCamera.IsEntityControlEnabled
                 && componentSleep.SleepFactor <= 0f;
             m_moveRectangleContainerWidget.IsVisible = !SettingsManager.HideMoveLookPads && ShowTouchWidget;
-            bool flag = false;
-            if (!SettingsManager.HideMoveLookPads && ShowTouchWidget) {
-                if (SettingsManager.MoveControlMode == MoveControlMode.Buttons
-                    && SettingsManager.LookControlMode == LookControlMode.Pad) {
-                    flag = true;
-                }
-                else if (SettingsManager.MoveControlMode == MoveControlMode.Pad) {
-                    flag = true;
-                }
-            }
-            m_lookRectangleContainerWidget.IsVisible = flag;
-            m_lookPadContainerWidget.IsVisible = !SettingsManager.HideMoveLookPads && ShowTouchWidget;
+            m_lookRectangleContainerWidget.IsVisible = !SettingsManager.HideMoveLookPads && ShowTouchWidget && (SettingsManager.LookControlMode != LookControlMode.EntireScreen || SettingsManager.MoveControlMode != MoveControlMode.Buttons);
+            m_lookPadContainerWidget.IsVisible = SettingsManager.LookControlMode != LookControlMode.SplitTouch;
             MoveRoseWidget.IsVisible = ShowTouchWidget;
             m_moreContentsWidget.IsVisible = m_moreButtonWidget.IsChecked;
             m_moveButtonsContainerWidget.IsVisible = SettingsManager.MoveControlMode == MoveControlMode.Buttons;

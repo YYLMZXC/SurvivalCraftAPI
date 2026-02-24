@@ -212,7 +212,7 @@ namespace Game {
                     ContentManager.Add(contentInfo);
                 }
             }
-            LoadingScreen.Info($"[{modInfo.Name}] Loaded {ModFiles.Count} resource files.");
+            LoadingScreen.Info($"[{modInfo.Name}](Version: {modInfo.Version}) Loaded {ModFiles.Count} resource files.");
         }
 
         /// <summary>

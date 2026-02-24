@@ -478,26 +478,30 @@ public static class ModsManager {
     /// <param name="path">文件路径</param>
     public static void GetScmods(string path) {
         foreach (string item in Storage.ListFileNames(path)) {
-            string ms = Storage.GetExtension(item).ToLowerInvariant();
-            string ks = Storage.CombinePaths(path, item);
-            using Stream stream = Storage.OpenFile(ks, OpenFileMode.Read);
-            try {
-                if (ms == ModSuffix) {
+            if (Storage.GetExtension(item).ToLowerInvariant() == ModSuffix) {
+                string filePath = Storage.CombinePaths(path, item);
+                using Stream stream = Storage.OpenFile(filePath, OpenFileMode.Read);
+                try {
                     Stream keepOpenStream = GetDecipherStream(stream);
-                    ModEntity modEntity = new(ks, ZipArchive.Open(keepOpenStream, true));
+                    ModEntity modEntity = new(filePath, ZipArchive.Open(keepOpenStream, true));
                     if (modEntity.modInfo == null) {
-                        LoadingScreen.Warning($"The modinfo.json is missing or broken from [{Storage.GetFileName(modEntity.ModFilePath)}], and this mod will be disabled.");
+                        LoadingScreen.Warning(
+                            $"The modinfo.json is missing or broken from [{Storage.GetFileName(modEntity.ModFilePath)}], and this mod will be disabled."
+                        );
                     }
-                    else if (modEntity.IsDisabled && modEntity.DisableReason == ModDisableReason.InvalidPackageName) {
-                        LoadingScreen.Warning($"The package name [{modEntity.modInfo.PackageName}] of [{Storage.GetFileName(modEntity.ModFilePath)}] is not allowed, and this mod will not be loaded.");
+                    else if (modEntity.IsDisabled
+                        && modEntity.DisableReason == ModDisableReason.InvalidPackageName) {
+                        LoadingScreen.Warning(
+                            $"The package name [{modEntity.modInfo.PackageName}] of [{Storage.GetFileName(modEntity.ModFilePath)}] is not allowed, and this mod will not be loaded."
+                        );
                         continue;
                     }
                     ModListAll.Add(modEntity);
                 }
-            }
-            catch (Exception e) {
-                AddException(e);
-                stream.Close();
+                catch (Exception e) {
+                    AddException(new Exception($"Failed to load mod [{item}]: {e}"));
+                    stream.Close();
+                }
             }
         }
         foreach (string dir in Storage.ListDirectoryNames(path)) {
@@ -544,14 +548,14 @@ public static class ModsManager {
         return sBuilder.ToString();
     }
 
-    public static bool FindElement(XElement xElement, Func<XElement, bool> func, out XElement elementout) {
-        elementout = xElement.Descendants().FirstOrDefault(func);
-        return elementout != null;
+    public static bool FindElement(XElement xElement, Func<XElement, bool> func, out XElement result) {
+        result = xElement.Descendants().FirstOrDefault(func);
+        return result != null;
     }
 
-    public static bool FindElementByGuid(XElement xElement, string guid, out XElement elementout) {
-        elementout = xElement.Descendants().FirstOrDefault(e => e.Attribute("Guid")?.Value == guid);
-        return elementout != null;
+    public static bool FindElementByGuid(XElement xElement, string guid, out XElement result) {
+        result = xElement.Descendants().FirstOrDefault(e => e.Attribute("Guid")?.Value == guid);
+        return result != null;
     }
 
     public static bool HasAttribute(XElement element, Func<string, bool> func, out XAttribute xAttributeout) {
@@ -559,6 +563,29 @@ public static class ModsManager {
             .FirstOrDefault(a => func(a.Name.LocalName));
         return xAttributeout != null;
     }
+
+    public static bool FindSameElement(XElement source, XElement target, string ignoreAttribute, bool ignoreContent, out XElement result) => FindElement(
+        source,
+        ele => {
+            if (!ignoreContent && target.Value != ele.Value) {
+                return false;
+            }
+            foreach (XAttribute xAttribute in target.Attributes()) {
+                if (xAttribute.Name == ignoreAttribute) {
+                    continue;
+                }
+                XAttribute xAttribute1 = ele.Attribute(xAttribute.Name);
+                if (xAttribute1 == null) {
+                    return false;
+                }
+                if (xAttribute1.Value != xAttribute.Value) {
+                    return false;
+                }
+            }
+            return true;
+        },
+        out result
+    );
 
     public static void CombineClo(XElement clothesRoot, Stream toCombineStream) {
         XElement toCombineRoot = XmlUtils.LoadXmlFromStream(toCombineStream, Encoding.UTF8, true);
@@ -580,7 +607,7 @@ public static class ModsManager {
                     element1.SetAttributeValue(newAttribute.Name.LocalName.Substring(4), newAttribute.Value);
                 }
             }
-            else if (HasAttribute(element, name => name.StartsWith("r-"), out XAttribute _)
+            else if (HasAttribute(element, name => name.StartsWith("r-") || name == "remove", out XAttribute _)
                 && FindElement(clothesRoot, e => e.Attribute("Index")?.Value == indexValue, out XElement element2)) {
                 element2.Remove();
                 element.Remove();
@@ -591,64 +618,39 @@ public static class ModsManager {
         }
     }
 
-    public static void CombineCr(XElement xElement, Stream cloorcr) {
-        XElement MergeXml = XmlUtils.LoadXmlFromStream(cloorcr, Encoding.UTF8, true);
-        CombineCrLogic(xElement, MergeXml);
+    public static void CombineCr(XElement crRoot, Stream toCombineStream) {
+        XElement toCombineRoot = XmlUtils.LoadXmlFromStream(toCombineStream, Encoding.UTF8, true);
+        CombineCrLogic(crRoot, toCombineRoot);
     }
 
-    public static void CombineCrLogic(XElement xElement, XElement needCombine) {
-        foreach (XElement element in needCombine.Elements()) {
+    public static void CombineCrLogic(XElement crRoot, XElement toCombineRoot) {
+        foreach (XElement element in toCombineRoot.Elements()) {
             if (element.Attribute("Result") != null) {
                 if (HasAttribute(element, name => name.StartsWith("new-"), out XAttribute attribute)) {
-                    if (FindElement(
-                            xElement,
-                            ele => { //原始标签
-                                foreach (XAttribute xAttribute in element.Attributes()) //待修改的标签
-                                {
-                                    if (xAttribute.Name == attribute.Name) {
-                                        continue;
-                                    }
-                                    if (ele.Attribute(xAttribute.Name) == null) {
-                                        return false;
-                                    }
-                                }
-                                return true;
-                            },
-                            out XElement element1
-                        )) {
+                    if (FindSameElement(crRoot, element, attribute.Name.LocalName, true, out XElement element1)) {
                         element1.SetAttributeValue(attribute.Name.LocalName.Substring(4), attribute.Value);
                         element1.SetValue(element.Value);
                     }
                 }
-                else if (HasAttribute(element, name => name.StartsWith("r-"), out XAttribute attribute1)) {
-                    if (FindElement(
-                            xElement,
-                            ele => { //原始标签
-                                foreach (XAttribute xAttribute in element.Attributes()) //待修改的标签
-                                {
-                                    if (xAttribute.Name == attribute1.Name) {
-                                        continue;
-                                    }
-                                    if (ele.Attribute(xAttribute.Name) == null) {
-                                        return false;
-                                    }
-                                }
-                                return true;
-                            },
-                            out XElement element1
-                        )) {
+                else if (HasAttribute(element, name => name.StartsWith("r-") || name == "remove", out XAttribute attribute1)) {
+                    if (FindSameElement(crRoot, element, attribute1.Name.LocalName, true, out XElement element1)) {
                         element1.Remove();
                         element.Remove();
                     }
                 }
                 else {
-                    xElement.Add(element);
+                    crRoot.Add(element);
                 }
             }
-            CombineCrLogic(xElement, element);
+            else {
+                CombineCrLogic(crRoot, element);
+            }
         }
     }
 
+    /// <summary>
+    /// 仅用于合并 Database
+    /// </summary>
     public static void Modify(XElement source, XElement change) {
         if (FindElement(
                 source,
@@ -751,8 +753,18 @@ public static class ModsManager {
                     element.Add(parameterElement);
                 }
             }
+            if (element.Attribute("remove") != null) {
+                XAttribute guidAttribute = element.Attribute("Guid");
+                if (guidAttribute == null) {
+                    continue;
+                }
+                if (FindElementByGuid(databaseObjects, guidAttribute.Value, out XElement oldElement)) {
+                    oldElement.Remove();
+                }
+                element.Remove();
+            }
             //处理修改
-            if (HasAttribute(element, str => str.StartsWith("new-"), out XAttribute newAttribute)) {
+            else if (HasAttribute(element, str => str.StartsWith("new-"), out XAttribute newAttribute)) {
                 XAttribute guidAttribute = element.Attribute("Guid");
                 if (guidAttribute == null) {
                     continue;

@@ -13,9 +13,6 @@ using Game.IContentReader;
 using NuGet.Versioning;
 using XmlUtilities;
 using ZipArchive = Game.ZipArchive;
-#if DEBUG
-using System.IO.Compression;
-#endif
 public static class ModsManager {
     public static string ModSuffix = ".scmod";
     public static string APIVersionString = "1.8.2.3";
@@ -78,25 +75,14 @@ public static class ModsManager {
 
     public class ModHook(string name) {
         public string HookName = name;
-        public Dictionary<ModLoader, bool> Loaders = [];
-        public Dictionary<ModLoader, string> DisableReason = [];
+        public List<ModLoader> Loaders = [];
 
         public void Add(ModLoader modLoader) {
-            if (!Loaders.TryGetValue(modLoader, out _)) {
-                Loaders.Add(modLoader, true);
-            }
+            Loaders.Add(modLoader);
         }
 
         public void Remove(ModLoader modLoader) {
-            Loaders.Remove(modLoader, out _);
-        }
-
-        public void Disable(ModLoader from, ModLoader toDisable, string reason) {
-            if (Loaders.TryGetValue(toDisable, out _)) {
-                if (!DisableReason.TryGetValue(from, out _)) {
-                    DisableReason.Add(from, reason);
-                }
-            }
+            Loaders.Remove(modLoader);
         }
     }
 
@@ -141,12 +127,9 @@ public static class ModsManager {
     /// <summary>
     ///     执行Hook
     /// </summary>
-    /// <param name="HookName"></param>
-    /// <param name="action"></param>
-    public static void HookAction(string HookName, Func<ModLoader, bool> action) //按先加载→后加载模组（先主题模组后辅助模组的顺序）执行
-    {
+    public static void HookAction(string HookName, Func<ModLoader, bool> action) {
         if (ModHooks.TryGetValue(HookName, out ModHook modHook)) {
-            foreach (ModLoader modLoader in modHook.Loaders.Keys) {
+            foreach (ModLoader modLoader in modHook.Loaders) {
                 if (TryInvoke(modHook, modLoader, action)) {
                     break;
                 }
@@ -154,10 +137,12 @@ public static class ModsManager {
         }
     }
 
-    public static void HookActionReverse(string HookName, Func<ModLoader, bool> action) //按后加载→先加载模组（先辅助模组后主题模组的顺序）执行
-    {
+    /// <summary>
+    ///     反向执行Hook
+    /// </summary>
+    public static void HookActionReverse(string HookName, Func<ModLoader, bool> action) {
         if (ModHooks.TryGetValue(HookName, out ModHook modHook)) {
-            foreach (ModLoader modLoader in modHook.Loaders.Keys.Reverse()) {
+            foreach (ModLoader modLoader in Enumerable.Reverse(modHook.Loaders)) {
                 if (TryInvoke(modHook, modLoader, action)) {
                     break;
                 }
@@ -184,29 +169,48 @@ public static class ModsManager {
         }
     }
 
+    public static Dictionary<string, PriorityQueue<ModLoader, int>> m_tempModHooks = [];
+
     /// <summary>
-    ///     注册Hook
+    ///     注册Hook，优先级默认为 0<br/>
+    ///     优先级相同时，执行顺序将不确定
     /// </summary>
-    /// <param name="HookName"></param>
-    /// <param name="modLoader"></param>
-    public static void RegisterHook(string HookName, ModLoader modLoader) {
-        if (!ModHooks.TryGetValue(HookName, out ModHook modHook)) {
-            modHook = new ModHook(HookName);
-            ModHooks.Add(HookName, modHook);
+    public static void RegisterHook(string hookName, ModLoader modLoader) {
+        if (!m_tempModHooks.TryGetValue(hookName, out PriorityQueue<ModLoader, int> pq)) {
+            pq = new PriorityQueue<ModLoader, int>();
+            m_tempModHooks.Add(hookName, pq);
         }
-        modHook.Add(modLoader);
+        pq.Enqueue(modLoader, 0);
     }
 
-    public static void DisableHook(ModLoader from, string HookName, string packageName, string reason) {
-        ModEntity modEntity = ModList.Find(p => p.modInfo.PackageName == packageName);
-        if (modEntity != null
-            && ModHooks.TryGetValue(HookName, out ModHook modHook)) {
-            modHook.Disable(from, modEntity.Loader, reason);
+    /// <summary>
+    ///     注册Hook<br/>
+    ///     优先级相同时，执行顺序将不确定
+    /// </summary>
+    /// <param name="priority">优先级，越小越优先</param>
+    public static void RegisterHook(string hookName, ModLoader modLoader, int priority) {
+        if (!m_tempModHooks.TryGetValue(hookName, out PriorityQueue<ModLoader, int> pq)) {
+            pq = new PriorityQueue<ModLoader, int>();
+            m_tempModHooks.Add(hookName, pq);
         }
+        pq.Enqueue(modLoader, priority);
+    }
+
+    public static void DealWithTempModHooks() {
+        foreach ((string hookName, PriorityQueue<ModLoader, int> pq) in m_tempModHooks) {
+            ModHook modHook = new(hookName);
+            ModHooks.Add(hookName, modHook);
+            HashSet<ModLoader> hashSet = [];
+            while (pq.TryDequeue(out ModLoader modLoader, out _)) {
+                if (hashSet.Add(modLoader)) {
+                    modHook.Add(modLoader);
+                }
+            }
+        }
+        m_tempModHooks.Clear();
     }
 
     public static T GetInPakOrStorageFile<T>(string filePath, string suffix = "txt") where T : class =>
-        //string storagePath = Storage.CombinePaths(ExternelPath, filepath + prefix);
         ContentManager.Get<T>(filePath, suffix);
 
     public static ModInfo DeserializeJson(string json) {
@@ -419,7 +423,7 @@ public static class ModsManager {
             )
         );
         //float api = float.Parse(APIVersion);
-        //读取SCMOD文件到ModListAll列表
+        //读取 scmod 文件到ModListAll列表
         foreach (ModEntity modEntity1 in ModListAll) {
             if (modEntity1.IsDisabled) {
                 continue;
@@ -847,7 +851,7 @@ public static class ModsManager {
                     else {
                         AllowContinue = true;
                     }
-                };
+                }
                 Handle();
             }
         }

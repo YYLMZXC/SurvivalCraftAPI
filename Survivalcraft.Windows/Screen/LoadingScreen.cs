@@ -197,6 +197,8 @@ namespace Game {
                     );
                     //加载 mod 程序集(.dll)文件
                     //但不进行处理操作(如添加block等)
+                    ModsManager.ModHooks.Clear();
+                    ModsManager.m_tempModHooks.Clear();
                     ModsManager.ModListAllDo(modEntity => {
                             if (!isLoadSucceed) {
                                 return;
@@ -399,6 +401,7 @@ namespace Game {
                 }
             );
 #endif
+            AddLoadAction(ModsManager.DealWithTempModHooks);
             AddLoadAction(
                 delegate {
                     Info(LanguageControl.Get(fName, "1"));

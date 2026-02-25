@@ -142,14 +142,6 @@ namespace Game {
         }
 
         /// <summary>
-        ///     Mod初始化
-        /// </summary>
-        public virtual void ModInitialize() {
-            LoadingScreen.Info($"[{modInfo.Name}] Executing __ModInitialize mission");
-            ModLoader_?.__ModInitialize();
-        }
-
-        /// <summary>
         ///     初始化Content资源
         /// </summary>
         public virtual void InitResources() {

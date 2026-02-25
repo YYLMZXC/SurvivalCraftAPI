@@ -99,6 +99,18 @@ namespace Game {
                                 m_worldsListWidget.SelectedItem = worldInfos.FirstOrDefault(wi => wi.DirectoryName == selectedItem.DirectoryName);
                             }
                             DialogsManager.HideDialog(dialog);
+                            if (parameters.Length > 0 && parameters[0] is string str) {
+                                WorldInfo info = WorldsManager.WorldInfos.FirstOrDefault(wi => Storage.GetFileName(wi.DirectoryName) == str);
+                                if (info != null) {
+                                    Play(info);
+                                }
+                                else {
+                                    DialogsManager.ShowDialog(
+                                        null,
+                                        new MessageDialog(LanguageControl.Error, string.Format(LanguageControl.Get(fName, "12"), str), LanguageControl.Ok, null, null)
+                                    );
+                                }
+                            }
                         }
                     );
                 }
@@ -106,10 +118,7 @@ namespace Game {
         }
 
         public override void Update() {
-            Vector2 size = new(310, 60);
-            if (SettingsManager.UIScale > 1f) {
-                size = new Vector2(250, 60);
-            }
+            Vector2 size = SettingsManager.UIScale > 1f ? new Vector2(250, 60) : new Vector2(310, 60);
             m_playButton.Size = size;
             m_newWorldButton.Size = size;
             if (m_worldsListWidget.SelectedItem != null

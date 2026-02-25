@@ -34,6 +34,7 @@ namespace Game {
 
         static ListPanelWidget LogList;
         public static bool m_isContentLoaded;
+        public static string m_worldDirectoryToPlayAfterLoading = null;
         public const string fName = "LoadingScreen";
 
         static LoadingScreen() {
@@ -493,7 +494,16 @@ namespace Game {
                 }
             );
             AddLoadAction(KeyCompatibleGroupsManager.Initialize); //初始化按键兼容组
-            AddLoadAction(delegate { ScreensManager.SwitchScreen("MainMenu"); });
+            AddLoadAction(
+                delegate {
+                    if (string.IsNullOrEmpty(m_worldDirectoryToPlayAfterLoading)) {
+                        ScreensManager.SwitchScreen("MainMenu");
+                    }
+                    else {
+                        ScreensManager.SwitchScreen("Play", m_worldDirectoryToPlayAfterLoading);
+                        m_worldDirectoryToPlayAfterLoading = null;
+                    }
+                });
         }
 
         void InitScreens() {

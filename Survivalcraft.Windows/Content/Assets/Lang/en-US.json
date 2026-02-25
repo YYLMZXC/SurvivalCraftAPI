@@ -1190,7 +1190,8 @@
     "8": "Mod Missing",
     "9": "{0} world, {1}",
     "10": "{0} worlds, {1}",
-    "11": "No worlds"
+    "11": "No worlds",
+    "12": "The specified directory not found:\n{0}"
   },
   "NewWorldScreen": {
     "1": "Leave blank for a random seed",

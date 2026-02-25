@@ -128,6 +128,7 @@ namespace SC4Android {
             if (Build.VERSION.SdkInt >= BuildVersionCodes.S) {
                 SplashScreen.SetOnExitAnimationListener(new SplashScreenOnExitAnimationListener());
             }
+            LoadingScreen.m_worldDirectoryToPlayAfterLoading = Intent?.GetStringExtra("play") ?? null;
         }
 
         public class ViewTreeObserverListener : Java.Lang.Object, ViewTreeObserver.IOnPreDrawListener {

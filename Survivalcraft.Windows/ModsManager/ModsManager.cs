@@ -187,6 +187,8 @@ public static class ModsManager {
     ///     注册Hook<br/>
     ///     优先级相同时，执行顺序将不确定
     /// </summary>
+    /// <param name="hookName"></param>
+    /// <param name="modLoader"></param>
     /// <param name="priority">优先级，越小越优先</param>
     public static void RegisterHook(string hookName, ModLoader modLoader, int priority) {
         if (!m_tempModHooks.TryGetValue(hookName, out PriorityQueue<ModLoader, int> pq)) {

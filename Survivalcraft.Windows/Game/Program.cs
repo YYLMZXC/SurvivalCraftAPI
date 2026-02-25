@@ -96,16 +96,20 @@ namespace Game {
                         return;
                     }
                     case 2:
-                        if (args[0] != "--wait") {
-                            break;
-                        }
-                        if (int.TryParse(args[1], out int pid)) {
-                            try {
-                                Process.GetProcessById(pid)?.WaitForExit();
-                            }
-                            catch {
-                                // ignored
-                            }
+                        switch (args[0]) {
+                            case "--wait":
+                                if (int.TryParse(args[1], out int pid)) {
+                                    try {
+                                        Process.GetProcessById(pid)?.WaitForExit();
+                                    }
+                                    catch {
+                                        // ignored
+                                    }
+                                }
+                                break;
+                            case "-p" or "--play":
+                                LoadingScreen.m_worldDirectoryToPlayAfterLoading = args[1];
+                                break;
                         }
                         break;
                 }

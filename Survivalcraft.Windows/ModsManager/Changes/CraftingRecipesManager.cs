@@ -58,7 +58,7 @@ namespace Game {
 
         public static void LoadData(XElement item) {
             try {
-                if (item.Attribute("Result") != null) {
+                if (item.Attribute("Result") == null) {
                     foreach (XElement xElement in item.Elements()) {
                         LoadData(xElement);
                     }

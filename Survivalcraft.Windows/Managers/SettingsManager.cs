@@ -400,6 +400,9 @@ namespace Game {
             }
         }
 
+        //因为赋值时ModsManager还没准备好，所以不在此处理get和set
+        public static string ModLoadAfters { get; set; }
+
         public static bool SafeMode { get; set; }
 
         public static bool AdaptEdgeToEdgeDisplay { get; set; }
@@ -789,7 +792,7 @@ namespace Game {
                             foreach (string name in valuesDictionary.Keys) {
                                 try {
                                     PropertyInfo propertyInfo = (from pi in typeof(SettingsManager).GetRuntimeProperties()
-                                        where pi.Name == name && pi.GetMethod.IsStatic && pi.GetMethod.IsPublic && pi.SetMethod.IsPublic
+                                        where pi.Name == name && pi.GetMethod != null && pi.GetMethod.IsStatic && pi.GetMethod.IsPublic && pi.SetMethod != null && pi.SetMethod.IsPublic
                                         select pi).FirstOrDefault();
                                     if (propertyInfo is not null) {
                                         object value = valuesDictionary.GetValue<object>(name);

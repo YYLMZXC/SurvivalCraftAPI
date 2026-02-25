@@ -10,7 +10,7 @@ namespace Game {
 
     public class ModInfo {
         public string Name, Version, ApiVersion, Description, ScVersion, Link, Author, PackageName;
-        public int LoadOrder = 0;
+        public int LoadOrder = (int)Game.LoadOrder.Default;
         public List<string> Dependencies = [];
         public NuGetVersion NuGetVersion;
         public VersionRange ApiVersionRange;

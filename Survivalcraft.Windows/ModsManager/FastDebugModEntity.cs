@@ -10,7 +10,7 @@ namespace Game {
         public FastDebugModEntity() {
             modInfo = new ModInfo { Name = "[Debug]", PackageName = "debug" };
             InitResources();
-            modInfo.LoadOrder = int.MinValue + 1;
+            modInfo.LoadOrder = (int)LoadOrder.Survivalcraft + 1;
         }
 
         public override void InitResources() {
@@ -53,17 +53,22 @@ namespace Game {
                 }
                 string abpath = $"{path}/{f}";
                 string FilenameInZip = abpath.Substring(basepath.Length + 1);
-                if (FilenameInZip.StartsWith("Assets/")) {
-                    string name = FilenameInZip.Substring(7);
+                FModFiles.Add(FilenameInZip, new FileInfo(Storage.GetSystemPath(abpath)));
+            }
+        }
+
+        public override void CombineContent() {
+            foreach ((string path, FileInfo fileInfo) in FModFiles) {
+                if (path.StartsWith("Assets/")) {
+                    string name = path.Substring(7);
                     ContentInfo contentInfo = new(name);
                     MemoryStream memoryStream = new();
-                    using (Stream stream = Storage.OpenFile(abpath, OpenFileMode.Read)) {
+                    using (Stream stream = fileInfo.Open(FileMode.Open)) {
                         stream.CopyTo(memoryStream);
                         contentInfo.SetContentStream(memoryStream);
                         ContentManager.Add(contentInfo);
                     }
                 }
-                FModFiles.Add(FilenameInZip, new FileInfo(Storage.GetSystemPath(abpath)));
             }
         }
 
@@ -93,17 +98,17 @@ namespace Game {
             }
         }
 
-        public override bool GetFile(string filename, Action<Stream> stream) {
+        public override bool GetFile(string filename, Action<Stream> action) {
             bool skip = false;
             bool loaderReturns = false;
-            Loader?.GetModFile(filename, stream, out skip, out loaderReturns);
+            Loader?.GetModFile(filename, action, out skip, out loaderReturns);
             if (skip) {
                 return loaderReturns;
             }
             if (FModFiles.TryGetValue(filename, out FileInfo fileInfo)) {
                 using (Stream fs = fileInfo.OpenRead()) {
                     try {
-                        stream?.Invoke(fs);
+                        action?.Invoke(fs);
                     }
                     catch (Exception e) {
                         Log.Error($"GetFile {filename} Error:{e}");
@@ -114,6 +119,6 @@ namespace Game {
             return false;
         }
 
-        public override bool GetAssetsFile(string filename, Action<Stream> stream) => GetFile($"Assets/{filename}", stream);
+        public override bool GetAssetsFile(string filename, Action<Stream> action) => GetFile($"Assets/{filename}", action);
     }
 }

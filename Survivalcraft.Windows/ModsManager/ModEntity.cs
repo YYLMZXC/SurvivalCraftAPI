@@ -16,6 +16,7 @@ namespace Game {
         public ModDisableReason DisableReason = ModDisableReason.Unknown;
         public long Size;
         public bool IsDependencyChecked;
+        public string LoadAfter;
         public static HashSet<string> InvalidDllNames = ["Survivalcraft.dll", "Engine.dll", "EntitySystem.dll"];
         public const string fName = "ModEntity";
 
@@ -91,12 +92,12 @@ namespace Game {
         ///     获取指定文件
         /// </summary>
         /// <param name="filename"></param>
-        /// <param name="stream">参数1打开的文件流</param>
+        /// <param name="action">参数1打开的文件流</param>
         /// <returns></returns>
-        public virtual bool GetFile(string filename, Action<Stream> stream) {
+        public virtual bool GetFile(string filename, Action<Stream> action) {
             bool skip = false;
             bool loaderReturns = false;
-            Loader?.GetModFile(filename, stream, out skip, out loaderReturns);
+            Loader?.GetModFile(filename, action, out skip, out loaderReturns);
             if (skip) {
                 return loaderReturns;
             }
@@ -105,7 +106,7 @@ namespace Game {
                 ModArchive.ExtractFile(entry, ms);
                 ms.Position = 0L;
                 try {
-                    stream?.Invoke(ms);
+                    action?.Invoke(ms);
                 }
                 catch (Exception e) {
                     LoadingScreen.Error($"[{modInfo.Name}] Get file [{filename}] failed: {e}");
@@ -115,7 +116,7 @@ namespace Game {
             return true;
         }
 
-        public virtual bool GetAssetsFile(string filename, Action<Stream> stream) => GetFile($"Assets/{filename}", stream);
+        public virtual bool GetAssetsFile(string filename, Action<Stream> action) => GetFile($"Assets/{filename}", action);
 
         /// <summary>
         ///     初始化语言包
@@ -180,12 +181,24 @@ namespace Game {
                 DisableReason = ModDisableReason.InvalidPackageName;
                 return;
             }
+            ModEntity temp = ModsManager.ModListAll.FirstOrDefault(x => x.modInfo?.PackageName == modInfo.PackageName);
+            if (temp != null) {
+                IsDisabled = true;
+                DisableReason = ModDisableReason.Duplicated;
+                temp.IsDisabled = true;
+                temp.DisableReason = ModDisableReason.Duplicated;
+                return;
+            }
             if (ModsManager.DisabledMods.TryGetValue(modInfo.PackageName, out HashSet<string> disabledVersions)
                 && disabledVersions.Contains(modInfo.Version)) {
                 IsDisabled = true;
                 DisableReason = ModDisableReason.Manually;
                 return;
             }
+            LoadingScreen.Info($"[{modInfo.Name}](Version: {modInfo.Version}) Loaded {ModFiles.Count} resource files.");
+        }
+
+        public virtual void CombineContent() {
             foreach (KeyValuePair<string, ZipArchiveEntry> c in ModFiles) {
                 ZipArchiveEntry zipArchiveEntry = c.Value;
                 string filename = zipArchiveEntry.FilenameInZip;
@@ -204,7 +217,6 @@ namespace Game {
                     ContentManager.Add(contentInfo);
                 }
             }
-            LoadingScreen.Info($"[{modInfo.Name}](Version: {modInfo.Version}) Loaded {ModFiles.Count} resource files.");
         }
 
         /// <summary>
@@ -389,7 +401,12 @@ namespace Game {
                 if (entity != null) {
                     if (!entity.IsDependencyChecked) {
                         if (entity.modInfo.DependencyRanges.ContainsKey(modInfo.PackageName)) {
-                            throw new Exception($"[{modInfo.Name}] Dependency {name} is dependent on {modInfo.Name}, which is not allowed.");
+                            IsDisabled = true;
+                            DisableReason = ModDisableReason.DependencyError;
+                            entity.IsDisabled = true;
+                            entity.DisableReason = ModDisableReason.DependencyError;
+                            Log.Error($"[{modInfo.Name}] Dependency {name} is dependent on {modInfo.Name}, which is not allowed.");
+                            return;
                         }
                         entity.CheckDependencies(modEntities);
                     }
@@ -397,7 +414,8 @@ namespace Game {
                 else {
                     IsDisabled = true;
                     DisableReason = ModDisableReason.DependencyError;
-                    throw new Exception($"[{modInfo.Name}] Failed to find dependency {name}");
+                    Log.Error($"[{modInfo.Name}] Failed to find dependency {name}");
+                    return;
                 }
             }
             IsDependencyChecked = true;
@@ -437,7 +455,7 @@ namespace Game {
             catch {
                 // ignored
             }
-            ModArchive?.ZipFileStream.Close();
+            ModArchive?.ZipFileStream.Dispose();
         }
 
         public override bool Equals(object obj) {

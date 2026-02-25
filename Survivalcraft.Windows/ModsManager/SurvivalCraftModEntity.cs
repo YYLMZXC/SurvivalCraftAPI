@@ -64,7 +64,7 @@ namespace Game {
 #endif
             InitResources();
             if (modInfo != null) {
-                modInfo.LoadOrder = int.MinValue;
+                modInfo.LoadOrder = (int)LoadOrder.Survivalcraft;
             }
         }
 

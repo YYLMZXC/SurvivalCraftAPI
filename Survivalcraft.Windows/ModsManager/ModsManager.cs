@@ -67,6 +67,7 @@ public static class ModsManager {
     //public static bool IsAndroid => VersionsManager.Platform == Platform.Android;
 
     internal static ModEntity SurvivalCraftModEntity;
+    internal static ModEntity FastDebugModEntity;
     internal static bool ConfigLoaded;
 
     public class ModSettings {
@@ -416,45 +417,50 @@ public static class ModsManager {
         if (SettingsManager.SafeMode) {
             return;
         }
-        ModEntity FastDebug = new FastDebugModEntity();
-        ModListAll.Add(FastDebug);
+        FastDebugModEntity = new FastDebugModEntity();
+        ModListAll.Add(FastDebugModEntity);
         GetScmods(ModsPath);
-        ModListAll.Sort((x, y) =>
-            (x.IsDisabled ? int.MaxValue : x.modInfo?.LoadOrder ?? int.MaxValue).CompareTo(
-                y.IsDisabled ? int.MaxValue : y.modInfo?.LoadOrder ?? int.MaxValue
-            )
-        );
-        //float api = float.Parse(APIVersion);
-        //读取 scmod 文件到ModListAll列表
-        foreach (ModEntity modEntity1 in ModListAll) {
-            if (modEntity1.IsDisabled) {
-                continue;
-            }
-            string packageName = modEntity1.modInfo?.PackageName;
-            if (packageName == null) {
-                continue;
-            }
-            //ModInfo disabledmod = ToDisable.Find(l => l.PackageName == modInfo.PackageName);
-            //if (disabledmod != null && disabledmod.PackageName != SurvivalCraftModEntity.modInfo.PackageName && disabledmod.PackageName != FastDebug.modInfo.PackageName)
-            //{
-            //	ToDisable.Add(modInfo);
-            //	ToRemove.Add(modEntity1);
-            //	continue;
-            //}
-            //float.TryParse(modInfo.ApiVersionString, out float curr);
-            //if (curr < api)
-            //{//api版本检测
-            //    ToDisable.Add(modInfo);
-            //    ToRemove.Add(modEntity1);
-            //    AddException(new Exception($"[{modEntity1.modInfo.PackageName}]Target version {modInfo.Version} is less than api version {APIVersion}."), true);
-            //}
-            List<ModEntity> modEntities = ModListAll.FindAll(px => !px.IsDisabled && px.modInfo?.PackageName == packageName);
-            if (modEntities.Count > 1) {
-                modEntity1.IsDisabled = true;
-                modEntity1.DisableReason = ModDisableReason.Duplicated;
-                AddException(new Exception($"Multiple mods with PackageName [{packageName}], please keep only one."));
+        HashSet<ModEntity> toRemove = [];
+        foreach (ModEntity modEntity in ModListAll) {
+            if (modEntity.IsDisabled
+                && modEntity.DisableReason == ModDisableReason.Duplicated) {
+                toRemove.Add(modEntity);
             }
         }
+        foreach (ModEntity modEntity in toRemove) {
+            ModListAll.Remove(modEntity);
+        }
+        if (!string.IsNullOrEmpty(SettingsManager.ModLoadAfters)) {
+            string[] array = SettingsManager.ModLoadAfters.Split(';');
+            if (array.Length > 0
+                && array.Length % 2 == 0) {
+                for (int i = 0; i < array.Length; i += 2) {
+                    string packageName1 = array[i];
+                    ModEntity modEntity1 = ModListAll.Find(x => {
+                            if (x.modInfo == null) {
+                                return false;
+                            }
+                            return x.modInfo.PackageName == packageName1;
+                        }
+                    );
+                    if (modEntity1 == null) {
+                        continue;
+                    }
+                    string packageName2 = array[i + 1];
+                    ModEntity modEntity2 = ModListAll.Find(x => {
+                        if (x.modInfo == null) {
+                            return false;
+                        }
+                        return x.modInfo.PackageName == packageName2;
+                    });
+                    if (modEntity2 == null) {
+                        continue;
+                    }
+                    modEntity1.LoadAfter = packageName2;
+                }
+            }
+        }
+        SortModListAll();
         AppDomain.CurrentDomain.AssemblyResolve += (_, args) => {
             try {
 #nullable enable
@@ -470,6 +476,80 @@ public static class ModsManager {
             }
         };
 #endif
+    }
+
+    // By Gemini
+    public static void SortModListAll() {
+        // 1. 基础排序：先单纯按照 LoadOrder 从小到大排
+        List<ModEntity> orderedMods = ModListAll.Where(m => m.modInfo != null).OrderBy(m => m.modInfo.LoadOrder).ToList();
+        // 2. 准备图结构：入度表 (InDegree) 和 邻接表 (AdjList)
+        Dictionary<string, int> inDegree = new();
+        Dictionary<string, List<string>> adjList = new();
+        foreach (ModEntity mod in orderedMods) {
+            inDegree[mod.modInfo.PackageName] = 0;
+            adjList[mod.modInfo.PackageName] = [];
+        }
+        // 3. 构建依赖图
+        foreach (ModEntity mod in orderedMods) {
+            // 使用 HashSet 去重：防止 LoadAfter 和 Dependencies 里出现重复的包名
+            HashSet<string> prerequisites = new HashSet<string>();
+            if (mod.modInfo.DependencyRanges != null) {
+                foreach (string dep in mod.modInfo.DependencyRanges.Keys) {
+                    prerequisites.Add(dep);
+                }
+            }
+            if (!string.IsNullOrEmpty(mod.LoadAfter)) {
+                prerequisites.Add(mod.LoadAfter);
+            }
+            foreach (string pre in prerequisites) {
+                // 核心需求：无视未找到的依赖项
+                // 只有当这个前置模组确实存在于当前列表中时，才建立连接
+                if (adjList.ContainsKey(pre)) {
+                    adjList[pre].Add(mod.modInfo.PackageName); // pre 必须在 mod 之前加载
+                    inDegree[mod.modInfo.PackageName]++; // mod 的前置条件 +1
+                }
+            }
+        }
+        // 4. 稳定拓扑排序 (Kahn算法变形)
+        List<ModEntity> sortedResult = [];
+        List<ModEntity> remainingMods = new(orderedMods);
+        while (remainingMods.Count > 0) {
+            // 寻找第一个入度为 0（即所有前置模组都已加载）的模组
+            // 使用 FindIndex 保证了当多个模组入度为 0 时，优先保持最初的 LoadOrder 顺序
+            int index = remainingMods.FindIndex(m => inDegree[m.modInfo.PackageName] == 0);
+            if (index != -1) {
+                ModEntity currentMod = remainingMods[index];
+                remainingMods.RemoveAt(index);
+                sortedResult.Add(currentMod);
+                // currentMod 已经“加载”，解除它对后续模组的阻塞
+                foreach (string dependent in adjList[currentMod.modInfo.PackageName]) {
+                    inDegree[dependent]--;
+                }
+            }
+            else {
+                // 触发此分支说明发生了“循环依赖”
+                // 例如：用户手动设置 A 加载在 B 之后，但 B 的 Dependencies 里有 A
+                // 为防止卡死或丢失模组，强行把剩下的模组按原 LoadOrder 追加到列表末尾
+                sortedResult.AddRange(remainingMods);
+                break;
+            }
+        }
+        // 5. 应用排序结果
+        ModListAll.Clear();
+        ModListAll.AddRange(sortedResult);
+    }
+
+    public static void DisposeNotEnabledModsResources() {
+        HashSet<ModEntity> notEnabled = [];
+        foreach (ModEntity entity in ModListAll) {
+            if (entity.IsDisabled || !ModList.Contains(entity)) {
+                notEnabled.Add(entity);
+            }
+        }
+        foreach (ModEntity entity in notEnabled) {
+            entity.ModArchive?.ZipFileStream.Dispose();
+            entity.ModFiles.Clear();
+        }
     }
 
     public static void AddException(Exception e, bool AllowContinue_ = false) {
@@ -495,12 +575,17 @@ public static class ModsManager {
                             $"The modinfo.json is missing or broken from [{Storage.GetFileName(modEntity.ModFilePath)}], and this mod will be disabled."
                         );
                     }
-                    else if (modEntity.IsDisabled
-                        && modEntity.DisableReason == ModDisableReason.InvalidPackageName) {
-                        LoadingScreen.Warning(
-                            $"The package name [{modEntity.modInfo.PackageName}] of [{Storage.GetFileName(modEntity.ModFilePath)}] is not allowed, and this mod will not be loaded."
-                        );
-                        continue;
+                    else if (modEntity.IsDisabled) {
+                        if (modEntity.DisableReason == ModDisableReason.InvalidPackageName) {
+                            LoadingScreen.Warning(
+                                $"The package name [{modEntity.modInfo.PackageName}] of [{Storage.GetFileName(modEntity.ModFilePath)}] is not allowed, and this mod will not be loaded."
+                            );
+                            continue;
+                        }
+                        if (modEntity.DisableReason == ModDisableReason.Duplicated) {
+                            AddException(new Exception($"Multiple mods with PackageName [{modEntity.modInfo.PackageName}], please keep only one."));
+                            continue;
+                        }
                     }
                     ModListAll.Add(modEntity);
                 }

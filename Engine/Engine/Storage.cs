@@ -188,6 +188,9 @@ namespace Engine {
         public static string GetSystemPath(string path) => ProcessPath(path, false, m_isAndroidPlatform);
 
         public static string GetExtension(string path) {
+            if (string.IsNullOrEmpty(path)) {
+                return string.Empty;
+            }
             int lastIndexOfPoint = path.LastIndexOf('.');
             int lastIndexOfSlash = Math.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
             return lastIndexOfPoint >= 0 && (lastIndexOfSlash == -1 || lastIndexOfSlash < lastIndexOfPoint)
@@ -196,17 +199,26 @@ namespace Engine {
         }
 
         public static string GetFileName(string path) {
+            if (string.IsNullOrEmpty(path)) {
+                return string.Empty;
+            }
             int num = Math.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
             return num >= 0 ? path.Substring(num + 1) : path;
         }
 
         public static string GetFileNameWithoutExtension(string path) {
+            if (string.IsNullOrEmpty(path)) {
+                return string.Empty;
+            }
             string fileName = GetFileName(path);
             int num = fileName.LastIndexOf('.');
             return num >= 0 ? fileName.Substring(0, num) : fileName;
         }
 
         public static string GetDirectoryName(string path) {
+            if (string.IsNullOrEmpty(path)) {
+                return string.Empty;
+            }
             int num = path.LastIndexOf('/');
             return num >= 0 ? path.Substring(0, num).TrimEnd('/') : string.Empty;
         }

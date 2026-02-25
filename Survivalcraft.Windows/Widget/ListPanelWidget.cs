@@ -127,6 +127,35 @@ namespace Game {
             }
         }
 
+        public void SwapItems(object item1, object item2) {
+            int index1 = m_items.IndexOf(item1);
+            int index2 = m_items.IndexOf(item2);
+            SwapItemsAt(index1, index2);
+        }
+
+        public void SwapItemsAt(int index1, int index2) {
+            if (index1 >= 0
+                && index1 < m_items.Count
+                && index2 >= 0
+                && index2 < m_items.Count) {
+                object item1 = m_items[index1];
+                object item2 = m_items[index2];
+                m_items[index1] = item2;
+                m_items[index2] = item1;
+                Widget widget1 = m_widgetsByIndex[index1];
+                Widget widget2 = m_widgetsByIndex[index2];
+                m_widgetsByIndex[index1] = widget2;
+                m_widgetsByIndex[index2] = widget1;
+                m_widgetsDirty = true;
+                if (m_selectedItemIndex == index1) {
+                    m_selectedItemIndex = index2;
+                }
+                else if (m_selectedItemIndex == index2) {
+                    m_selectedItemIndex = index1;
+                }
+            }
+        }
+
         public void ClearItems() {
             m_items.Clear();
             m_widgetsByIndex.Clear();

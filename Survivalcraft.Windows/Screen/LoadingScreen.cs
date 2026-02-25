@@ -160,9 +160,8 @@ namespace Game {
                     ModsManager.Initialize();
                 }
             );
-            AddLoadAction(ContentLoaded);
             AddLoadAction(
-                delegate { //检查所有Mod依赖项 
+                delegate { //检查所有Mod依赖项
                     //根据加载顺序排序后的结果
                     ModsManager.ModList.Clear();
                     foreach (ModEntity item in ModsManager.ModListAll) {
@@ -173,6 +172,13 @@ namespace Game {
                     }
                 }
             );
+            AddLoadAction(() => {
+                foreach (ModEntity modEntity in ModsManager.ModList) {
+                    modEntity.CombineContent();
+                }
+                ModsManager.DisposeNotEnabledModsResources();
+            });
+            AddLoadAction(ContentLoaded);
             AddLoadAction(() => {
                     Dictionary<string, Assembly[]> assemblies = [];
                     ModsManager.ModListAllDo(modEntity => {

@@ -8,8 +8,11 @@ public class ModsManageContentScreen : Screen {
     public ListPanelWidget m_modsContentList;
     public ButtonWidget m_viewDetailButton;
     public ButtonWidget m_triggerEnableButton;
+    public ButtonWidget m_moveUpButton;
+    public ButtonWidget m_moveDownButton;
     public ButtonWidget m_openHomepageButton;
 
+    public int m_fixedModsCount;
     public bool m_needRestart;
 
     public static bool IsOldApiVersionMod(ModEntity modEntity, out string description) {
@@ -43,18 +46,18 @@ public class ModsManageContentScreen : Screen {
     }
 
     public ModsManageContentScreen() {
+        m_fixedModsCount = ModsManager.ModListAll.IndexOf(ModsManager.FastDebugModEntity) == 1 ? 2 : 1;
         XElement node = ContentManager.Get<XElement>("Screens/ModsManageContentScreen");
         LoadContents(this, node);
         m_modsContentList = Children.Find<ListPanelWidget>("ModsContentList");
         Children.Find<LabelWidget>("TopBar.Label").Text = LanguageControl.Get(fName, "1");
         m_viewDetailButton = Children.Find<ButtonWidget>("ViewDetailButton");
         m_triggerEnableButton = Children.Find<BevelledButtonWidget>("TriggerEnableButton");
+        m_moveUpButton = Children.Find<BevelledButtonWidget>("MoveUpButton");
+        m_moveDownButton = Children.Find<BevelledButtonWidget>("MoveDownButton");
         m_openHomepageButton = Children.Find<BevelledButtonWidget>("OpenHomepageButton");
-        m_viewDetailButton.IsEnabled = false;
         m_viewDetailButton.Text = LanguageControl.Get(fName, "80");
-        m_triggerEnableButton.IsEnabled = false;
         m_triggerEnableButton.Text = LanguageControl.Get(fName, "18");
-        m_openHomepageButton.IsEnabled = false;
         m_openHomepageButton.Text = LanguageControl.Get(fName, "77");
         m_modsContentList.ItemWidgetFactory = item => {
             if (item is not ModEntity entity) {
@@ -90,14 +93,17 @@ public class ModsManageContentScreen : Screen {
             if (item is not ModEntity entity) {
                 return;
             }
-            m_viewDetailButton.IsEnabled = true;
-            m_triggerEnableButton.IsEnabled = entity.IsDisabled
-                ? entity.DisableReason == ModDisableReason.Manually
-                : entity.modInfo?.PackageName is not "survivalcraft" and not "fastdebug";
-            m_triggerEnableButton.Text = LanguageControl.Get(fName, GetTrigger(entity) ? "19" : "18");
-            m_openHomepageButton.IsEnabled = true;
             if (ReferenceEquals(entity, m_modsContentList.SelectedItem)) {
                 DialogsManager.ShowDialog(null, new ModDetailsDialog(this, entity));
+            }
+            else {
+                m_viewDetailButton.IsEnabled = true;
+                m_triggerEnableButton.IsEnabled = entity.IsDisabled
+                    ? entity.DisableReason == ModDisableReason.Manually
+                    : entity.modInfo.PackageName is not "survivalcraft" and not "fastdebug";
+                m_triggerEnableButton.Text = LanguageControl.Get(fName, GetTrigger(entity) ? "19" : "18");
+                m_openHomepageButton.IsEnabled = true;
+                UpdateMoveUpAndDownEnable(ModsManager.ModListAll.IndexOf(entity));
             }
         };
     }
@@ -121,6 +127,12 @@ public class ModsManageContentScreen : Screen {
             if (m_triggerEnableButton.IsClicked) {
                 TriggerEnable(entity);
             }
+            if (m_moveUpButton.IsClicked) {
+                MoveUp(entity);
+            }
+            if (m_moveDownButton.IsClicked) {
+                MoveDown(entity);
+            }
             if (m_openHomepageButton.IsClicked) {
                 if (string.IsNullOrEmpty(entity.modInfo?.Link)) {
                     DialogsManager.ShowDialog(
@@ -137,6 +149,14 @@ public class ModsManageContentScreen : Screen {
             || Input.Cancel
             || Children.Find<ButtonWidget>("TopBar.Back").IsClicked) {
             if (m_needRestart) {
+                List<string> array = [];
+                foreach (ModEntity entity1 in ModsManager.ModListAll) {
+                    if (!string.IsNullOrEmpty(entity1.LoadAfter)) {
+                        array.Add(entity1.modInfo.PackageName);
+                        array.Add(entity1.LoadAfter);
+                    }
+                }
+                SettingsManager.ModLoadAfters = string.Join(';', array);
                 DialogsManager.ShowDialog(
                     null,
                     new MessageDialog(
@@ -145,8 +165,8 @@ public class ModsManageContentScreen : Screen {
                         LanguageControl.Get(fName, 39),
                         LanguageControl.Get(fName, 31),
                         delegate(MessageDialogButton result) {
+                            SettingsManager.SaveSettings();
                             if (result == MessageDialogButton.Button1) {
-                                SettingsManager.SaveSettings();
                                 Window.Restart();
                             }
                             if (result == MessageDialogButton.Button2) {
@@ -236,5 +256,59 @@ public class ModsManageContentScreen : Screen {
         return entity.modInfo != null
             && ModsManager.DisabledMods.TryGetValue(entity.modInfo!.PackageName, out HashSet<string> versions2)
             && versions2.Contains(entity.modInfo.Version);
+    }
+
+    public void MoveUp(ModEntity entity) {
+        int index = ModsManager.ModListAll.IndexOf(entity);
+        if (index <= m_fixedModsCount) {
+            return;
+        }
+        ModEntity upEntity = ModsManager.ModListAll[index - 1];
+        if (entity.modInfo.DependencyRanges.ContainsKey(upEntity.modInfo.PackageName)) {
+            return;
+        }
+        m_needRestart = true;
+        ModsManager.ModListAll[index - 1] = entity;
+        ModsManager.ModListAll[index] = upEntity;
+        entity.LoadAfter = ModsManager.ModListAll[index - 2].modInfo.PackageName;
+        upEntity.LoadAfter = entity.modInfo.PackageName;
+        if (index + 1 < ModsManager.ModListAll.Count) {
+            ModsManager.ModListAll[index + 1].LoadAfter = upEntity.modInfo.PackageName;
+        }
+        m_modsContentList.SwapItemsAt(index, index - 1);
+        UpdateMoveUpAndDownEnable(index - 1);
+    }
+
+    public void MoveDown(ModEntity entity) {
+        int index = ModsManager.ModListAll.IndexOf(entity);
+        if (index < m_fixedModsCount || index >= ModsManager.ModListAll.Count - 1) {
+            return;
+        }
+        ModEntity downEntity = ModsManager.ModListAll[index + 1];
+        if (entity.modInfo.DependencyRanges.ContainsKey(downEntity.modInfo.PackageName)) {
+            return;
+        }
+        m_needRestart = true;
+        ModsManager.ModListAll[index + 1] = entity;
+        ModsManager.ModListAll[index] = downEntity;
+        entity.LoadAfter = downEntity.modInfo.PackageName;
+        downEntity.LoadAfter = ModsManager.ModListAll[index - 1].modInfo.PackageName;
+        if (index + 2 < ModsManager.ModListAll.Count) {
+            ModsManager.ModListAll[index + 2].LoadAfter = entity.modInfo.PackageName;
+        }
+        m_modsContentList.SwapItemsAt(index, index + 1);
+        UpdateMoveUpAndDownEnable(index + 1);
+    }
+
+    public void UpdateMoveUpAndDownEnable(int index) {
+        if (index < m_fixedModsCount) {
+            m_moveUpButton.IsEnabled = false;
+            m_moveDownButton.IsEnabled = false;
+        }
+        else {
+            ModEntity entity = ModsManager.ModListAll[index];
+            m_moveUpButton.IsEnabled = index > m_fixedModsCount && !entity.modInfo.DependencyRanges.ContainsKey(ModsManager.ModListAll[index - 1].modInfo.PackageName);
+            m_moveDownButton.IsEnabled = index < ModsManager.ModListAll.Count - 1 && !ModsManager.ModListAll[index + 1].modInfo.DependencyRanges.ContainsKey(entity.modInfo.PackageName);
+        }
     }
 }

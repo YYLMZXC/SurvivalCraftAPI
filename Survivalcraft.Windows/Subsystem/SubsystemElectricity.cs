@@ -413,7 +413,9 @@ namespace Game {
                             try {
                                 SimulateElectricElement(key);
                             }
+#pragma warning disable CS0168 // 声明了变量，但从未使用过
                             catch (Exception e) {
+#pragma warning restore CS0168 // 声明了变量，但从未使用过
 #if DEBUG
                                 Console.WriteLine($"Error in simulating {type.Name}: {e}");
 #endif

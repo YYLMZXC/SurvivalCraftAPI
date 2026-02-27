@@ -19,6 +19,7 @@
         <AndroidStoreUncompressedFileExtensions>.dll</AndroidStoreUncompressedFileExtensions>
         <AndroidPackageFormat>apk</AndroidPackageFormat>
         <AndroidUseDesignerAssembly>true</AndroidUseDesignerAssembly>
+        <SupportedOSPlatformVersion>23.0</SupportedOSPlatformVersion>
         <!--签名-->
         <AndroidKeyStore>true</AndroidKeyStore>
         <AndroidSigningKeyAlias>androiddebugkey</AndroidSigningKeyAlias>

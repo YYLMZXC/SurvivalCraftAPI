@@ -34,7 +34,7 @@ namespace Game {
 
         static ListPanelWidget LogList;
         public static bool m_isContentLoaded;
-        public static string m_worldDirectoryToPlayAfterLoading = null;
+        public static string m_worldDirectoryToPlayAfterLoading;
         public const string fName = "LoadingScreen";
 
         static LoadingScreen() {
@@ -247,8 +247,8 @@ namespace Game {
                                     $"Check the API version required by mod is equal to the current API version ({ModsManager.APIVersionString}). Check and add missing mods. If not solved, please contact the developer of the mods or API with Game.log in the path below.",
                                     $"检查模组是否缺失，并添加所缺失的模组。查看模组所需插件版版本与当前插件版版本（{ModsManager.APIVersionString}）是否一致。若以上方式都无法解决，请联系模组、插件版开发者，并发送下面路径中的 Game.log",
                                     Storage.GetSystemPath(ModsManager.LogPath),
-                                    "And you can enable Safe Mode to prevent loading any mod.",
-                                    "你还可以启用安全模式，防止加载任何模组。"
+                                    "And you can enable Safe Mode to stop loading any mod.",
+                                    "你还可以启用安全模式，停止加载任何模组。"
                                 ]
                             )
                         );

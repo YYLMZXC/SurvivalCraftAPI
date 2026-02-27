@@ -3,6 +3,7 @@
   android:versionCode="18230"
   android:versionName="API1.8.2.3"
   package="com.candy.survivalcraftAPI1_8">
+  <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="36" />
   <application
     android:label="@string/ApiTitle"
     android:theme="@style/MainTheme"

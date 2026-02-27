@@ -41,12 +41,6 @@ namespace Game {
         public static string PlatformTag = RuntimeInformation.OSDescription;
         public static BuildConfiguration BuildConfiguration => BuildConfiguration.Release;
 
-#if DIRECT3D11
-	public static bool IsDirect3D11 = true;
-#else
-        public static bool IsDirect3D11 = false;
-#endif
-
         public static string Version { get; set; }
 
         public static string SerializationVersion { get; set; }

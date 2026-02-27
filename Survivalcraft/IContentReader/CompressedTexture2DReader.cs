@@ -1,4 +1,3 @@
-#if !DIRECT3D11
 using Engine.Graphics;
 
 namespace Game.IContentReader {
@@ -16,4 +15,3 @@ namespace Game.IContentReader {
         }
     }
 }
-#endif

@@ -6,13 +6,6 @@
     <ItemGroup>
         <PackageReference Include="NativeFileDialogCore" Version="1.0.3" />
     </ItemGroup>
-    <ItemGroup Condition="'$(Configuration)' == 'Direct3D11'">
-        <PackageReference Include="SharpDX" Version="4.2.0" />
-        <PackageReference Include="SharpDX.D3DCompiler" Version="4.2.0" />
-        <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
-        <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
-        <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
-    </ItemGroup>
     <ItemGroup>
         <Compile Remove="Engine.Graphics\EGL.cs" Condition="'$(Configuration)' != 'Angle'" />
     </ItemGroup>

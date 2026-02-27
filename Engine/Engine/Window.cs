@@ -422,7 +422,7 @@ namespace Engine {
             Silk.NET.Windowing.Window.ShouldLoadFirstPartyPlatforms(false);
             Silk.NET.Windowing.Window.TryAdd(WindowingLibrary);
 #endif
-#if DIRECT3D11 || ANGLE
+#if ANGLE
             GraphicsAPI api = GraphicsAPI.None;
 #elif IOS
             GraphicsAPI api = new(ContextAPI.OpenGLES, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 0));
@@ -500,9 +500,7 @@ namespace Engine {
             }
 #endif // !MOBILE
             finally {
-#if !DIRECT3D11
                 GLWrapper.GL?.Dispose();
-#endif
                 m_view?.Dispose();
             }
 #endif // !BROWSER
@@ -612,9 +610,7 @@ namespace Engine {
             AfterFrameAll();
 
             if (!m_closing) {
-#if DIRECT3D11
-                DXWrapper.Present(m_swapInterval ?? 1);
-#elif ANGLE
+#if ANGLE
                 Egl.SwapBuffers(GLWrapper.m_eglDisplay, GLWrapper.m_eglSurface);
 #elif !BROWSER
                 m_view.SwapBuffers();

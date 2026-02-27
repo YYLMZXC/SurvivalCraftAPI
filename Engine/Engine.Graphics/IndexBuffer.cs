@@ -1,34 +1,19 @@
-#if DIRECT3D11
-using SharpDX;
-using SharpDX.Direct3D11;
-#else
 using Silk.NET.OpenGLES;
-#endif
 using System.Runtime.InteropServices;
 
 namespace Engine.Graphics {
     public class IndexBuffer : GraphicsResource {
-#if DIRECT3D11
-        public SharpDX.Direct3D11.Buffer m_buffer;
-#else
         public int m_buffer;
-#endif
 
         public string DebugName {
             get {
-#if DIRECT3D11
-                return m_buffer.DebugName;
-#else
                 return string.Empty;
-#endif
             }
             // ReSharper disable ValueParameterNotUsed
             set
             // ReSharper restore ValueParameterNotUsed
             {
-#if DIRECT3D11
-                m_buffer.DebugName = value;
-#endif
+                // For Direct3D backend
             }
         }
 
@@ -54,11 +39,6 @@ namespace Engine.Graphics {
             try {
                 int num = Utilities.SizeOf<T>();
                 int size = IndexFormat.GetSize();
-#if DIRECT3D11
-                DataBox dataBox = new(gCHandle.AddrOfPinnedObject() + sourceStartIndex * num, 1, 0);
-                ResourceRegion resourceRegion = new(targetStartIndex * size, 0, 0, targetStartIndex * size + sourceCount * num, 1, 1);
-                DXWrapper.Context.UpdateSubresource(dataBox, m_buffer, 0, resourceRegion);
-#else
                 unsafe {
                     GLWrapper.BindBuffer(BufferTargetARB.ElementArrayBuffer, m_buffer);
                     GLWrapper.GL.BufferSubData(
@@ -68,7 +48,6 @@ namespace Engine.Graphics {
                         (gCHandle.AddrOfPinnedObject() + sourceStartIndex * num).ToPointer()
                     );
                 }
-#endif
             }
             finally {
                 gCHandle.Free();
@@ -84,17 +63,6 @@ namespace Engine.Graphics {
         }
 
         public void AllocateBuffer() {
-#if DIRECT3D11
-            m_buffer = new SharpDX.Direct3D11.Buffer(
-                DXWrapper.Device,
-                IndexFormat.GetSize() * IndicesCount,
-                ResourceUsage.Default,
-                BindFlags.IndexBuffer,
-                CpuAccessFlags.None,
-                ResourceOptionFlags.None,
-                0
-            );
-#else
             unsafe {
                 GLWrapper.GL.GenBuffers(1, out uint buffer);
                 m_buffer = (int)buffer;
@@ -106,18 +74,13 @@ namespace Engine.Graphics {
                     BufferUsageARB.StaticDraw
                 );
             }
-#endif
         }
 
         public void DeleteBuffer() {
-#if DIRECT3D11
-            Utilities.Dispose(ref m_buffer);
-#else
             if (m_buffer != 0) {
                 GLWrapper.DeleteBuffer(BufferTargetARB.ElementArrayBuffer, m_buffer);
                 m_buffer = 0;
             }
-#endif
         }
 
         public override int GetGpuMemoryUsage() => IndicesCount * IndexFormat.GetSize();

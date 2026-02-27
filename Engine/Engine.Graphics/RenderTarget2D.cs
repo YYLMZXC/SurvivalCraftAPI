@@ -1,10 +1,4 @@
-#if DIRECT3D11
-using SharpDX.DXGI;
-using SharpDX;
-using SharpDX.Direct3D11;
-#else
 using Silk.NET.OpenGLES;
-#endif
 using System.Runtime.InteropServices;
 using Engine.Media;
 using SixLabors.ImageSharp;
@@ -14,18 +8,8 @@ using Image = Engine.Media.Image;
 namespace Engine.Graphics {
     public class RenderTarget2D : Texture2D {
         DepthFormat m_depthFormat;
-
-#if DIRECT3D11
-        public RenderTargetView m_colorTextureView;
-
-        public SharpDX.Direct3D11.Texture2D m_depthTexture;
-
-        public DepthStencilView m_depthTextureView;
-#else
         public int m_frameBuffer;
-
         public int m_depthBuffer;
-#endif
 
         public DepthFormat DepthFormat {
             get => m_depthFormat;
@@ -79,45 +63,6 @@ namespace Engine.Graphics {
         }
 
         public void GetDataInternal(nint target, Rectangle sourceRectangle) {
-#if DIRECT3D11
-            int size = ColorFormat.GetSize();
-            Texture2DDescription texture2DDescription = new() {
-                ArraySize = 1,
-                BindFlags = BindFlags.None,
-                CpuAccessFlags = CpuAccessFlags.Read,
-                Format = DXWrapper.TranslateColorFormat(ColorFormat),
-                MipLevels = 1,
-                OptionFlags = ResourceOptionFlags.None,
-                SampleDescription = new SampleDescription(1, 0),
-                Usage = ResourceUsage.Staging,
-                Width = sourceRectangle.Width,
-                Height = sourceRectangle.Height
-            };
-            using (SharpDX.Direct3D11.Texture2D texture2D = new(DXWrapper.Device, texture2DDescription)) {
-                ResourceRegion resourceRegion = new(
-                    sourceRectangle.Left,
-                    sourceRectangle.Top,
-                    0,
-                    sourceRectangle.Left + sourceRectangle.Width,
-                    sourceRectangle.Top + sourceRectangle.Height,
-                    1
-                );
-                DXWrapper.Context.CopySubresourceRegion(m_texture, 0, resourceRegion, texture2D, 0);
-                DataStream dataStream = null;
-                try {
-                    DataBox dataBox = DXWrapper.Context.MapSubresource(texture2D, 0, MapMode.Read, SharpDX.Direct3D11.MapFlags.None, out dataStream);
-                    int num = 0;
-                    for (int i = 0; i < sourceRectangle.Height; i++) {
-                        dataStream.Position = i * dataBox.RowPitch;
-                        dataStream.Read(target, num * size, sourceRectangle.Width * size);
-                        num += sourceRectangle.Width;
-                    }
-                }
-                finally {
-                    dataStream?.Dispose();
-                }
-            }
-#else
             unsafe {
                 GLWrapper.BindFramebuffer(m_frameBuffer);
                 GLWrapper.GL.ReadPixels(
@@ -130,16 +75,11 @@ namespace Engine.Graphics {
                     target.ToPointer()
                 );
             }
-#endif
         }
 
         public void GenerateMipMaps() {
-#if DIRECT3D11
-            DXWrapper.Context.GenerateMips(m_textureView);
-#else
             GLWrapper.BindTexture(TextureTarget.Texture2D, m_texture, false);
             GLWrapper.GL.GenerateMipmap(TextureTarget.Texture2D);
-#endif
         }
 
         public override void HandleDeviceLost() {
@@ -147,32 +87,10 @@ namespace Engine.Graphics {
         }
 
         public override void HandleDeviceReset() {
-#if DIRECT3D11
-            base.HandleDeviceReset();
-#endif
             AllocateRenderTarget();
         }
 
         public void AllocateRenderTarget() {
-#if DIRECT3D11
-            m_colorTextureView = new RenderTargetView(DXWrapper.Device, m_texture);
-            if (DepthFormat != DepthFormat.None) {
-                Texture2DDescription texture2DDescription = new() {
-                    ArraySize = 1,
-                    BindFlags = BindFlags.DepthStencil,
-                    CpuAccessFlags = CpuAccessFlags.None,
-                    Format = DXWrapper.TranslateDepthFormat(DepthFormat),
-                    MipLevels = 1,
-                    OptionFlags = ResourceOptionFlags.None,
-                    SampleDescription = new SampleDescription(1, 0),
-                    Usage = ResourceUsage.Default,
-                    Width = Width,
-                    Height = Height
-                };
-                m_depthTexture = new SharpDX.Direct3D11.Texture2D(DXWrapper.Device, texture2DDescription);
-                m_depthTextureView = new DepthStencilView(DXWrapper.Device, m_depthTexture);
-            }
-#else
             GLWrapper.GL.GenFramebuffers(1u, out uint frameBuffer);
             m_frameBuffer = (int)frameBuffer;
             GLWrapper.BindFramebuffer(m_frameBuffer);
@@ -224,15 +142,9 @@ namespace Engine.Graphics {
             if (framebufferErrorCode != GLEnum.FramebufferComplete) {
                 throw new InvalidOperationException($"Error creating framebuffer ({framebufferErrorCode.ToString()}).");
             }
-#endif
         }
 
         public void DeleteRenderTarget() {
-#if DIRECT3D11
-            Utilities.Dispose(ref m_colorTextureView);
-            Utilities.Dispose(ref m_depthTexture);
-            Utilities.Dispose(ref m_depthTextureView);
-#else
             if (m_depthBuffer != 0) {
                 uint depthBuffer = (uint)m_depthBuffer;
                 GLWrapper.GL.DeleteRenderbuffers(1, in depthBuffer);
@@ -242,7 +154,6 @@ namespace Engine.Graphics {
                 GLWrapper.DeleteFramebuffer(m_frameBuffer);
                 m_frameBuffer = 0;
             }
-#endif
         }
 
         public new static RenderTarget2D Load(Color color, int width, int height) {
@@ -259,12 +170,8 @@ namespace Engine.Graphics {
             RenderTarget2D renderTarget2D = new(image.Width, image.Height, mipLevelsCount, ColorFormat.Rgba8888, DepthFormat.None);
             renderTarget2D.SetData(image.m_trueImage);
             if (mipLevelsCount > 1) {
-#if DIRECT3D11
-                DXWrapper.Context.GenerateMips(renderTarget2D.m_textureView);
-#else
                 GLWrapper.BindTexture(TextureTarget.Texture2D, renderTarget2D.m_texture, false);
                 GLWrapper.GL.GenerateMipmap(TextureTarget.Texture2D);
-#endif
             }
             return renderTarget2D;
         }

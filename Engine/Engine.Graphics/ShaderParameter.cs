@@ -6,17 +6,8 @@ namespace Engine.Graphics {
         public readonly string Name;
         public readonly ShaderParameterType Type;
         public readonly int Count;
-#if DIRECT3D11
-        public int VsResourceBindingSlot = -1;
-        public int PsResourceBindingSlot = -1;
-        public int VsBufferIndex = -1;
-        public IntPtr VsBufferPtr;
-        public int PsBufferIndex = -1;
-        public IntPtr PsBufferPtr;
-#else
         public int Location;
         public float[] Value;
-#endif
 
         public ShaderParameter(string name, ShaderParameterType type) {
             Name = name;
@@ -28,7 +19,6 @@ namespace Engine.Graphics {
             Name = name;
             Type = type;
             Count = count;
-#if !DIRECT3D11
             switch (type) {
                 case ShaderParameterType.Texture2D:
                 case ShaderParameterType.Sampler2D: break;
@@ -39,28 +29,9 @@ namespace Engine.Graphics {
                 case ShaderParameterType.Matrix: Value = new float[16 * count]; break;
                 default: throw new ArgumentException("type");
             }
-#endif
         }
 
         public void SetValue(float value) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Float
-                    || Count != 1) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (VsBufferIndex != -1
-                    && *(float*)(void*)VsBufferPtr != value) {
-                    *(float*)(void*)VsBufferPtr = value;
-                    IsChanged = true;
-                }
-                if (PsBufferIndex != -1
-                    && *(float*)(void*)PsBufferPtr != value) {
-                    *(float*)(void*)PsBufferPtr = value;
-                    IsChanged = true;
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -72,38 +43,9 @@ namespace Engine.Graphics {
                 Value[0] = value;
                 IsChanged = true;
             }
-#endif
         }
 
         public void SetValue(float[] value, int count) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Float) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (count < 0
-                    || count > value.Length
-                    || count > Count) {
-                    throw new ArgumentOutOfRangeException("count");
-                }
-                for (int i = 0; i < count; i++) {
-                    if (VsBufferIndex != -1) {
-                        float* ptr = (float*)((byte*)(void*)VsBufferPtr + (IntPtr)i * 4);
-                        if (*ptr != value[i]) {
-                            *ptr = value[i];
-                            IsChanged = true;
-                        }
-                    }
-                    if (PsBufferIndex != -1) {
-                        float* ptr2 = (float*)((byte*)(void*)PsBufferPtr + (IntPtr)i * 4);
-                        if (*ptr2 != value[i]) {
-                            *ptr2 = value[i];
-                            IsChanged = true;
-                        }
-                    }
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -129,28 +71,9 @@ namespace Engine.Graphics {
                 }
                 IsChanged = true;
             }
-#endif
         }
 
         public void SetValue(Vector2 value) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Vector2
-                    || Count != 1) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (VsBufferIndex != -1
-                    && (IsChanged || !Compare((Vector2*)(void*)VsBufferPtr, &value))) {
-                    *(Vector2*)(void*)VsBufferPtr = value;
-                    IsChanged = true;
-                }
-                if (PsBufferIndex != -1
-                    && (IsChanged || !Compare((Vector2*)(void*)PsBufferPtr, &value))) {
-                    *(Vector2*)(void*)PsBufferPtr = value;
-                    IsChanged = true;
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -165,40 +88,9 @@ namespace Engine.Graphics {
                 Value[1] = value.Y;
                 IsChanged = true;
             }
-#endif
         }
 
         public void SetValue(Vector2[] value, int count) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Vector2) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (count < 0
-                    || count > value.Length
-                    || count > Count) {
-                    throw new ArgumentOutOfRangeException("count");
-                }
-                fixed (Vector2* ptr = value) {
-                    if (VsBufferIndex != -1) {
-                        for (int i = 0; i < count; i++) {
-                            if (IsChanged || !Compare((Vector2*)((byte*)(void*)VsBufferPtr + i * (IntPtr)sizeof(Vector2)), ptr + i)) {
-                                *(Vector2*)((byte*)(void*)VsBufferPtr + i * (IntPtr)sizeof(Vector2)) = ptr[i];
-                                IsChanged = true;
-                            }
-                        }
-                    }
-                    if (PsBufferIndex != -1) {
-                        for (int j = 0; j < count; j++) {
-                            if (IsChanged || !Compare((Vector2*)((byte*)(void*)PsBufferPtr + j * (IntPtr)sizeof(Vector2)), ptr + j)) {
-                                *(Vector2*)((byte*)(void*)PsBufferPtr + j * (IntPtr)sizeof(Vector2)) = ptr[j];
-                                IsChanged = true;
-                            }
-                        }
-                    }
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -229,28 +121,9 @@ namespace Engine.Graphics {
                     Value[num2++] = value[j].Y;
                 }
             }
-#endif
         }
 
         public void SetValue(Vector3 value) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Vector3
-                    || Count != 1) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (VsBufferIndex != -1
-                    && (IsChanged || !Compare((Vector3*)(void*)VsBufferPtr, &value))) {
-                    *(Vector3*)(void*)VsBufferPtr = value;
-                    IsChanged = true;
-                }
-                if (PsBufferIndex != -1
-                    && (IsChanged || !Compare((Vector3*)(void*)PsBufferPtr, &value))) {
-                    *(Vector3*)(void*)PsBufferPtr = value;
-                    IsChanged = true;
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -267,40 +140,9 @@ namespace Engine.Graphics {
                 Value[2] = value.Z;
                 IsChanged = true;
             }
-#endif
         }
 
         public void SetValue(Vector3[] value, int count) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Vector3) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (count < 0
-                    || count > value.Length
-                    || count > Count) {
-                    throw new ArgumentOutOfRangeException("count");
-                }
-                fixed (Vector3* ptr = value) {
-                    if (VsBufferIndex != -1) {
-                        for (int i = 0; i < count; i++) {
-                            if (IsChanged || !Compare((Vector3*)((byte*)(void*)VsBufferPtr + i * (IntPtr)sizeof(Vector3)), ptr + i)) {
-                                *(Vector3*)((byte*)(void*)VsBufferPtr + i * (IntPtr)sizeof(Vector3)) = ptr[i];
-                                IsChanged = true;
-                            }
-                        }
-                    }
-                    if (PsBufferIndex != -1) {
-                        for (int j = 0; j < count; j++) {
-                            if (IsChanged || !Compare((Vector3*)((byte*)(void*)PsBufferPtr + j * (IntPtr)sizeof(Vector3)), ptr + j)) {
-                                *(Vector3*)((byte*)(void*)PsBufferPtr + j * (IntPtr)sizeof(Vector3)) = ptr[j];
-                                IsChanged = true;
-                            }
-                        }
-                    }
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -333,28 +175,9 @@ namespace Engine.Graphics {
                     Value[num2++] = value[j].Z;
                 }
             }
-#endif
         }
 
         public void SetValue(Vector4 value) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Vector4
-                    || Count != 1) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (VsBufferIndex != -1
-                    && (IsChanged || !Compare((Vector4*)(void*)VsBufferPtr, &value))) {
-                    *(Vector4*)(void*)VsBufferPtr = value;
-                    IsChanged = true;
-                }
-                if (PsBufferIndex != -1
-                    && (IsChanged || !Compare((Vector4*)(void*)PsBufferPtr, &value))) {
-                    *(Vector4*)(void*)PsBufferPtr = value;
-                    IsChanged = true;
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -373,40 +196,9 @@ namespace Engine.Graphics {
                 Value[3] = value.W;
                 IsChanged = true;
             }
-#endif
         }
 
         public void SetValue(Vector4[] value, int count) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Vector4) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (count < 0
-                    || count > value.Length
-                    || count > Count) {
-                    throw new ArgumentOutOfRangeException("count");
-                }
-                fixed (Vector4* ptr = value) {
-                    if (VsBufferIndex != -1) {
-                        for (int i = 0; i < count; i++) {
-                            if (IsChanged || !Compare((Vector4*)((byte*)(void*)VsBufferPtr + i * (IntPtr)sizeof(Vector4)), ptr + i)) {
-                                *(Vector4*)((byte*)(void*)VsBufferPtr + i * (IntPtr)sizeof(Vector4)) = ptr[i];
-                                IsChanged = true;
-                            }
-                        }
-                    }
-                    if (PsBufferIndex != -1) {
-                        for (int j = 0; j < count; j++) {
-                            if (IsChanged || !Compare((Vector4*)((byte*)(void*)PsBufferPtr + j * (IntPtr)sizeof(Vector4)), ptr + j)) {
-                                *(Vector4*)((byte*)(void*)PsBufferPtr + j * (IntPtr)sizeof(Vector4)) = ptr[j];
-                                IsChanged = true;
-                            }
-                        }
-                    }
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -441,28 +233,9 @@ namespace Engine.Graphics {
                     Value[num2++] = value[j].W;
                 }
             }
-#endif
         }
 
         public void SetValue(Matrix value) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Matrix
-                    || Count != 1) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (VsBufferIndex != -1
-                    && (IsChanged || !Compare((Matrix*)(void*)VsBufferPtr, &value))) {
-                    *(Matrix*)(void*)VsBufferPtr = value;
-                    IsChanged = true;
-                }
-                if (PsBufferIndex != -1
-                    && (IsChanged || !Compare((Matrix*)(void*)PsBufferPtr, &value))) {
-                    *(Matrix*)(void*)PsBufferPtr = value;
-                    IsChanged = true;
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -505,40 +278,9 @@ namespace Engine.Graphics {
                 Value[15] = value.M44;
                 IsChanged = true;
             }
-#endif
         }
 
         public void SetValue(Matrix[] value, int count) {
-#if DIRECT3D11
-            unsafe {
-                if (Type != ShaderParameterType.Matrix) {
-                    throw new InvalidOperationException("Shader parameter type mismatch.");
-                }
-                if (count < 0
-                    || count > value.Length
-                    || count > Count) {
-                    throw new ArgumentOutOfRangeException("count");
-                }
-                fixed (Matrix* ptr = value) {
-                    if (VsBufferIndex != -1) {
-                        for (int i = 0; i < count; i++) {
-                            if (IsChanged || !Compare((Matrix*)((byte*)(void*)VsBufferPtr + i * (IntPtr)sizeof(Matrix)), ptr + i)) {
-                                *(Matrix*)((byte*)(void*)VsBufferPtr + i * (IntPtr)sizeof(Matrix)) = ptr[i];
-                                IsChanged = true;
-                            }
-                        }
-                    }
-                    if (PsBufferIndex != -1) {
-                        for (int j = 0; j < count; j++) {
-                            if (IsChanged || !Compare((Matrix*)((byte*)(void*)PsBufferPtr + j * (IntPtr)sizeof(Matrix)), ptr + j)) {
-                                *(Matrix*)((byte*)(void*)PsBufferPtr + j * (IntPtr)sizeof(Matrix)) = ptr[j];
-                                IsChanged = true;
-                            }
-                        }
-                    }
-                }
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -597,20 +339,9 @@ namespace Engine.Graphics {
                     Value[num2++] = value[j].M44;
                 }
             }
-#endif
         }
 
         public void SetValue(Texture2D value) {
-#if DIRECT3D11
-            if (Type != ShaderParameterType.Texture2D
-                || Count != 1) {
-                throw new InvalidOperationException("Shader parameter type mismatch.");
-            }
-            if (value != Resource) {
-                Resource = value;
-                IsChanged = true;
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -622,20 +353,9 @@ namespace Engine.Graphics {
                 Resource = value;
                 IsChanged = true;
             }
-#endif
         }
 
         public void SetValue(SamplerState value) {
-#if DIRECT3D11
-            if (Type != ShaderParameterType.Sampler2D
-                || Count != 1) {
-                throw new InvalidOperationException("Shader parameter type mismatch.");
-            }
-            if (value != Resource) {
-                Resource = value;
-                IsChanged = true;
-            }
-#else
             if (Type == ShaderParameterType.Null) {
                 return;
             }
@@ -647,7 +367,6 @@ namespace Engine.Graphics {
                 Resource = value;
                 IsChanged = true;
             }
-#endif
         }
 
         public static unsafe bool Compare(Vector2* a, Vector2* b) => *(long*)a == *(long*)b;

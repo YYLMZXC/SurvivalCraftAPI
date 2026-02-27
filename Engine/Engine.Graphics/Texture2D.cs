@@ -1,10 +1,4 @@
-#if DIRECT3D11
-using SharpDX.DXGI;
-using SharpDX;
-using SharpDX.Direct3D11;
-#else
 using Silk.NET.OpenGLES;
-#endif
 using System.Runtime.InteropServices;
 using Engine.Media;
 using SixLabors.ImageSharp;
@@ -19,33 +13,18 @@ namespace Engine.Graphics {
         int m_mipLevelsCount;
         object m_tag;
         string m_debugName;
-#if DIRECT3D11
-        public SharpDX.Direct3D11.Texture2D m_texture;
-        public ShaderResourceView m_textureView;
-
-        public IntPtr NativeHandle => m_texture.NativePointer;
-#else
         public int m_texture;
         public PixelFormat m_pixelFormat;
         public PixelType m_pixelType;
 
         public IntPtr NativeHandle => m_texture;
-#endif
 
         public string DebugName {
             get {
-#if DIRECT3D11
-                return m_texture.DebugName;
-#else
                 return m_debugName;
-#endif
             }
             set {
-#if DIRECT3D11
-                m_texture.DebugName = value;
-#else
                 m_debugName = value;
-#endif
             }
         }
 
@@ -78,7 +57,6 @@ namespace Engine.Graphics {
 
         public Texture2D(int width, int height, int mipLevelsCount, ColorFormat colorFormat) {
             InitializeTexture2D(width, height, mipLevelsCount, colorFormat);
-#if !DIRECT3D11
             switch (ColorFormat) {
                 case ColorFormat.Rgba8888:
                     m_pixelFormat = PixelFormat.Rgba;
@@ -98,7 +76,6 @@ namespace Engine.Graphics {
                     break;
                 default: throw new InvalidOperationException("Unsupported surface format.");
             }
-#endif
             AllocateTexture();
         }
 
@@ -125,11 +102,6 @@ namespace Engine.Graphics {
         }
 
         public virtual void SetDataInternal(int mipLevel, nint source) {
-#if DIRECT3D11
-            int num = ColorFormat.GetSize() * Math.Max(Width >> mipLevel, 1);
-            DataBox dataBox = new(source, num, 0);
-            DXWrapper.Context.UpdateSubresource(dataBox, m_texture, mipLevel);
-#else
             int width = MathUtils.Max(Width >> mipLevel, 1);
             int height = MathUtils.Max(Height >> mipLevel, 1);
             GLWrapper.BindTexture(TextureTarget.Texture2D, m_texture, false);
@@ -144,15 +116,9 @@ namespace Engine.Graphics {
                 m_pixelType,
                 in source
             );
-#endif
         }
 
         public virtual unsafe void SetDataInternal(int mipLevel, void* source) {
-#if DIRECT3D11
-            int num = ColorFormat.GetSize() * Math.Max(Width >> mipLevel, 1);
-            DataBox dataBox = new((nint)source, num, 0);
-            DXWrapper.Context.UpdateSubresource(dataBox, m_texture, mipLevel);
-#else
             int width = MathUtils.Max(Width >> mipLevel, 1);
             int height = MathUtils.Max(Height >> mipLevel, 1);
             GLWrapper.BindTexture(TextureTarget.Texture2D, m_texture, false);
@@ -167,7 +133,6 @@ namespace Engine.Graphics {
                 m_pixelType,
                 source
             );
-#endif
         }
 
         public virtual void SetData(Image<Rgba32> source) {
@@ -184,12 +149,8 @@ namespace Engine.Graphics {
             VerifyParametersSwap(texture1, texture2);
             SwapTexture2D(texture1, texture2);
             Utilities.Swap(ref texture1.m_texture, ref texture2.m_texture);
-#if DIRECT3D11
-            Utilities.Swap(ref texture1.m_textureView, ref texture2.m_textureView);
-#else
             Utilities.Swap(ref texture1.m_pixelFormat, ref texture2.m_pixelFormat);
             Utilities.Swap(ref texture1.m_pixelType, ref texture2.m_pixelType);
-#endif
             Utilities.Swap(ref texture1.m_debugName, ref texture2.m_debugName);
         }
 
@@ -210,23 +171,6 @@ namespace Engine.Graphics {
         }
 
         public virtual void AllocateTexture() {
-#if DIRECT3D11
-            bool flag = this is RenderTarget2D || MipLevelsCount > 1;
-            Texture2DDescription texture2DDescription = new() {
-                ArraySize = 1,
-                BindFlags = flag ? BindFlags.ShaderResource | BindFlags.RenderTarget : BindFlags.ShaderResource,
-                CpuAccessFlags = CpuAccessFlags.None,
-                Format = DXWrapper.TranslateColorFormat(ColorFormat),
-                MipLevels = MipLevelsCount,
-                OptionFlags = flag ? ResourceOptionFlags.GenerateMipMaps : ResourceOptionFlags.None,
-                SampleDescription = new SampleDescription(1, 0),
-                Usage = ResourceUsage.Default,
-                Width = Width,
-                Height = Height
-            };
-            m_texture = new SharpDX.Direct3D11.Texture2D(DXWrapper.Device, texture2DDescription);
-            m_textureView = new ShaderResourceView(DXWrapper.Device, m_texture);
-#else
             unsafe {
                 GLWrapper.GL.GenTextures(1, out uint texture);
                 m_texture = (int)texture;
@@ -247,19 +191,13 @@ namespace Engine.Graphics {
                     );
                 }
             }
-#endif
         }
 
         public void DeleteTexture() {
-#if DIRECT3D11
-            Utilities.Dispose(ref m_texture);
-            Utilities.Dispose(ref m_textureView);
-#else
             if (m_texture != 0) {
                 GLWrapper.DeleteTexture(m_texture);
                 m_texture = 0;
             }
-#endif
         }
 
         public override int GetGpuMemoryUsage() {
@@ -291,12 +229,8 @@ namespace Engine.Graphics {
             Texture2D texture2D = new(image.Width, image.Height, mipLevelsCount, ColorFormat.Rgba8888);
             texture2D.SetData(image.m_trueImage);
             if (mipLevelsCount > 1) {
-#if DIRECT3D11
-                DXWrapper.Context.GenerateMips(texture2D.m_textureView);
-#else
                 GLWrapper.BindTexture(TextureTarget.Texture2D, texture2D.m_texture, false);
                 GLWrapper.GL.GenerateMipmap(TextureTarget.Texture2D);
-#endif
             }
             texture2D.Tag = image;
             return texture2D;
@@ -306,12 +240,8 @@ namespace Engine.Graphics {
             Texture2D texture2D = new(image.Width, image.Height, mipLevelsCount, ColorFormat.Rgba8888);
             texture2D.SetData(image);
             if (mipLevelsCount > 1) {
-#if DIRECT3D11
-                DXWrapper.Context.GenerateMips(texture2D.m_textureView);
-#else
                 GLWrapper.BindTexture(TextureTarget.Texture2D, texture2D.m_texture, false);
                 GLWrapper.GL.GenerateMipmap(TextureTarget.Texture2D);
-#endif
             }
             texture2D.Tag = new Image(image);
             return texture2D;

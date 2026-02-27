@@ -1,4 +1,3 @@
-#if !DIRECT3D11
 using System.Runtime.InteropServices;
 using Silk.NET.OpenGLES;
 using SixLabors.ImageSharp;
@@ -281,4 +280,3 @@ namespace Engine.Graphics {
         }
     }
 }
-#endif

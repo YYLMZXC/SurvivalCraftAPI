@@ -13,12 +13,8 @@ namespace Game.IContentReader {
             }
             string suffix = contentInfo.ContentSuffix.ToLower();
             return suffix switch {
-#if DIRECT3D11
-                ".astc" or ".astcsrgb" => throw new NotImplementedException(),
-#else
                 ".astc" => CompressedTexture2D.Load(contentInfo.Duplicate()),
                 ".astcsrgb" => CompressedTexture2D.Load(contentInfo.Duplicate(), false),
-#endif
                 _ => Texture2D.Load(ContentManager.Get<Image>(contentInfo.ContentPath, suffix))
             };
         }

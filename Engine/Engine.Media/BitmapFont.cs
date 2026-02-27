@@ -78,15 +78,8 @@ namespace Engine.Media {
         public static BitmapFont DebugFont {
             get {
                 if (m_debugFont == null) {
-#if ANDROID
-#pragma warning disable CA1416
-                    using Stream stream = EngineActivity.m_activity.Assets?.Open("Debugfont.png");
-                    using Stream stream2 = EngineActivity.m_activity.Assets?.Open("Debugfont.lst");
-#pragma warning restore CA1416
-#else
                     using Stream stream = typeof(BitmapFont).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.Debugfont.png");
                     using Stream stream2 = typeof(BitmapFont).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.Debugfont.lst");
-#endif
                     if (stream == null) {
                         throw new FileNotFoundException("Debugfont.png");
                     }

@@ -1,25 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Survivalcraft\Survivalcraft.props" />
+    <Import Project="..\build\Android.props" />
     <PropertyGroup>
-        <NoWarn>$(NoWarn);CS1591;XA0141;XA4301</NoWarn>
-        <RootNamespace>Game</RootNamespace>
-        <AssemblyName>Survivalcraft</AssemblyName>
-        <Product>Survivalcraft</Product>
-        <TargetFramework>net10.0-android</TargetFramework>
-        <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
-        <ApplicationVersion>2.4.0.0</ApplicationVersion>
-        <AssemblyVersion>2.4.0.0</AssemblyVersion>
-        <FileVersion>2.4.0.0</FileVersion>
-        <LangVersion>preview</LangVersion>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Nullable>disable</Nullable>
+        <NoWarn>$(NoWarn);XA0141;XA4301</NoWarn>
         <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
         <AndroidApplication>true</AndroidApplication>
         <ApplicationId>com.candy.SurvivalcraftAPI1_8</ApplicationId>
         <AndroidStoreUncompressedFileExtensions>.dll</AndroidStoreUncompressedFileExtensions>
         <AndroidPackageFormat>apk</AndroidPackageFormat>
         <AndroidUseDesignerAssembly>true</AndroidUseDesignerAssembly>
-        <SupportedOSPlatformVersion>23.0</SupportedOSPlatformVersion>
         <!--签名-->
         <AndroidKeyStore>true</AndroidKeyStore>
         <AndroidSigningKeyAlias>androiddebugkey</AndroidSigningKeyAlias>
@@ -37,53 +26,22 @@
         <AndroidUseInterpreter>false</AndroidUseInterpreter>
         <EnableLLVM>true</EnableLLVM>
         <RunAOTCompilation>false</RunAOTCompilation>
-        <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <DefineConstants>DEBUG;MOBILE</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-        <DebugType>none</DebugType>
-        <DefineConstants>TRACE;MOBILE</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
-        <AndroidAsset Include="..\Engine\Resources\Lit.psh" Link="Assets\Lit.psh">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </AndroidAsset>
-        <AndroidAsset Include="..\Engine\Resources\Lit.vsh" Link="Assets\Lit.vsh">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </AndroidAsset>
-        <AndroidAsset Include="..\Engine\Resources\UnLit.psh" Link="Assets\Unlit.psh">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </AndroidAsset>
-        <AndroidAsset Include="..\Engine\Resources\UnLit.vsh" Link="Assets\Unlit.vsh">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </AndroidAsset>
-        <AndroidAsset Include="..\Engine\Resources\Debugfont.png" Link="Assets\Debugfont.png">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </AndroidAsset>
-        <AndroidAsset Include="..\Engine\Resources\Debugfont.lst" Link="Assets\Debugfont.lst">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </AndroidAsset>
-        <AndroidAsset Include="..\Survivalcraft.Windows\Content.zip">
+        <ProjectReference Include="..\EntitySystem.Android\EntitySystem.Android.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <AndroidAsset Include="..\Survivalcraft\Content.zip">
             <Link>Assets\Content.zip</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </AndroidAsset>
-        <AndroidAsset Include="..\Survivalcraft.Windows\init.js">
+        <AndroidAsset Include="..\Survivalcraft\init.js">
             <Link>Assets\init.js</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </AndroidAsset>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Jint" Version="4.6.0"/>
-        <PackageReference Include="NAudio.Flac.Unknown.Mod" Version="1.0.4"/>
-        <PackageReference Include="NuGet.Versioning" Version="7.3.0" />
-    </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0-android"/>
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net10.0-android" />
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs"/>
+        <Compile Include="MainActivity.cs"/>
+        <Compile Include="ImportExternalContentActivity.cs"/>
     </ItemGroup>
 </Project>

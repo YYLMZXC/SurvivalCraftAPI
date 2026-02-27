@@ -1,47 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <NoWarn>$(NoWarn);CS1591</NoWarn>
-        <RootNamespace>Game</RootNamespace>
-        <AssemblyName>Survivalcraft</AssemblyName>
-        <TargetFramework>net10.0</TargetFramework>
-        <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-        <ApplicationVersion>2.4.0.0</ApplicationVersion>
-        <AssemblyVersion>2.4.0.0</AssemblyVersion>
-        <FileVersion>2.4.0.0</FileVersion>
-        <LangVersion>preview</LangVersion>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Nullable>disable</Nullable>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <OutputType>Exe</OutputType>
-        <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <DefineConstants>DEBUG;LINUX</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-        <DebugType>none</DebugType>
-        <DefineConstants>TRACE;LINUX</DefineConstants>
-    </PropertyGroup>
+    <Import Project="..\Survivalcraft\Survivalcraft.props" />
+    <Import Project="..\build\Linux.props" />
     <ItemGroup>
-        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0" />
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net10.0" />
+        <ProjectReference Include="..\EntitySystem.Linux\EntitySystem.Linux.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="TextCopy" Version="6.2.1" />
-        <PackageReference Include="Jint" Version="4.6.0" />
-        <PackageReference Include="NAudio.Flac.Unknown.Mod" Version="1.0.4" />
-        <PackageReference Include="NuGet.Versioning" Version="7.3.0" />
     </ItemGroup>
     <ItemGroup>
-        <None Include="..\Survivalcraft.Windows\Content.zip" Link="Content.zip">
+        <None Include="..\Survivalcraft\Content.zip" Link="Content.zip">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Include="..\Survivalcraft.Windows\init.js" Link="init.js">
+        <None Include="..\Survivalcraft\init.js" Link="init.js">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs"/>
     </ItemGroup>
 </Project>

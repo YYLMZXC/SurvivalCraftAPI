@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Engine\Engine.props" />
+    <Import Project="..\build\Android.props" />
+    <ItemGroup>
+        <PackageReference Include="Xamarin.AndroidX.Core" Version="1.17.0.1" />
+        <PackageReference Remove="Silk.NET.Input" />
+    </ItemGroup>
+</Project>

@@ -1,45 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Survivalcraft\Survivalcraft.props" />
+    <Import Project="..\build\IOS.props" />
     <PropertyGroup>
-        <NoWarn>$(NoWarn);CS1591</NoWarn>
-        <AssemblyName>Survivalcraft</AssemblyName>
-        <RootNamespace>Game</RootNamespace>
-        <TargetFramework>net9.0-ios</TargetFramework>
-        <LangVersion>preview</LangVersion>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Nullable>disable</Nullable>
-        <OutputType>Exe</OutputType>
         <ImplicitUsings>true</ImplicitUsings>
         <ProvisioningType>manual</ProvisioningType>
         <EnableSGenConc>true</EnableSGenConc>
-        <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
-        <IsTrimmable>true</IsTrimmable>
         <ApplicationId>com.survivalcraft.api</ApplicationId>
-        <Configuration Condition="'$(Configuration)' == ''">IOS</Configuration>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)' == 'IOS'">
-        <DebugType>none</DebugType>
-        <DefineConstants>TRACE;RELEASE;IOS;MOBILE</DefineConstants>
-        <MtouchLink>None</MtouchLink>
-        <MtouchUseLlvm>false</MtouchUseLlvm>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Include="..\Survivalcraft.Windows\**\*.cs" Exclude="..\Survivalcraft.Windows\obj\**\*.cs" />
+        <Compile Remove="..\Survivalcraft\Properties\AssemblyInfo.cs" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Remove="..\Survivalcraft.Windows\Properties\AssemblyInfo.cs" />
-    </ItemGroup>
-    <ItemGroup>
-        <EmbeddedResource Include="..\Survivalcraft.Windows\Content.zip" Link="Content.zip">
+        <EmbeddedResource Include="..\Survivalcraft\Content.zip" Link="Content.zip">
             <LogicalName>Game.Content.zip</LogicalName>
         </EmbeddedResource>
-        <None Include="..\Survivalcraft.Windows\init.js" Link="init.js">
+        <None Include="..\Survivalcraft\init.js" Link="init.js">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net9.0-ios" />
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net9.0-ios" />
+        <ProjectReference Include="..\EntitySystem.IOS\EntitySystem.IOS.csproj" />
     </ItemGroup>
     <ItemGroup>
         <Reference Include="Bass.Net">
@@ -65,8 +45,5 @@
             <Kind>Framework</Kind>
             <ForceLoad>true</ForceLoad>
         </NativeReference>
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="NuGet.Versioning" Version="7.3.0" />
     </ItemGroup>
 </Project>

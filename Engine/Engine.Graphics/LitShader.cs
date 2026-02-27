@@ -1,7 +1,5 @@
 using System.Globalization;
-#if !ANDROID
 using System.Reflection;
-#endif
 
 namespace Engine.Graphics {
     public class LitShader : TransformedShader {
@@ -270,21 +268,13 @@ namespace Engine.Graphics {
         }
 
         public static string GetLitVshString() {
-#if ANDROID
-            Stream stream = Storage.OpenFile("app:Lit.vsh", OpenFileMode.Read);
-#else
             Stream stream = typeof(Shader).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.Lit.vsh");
-#endif
             ArgumentNullException.ThrowIfNull(stream);
             return new StreamReader(stream).ReadToEnd();
         }
 
         public static string GetLitPshString() {
-#if ANDROID
-            Stream stream = Storage.OpenFile("app:Lit.psh", OpenFileMode.Read);
-#else
             Stream stream = typeof(Shader).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.Lit.psh");
-#endif
             ArgumentNullException.ThrowIfNull(stream);
             return new StreamReader(stream).ReadToEnd();
         }

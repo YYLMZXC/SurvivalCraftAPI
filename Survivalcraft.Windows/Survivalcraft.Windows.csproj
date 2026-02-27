@@ -1,84 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\Survivalcraft\Survivalcraft.props" />
     <PropertyGroup>
-        <NoWarn>$(NoWarn);CS1591</NoWarn>
-        <RootNamespace>Game</RootNamespace>
-        <AssemblyName>Survivalcraft</AssemblyName>
-        <Configurations>Debug;Release;Direct3D11</Configurations>
-        <PackageId>SurvivalcraftAPI.Survivalcraft</PackageId>
-        <Title>SurvivalcraftAPI.Survivalcraft</Title><!--For NuGet Package-->
-        <Version>1.8.2.3</Version><!--For NuGet Package-->
-        <PackageProjectUrl>https://gitee.com/SC-SPM/SurvivalcraftApi</PackageProjectUrl>
-        <RepositoryUrl>https://gitee.com/SC-SPM/SurvivalcraftApi</RepositoryUrl>
-        <RepositoryType>Git</RepositoryType>
-        <ApplicationVersion>2.4.0.0</ApplicationVersion>
-        <AssemblyVersion>2.4.0.0</AssemblyVersion>
-        <FileVersion>2.4.0.0</FileVersion>
-        <NeutralLanguage>zh-CN</NeutralLanguage>
-        <LangVersion>preview</LangVersion>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Nullable>disable</Nullable>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <ApplicationIcon>icon.ico</ApplicationIcon>
         <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
         <OutputType>WinExe</OutputType>
-        <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-        <TargetFramework>net10.0-windows</TargetFramework>
-        <DefineConstants>DEBUG</DefineConstants>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-        <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
-        <DebugType>none</DebugType>
-        <DefineConstants>TRACE</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)' == 'Direct3D11'">
-        <TargetFramework>net10.0-windows</TargetFramework>
-        <DebugType>none</DebugType>
-        <DefineConstants>TRACE;RELEASE;DIRECT3D11</DefineConstants>
-        <Optimize>true</Optimize>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)' == 'Angle'">
-        <TargetFramework>net10.0-windows</TargetFramework>
-        <DebugType>none</DebugType>
-        <DefineConstants>TRACE;RELEASE;ANGLE</DefineConstants>
-        <Optimize>true</Optimize>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
-        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    </PropertyGroup>
-    <ItemGroup Condition="'$(Configuration)' != 'Release'">
-        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFramework=net10.0-windows" />
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFramework=net10.0-windows" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(Configuration)' == 'Release'">
-        <ProjectReference Include="..\Engine\Engine.csproj" SetTargetFramework="TargetFrameworks=net10.0;net10.0-windows" />
-        <ProjectReference Include="..\EntitySystem\EntitySystem.csproj" SetTargetFramework="TargetFrameworks=net10.0;net10.0-windows" />
+    <ItemGroup>
+        <ProjectReference Include="..\EntitySystem.Windows\EntitySystem.Windows.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="TextCopy" Version="6.2.1" Condition="'$(TargetFramework)' == 'net10.0-windows'" />
-        <PackageReference Include="ImeSharp.ImmOnly" Version="1.0.0" Condition="'$(TargetFramework)' == 'net10.0-windows'" />
-        <PackageReference Include="Jint" Version="4.6.0" />
-        <PackageReference Include="NAudio.Flac.Unknown.Mod" Version="1.0.4" />
-        <PackageReference Include="NuGet.Versioning" Version="7.3.0" />
+        <PackageReference Include="TextCopy" Version="6.2.1" />
+        <PackageReference Include="ImeSharp.ImmOnly" Version="1.0.0" />
     </ItemGroup>
-    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
-        <None Update="Content.zip">
+    <ItemGroup>
+        <None Include="..\Survivalcraft\Content.zip">
+            <Link>Content.zip</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="..\Survivalcraft\init.js">
+            <Link>init.js</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="openal32.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="wrap_oal.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="init.js">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Compatible Patch Note 兼容补丁使用说明.txt" Condition="'$(Configuration)' == 'Direct3D11'">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Include="..\README.md">
@@ -93,7 +45,7 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
-    <Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(TargetFramework)' == 'net10.0-windows'">
-        <ZipDirectory SourceDirectory="Content" DestinationFile="Content.zip" Overwrite="true" />
+    <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+        <ZipDirectory SourceDirectory="..\Survivalcraft\Content" DestinationFile="..\Survivalcraft\Content.zip" Overwrite="true" />
     </Target>
 </Project>

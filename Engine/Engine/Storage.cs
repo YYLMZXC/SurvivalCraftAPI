@@ -5,15 +5,13 @@ using Android.OS;
 #elif IOS
 using Foundation;
 #else
-#if WINDOWS
-using System.Diagnostics;
-#endif
 #if BROWSER
 using System.Runtime.InteropServices;
 using Engine.Browser;
 using System.Runtime.InteropServices.JavaScript;
 #pragma warning disable CA1416
 #else
+using System.Diagnostics;
 using NativeFileDialogCore;
 #endif
 using System.Reflection;

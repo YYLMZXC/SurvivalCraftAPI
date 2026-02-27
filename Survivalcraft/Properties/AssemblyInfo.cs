@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Survivalcraft")]
-[assembly: AssemblyCopyright("Copyright © 2011 - 2022")]
+[assembly: AssemblyCopyright("Copyright © 2011 - 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -1,6 +1,4 @@
-#if !ANDROID
 using System.Reflection;
-#endif
 
 namespace Engine.Graphics {
     public class UnlitShader : TransformedShader {
@@ -74,21 +72,13 @@ namespace Engine.Graphics {
         }
 
         public static string GetUnlitVshString() {
-#if ANDROID
-            Stream stream = Storage.OpenFile("app:Unlit.vsh", OpenFileMode.Read);
-#else
             Stream stream = typeof(Shader).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.Unlit.vsh");
-#endif
             ArgumentNullException.ThrowIfNull(stream);
             return new StreamReader(stream).ReadToEnd();
         }
 
         public static string GetUnlitPshString() {
-#if ANDROID
-            Stream stream = Storage.OpenFile("app:Unlit.psh", OpenFileMode.Read);
-#else
             Stream stream = typeof(Shader).GetTypeInfo().Assembly.GetManifestResourceStream("Engine.Resources.Unlit.psh");
-#endif
             ArgumentNullException.ThrowIfNull(stream);
             return new StreamReader(stream).ReadToEnd();
         }

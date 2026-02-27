@@ -1,1 +1,1 @@
-dotnet publish Survivalcraft.Browser -c Browser -p:IsPublishing=true
+dotnet publish Survivalcraft.Browser -c Release -p:IsPublishing=true

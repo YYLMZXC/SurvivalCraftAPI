@@ -1,14 +1,29 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Android", "Android", "{1713D085-0B95-411E-970D-2A2DEA1ACA05}"
+	ProjectSection(SolutionItems) = preProject
+		build\Android.props = build\Android.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Browser", "Browser", "{0539ACE0-1BF6-4AFD-8C7B-A99CEFF97A8A}"
+	ProjectSection(SolutionItems) = preProject
+		build\Browser.props = build\Browser.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IOS", "IOS", "{AB252B17-2B57-4267-90FD-F20647C18B07}"
+	ProjectSection(SolutionItems) = preProject
+		build\IOS.props = build\IOS.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Linux", "Linux", "{D0B52529-A78D-4C77-B55B-5C63064AB2E0}"
+	ProjectSection(SolutionItems) = preProject
+		build\Linux.props = build\Linux.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Windows", "Windows", "{A1B2C3D4-E5F6-7890-ABCD-1234567890FF}"
+	ProjectSection(SolutionItems) = preProject
+		build\Windows.props = build\Windows.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Engine", "Engine\Engine.csproj", "{0F3ABA55-EDCA-4613-9651-8B3D11808D22}"
 EndProject

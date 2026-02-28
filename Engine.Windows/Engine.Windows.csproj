@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <Import Project="..\Engine\Engine.props" />
+    <Import Project="..\build\Windows.props" />
     <PropertyGroup>
-        <TargetFramework>net10.0-windows</TargetFramework>
         <DefineConstants Condition="'$(UseAngle)' == 'true'">$(DefineConstants);ANGLE</DefineConstants>
     </PropertyGroup>
     <ItemGroup>

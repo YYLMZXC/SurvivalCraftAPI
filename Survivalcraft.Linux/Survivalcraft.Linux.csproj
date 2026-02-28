@@ -14,5 +14,9 @@
         <None Include="..\Survivalcraft\init.js" Link="init.js">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Include="..\README.md">
+            <Link>Readme 请读我.md</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

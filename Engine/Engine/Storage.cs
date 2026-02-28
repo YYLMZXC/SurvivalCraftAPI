@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using Engine.Browser;
 using System.Runtime.InteropServices.JavaScript;
 #pragma warning disable CA1416
-#else
+#elif WINDOWS || LINUX
 using System.Diagnostics;
 using NativeFileDialogCore;
 #endif
@@ -488,7 +488,7 @@ namespace Engine {
             bytes.Dispose();
             stream.Position = 0;
             return (stream, fileName);
-#else
+#elif WINDOWS || LINUX
             string filtersString = null;
             if (filters != null) {
                 StringBuilder sb = new();
@@ -542,8 +542,8 @@ namespace Engine {
                     return (null, result.Path);
                 }
             }
-            return (null, null);
 #endif
+            return (null, null);
         }
 
 #if BROWSER

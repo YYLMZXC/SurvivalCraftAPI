@@ -3,7 +3,4 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
     </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="NativeFileDialogCore" Version="1.0.3" />
-    </ItemGroup>
 </Project>

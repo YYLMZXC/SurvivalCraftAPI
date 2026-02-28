@@ -114,7 +114,7 @@
     > 还没有 Git？[官网下载](https://git-scm.com/downloads)
 
 2. 进入此仓库，使用 [Visual Studio](https://visualstudio.microsoft.com/) 或 [Rider](https://www.jetbrains.com/zh-cn/rider/) 打开`SurvivalcraftApi`目录中的`SurvivalCraftApi.sln`
-3. 如果只是在 Windows 系统上进行调试，请右键卸载`Survivalcraft.Android`、`Survivalcraft.Linux`等非 Windows 的 Survivalcraft 项目，之后在`Survivalcraft.Windows`项目上右键，点击`构建所选项目`即可
+3. 如果只是在 Windows 系统上进行调试，请右键卸载`Survivalcraft.Android`等所有名称没有 Windows 的 项目，之后在`Survivalcraft.Windows`项目上右键，点击`构建所选项目`即可
 4. 如果需要生成 Android 系统上的`APK`安装包，请在`Survivalcraft.Android`项目上右键，点击`加载项目`，再点击`归档以用于发布`，之后按提示操作
 5. 如果要生成`nupkg`引用包，请运行项目根目录的`PackNugetPackages.bat`
 6. 如果要生成网页版，请右键卸载非 Browser 的 Survivalcraft 项目，并将配置切换到 Browser，之后在`Survivalcraft.Browser`项目上右键，点击`构建所选项目`即可；如果要生成最终用于发布的网页版，请运行项目根目录的`PublishSurvivalcraftBrowser.bat`

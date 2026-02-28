@@ -47,7 +47,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Engine.IOS", "Engine.IOS\En
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EntitySystem.IOS", "EntitySystem.IOS\EntitySystem.IOS.csproj", "{0C69436C-40F5-4B24-9D87-54B457397DEC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SurvivalCraft.IOS", "SurvivalCraft.IOS\SurvivalCraft.IOS.csproj", "{A486B307-55FA-C2C1-B3AB-3A05986E14AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Survivalcraft.IOS", "Survivalcraft.IOS\Survivalcraft.IOS.csproj", "{A486B307-55FA-C2C1-B3AB-3A05986E14AA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Engine.Linux", "Engine.Linux\Engine.Linux.csproj", "{C699F9B1-7E06-4891-9588-187EB2994C1C}"
 EndProject

@@ -6,7 +6,4 @@
     <ItemGroup>
         <PackageReference Include="NativeFileDialogCore" Version="1.0.3" />
     </ItemGroup>
-    <ItemGroup>
-        <Compile Remove="Engine.Graphics\EGL.cs" Condition="'$(Configuration)' != 'Angle'" />
-    </ItemGroup>
 </Project>

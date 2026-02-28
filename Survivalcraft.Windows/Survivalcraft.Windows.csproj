@@ -38,12 +38,6 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <!-- 来自 https://github.com/mmozeiko/build-angle/releases/tag/2026-01-04 -->
-        <None Update="libEGL.dll" Condition="'$(Configuration)' == 'Angle'">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="libGLESv2.dll" Condition="'$(Configuration)' == 'Angle'">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
     </ItemGroup>
     <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
         <ZipDirectory SourceDirectory="..\Survivalcraft\Content" DestinationFile="..\Survivalcraft\Content.zip" Overwrite="true" />

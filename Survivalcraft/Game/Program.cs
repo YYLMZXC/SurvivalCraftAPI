@@ -1,5 +1,6 @@
 #if ANDROID
 using Android.Content;
+using SC4Android;
 #elif BROWSER
 using System.Runtime.Versioning;
 using Engine.Browser;
@@ -161,6 +162,9 @@ namespace Game {
             SystemLanguage = BrowserInterop.GetLanguage();
 #else
             SystemLanguage = CultureInfo.CurrentUICulture.Name;
+#endif
+#if ANDROID
+            LoadingScreen.m_worldDirectoryToPlayAfterLoading = MainActivity.m_worldDirectoryToPlayAfterLoading;
 #endif
             if (string.IsNullOrEmpty(SystemLanguage)) {
                 SystemLanguage = RegionInfo.CurrentRegion.DisplayName != "United States" ? "zh-CN" : "en-US";

@@ -2,11 +2,24 @@
     <Import Project="..\Engine\Engine.props" />
     <PropertyGroup>
         <TargetFramework>net10.0-windows</TargetFramework>
+        <DefineConstants Condition="'$(UseAngle)' == 'true'">$(DefineConstants);ANGLE</DefineConstants>
     </PropertyGroup>
     <ItemGroup>
         <EmbeddedResource Include="..\Engine\Resources\icon.png" Link="Resources\icon.png" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NativeFileDialogCore" Version="1.0.3" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(UseAngle)' == 'true'">
+        <Compile Include="..\Engine\Engine.Graphics\EGL.cs" Link="Engine.Graphics\EGL.cs" />
+        <None Update="libEGL.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="libGLESv2.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Compatible Patch Note 兼容补丁使用说明.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

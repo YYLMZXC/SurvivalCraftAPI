@@ -42,6 +42,8 @@ namespace SC4Android {
         public static bool GraterThanAndroid11 { get; } = Build.VERSION.SdkInt >= BuildVersionCodes.R;
         public static bool GraterThanAndroid6 { get; } = Build.VERSION.SdkInt >= BuildVersionCodes.M;
 
+        public static string m_worldDirectoryToPlayAfterLoading;
+
         public static bool CheckAndRequestPermission(Activity activity) {
             bool arePermissionsGranted = true;
             if (GraterThanAndroid11) {
@@ -128,7 +130,7 @@ namespace SC4Android {
             if (Build.VERSION.SdkInt >= BuildVersionCodes.S) {
                 SplashScreen.SetOnExitAnimationListener(new SplashScreenOnExitAnimationListener());
             }
-            LoadingScreen.m_worldDirectoryToPlayAfterLoading = Intent?.GetStringExtra("play") ?? null;
+            m_worldDirectoryToPlayAfterLoading = Intent?.GetStringExtra("play") ?? null;
         }
 
         public class ViewTreeObserverListener : Java.Lang.Object, ViewTreeObserver.IOnPreDrawListener {

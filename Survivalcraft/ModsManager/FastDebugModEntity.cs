@@ -14,7 +14,11 @@ namespace Game {
         }
 
         public override void InitResources() {
-            ReadDirResouces(ModsManager.ModsPath, "");
+            if (SettingsManager.SafeMode) {
+                modInfo = GenerateDefaultModInfo();
+                return;
+            }
+            ReadDirResources(ModsManager.ModsPath, "");
             if (!GetFile(
                     "modinfo.json",
                     stream => {
@@ -22,30 +26,19 @@ namespace Game {
                         modInfo.Name = $"[FastDebug]{modInfo.Name}";
                     }
                 )) {
-                modInfo = new ModInfo {
-                    Name = "FastDebug",
-                    Version = "1.0.0",
-                    NuGetVersion = new NuGetVersion(1, 0, 0),
-                    ApiVersion = ModsManager.APIVersionString,
-                    ApiVersionRange = new VersionRange(ModsManager.APINuGetVersion),
-                    Link = "https://gitee.com/SC-SPM/SurvivalcraftApi",
-                    Author = "SC-SPM",
-                    Description = "Debug uncompressed mod. 调试未压缩模组",
-                    ScVersion = "2.4.0.0",
-                    PackageName = "fastdebug"
-                };
+                modInfo = GenerateDefaultModInfo();
             }
             if(!GetFile("icon.webp", LoadIcon)) {
                 GetFile("icon.png", LoadIcon);
             }
         }
 
-        public void ReadDirResouces(string basepath, string path) {
+        public void ReadDirResources(string basepath, string path) {
             if (string.IsNullOrEmpty(path)) {
                 path = basepath;
             }
             foreach (string d in Storage.ListDirectoryNames(path)) {
-                ReadDirResouces(basepath, $"{path}/{d}");
+                ReadDirResources(basepath, $"{path}/{d}");
             }
             foreach (string f in Storage.ListFileNames(path)) {
                 if (f.EndsWith(".scmod")) {
@@ -120,5 +113,18 @@ namespace Game {
         }
 
         public override bool GetAssetsFile(string filename, Action<Stream> action) => GetFile($"Assets/{filename}", action);
+
+        public static ModInfo GenerateDefaultModInfo() => new() {
+            Name = "FastDebug",
+            Version = "1.0.0",
+            NuGetVersion = new NuGetVersion(1, 0, 0),
+            ApiVersion = ModsManager.APIVersionString,
+            ApiVersionRange = new VersionRange(ModsManager.APINuGetVersion),
+            Link = "https://gitee.com/SC-SPM/SurvivalcraftApi",
+            Author = "SC-SPM",
+            Description = "Debug uncompressed mod. 调试未压缩模组",
+            ScVersion = "2.4.0.0",
+            PackageName = "fastdebug"
+        };
     }
 }

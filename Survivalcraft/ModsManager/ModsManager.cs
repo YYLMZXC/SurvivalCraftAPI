@@ -414,9 +414,6 @@ public static class ModsManager {
         SurvivalCraftModEntity = new SurvivalCraftModEntity();
         ModListAll.Add(SurvivalCraftModEntity);
 #if !BROWSER
-        if (SettingsManager.SafeMode) {
-            return;
-        }
         FastDebugModEntity = new FastDebugModEntity();
         ModListAll.Add(FastDebugModEntity);
         GetScmods(ModsPath);

@@ -389,7 +389,7 @@ namespace Game {
 #endif
                     ModsManager.ModListAllDo(modEntity => { modEntity.LoadLauguage(); });
                     LanguageControl.SetUsual();
-#if !ANDROID
+#if !MOBILE
                     string title =
                         $"{(SettingsManager.SafeMode ? $"[{LanguageControl.Get("Usual", "safeMode")}]" : "")}{LanguageControl.Get("Usual", "gameName")} {ModsManager.ShortGameVersion} - {LanguageControl.Get("Usual", "api")} {ModsManager.APIVersionString}";
 #if DEBUG

@@ -367,7 +367,7 @@ namespace Game {
                 }
                 SetUsual(true);
             }
-#if !ANDROID
+#if !MOBILE
             string title = $"{(SettingsManager.SafeMode ? $"[{LanguageControl.Get("Usual", "safeMode")}]" : "")}{Get("Usual", "gameName")} {ModsManager.ShortGameVersion} - API {ModsManager.APIVersionString}";
 #if DEBUG
             title = $"[{Get("Usual", "debug")}]{title}";

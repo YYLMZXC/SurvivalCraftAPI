@@ -56,11 +56,11 @@ namespace Game {
             //将每个zip里面的文件读进内存中
             bool skip = false;
             Loader?.GetModFiles(extension, action, out skip);
-            if (skip) {
+            if (skip || ModArchive == null) {
                 return;
             }
-            foreach (ZipArchiveEntry zipArchiveEntry in ModArchive.ReadCentralDir()) {
-                if (Storage.GetExtension(zipArchiveEntry.FilenameInZip) == extension) {
+            foreach ((string filename, ZipArchiveEntry zipArchiveEntry) in ModFiles) {
+                if (Storage.GetExtension(filename) == extension) {
                     MemoryStream stream = new();
                     ModArchive.ExtractFile(zipArchiveEntry, stream);
                     stream.Position = 0L;
@@ -81,7 +81,7 @@ namespace Game {
         /// <param name="action">参数1文件名参数，2打开的文件流</param>
         /// <return>列表是否为空</return>
         public virtual bool GetFilesAndExist(string extension, Action<string, Stream> action) {
-            if (ModArchive.ReadCentralDir().Count != 0) {
+            if (ModArchive?.ReadCentralDir().Count != 0) {
                 GetFiles(extension, action);
                 return false;
             }
@@ -98,7 +98,7 @@ namespace Game {
             bool skip = false;
             bool loaderReturns = false;
             Loader?.GetModFile(filename, action, out skip, out loaderReturns);
-            if (skip) {
+            if (skip || ModArchive == null) {
                 return loaderReturns;
             }
             if (ModFiles.TryGetValue(filename, out ZipArchiveEntry entry)) {
@@ -168,6 +168,11 @@ namespace Game {
                         Log.Error($"Deserialize modinfo.json from [{Storage.GetFileName(ModFilePath)}] failed: {e}");
                     }
                 });
+            if (SettingsManager.SafeMode && this is not SurvivalCraftModEntity) {
+                ModFiles.Clear();
+                ModArchive?.ZipFileStream.Dispose();
+                ModArchive = null;
+            }
             if (modInfo == null) {
                 IsDisabled = true;
                 DisableReason = ModDisableReason.NoModInfo;

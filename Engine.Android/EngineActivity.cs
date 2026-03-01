@@ -1,4 +1,3 @@
-#if ANDROID
 #pragma warning disable CA1416
 using Android.App;
 using Android.Content;
@@ -307,6 +306,8 @@ namespace Engine {
             }
         }
 
+        public int GetScreenRefreshRate() => (int)Display.RefreshRate;
+
         public System.IO.Stream GetStreamFromUri(Uri uri, out string fileName) {
             System.IO.Stream stream = null;
             fileName = null;
@@ -360,4 +361,3 @@ namespace Engine {
         }
     }
 }
-#endif

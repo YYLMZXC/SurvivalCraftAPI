@@ -334,6 +334,21 @@ namespace Engine {
 #endif
         }
 
+        public static int ScreenRefreshRate {
+            get {
+                if(!IsWindowOpened()) {
+                    return 0;
+                }
+#if IOS || BROWSER
+                return 60;
+#elif ANDROID
+                return Activity.GetScreenRefreshRate();
+#else
+                return m_gameWindow.Monitor?.VideoMode.RefreshRate ?? 60;
+#endif
+            }
+        }
+
         public static IntPtr Handle {
             get {
 #if !BROWSER

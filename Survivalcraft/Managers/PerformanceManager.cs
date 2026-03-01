@@ -204,9 +204,10 @@ namespace Game {
                         color2
                     );
                 }
+                float num7 = num3 + num2 / Window.ScreenRefreshRate;
                 flatBatch2D.QueueLine(
-                    new Vector2(0f, num3 + 0.0166666675f * num2),
-                    new Vector2(viewport.Width, num3 + 0.0166666675f * num2),
+                    new Vector2(0f, num7),
+                    new Vector2(viewport.Width, num7),
                     0f,
                     Color.Green
                 );

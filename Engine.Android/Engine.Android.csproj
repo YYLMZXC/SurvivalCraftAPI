@@ -5,4 +5,7 @@
         <PackageReference Include="Xamarin.AndroidX.Core" Version="1.17.0.1" />
         <PackageReference Remove="Silk.NET.Input" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="EngineActivity.cs"/>
+    </ItemGroup>
 </Project>

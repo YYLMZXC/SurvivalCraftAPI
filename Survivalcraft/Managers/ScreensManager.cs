@@ -5,32 +5,20 @@ namespace Game {
     public static class ScreensManager {
         public class AnimationData {
             public Screen OldScreen;
-
             public Screen NewScreen;
-
             public float Factor;
-
             public float Speed;
-
             public object[] Parameters;
         }
 
         public static Dictionary<string, Screen> m_screens = [];
-
         public static AnimationData m_animationData;
-
         public static PrimitivesRenderer2D m_pr2 = new();
-
         public static PrimitivesRenderer3D m_pr3 = new();
-
         public static Random Random = new(0);
-
         public static RenderTarget2D m_uiRenderTarget;
-
         public static Vector3 m_vrQuadPosition;
-
         public static Matrix m_vrQuadMatrix;
-
         public static float DebugUiScale = 1f;
 
         public static ContainerWidget RootWidget { get; set; }
@@ -42,10 +30,7 @@ namespace Game {
         /// <summary>
         ///     上一个Screen
         /// </summary>
-        public static Screen PreviousScreen {
-            get;
-            set;
-        }
+        public static Screen PreviousScreen { get; set; }
 
         public static Stack<Screen> HistoryStack { get; } = [];
 
@@ -58,15 +43,18 @@ namespace Game {
             return (T)value;
         }
 
-        public static void AddScreen(string name, Screen screen) {
-            m_screens.Add(name, screen);
-        }
+        public static void AddScreen(string name, Screen screen) => m_screens.Add(name, screen);
 
-        public static void SwitchScreen(string name, params object[] parameters) {
-            SwitchScreen(string.IsNullOrEmpty(name) ? null : FindScreen<Screen>(name), parameters);
-        }
+        public static void SwitchScreen(string name, params object[] parameters) => SwitchScreen(string.IsNullOrEmpty(name) ? null : FindScreen<Screen>(name), parameters);
 
         public static void SwitchScreen(Screen screen, params object[] parameters) {
+            ModsManager.HookAction(
+                "OnSwitchScreen",
+                loader => {
+                    loader.OnSwitchScreen(ref screen, parameters);
+                    return false;
+                }
+            );
             if (screen == CurrentScreen) {
                 return;
             }
@@ -98,9 +86,7 @@ namespace Game {
             }
         }
 
-        public static void GoBack(params object[] parameters) {
-            SwitchScreen(TopOfHistoryScreen, parameters);
-        }
+        public static void GoBack(params object[] parameters) => SwitchScreen(TopOfHistoryScreen, parameters);
 
         public static void Initialize() {
             RootWidget = new CanvasWidget();

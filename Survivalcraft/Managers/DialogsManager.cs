@@ -33,6 +33,16 @@ namespace Game {
         }
 
         public static void ShowDialog(ContainerWidget parentWidget, Dialog dialog) {
+            ModsManager.HookAction(
+                "OnShowDialog",
+                loader => {
+                    loader.OnShowDialog(ref parentWidget, ref dialog);
+                    return false;
+                }
+            );
+            if (dialog == null) {
+                return;
+            }
             Dispatcher.Dispatch(
                 delegate {
                     if (!m_dialogs.Contains(dialog)) {
@@ -56,6 +66,16 @@ namespace Game {
         }
 
         public static void HideDialog(Dialog dialog) {
+            ModsManager.HookAction(
+                "OnHideDialog",
+                loader => {
+                    loader.OnHideDialog(ref dialog);
+                    return false;
+                }
+            );
+            if (dialog == null) {
+                return;
+            }
             Dispatcher.Dispatch(
                 delegate {
                     if (m_dialogs.Contains(dialog)) {

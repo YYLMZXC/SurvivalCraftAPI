@@ -2098,5 +2098,25 @@ namespace Game {
             ref float wetness,
             ref float gameTimeDelta,
             ref bool skipVanilla) { }
+
+        /// <summary>
+        /// 屏幕切换钩子
+        /// </summary>
+        /// <param name="screen">将切换到的屏幕；设置为 null 将不进行切换</param>
+        /// <param name="parameters">传递给屏幕的参数</param>
+        public virtual void OnSwitchScreen(ref Screen screen, object[] parameters) { }
+
+        /// <summary>
+        /// 显示对话框钩子
+        /// </summary>
+        /// <param name="parentWidget">对话框的父容器</param>
+        /// <param name="dialog">将显示的对话框；设置为 null 将不进行显示</param>
+        public virtual void OnShowDialog(ref ContainerWidget parentWidget, ref Dialog dialog) { }
+
+        /// <summary>
+        /// 隐藏对话框钩子
+        /// </summary>
+        /// <param name="dialog">将隐藏的对话框；设置为 null 将不进行隐藏</param>
+        public virtual void OnHideDialog(ref Dialog dialog) { }
     }
 }

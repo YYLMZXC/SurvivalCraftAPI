@@ -142,7 +142,7 @@ namespace Game {
                         case LogType.Error: Log.Error(mesg); break;
                         case LogType.Warning: Log.Warning(mesg); break;
                     }
-                    if (SettingsManager.DisplayLog) {
+                    if (SettingsManager.DisplayLog && LogList != null) {
                         LogItem item = new(type, mesg);
                         LogList.AddItem(item);
                         LogList.ScrollToItem(item);

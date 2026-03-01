@@ -224,17 +224,22 @@ namespace Engine.Media {
         public Vector2 MeasureText(string text, Vector2 scale, Vector2 spacing) => MeasureText(text, 0, text.Length, scale, spacing);
 
         public Vector2 MeasureText(string text, int start, int count, Vector2 scale, Vector2 spacing) {
+            if (text == null) {
+                throw new ArgumentNullException(nameof(text));
+            }
+            start = MathUtils.Clamp(start, 0, text.Length - 1);
+            count = MathUtils.Clamp(count, 0, text.Length - start);
             scale *= Scale;
             spacing += Spacing;
-            float num = GlyphHeight + spacing.Y;
-            Vector2 vector = new(0f, num);
+            float lineHeight = GlyphHeight + spacing.Y;
+            Vector2 vector = new(0f, lineHeight);
             Vector2 vector2 = vector;
-            int i = start;
-            for (int num2 = start + count; i < num2; i++) {
+            int end = start + count - 1;
+            for (int i = start; i <= end; i++) {
                 char c = text[i];
                 if (c == '\n') {
                     vector.X = 0f;
-                    vector.Y += num;
+                    vector.Y += lineHeight;
                     if (vector.Y > vector2.Y) {
                         vector2.Y = vector.Y;
                     }
@@ -245,7 +250,7 @@ namespace Engine.Media {
                         c = ' ';
                     }
                     Glyph glyph = GetGlyph(c);
-                    float num3 = i < text.Length - 1 ? GetKerning(c, text[i + 1]) : 0f;
+                    float num3 = i < end ? GetKerning(c, text[i + 1]) : 0f;
                     vector.X += glyph.Width - num3 + spacing.X;
                     if (vector.X > vector2.X) {
                         vector2.X = vector.X;

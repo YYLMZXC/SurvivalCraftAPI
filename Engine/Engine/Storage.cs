@@ -542,8 +542,10 @@ namespace Engine {
                     return (null, result.Path);
                 }
             }
-#endif
             return (null, null);
+#else
+            return (null, null);
+#endif
         }
 
 #if BROWSER

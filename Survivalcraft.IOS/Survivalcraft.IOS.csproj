@@ -22,6 +22,12 @@
         <ProjectReference Include="..\EntitySystem.IOS\EntitySystem.IOS.csproj" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Remove="Jint" />
+        <PackageReference Remove="NAudio.Flac.Unknown.Mod" />
+        <PackageReference Remove="HarmonyX" />
+        <PackageReference Remove="MonoMod.Core" />
+    </ItemGroup>
+    <ItemGroup>
         <Reference Include="Bass.Net">
             <HintPath>..\Engine.IOS\Bass.Net.dll</HintPath>
         </Reference>

@@ -13,7 +13,7 @@
 
 1. 从 [发布页](https://gitee.com/SC-SPM/SurvivalcraftApi/releases/latest) 下载前缀为`[Android]`，后缀为`.apk`的安装包
 2. 安装后运行
-3. 第一次运行可能会跳转到标题为`所有文件访问`的授权界面，请授权此 APP（名称：`生存战争2.4 API插件版1.8`），否则此 APP 无法运行
+3. 第一次运行可能会跳转到标题为`所有文件访问`的授权界面，请授权此 APP（名称：`生存战争2.4 API插件版1.9`），否则此 APP 无法运行
 
 ### iOS、iPadOS 系统看这里
 > 需要 64 位 ARM 架构 CPU，最低系统版本 16.0
@@ -62,7 +62,7 @@
 
 * 如果游戏打开后语言不是您希望的语言，请点击左下角第二个图标，即可切换语言
 * 模组文件的后缀为`.scmod`，安装位置：
-    * Android 系统：`/storage/emulated/0/Survivalcraft2.4_API1.8/Mods`
+    * Android 系统：`/storage/emulated/0/Survivalcraft2.4_API1.9/Mods`
     * 其他系统：`(解压到的目录)/Mods`
     * 在 Android 系统和 Windows 系统，你能在打开后缀为`.scmod`的文件时选择插件版，即可完成模组的安装（还支持打开`.scworld`、`.scbtex`、`.scskin`、`.scfpack`）
 * 按上面说明处理后仍然打不开游戏，或者运行遇到任何错误，请尝试移除所有模组，如果问题依旧，可在 [此处](https://gitee.com/SC-SPM/SurvivalcraftApi/issues) 反馈问题
@@ -88,7 +88,7 @@
 
     ```xml
     <ItemGroup>
-      <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.8.2.3"/>
+      <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.0.0"/>
     </ItemGroup>
     ```
 

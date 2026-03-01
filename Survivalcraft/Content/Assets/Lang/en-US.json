@@ -3005,7 +3005,7 @@
       "Title": "Dropbox"
     },
     "39": {
-      "value": "\\n The game allows you to import and export worlds to SD Card for sharing and backup purposes.\\n \\n\\n\\n If your device does not have an SD Card, generic external storage folder will be used.\\n The location of the data on the device is normally \/sdcard\/Survivalcraft2.4_API1.8\\n ",
+      "value": "\\n The game allows you to import and export worlds to SD Card for sharing and backup purposes.\\n \\n\\n\\n If your device does not have an SD Card, generic external storage folder will be used.\\n The location of the data on the device is normally \/sdcard\/Survivalcraft2.4_API1.9\\n ",
       "Name": "SDCard",
       "Title": "SD Card",
       "DisabledPlatforms": "Ios, Windows81, WindowsPhone81, Desktop"

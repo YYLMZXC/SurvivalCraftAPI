@@ -2817,7 +2817,7 @@
   },
   "Help": {
     "1": {
-      "value": "\\nAPI版本发布的模组格式为scmod，只有在主页-内容-模组管理器中有显示的模组才是有效的。\\n在Android系统和Windows系统，你能在打开格式为scmod的文件时选择插件版，即可完成模组的安装。\\n手动安装路径：\\n安卓：\/storage\/emulated\/0\/Survivalcraft2.4_API1.8\/Mods\\n其他系统：(解压到的目录)/Mods \\n\\n手动安装模组具体操作：\\n用系统自带的文件管理器或任何你喜欢的文件管理器，找到你下载的格式为scmod的模组文件，复制粘贴到前述手动安装路径，最后重启游戏即可。\\n删除模组同样需要重启游戏才生效。",
+      "value": "\\nAPI版本发布的模组格式为scmod，只有在主页-内容-模组管理器中有显示的模组才是有效的。\\n在Android系统和Windows系统，你能在打开格式为scmod的文件时选择插件版，即可完成模组的安装。\\n手动安装路径：\\n安卓：\/storage\/emulated\/0\/Survivalcraft2.4_API1.9\/Mods\\n其他系统：(解压到的目录)/Mods \\n\\n手动安装模组具体操作：\\n用系统自带的文件管理器或任何你喜欢的文件管理器，找到你下载的格式为scmod的模组文件，复制粘贴到前述手动安装路径，最后重启游戏即可。\\n删除模组同样需要重启游戏才生效。",
       "Name": "TutorialOfInstallingMods",
       "Title": "安装模组教程"
     },
@@ -3017,7 +3017,7 @@
       "Title": "Dropbox"
     },
     "41": {
-      "value": "\\n游戏允许你将世界存档等文件导入和导出到 SD 卡以进行分享和备份。\\n\\n如果你的设备没有 SD 卡，将使用通用内部存储文件夹。\\n导出的位置通常是 /sdcard/Survivalcraft2.4_API1.8\\n",
+      "value": "\\n游戏允许你将世界存档等文件导入和导出到 SD 卡以进行分享和备份。\\n\\n如果你的设备没有 SD 卡，将使用通用内部存储文件夹。\\n导出的位置通常是 /sdcard/Survivalcraft2.4_API1.9\\n",
       "Name": "SDCard",
       "Title": "SD 卡",
       "DisabledPlatforms": "Ios, Windows81, WindowsPhone81, Desktop"

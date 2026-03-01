@@ -52,4 +52,10 @@
             <ForceLoad>true</ForceLoad>
         </NativeReference>
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="AppDelegate.cs"/>
+        <Compile Include="GameViewController.cs"/>
+        <Compile Include="Main.cs"/>
+        <Compile Include="TouchView.cs"/>
+    </ItemGroup>
 </Project>

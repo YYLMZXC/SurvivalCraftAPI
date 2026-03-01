@@ -144,8 +144,8 @@ namespace Game {
                     }
                     m_changedGuids.Clear();
                     DatabaseManager.LoadDataBaseFromXml(DatabaseManager.DatabaseNode);
-                    ScreensManager.GoBack();
                 }
+                ScreensManager.GoBack();
             }
         }
     }

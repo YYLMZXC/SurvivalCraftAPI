@@ -43,6 +43,7 @@ namespace Game {
 #if !ANDROID
         // ReSharper disable UnusedMember.Local
 #if BROWSER
+        //浏览器运行最小测试
         public static async Task Main2(string[] args) {
             Display.Initialize();
             BrowserInterop.Initialize(InputBridge.Initialize());
@@ -73,7 +74,7 @@ namespace Game {
 #else
         static void Main(string[] args) {
 #endif
-        // ReSharper restore UnusedMember.Local
+            // ReSharper restore UnusedMember.Local
 #if WINDOWS
             if (args != null
                 && args.Length > 0) {
@@ -130,7 +131,6 @@ namespace Game {
             }
 #endif
 
-            // Process.Start("C:\\Windows\\System32\\msg.exe",  "/server:127.0.0.1 * \"此版本为预览版 不建议长期使用");
 #if WINDOWS
             Window.Created += () => {
                 InputMethod.Initialize(Process.GetCurrentProcess().MainWindowHandle);
@@ -184,7 +184,7 @@ namespace Game {
 #if DEBUG
             title = $"[DEBUG]{title}";
 #endif
-            Window.UnhandledException += delegate(UnhandledExceptionInfo e) {
+            Window.UnhandledException += delegate (UnhandledExceptionInfo e) {
                 ExceptionManager.ReportExceptionToUser("Unhandled exception.", e.Exception);
                 e.IsHandled = true;
             };
@@ -319,8 +319,7 @@ namespace Game {
             Window.Activity.StartActivity(intent);
 #elif !BROWSER
             Process current = Process.GetCurrentProcess();
-            Process.Start(new ProcessStartInfo
-            {
+            Process.Start(new ProcessStartInfo {
                 FileName = current.MainModule!.FileName!,
                 Arguments = $"--wait {current.Id}",
                 UseShellExecute = false

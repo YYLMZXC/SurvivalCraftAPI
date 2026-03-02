@@ -66,6 +66,11 @@ namespace Engine.Graphics {
         public static bool GL_KHR_texture_compression_astc_ldr;
         public static int GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS;
         public static int GL_MAX_TEXTURE_SIZE;
+#if ANGLE
+        public static bool UsingAngle = true;
+#else
+        public static bool UsingAngle = false;
+#endif
 
         public static void Initialize() {
 #if ANGLE || BROWSER

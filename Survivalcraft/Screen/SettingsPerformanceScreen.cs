@@ -81,11 +81,15 @@ namespace Game {
             m_lowFPSToTimeDecelerationSlider.MaxValue = 20f;
             m_lowFPSToTimeDecelerationSlider.Value = SettingsManager.LowFPSToTimeDeceleration;
             m_animatedTextureRefreshLimitSlider = Children.Find<SliderWidget>("AnimatedTextureRefreshLimitSlider");
-#if ANDROID || ANGLE
+#if ANDROID
             m_framerateLimitSlider.MinValue = 1;
 #elif BROWSER
             m_framerateLimitSlider.MinValue = 1;
             m_framerateLimitSlider.MaxValue = 1;
+#else
+            if (Engine.Graphics.GLWrapper.UsingAngle) {
+                m_framerateLimitSlider.MinValue = 1;
+            }
 #endif
         }
 

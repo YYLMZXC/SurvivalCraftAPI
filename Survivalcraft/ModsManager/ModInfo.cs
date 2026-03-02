@@ -20,7 +20,12 @@ namespace Game {
         ///     该项为true表示：在存档中不记录该模组的modInfo，当玩家在未装载该模组，并运行之前带有该模组的存档时，不报错
         ///     适用于不在存档中存储特殊信息的辅助模组
         /// </summary>
-        public bool NonPersistentMod = false; //“注意这玩意写开发文档里”，git push的时候把这句话提交上去
+        public bool NonPersistentMod = false; //"注意这玩意写开发文档里"，git push的时候把这句话提交上去
+
+        /// <summary>
+        ///     玩法影响等级，用于标识模组对游戏平衡性的影响程度
+        /// </summary>
+        public GameplayImpactLevel GameplayImpactLevel = GameplayImpactLevel.Cosmetic;
 
         public override int GetHashCode() =>
             // ReSharper disable NonReadonlyMemberInGetHashCode

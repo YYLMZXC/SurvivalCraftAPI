@@ -306,6 +306,11 @@ public static class ModsManager {
             && nonPersistentMod.ValueKind == JsonValueKind.True) {
             modInfo.NonPersistentMod = true;
         }
+        if (jsonElement.TryGetProperty("GameplayImpactLevel", out JsonElement gameplayImpactLevel)
+            && gameplayImpactLevel.ValueKind == JsonValueKind.String
+            && Enum.TryParse(gameplayImpactLevel.GetString(), out GameplayImpactLevel impactLevel)) {
+            modInfo.GameplayImpactLevel = impactLevel;
+        }
         return modInfo;
     }
 

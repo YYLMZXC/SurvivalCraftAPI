@@ -643,7 +643,8 @@
     "101": "Humidity",
     "102": "Terrain {0}, Season {1}, Final {2}",
     "103": "Spawn Location",
-    "104": "Toggle Fullscreen"
+    "104": "Toggle Fullscreen",
+    "105": "Highest Mod Impact Level"
   },
   "ModDetailsDialog": {
     "1": "Disable Reason: ",
@@ -853,6 +854,13 @@
     "Challenging": "Challenging",
     "Adventure": "Adventure",
     "Cruel": "Cruel"
+  },
+  "GameplayImpactLevel": {
+    "0": "Cosmetic",
+    "1": "Assist",
+    "2": "Turbo",
+    "3": "Break",
+    "4": "Godmode"
   },
   "ComponentLocomotion": {
     "1": "Running barefoot is slow, wear shoes"

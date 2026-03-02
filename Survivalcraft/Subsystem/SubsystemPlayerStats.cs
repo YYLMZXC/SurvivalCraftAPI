@@ -20,6 +20,21 @@ namespace Game {
                 playerStats.Load((ValuesDictionary)item.Value);
                 m_playerStats.Add(int.Parse(item.Key, CultureInfo.InvariantCulture), playerStats);
             }
+            // 根据已启用模组中最高的GameplayImpactLevel设置所有玩家的该字段
+            if (!SettingsManager.SafeMode) {
+                GameplayImpactLevel maxImpactLevel = GameplayImpactLevel.Cosmetic;
+                foreach (ModEntity modEntity in ModsManager.ModList) {
+                    if (modEntity.modInfo != null
+                        && modEntity.modInfo.GameplayImpactLevel > maxImpactLevel) {
+                        maxImpactLevel = modEntity.modInfo.GameplayImpactLevel;
+                    }
+                }
+                foreach (PlayerStats stats in m_playerStats.Values) {
+                    if (maxImpactLevel > stats.HighestGameplayImpactLevel) {
+                        stats.HighestGameplayImpactLevel = maxImpactLevel;
+                    }
+                }
+            }
         }
 
         public override void Save(ValuesDictionary valuesDictionary) {

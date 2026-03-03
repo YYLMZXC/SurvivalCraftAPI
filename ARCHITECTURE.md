@@ -81,7 +81,7 @@ graph TB
 │   │   ├── Shaders/             # 着色器
 │   │   ├── Styles/              # 界面样式
 │   │   ├── Textures/            # 纹理资源
-│   │   ├── Widgets/             # 控件布局
+│   │   ├── Widgets/             # 界面控件布局
 │   │   │
 │   │   ├── BlocksData.txt       # 方块表
 │   │   ├── Clothes.xml          # 衣物数据
@@ -104,7 +104,7 @@ graph TB
 │   ├── ModsManager/             # 实现模组支持
 │   ├── Screen/                  # 全屏界面
 │   ├── Subsystem/               # 子系统实现
-│   └── Widget/                  # 控件
+│   └── Widget/                  # 界面控件
 │
 ├── Survivalcraft.平台/          # 平台专属游戏启动代码
 │
@@ -269,9 +269,9 @@ sequenceDiagram
 | 数据类型 | 游戏内文件 | 模组内文件 | 合并方式 |
 |----------|------------|------------|----------|
 | 方块表 | `BlocksData.txt` | `*.csv` | 追加新方块、类名相同时修改属性 |
-| 衣物表 | `Clothes.xml` | `*.clo` | 按 Index 匹配，支持 `new-` 修改、`remove`/`r-` 删除 |
-| 合成表 | `CraftingRecipes.xml` | `*.cr` | 追加新合成配方，支持 `new-` 修改、`remove`/`r-` 删除（需要其他每个属性都相同） |
-| 数据库 | `Database.xml` | `*.xdb` | 追加新数据，按 Guid 匹配，支持 `new-` 前缀修改属性、`remove`/`r-` 删除 |
+| 衣物表 | `Clothes.xml` | `*.clo` | 按 Index 匹配，支持 `New-` 修改、`Remove` 删除 |
+| 合成表 | `CraftingRecipes.xml` | `*.cr` | 追加新合成配方，支持 `New-` 修改、`Remove` 删除（需要其他每个属性都相同） |
+| 数据库 | `Database.xml` | `*.xdb` | 追加新数据，按 Guid 匹配，支持 `New-` 前缀修改属性、`Remove` 删除 |
 | 语言字符串 | `Lang/*.json` | 同左 | 追加新字符串，覆盖同路径字符串 |
 
 ### ModLoader 钩子系统

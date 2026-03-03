@@ -685,12 +685,13 @@ public static class ModsManager {
         foreach (XElement element in toCombineRoot.Elements()) {
             string indexValue = element.Attribute("Index")?.Value;
             if (indexValue == null) {
-                clothesRoot.Add(toCombineRoot);
+                clothesRoot.Add(element);
                 continue;
             }
             List<XAttribute> newAttributes = [];
             foreach (XAttribute attribute in element.Attributes()) {
-                if (attribute.Name.LocalName.StartsWith("new-")) {
+                string localName = attribute.Name.LocalName;
+                if (localName.StartsWith("new-") || localName.StartsWith("New-")) {
                     newAttributes.Add(attribute);
                 }
             }
@@ -700,13 +701,13 @@ public static class ModsManager {
                     element1.SetAttributeValue(newAttribute.Name.LocalName.Substring(4), newAttribute.Value);
                 }
             }
-            else if (HasAttribute(element, name => name.StartsWith("r-") || name == "remove", out XAttribute _)
+            else if (HasAttribute(element, name => name.StartsWith("r-") || name == "Remove", out XAttribute _)
                 && FindElement(clothesRoot, e => e.Attribute("Index")?.Value == indexValue, out XElement element2)) {
                 element2.Remove();
                 element.Remove();
             }
             else {
-                clothesRoot.Add(toCombineRoot);
+                clothesRoot.Add(element);
             }
         }
     }
@@ -719,13 +720,13 @@ public static class ModsManager {
     public static void CombineCrLogic(XElement crRoot, XElement toCombineRoot) {
         foreach (XElement element in toCombineRoot.Elements()) {
             if (element.Attribute("Result") != null) {
-                if (HasAttribute(element, name => name.StartsWith("new-"), out XAttribute attribute)) {
+                if (HasAttribute(element, name => name.StartsWith("new-") || name.StartsWith("New-"), out XAttribute attribute)) {
                     if (FindSameElement(crRoot, element, attribute.Name.LocalName, true, out XElement element1)) {
                         element1.SetAttributeValue(attribute.Name.LocalName.Substring(4), attribute.Value);
                         element1.SetValue(element.Value);
                     }
                 }
-                else if (HasAttribute(element, name => name.StartsWith("r-") || name == "remove", out XAttribute attribute1)) {
+                else if (HasAttribute(element, name => name.StartsWith("r-") || name == "Remove", out XAttribute attribute1)) {
                     if (FindSameElement(crRoot, element, attribute1.Name.LocalName, true, out XElement element1)) {
                         element1.Remove();
                         element.Remove();
@@ -846,7 +847,7 @@ public static class ModsManager {
                     element.Add(parameterElement);
                 }
             }
-            if (element.Attribute("remove") != null) {
+            if (element.Attribute("Remove") != null) {
                 XAttribute guidAttribute = element.Attribute("Guid");
                 if (guidAttribute == null) {
                     continue;
@@ -857,7 +858,7 @@ public static class ModsManager {
                 element.Remove();
             }
             //处理修改
-            else if (HasAttribute(element, str => str.StartsWith("new-"), out XAttribute newAttribute)) {
+            else if (HasAttribute(element, str => str.StartsWith("new-") || str.StartsWith("New-"), out XAttribute newAttribute)) {
                 XAttribute guidAttribute = element.Attribute("Guid");
                 if (guidAttribute == null) {
                     continue;

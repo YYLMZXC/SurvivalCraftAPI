@@ -15,8 +15,8 @@
             <xs:attribute name="Class" type="xs:string" default="Game.ClothingData" />
             <xs:attribute name="New-Class" type="xs:string" default="Game.ClothingData" />
             <xs:attribute name="Index" use="required" type="IndexType" />
-            <xs:attribute name="DisplayIndex" use="required" type="IndexType" />
-            <xs:attribute name="New-DisplayIndex" use="required" type="IndexType" />
+            <xs:attribute name="DisplayIndex" type="IndexType" />
+            <xs:attribute name="New-DisplayIndex" type="IndexType" />
             <xs:attribute name="DisplayName" type="xs:string" />
             <xs:attribute name="New-DisplayName" type="xs:string" />
             <xs:attribute name="Description" type="xs:string" />

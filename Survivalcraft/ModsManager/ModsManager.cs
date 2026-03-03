@@ -657,28 +657,45 @@ public static class ModsManager {
         return xAttributeout != null;
     }
 
-    public static bool FindSameElement(XElement source, XElement target, string ignoreAttribute, bool ignoreContent, out XElement result) => FindElement(
-        source,
-        ele => {
-            if (!ignoreContent && target.Value != ele.Value) {
-                return false;
-            }
-            foreach (XAttribute xAttribute in target.Attributes()) {
-                if (xAttribute.Name == ignoreAttribute) {
-                    continue;
-                }
-                XAttribute xAttribute1 = ele.Attribute(xAttribute.Name);
-                if (xAttribute1 == null) {
+    public static bool FindSameCraftingRecipeXElement(XElement source,
+        XElement target,
+        string ignoreAttribute,
+        out XElement result) {
+        string[] array1 = target.Value.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (int i = 0; i < array1.Length; i++) {
+            string str = array1[i];
+            int left = str.IndexOf('"');
+            array1[i] = str.Substring(left + 1, str.LastIndexOf('"') - left - 1);
+        }
+        return FindElement(
+            source,
+            ele => {
+                if (ele.HasElements) {
                     return false;
                 }
-                if (xAttribute1.Value != xAttribute.Value) {
-                    return false;
+                foreach (XAttribute xAttribute in target.Attributes()) {
+                    if (xAttribute.Name == ignoreAttribute) {
+                        continue;
+                    }
+                    XAttribute xAttribute1 = ele.Attribute(xAttribute.Name);
+                    if (xAttribute1 == null) {
+                        return false;
+                    }
+                    if (xAttribute1.Value != xAttribute.Value) {
+                        return false;
+                    }
                 }
-            }
-            return true;
-        },
-        out result
-    );
+                string[] array2 = ele.Value.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                for (int i = 0; i < array2.Length; i++) {
+                    string str = array2[i];
+                    int left = str.IndexOf('"');
+                    array2[i] = str.Substring(left + 1, str.LastIndexOf('"') - left - 1);
+                }
+                return array1.SequenceEqual(array2);
+            },
+            out result
+        );
+    }
 
     public static void CombineClo(XElement clothesRoot, Stream toCombineStream) {
         XElement toCombineRoot = XmlUtils.LoadXmlFromStream(toCombineStream, Encoding.UTF8, true);
@@ -721,13 +738,13 @@ public static class ModsManager {
         foreach (XElement element in toCombineRoot.Elements()) {
             if (element.Attribute("Result") != null) {
                 if (HasAttribute(element, name => name.StartsWith("new-") || name.StartsWith("New-"), out XAttribute attribute)) {
-                    if (FindSameElement(crRoot, element, attribute.Name.LocalName, true, out XElement element1)) {
+                    if (FindSameCraftingRecipeXElement(crRoot, element, attribute.Name.LocalName, out XElement element1)) {
                         element1.SetAttributeValue(attribute.Name.LocalName.Substring(4), attribute.Value);
                         element1.SetValue(element.Value);
                     }
                 }
                 else if (HasAttribute(element, name => name.StartsWith("r-") || name == "Remove", out XAttribute attribute1)) {
-                    if (FindSameElement(crRoot, element, attribute1.Name.LocalName, true, out XElement element1)) {
+                    if (FindSameCraftingRecipeXElement(crRoot, element, attribute1.Name.LocalName, out XElement element1)) {
                         element1.Remove();
                         element.Remove();
                     }

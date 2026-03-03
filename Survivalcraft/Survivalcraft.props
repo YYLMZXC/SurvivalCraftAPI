@@ -1,7 +1,6 @@
 ﻿<Project>
     <Import Project="$(MSBuildThisFileDirectory)..\build\Common.props" />
     <PropertyGroup>
-        <NoWarn>$(NoWarn);NU1605</NoWarn>
         <RootNamespace>Game</RootNamespace>
         <AssemblyName>Survivalcraft</AssemblyName>
         <PackageId>SurvivalcraftAPI.Survivalcraft</PackageId>
@@ -17,7 +16,6 @@
         <PackageReference Include="Jint" Version="4.6.0" />
         <PackageReference Include="NAudio.Flac.Unknown.Mod" Version="1.0.4" /><!--Source: https://github.com/XiaofengdiZhu/NAudio.Flac/ -->
         <PackageReference Include="HarmonyX" Version="2.16.0" />
-        <PackageReference Include="MonoMod.Core" Version="1.3.3-daily.26.3.1.2.1" /><!--Source: https://github.com/XiaofengdiZhu/MonoMod.Android/ -->
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" Exclude="$(MSBuildThisFileDirectory)obj\**\*.cs"/>

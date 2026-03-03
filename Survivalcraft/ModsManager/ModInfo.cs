@@ -9,7 +9,36 @@ namespace Game {
     }
 
     public class ModInfo {
-        public string Name, Version, ApiVersion, Description, ScVersion, Link, Author, PackageName;
+        /// <summary>
+        /// 模组名称
+        /// </summary>
+        public string Name;
+        /// <summary>
+        /// 模组版本，建议符合 Semver 标准： https://semver.org/lang/zh-CN/ <br/>
+        /// 另外，相比 Semver 最多 3 个数字（1.2.3），这里支持 4 个数字（1.2.3.4）
+        /// </summary>
+        public string Version;
+        /// <summary>
+        /// 模组适配的 API 版本，低于 1.8 的模组将警告不兼容，但还是会尝试加载
+        /// </summary>
+        public string ApiVersion;
+        /// <summary>
+        /// 模组描述
+        /// </summary>
+        public string Description;
+        /// <summary>
+        /// 模组适配的生存战争游戏版本，没有实际用处
+        /// </summary>
+        public string ScVersion;
+        public string Link;
+        public string Author;
+        public string PackageName;
+
+        /// <summary>
+        /// 模组加载顺序，值越小越先加载，默认为 0<br/>
+        /// 建议：主题模组 -100000~-10000，辅助模组 10000~100000<br/>
+        /// 注意：玩家能在游戏中手动修改顺序
+        /// </summary>
         public int LoadOrder = (int)Game.LoadOrder.Default;
         public List<string> Dependencies = [];
         public NuGetVersion NuGetVersion;
@@ -17,10 +46,10 @@ namespace Game {
         public Dictionary<string, VersionRange> DependencyRanges = [];
 
         /// <summary>
-        ///     该项为true表示：在存档中不记录该模组的modInfo，当玩家在未装载该模组，并运行之前带有该模组的存档时，不报错
-        ///     适用于不在存档中存储特殊信息的辅助模组
+        ///     非持久性模组<br/>
+        ///     该项为 true 时，将不会在存档中记录该模组，从而在移除该模组后，进入存档时，不会警告未安装该模组；适用于不在存档中存储数据、添加方块、添加实体的模组
         /// </summary>
-        public bool NonPersistentMod = false; //"注意这玩意写开发文档里"，git push的时候把这句话提交上去
+        public bool NonPersistentMod = false;
 
         /// <summary>
         ///     玩法影响等级，用于标识模组对游戏平衡性的影响程度

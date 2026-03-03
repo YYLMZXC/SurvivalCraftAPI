@@ -12,7 +12,6 @@
     <ItemGroup>
         <PackageReference Remove="Jint" />
         <PackageReference Remove="HarmonyX" />
-        <PackageReference Remove="MonoMod.Core" />
     </ItemGroup>
     <ItemGroup>
         <NativeFileReference Include="Native/libEGL.c" ScanForPInvokes="true" />

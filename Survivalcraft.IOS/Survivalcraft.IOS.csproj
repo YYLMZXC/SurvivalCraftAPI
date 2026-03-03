@@ -25,7 +25,6 @@
         <PackageReference Remove="Jint" />
         <PackageReference Remove="NAudio.Flac.Unknown.Mod" />
         <PackageReference Remove="HarmonyX" />
-        <PackageReference Remove="MonoMod.Core" />
     </ItemGroup>
     <ItemGroup>
         <Reference Include="Bass.Net">

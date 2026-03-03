@@ -28,29 +28,29 @@ namespace Game {
                 if (index == null) {
                     return;
                 }
-                int.TryParse(index.Value, out int ClothIndex);
-                ClothIndex &= 0x3FF;
-                ClothingData clothingData = new(item);
-                string className = item.Attribute("Class")?.Value ?? typeof(ClothingData).FullName;
-                if (!string.IsNullOrEmpty(className)) {
-                    try {
-                        Type type = TypeCache.FindType(className, false, true);
+                int.TryParse(index.Value, out int clothIndex);
+                clothIndex &= 1023;
+                ClothingData clothingData = null;
+                string className = item.Attribute("Class")?.Value;
+                try {
+                    Type type = className == null ? typeof(ClothingData) : TypeCache.FindType(className, false, true);
 #pragma warning disable IL2072
-                        clothingData = (ClothingData)Activator.CreateInstance(type, item);
+                    clothingData = (ClothingData)Activator.CreateInstance(type, item);
 #pragma warning restore IL2072
-                        if (clothingData == null) {
-                            throw new Exception("ClothingData is not assignable to Game.ClothingData.");
-                        }
+                    if (clothingData == null) {
+                        throw new Exception("ClothingData is not assignable to Game.ClothingData.");
                     }
-                    catch (Exception ex) {
-                        Log.Error($"ClothingData from class {className} create failed! {ex}");
-                    }
+                }
+                catch (Exception ex) {
+                    Log.Error($"ClothingData from class {className} create failed! {ex}");
                 }
                 if (clothingData == null) {
                     return;
                 }
-                clothingData.DisplayIndex = m_displayIndex++;
-                m_clothingData[ClothIndex] = clothingData;
+                if (clothingData.DisplayIndex == -1) {
+                    clothingData.DisplayIndex = m_displayIndex++;
+                }
+                m_clothingData[clothIndex] = clothingData;
             }
             foreach (XElement xElement1 in item.Elements()) {
                 LoadClothingData(xElement1);
@@ -158,8 +158,6 @@ namespace Game {
         }
 
         public override int GetDamage(int value) => (Terrain.ExtractData(value) >> 8) & 0xF;
-
-        public override int GetDisplayOrder(int value) => GetClothingData(value)?.DisplayIndex ?? int.MaxValue;
 
         public override int SetDamage(int value, int damage) {
             int num1 = Terrain.ExtractData(value);

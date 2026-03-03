@@ -14,14 +14,9 @@
         <xs:complexType>
             <xs:attribute name="Class" type="xs:string" default="Game.ClothingData" />
             <xs:attribute name="New-Class" type="xs:string" default="Game.ClothingData" />
-            <xs:attribute name="Index" use="required">
-                <xs:simpleType>
-                    <xs:restriction base="xs:unsignedInt">
-                        <xs:minInclusive value="0" />
-                        <xs:maxInclusive value="1023" />
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
+            <xs:attribute name="Index" use="required" type="IndexType" />
+            <xs:attribute name="DisplayIndex" use="required" type="IndexType" />
+            <xs:attribute name="New-DisplayIndex" use="required" type="IndexType" />
             <xs:attribute name="DisplayName" type="xs:string" />
             <xs:attribute name="New-DisplayName" type="xs:string" />
             <xs:attribute name="Description" type="xs:string" />
@@ -61,6 +56,12 @@
         <xs:restriction base="xs:string">
             <xs:enumeration value="True" />
             <xs:enumeration value="False" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="IndexType">
+        <xs:restriction base="xs:unsignedInt">
+            <xs:minInclusive value="0" />
+            <xs:maxInclusive value="1023" />
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="SlotType">

@@ -9,24 +9,24 @@ namespace Game {
         public ClothingData() { }
 
         public ClothingData(XElement item) {
-            int.TryParse(item.Attribute("Index").Value, out int ClothIndex);
-            ClothIndex &= 0x3FF;
+            int.TryParse(item.Attribute("Index").Value, out int clothIndex);
+            clothIndex &= 1023;
             string newDescription = item.Attribute("Description")?.Value;
             string newDisplayName = item.Attribute("DisplayName")?.Value;
             if (newDescription != null
                 && newDescription.StartsWith('[')
                 && newDescription.EndsWith(']')
-                && LanguageControl.TryGetBlock($"{typeof(ClothingBlock).Name}:{ClothIndex}", "Description", out string d)) {
+                && LanguageControl.TryGetBlock(newDescription.Substring(1, newDescription.Length - 2), "Description", out string d)) {
                 newDescription = d;
             }
             if (newDisplayName != null
                 && newDisplayName.StartsWith('[')
                 && newDisplayName.EndsWith(']')
-                && LanguageControl.TryGetBlock($"{typeof(ClothingBlock).Name}:{ClothIndex}", "DisplayName", out string n)) {
+                && LanguageControl.TryGetBlock(newDisplayName.Substring(1, newDisplayName.Length - 2), "DisplayName", out string n)) {
                 newDisplayName = n;
             }
             xElement = item;
-            Index = ClothIndex;
+            Index = clothIndex;
             DisplayName = newDisplayName;
             string slotName = XmlUtils.GetAttributeValue<string>(item, "Slot");
             Slot = ClothingSlot.ClothingSlots[slotName];
@@ -42,12 +42,9 @@ namespace Game {
             PlayerLevelRequired = XmlUtils.GetAttributeValue<int>(item, "PlayerLevelRequired");
             ImpactSoundsFolder = XmlUtils.GetAttributeValue<string>(item, "ImpactSoundsFolder");
             Description = newDescription;
-
+            DisplayIndex = XmlUtils.GetAttributeValue<int>(item, "DisplayIndex", -1);
             string textureRoute = XmlUtils.GetAttributeValue<string>(item, "TextureName");
-
-            bool useLazyLoading = XmlUtils.GetAttributeValue<bool>(item, "UseLazyLoading", false);
-
-            if (useLazyLoading) {
+            if (XmlUtils.GetAttributeValue<bool>(item, "UseLazyLoading", false)) {
                 _textureName = textureRoute; // 保存纹理名称用于按需加载
             }
             else {

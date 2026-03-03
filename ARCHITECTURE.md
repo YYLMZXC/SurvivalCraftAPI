@@ -269,9 +269,9 @@ sequenceDiagram
 | 数据类型 | 游戏内文件 | 模组内文件 | 合并方式 |
 |----------|------------|------------|----------|
 | 方块表 | `BlocksData.txt` | `*.csv` | 追加新方块、类名相同时修改属性 |
-| 衣物表 | `Clothes.xml` | `*.clo` | 按 Index 匹配，支持 `New-` 修改、`Remove` 删除 |
-| 合成表 | `CraftingRecipes.xml` | `*.cr` | 追加新合成配方，支持 `New-` 修改、`Remove` 删除（需要其他每个属性都相同） |
-| 数据库 | `Database.xml` | `*.xdb` | 追加新数据，按 Guid 匹配，支持 `New-` 前缀修改属性、`Remove` 删除 |
+| 衣物表 | `Clothes.xml` | `*.clo` | 按 Index 匹配，支持 `New-` 前缀修改多个属性、`Remove` 删除元素 |
+| 合成表 | `CraftingRecipes.xml` | `*.cr` | 追加新合成配方，支持 `New-` 前缀修改单个属性、`Remove` 删除元素（需要其他每个属性都相同） |
+| 数据库 | `Database.xml` | `*.xdb` | 追加新数据，按 Guid 匹配，支持 `New-` 前缀修改单个属性、`Remove` 删除元素 |
 | 语言字符串 | `Lang/*.json` | 同左 | 追加新字符串，覆盖同路径字符串 |
 
 ### ModLoader 钩子系统

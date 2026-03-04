@@ -41,8 +41,17 @@ public class ModsManageContentScreen : Screen {
                 return true;
             }
         }
-        description = modEntity.IsDisabled ? $"{LanguageControl.Get("ModDetailsDialog", "8")}{Storage.GetFileName(modEntity.ModFilePath)}" : modInfo.Description;
+        description = modEntity.IsDisabled ? $"{LanguageControl.Get("ModDetailsDialog", "8")}{Storage.GetFileName(modEntity.ModFilePath)}" : GetFirstLine(modInfo.Description);
         return false;
+    }
+
+    public static string GetFirstLine(string input) {
+        if (string.IsNullOrEmpty(input)) {
+            return input;
+        }
+        ReadOnlySpan<char> span = input.AsSpan();
+        int index = span.IndexOf('\n');
+        return index == -1 ? input : span.Slice(0, index).TrimEnd('\r').ToString();
     }
 
     public ModsManageContentScreen() {

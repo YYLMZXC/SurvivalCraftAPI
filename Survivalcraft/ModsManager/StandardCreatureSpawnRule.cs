@@ -43,7 +43,7 @@ namespace Game {
             m_ignoreShoreDistance = MinShoreDistance == float.NegativeInfinity && MaxShoreDistance == float.PositiveInfinity;
             Suitability = valuesDictionary.GetValue("Suitability", 1f);
             Count = valuesDictionary.GetValue("Count", 1);
-            string blocksString = valuesDictionary.GetValue("BlockTypes", string.Empty);
+            string blocksString = valuesDictionary.GetValue("Blocks", string.Empty);
             foreach (string typeName in blocksString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) {
                 if (BlocksManager.BlockNameToIndex.TryGetValue(typeName, out int index)) {
                     BlockTypes.Add(BlocksManager.Blocks[index].GetType());
@@ -53,7 +53,7 @@ namespace Game {
             SpawnFunction = Spawn;
         }
 
-        public float GetSpawnSuitability(SubsystemCreatureSpawn.CreatureType _, Point3 position) {
+        public virtual float GetSpawnSuitability(SubsystemCreatureSpawn.CreatureType _, Point3 position) {
             TerrainChunk chunk = null;
             if (!m_ignoreShaftValue) {
                 chunk = m_subsystem.m_subsystemTerrain.Terrain.GetChunkAtCell(position);
@@ -101,7 +101,7 @@ namespace Game {
             return Suitability;
         }
 
-        public int Spawn(SubsystemCreatureSpawn.CreatureType creatureType, Point3 position) =>
+        public virtual int Spawn(SubsystemCreatureSpawn.CreatureType creatureType, Point3 position) =>
             m_subsystem.SpawnCreatures(creatureType, Name, position, Count).Count;
     }
 }

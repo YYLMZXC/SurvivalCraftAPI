@@ -4312,6 +4312,9 @@
           <Parameter Name="VrHandModelName" Description="[DescriptionAttribute:365]" Guid="1134396a-490f-4bb2-9f01-9fa8212e25d4" Value="" Type="string" />
           <Parameter Name="Class" Description="[DescriptionAttribute:366]" Guid="8da66911-b474-4492-bb71-ddd23bc12233" Value="Game.ComponentVrHandsModel" Type="string" />
         </ComponentTemplate>
+        <ComponentTemplate Name="NoEffect" Description="[DescriptionAttribute:373]" Guid="2c76d042-d427-446c-b699-98ce8d54af06" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
+          <Parameter Name="Class" Guid="d3f9cf88-a022-4bd7-87fa-020715737171" Value="Game.ComponentNoEffect" Type="string" />
+        </ComponentTemplate>
       </Folder>
     </Folder>
     <Folder Name="Projects" Guid="aec7b5f9-de96-4ef0-8b6c-4a9e3b021ddf">

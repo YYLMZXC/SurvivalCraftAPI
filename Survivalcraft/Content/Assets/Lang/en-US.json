@@ -4515,7 +4515,8 @@
       "369": "Names of subsystems which have to be loaded before this subsystem, comma separated",
       "370": "Components with lower load order are loaded before components with higher load order",
       "371": "If true, component type does not have to be present in code when creating entity",
-      "372": "Name of .NET class used to create component"
+      "372": "Name of .NET class used to create component",
+      "373": "No effect. Only for replacing a component to this."
     }
   }
 }

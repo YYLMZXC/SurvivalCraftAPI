@@ -17,6 +17,8 @@ namespace Game {
 
             public Func<CreatureType, Point3, int> SpawnFunction;
 
+            public CreatureType() {}
+
             // ReSharper disable UnusedParameter.Local
             public CreatureType(SubsystemCreatureSpawn subsystem, ValuesDictionary valuesDictionary) {}
             // ReSharper restore UnusedParameter.Local
@@ -1018,7 +1020,7 @@ namespace Game {
             }
             foreach (object value in valuesDictionary.Values) {
                 if (value is ValuesDictionary valuesDictionary1) {
-                    string ruleTypeName = valuesDictionary1.GetValue<string>("Type", null);
+                    string ruleTypeName = valuesDictionary1.GetValue<string>("Class", null);
                     if (string.IsNullOrEmpty(ruleTypeName)) {
                         continue;
                     }

@@ -1,4 +1,4 @@
-﻿# SurvivalCraft-API 生存战争插件版
+﻿# SurvivalCraft API 生存战争插件版
 
 ## 介绍
 
@@ -72,53 +72,13 @@
 * 网页版打不开？请尝试更换更好的网络，如果还是不行，请打开 [https://scapiweb.netlify.app/dashboard.html](https://scapiweb.netlify.app/dashboard.html)，检测你的浏览器是否支持网页版所需的功能。这里推荐使用最新版的 Chrome 浏览器。
 * 网页版键盘操作没反应？请将输入法切换成英文模式
 
-## 模组开发者引用
+## 模组开发者引用、仓库构建说明等
 
-1. 首先复制本存储库根目录的`nuget.config`文件到您的解决方案目录（和`.sln`文件同一层级）
+详见开发文档 [docs/Development.md](https://github.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/Development.md)
 
-2. 有两种常规方式添加引用包 (nupkg)，请选择您喜欢的方式
-   
-    * **推荐：** 在解决方案目录运行以下命令：
+## 更新日志
 
-    ```bat
-    dotnet add package SurvivalcraftAPI.Survivalcraft
-    ```
-
-    * 或者手动在`.csproj`文件的`<Project>...</Project>`中添加以下行（下面的版本号可能不是最新的）
-
-    ```xml
-    <ItemGroup>
-      <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.0.0"/>
-    </ItemGroup>
-    ```
-
-3. 不推荐以上方法之外的引用方式，如果网络实在不通畅无法完成 nupkg 的下载，可从 [发布页](https://gitee.com/SC-SPM/SurvivalcraftApi/releases/latest) 下载前缀为`[Nupkgs]`，后缀为`.7z`的压缩包，将其中的所有`nupkg`文件解压到您喜欢的目录，之后按照 [微软官方教程](https://learn.microsoft.com/zh-cn/nuget/hosting-packages/local-feeds) 手动添加
-4. 当然还有更麻烦的引用方式，按照上一步提到的方式或其他方式得到 nupkg 后，将其逐一解压，找到其中的`Engine.dll`、`EntitySystem.dll`、`Survivalcraft.dll`，将它们的路径记录下来，在`.csproj`文件的`<Project>...</Project>`中添加以下行（大部分 IDE 支持在图形界面进行该操作，最终达成相同的效果就好）
-
-```xml
-<ItemGroup>
-  <Reference Include="Engine" HintPath="（在此填写Engine.dll的文件路径，不要括号）" />
-  <Reference Include="EntitySystem" HintPath="（EntitySystem.dll的文件路径，不要括号）" />
-  <Reference Include="Survivalcraft" HintPath="（Survivalcraft.dll的文件路径，不要括号）" />
-</ItemGroup>
-```
-
-## 仓库构建说明
-
-1. 首先使用 Git 克隆此仓库
-
-    ```bat
-    git clone https://gitee.com/SC-SPM/SurvivalcraftApi.git
-    ```
-
-    > 还没有 Git？[官网下载](https://git-scm.com/downloads)
-
-2. 进入此仓库，使用 [Visual Studio](https://visualstudio.microsoft.com/) 或 [Rider](https://www.jetbrains.com/zh-cn/rider/) 打开`SurvivalcraftApi`目录中的`SurvivalCraftApi.sln`
-3. 如果只是在 Windows 系统上进行调试，请右键卸载`Survivalcraft.Android`等所有名称没有 Windows 的 项目，之后在`Survivalcraft.Windows`项目上右键，点击`构建所选项目`即可
-4. 如果需要生成 Android 系统上的`APK`安装包，请在`Survivalcraft.Android`项目上右键，点击`加载项目`，再点击`归档以用于发布`，之后按提示操作
-5. 如果要生成`nupkg`引用包，请运行仓库根目录的`PackNugetPackages.bat`
-6. 如果要生成网页版，请右键卸载非 Browser 的 Survivalcraft 项目，并将配置切换到 Browser，之后在`Survivalcraft.Browser`项目上右键，点击`构建所选项目`即可；如果要生成最终用于发布的网页版，请运行仓库根目录的`PublishSurvivalcraftBrowser.bat`
-7. 以上过程中，如果报错未安装相应功能，请按提示完成安装
+详见 [CHANGELOG.md](https://github.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/CHANGELOG.md)
 
 ## 感谢
 

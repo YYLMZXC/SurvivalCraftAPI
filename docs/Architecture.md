@@ -2,8 +2,6 @@
 
 本文档面向新加入项目的开发者和模组开发者（包括 AI Agent），帮助快速理解项目的整体架构和运行机制。
 
----
-
 ## 1. 项目技术概述
 
 | 项目 | 说明 |
@@ -15,8 +13,6 @@
 | **目标平台** | Windows、Linux、Android、iOS、Browser（WebAssembly） |
 | **游戏类型** | 3D 体素沙盒，野外生存，支持最多 4 人同屏 |
 | **模组支持** | 资源覆盖、ModLoader 钩子、HarmonyX 方法注入、运行 Javascript |
-
----
 
 ## 2. 整体分层架构
 
@@ -36,8 +32,6 @@ graph TB
 | **Engine** | 底层引擎服务 | 窗口管理、图形渲染、音频播放、输入处理、媒体解码、序列化 |
 | **EntitySystem** | 实体系统框架 | Entity（实体）、Component（组件）、Subsystem（子系统）、模板数据库 |
 | **Survivalcraft** | 游戏业务逻辑 | 方块定义、具体管理器/子系统/实体组件实现、UI 界面、模组支持 |
-
----
 
 ## 3. 目录结构速览
 
@@ -105,8 +99,6 @@ graph TB
 
 > **提示**：在 IDE 中打开 `SurvivalcraftApi.sln`，你会看到每个平台有专门的目录，右键目录可方便地卸载不需要的所有平台项目。
 
----
-
 ## 4. 游戏启动流程
 
 ```mermaid
@@ -159,32 +151,28 @@ sequenceDiagram
 5. **主循环** `Program.Run()`
    - 每帧调用 `ScreensManager.Update()` 和 `ScreensManager.Draw()`
 
----
-
-## 5. 核心运行机制：实体系统
+## 5. 核心运行机制：ECS
 
 游戏采用 ECS（Entity-Component-Subsystem）架构，但与典型 ECS 有所不同：
 
 ### 核心概念
 
-| 概念 | 说明 | 示例 |
-|------|------|------|
-| **Project** | 游戏世界的运行时实例 | 存档加载后创建的 Project |
-| **Entity** | 游戏实体，是 Component 的容器 | 玩家、动物、掉落物 |
-| **Component** | 实体的行为和数据组件 | ComponentHealth、ComponentBody |
-| **Subsystem** | 全局的子系统，管理某类功能，每个子系统只有一个实例 | SubsystemTerrain、SubsystemTime |
+| 概念 | 说明 | 实例获取方式 | 示例 |
+|------|------|--------------|------|
+| **Project** | 游戏世界的运行时实例 | `GameManager.Project` | / |
+| **Entity** | 游戏实体，是 Component 的容器 | `Project.Entities` | 玩家、动物、箱子 |
+| **Component** | 实体的行为和数据组件 | `Entity.FindComponent<T>()` | ComponentHealth、ComponentBody |
+| **Subsystem** | 全局的子系统，管理某类功能，每个子系统只有一个实例 | `Project.FindSubsystem<T>()` | SubsystemTerrain、SubsystemTime |
 
 ### 数据驱动设计
 
-实体和子系统的定义存储在数据库文件 `Database.xml` 中
+实体和子系统的定义存储在数据库文件 `Database.xml` 中，模组也应将新的实体模板、组件、子系统注册进数据库
 
 **加载流程**：
 1. `Project` 根据存档中的 `Project.xml` 和 `DatabaseManager.GameDatabase` 进行实例化
 2. 反射创建相应 `Subsystem` 列表和 `Entity` 列表
 3. 每个 `Entity` 根据模板创建其 `Component` 列表
 4. 上面具有 `IUpdatable` 接口的 `Subsystem` 和 `Component` 将加入 `SubsystemUpdate.m_updateables`，它们的 `Update` 方法将被每帧调用；具有 `IDrawable` 接口的同理
-
----
 
 ## 6. 跨平台策略
 
@@ -228,8 +216,6 @@ using NativeFileDialogCore;
 
 另外，`Engine.Windows` 有个专门的使用 [Angle](https://github.com/google/angle) 的版本，通过它能实现游戏在原生不支持 `OpenGL ES` 的显卡驱动上运行；可以通过根目录的 `BuildEngineWindowsWithUseAngle.bat` 来构建
 
----
-
 ## 7. 资源管线
 
 使用 `ContentManager.Get<T>(string name)` 方法来获取转换为指定类型的资源，大致流程如下
@@ -260,8 +246,6 @@ flowchart TD
 > `DefaultSuffix` 中越靠前的后缀，读取优先级越高  
 > 该方法还有带后缀支持的重载，如果手动指定了后缀，将无视读取器的 `DefaultSuffix`  
 > 大部分读取器只读取列表中第一个文件，部分读取器需要同时输入两个文件  
-
----
 
 ## 8. 模组系统
 
@@ -338,8 +322,6 @@ public class TemplateModLoader : ModLoader {
 
 [点此打开](https://gitee.com/SC-SPM/SurvivalcraftTemplateModForAPI)
 
----
-
 ## 9. 关键管理器速查
 
 | 管理器 | 职责 |
@@ -354,22 +336,3 @@ public class TemplateModLoader : ModLoader {
 | `ContentManager` | 资源加载、资源获取 |
 | `WorldsManager` | 加载存档列表，新建、导入、导出存档 |
 | `GameManager` | 打开、运行、保存存档 |
-
----
-
-## 10. 开发建议
-
-### 对于插件版开发者
-- 修改 `Engine/` 目录下的代码时，注意跨平台兼容性，推荐使用 `#if` 条件编译处理平台差异
-- 新增公开方法需考虑易用性
-- 避免修改、删除已有公开方法，导致旧版模组不兼容
-- 避免引入任何与原版不一致的特性
-- 提交前至少构建并启动游戏进入存档，作为最基本的测试
-
-### 对于模组开发者
-- 优先考虑新增子系统、组件的形式来添加新功能
-- 继承 `ModLoader` 类，使用钩子方法高效介入游戏逻辑
-- 使用已内置的 `HarmonyX` 库来注入游戏方法
-- 避免覆盖已有类，导致模组不兼容
-- 如果有条件，建议使用 IDE 调试运行游戏，开启捕获任何异常，这有助于发现模组中存在但不会出现在日志中的错误
-- 如有精力，建议提供国际化字符串（母语 + 英语）

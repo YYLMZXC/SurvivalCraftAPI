@@ -130,4 +130,6 @@
 * 罗马尼亚语 (Română) 翻译
   * NBG (Discord: nbgr)
 * 俄语 (Русский) 补充翻译
-  * Dasyukevich Pavel (VK: pawwel3l) 
+  * Dasyukevich Pavel (VK: pawwel3l)
+* 葡萄牙语 (Português) 翻译
+  * Kitão Gameplay's (Discord：ekitonmjjefgs)

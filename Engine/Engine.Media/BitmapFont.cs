@@ -225,7 +225,7 @@ namespace Engine.Media {
 
         public Vector2 MeasureText(string text, int start, int count, Vector2 scale, Vector2 spacing) {
             if (text == null) {
-                throw new ArgumentNullException(nameof(text));
+                return Vector2.Zero;
             }
             start = MathUtils.Clamp(start, 0, text.Length - 1);
             count = MathUtils.Clamp(count, 0, text.Length - start);

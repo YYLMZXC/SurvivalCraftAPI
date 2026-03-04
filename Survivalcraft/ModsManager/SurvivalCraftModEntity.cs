@@ -105,11 +105,12 @@ namespace Game {
                         );
                     }
                     else {
-                        /*var index = (int)fieldInfo.GetValue(null);
-                        var block = (Block)Activator.CreateInstance(type.GetTypeInfo().AsType());
-                        block.BlockIndex = index;*/
                         BlockTypes.Add(type);
                     }
+                }
+                else if (type.IsSubclassOf(typeof(SubsystemCreatureSpawn.CreatureType))
+                    && !type.IsAbstract) {
+                    SubsystemCreatureSpawn.m_creatureSpawnRules.TryAdd(type.FullName, type);
                 }
             }
         }

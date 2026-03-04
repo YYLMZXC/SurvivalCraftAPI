@@ -3710,6 +3710,7 @@
           <Parameter Name="WorldSeedString" Description="[DescriptionAttribute:58]" Guid="d8fc12d6-29e4-4583-841f-d3d423c469c4" Value="" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="CreatureSpawn" Description="[DescriptionAttribute:59]" Guid="b3f8c7e3-ba45-4ba0-8bc6-ffb20e82b57e" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">
+          <ParameterSet Name="CreatureSpawnRules" Guid="98c19e0b-ff62-4acc-8e58-def30e6257a3" />
           <Parameter Name="Class" Guid="d3764c71-e1e7-48b1-b12a-17428daad169" Value="Game.SubsystemCreatureSpawn" Type="string" />
         </SubsystemTemplate>
         <SubsystemTemplate Name="MovingBlocks" Description="[DescriptionAttribute:60]" Guid="bb01254d-4991-4135-96f2-50ad9262a28e" InheritanceParent="a3914c13-7801-46a6-b23a-9e2b36e9defb">

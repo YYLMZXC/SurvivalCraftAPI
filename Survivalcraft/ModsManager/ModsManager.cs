@@ -721,7 +721,6 @@ public static class ModsManager {
             else if (HasAttribute(element, name => name.StartsWith("r-") || name == "Remove", out XAttribute _)
                 && FindElement(clothesRoot, e => e.Attribute("Index")?.Value == indexValue, out XElement element2)) {
                 element2.Remove();
-                element.Remove();
             }
             else {
                 clothesRoot.Add(element);
@@ -746,7 +745,6 @@ public static class ModsManager {
                 else if (HasAttribute(element, name => name.StartsWith("r-") || name == "Remove", out XAttribute attribute1)) {
                     if (FindSameCraftingRecipeXElement(crRoot, element, attribute1.Name.LocalName, out XElement element1)) {
                         element1.Remove();
-                        element.Remove();
                     }
                 }
                 else {
@@ -872,7 +870,6 @@ public static class ModsManager {
                 if (FindElementByGuid(databaseObjects, guidAttribute.Value, out XElement oldElement)) {
                     oldElement.Remove();
                 }
-                element.Remove();
             }
             //处理修改
             else if (HasAttribute(element, str => str.StartsWith("new-") || str.StartsWith("New-"), out XAttribute newAttribute)) {

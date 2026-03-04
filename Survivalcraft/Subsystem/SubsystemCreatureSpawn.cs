@@ -17,6 +17,10 @@ namespace Game {
 
             public Func<CreatureType, Point3, int> SpawnFunction;
 
+            // ReSharper disable UnusedParameter.Local
+            public CreatureType(SubsystemCreatureSpawn subsystem, ValuesDictionary valuesDictionary) {}
+            // ReSharper restore UnusedParameter.Local
+
             public CreatureType(string name, SpawnLocationType spawnLocationType, bool randomSpawn, bool constantSpawn) {
                 Name = name;
                 SpawnLocationType = spawnLocationType;
@@ -28,50 +32,32 @@ namespace Game {
         }
 
         public SubsystemGameInfo m_subsystemGameInfo;
-
         public SubsystemSpawn m_subsystemSpawn;
-
         public SubsystemTerrain m_subsystemTerrain;
-
         public SubsystemTime m_subsystemTime;
-
         public SubsystemSky m_subsystemSky;
-
         public SubsystemSeasons m_subsystemSeasons;
-
         public SubsystemBodies m_subsystemBodies;
-
         public SubsystemGameWidgets m_subsystemViews;
 
         public Random m_random = new();
-
         public List<CreatureType> m_creatureTypes = [];
-
         public Dictionary<ComponentCreature, bool> m_creatures = [];
-
         public DynamicArray<ComponentBody> m_componentBodies = [];
-
         public List<SpawnChunk> m_newSpawnChunks = [];
-
         public List<SpawnChunk> m_spawnChunks = [];
 
         public static SpawnLocationType[] m_spawnLocations = EnumUtils.GetEnumValues<SpawnLocationType>().Cast<SpawnLocationType>().ToArray();
-
         public static int m_totalLimit = 26;
-
         public static int m_areaLimit = 3;
-
         public static int m_areaRadius = 16;
-
         public static int m_totalLimitConstant = 6;
-
         public static int m_totalLimitConstantChallenging = 12;
-
         public static int m_areaLimitConstant = 4;
-
         public static int m_areaRadiusConstant = 42;
-
         public const float m_populationReductionConstant = 0.25f;
+
+        public static Dictionary<string, Type> m_creatureSpawnRules = [];
 
         public Dictionary<ComponentCreature, bool>.KeyCollection Creatures => m_creatures.Keys;
 
@@ -109,6 +95,7 @@ namespace Game {
             m_subsystemSeasons = Project.FindSubsystem<SubsystemSeasons>(true);
             m_subsystemBodies = Project.FindSubsystem<SubsystemBodies>(true);
             m_subsystemViews = Project.FindSubsystem<SubsystemGameWidgets>(true);
+            InitializeCreatureTypesFromDatabase(valuesDictionary.GetValue<ValuesDictionary>("CreatureSpawnRules", null));
             InitializeCreatureTypes();
             m_subsystemSpawn.SpawningChunk += delegate(SpawnChunk chunk) {
                 m_spawnChunks.Add(chunk);
@@ -134,16 +121,16 @@ namespace Game {
             m_creatureTypes.Add(
                 new CreatureType("Duck", SpawnLocationType.Surface, true, false) {
                     SpawnSuitabilityFunction = delegate(CreatureType _, Point3 point) {
-                        float num97 = m_subsystemTerrain.TerrainContentsGenerator.CalculateOceanShoreDistance(point.X, point.Z);
-                        int humidity26 = m_subsystemTerrain.Terrain.GetHumidity(point.X, point.Z);
-                        int temperature38 = m_subsystemTerrain.Terrain.GetTemperature(point.X, point.Z);
-                        int num98 = Terrain.ExtractContents(m_subsystemTerrain.Terrain.GetCellValueFast(point.X, point.Y - 1, point.Z));
-                        int topHeight3 = m_subsystemTerrain.Terrain.GetTopHeight(point.X, point.Z);
-                        return humidity26 > 8
-                            && temperature38 > 4
-                            && num97 > 40f
-                            && point.Y >= topHeight3
-                            && (BlocksManager.Blocks[num98] is LeavesBlock || num98 == 18 || num98 == 8 || num98 == 2)
+                        float shoreDistance = m_subsystemTerrain.TerrainContentsGenerator.CalculateOceanShoreDistance(point.X, point.Z);
+                        int humidity = m_subsystemTerrain.Terrain.GetHumidity(point.X, point.Z);
+                        int temperature = m_subsystemTerrain.Terrain.GetTemperature(point.X, point.Z);
+                        int contents = Terrain.ExtractContents(m_subsystemTerrain.Terrain.GetCellValueFast(point.X, point.Y - 1, point.Z));
+                        int topHeight = m_subsystemTerrain.Terrain.GetTopHeight(point.X, point.Z);
+                        return humidity > 8
+                            && temperature > 4
+                            && shoreDistance > 40f
+                            && point.Y >= topHeight
+                            && (BlocksManager.Blocks[contents] is LeavesBlock || contents == 18 || contents == 8 || contents == 2)
                                 ? 2.5f
                                 : 0f;
                     },
@@ -1025,12 +1012,33 @@ namespace Game {
             );
         }
 
+        public virtual void InitializeCreatureTypesFromDatabase(ValuesDictionary valuesDictionary) {
+            if (valuesDictionary == null) {
+                return;
+            }
+            foreach (object value in valuesDictionary.Values) {
+                if (value is ValuesDictionary valuesDictionary1) {
+                    string ruleTypeName = valuesDictionary1.GetValue<string>("Type", null);
+                    if (string.IsNullOrEmpty(ruleTypeName)) {
+                        continue;
+                    }
+                    if (m_creatureSpawnRules.TryGetValue(ruleTypeName, out Type ruleType)) {
+                        try {
+                            m_creatureTypes.Add((CreatureType)Activator.CreateInstance(ruleType, this, valuesDictionary1));
+                        }
+                        catch (Exception e) {
+                            Log.Error($"An error occurred while initializing creature types from database. Reason: {e.Message}");
+                        }
+                    }
+                }
+            }
+        }
+
         public virtual void SpawnRandomCreature() {
             if (CountCreatures(false) < m_totalLimit) {
                 foreach (GameWidget gameWidget in m_subsystemViews.GameWidgets) {
-                    int num = 52;
                     Vector2 v = new(gameWidget.ActiveCamera.ViewPosition.X, gameWidget.ActiveCamera.ViewPosition.Z);
-                    if (CountCreaturesInArea(v - new Vector2(68f), v + new Vector2(68f), false) >= num) {
+                    if (CountCreaturesInArea(v - new Vector2(68f), v + new Vector2(68f), false) >= 52) {
                         break;
                     }
                     SpawnLocationType spawnLocationType = GetRandomSpawnLocationType();

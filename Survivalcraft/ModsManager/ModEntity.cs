@@ -347,21 +347,21 @@ namespace Game {
                         ModsManager.ModLoaders.Add(modLoader);
                     }
                 }
-                if (type.IsSubclassOf(typeof(IContentReader.IContentReader))
+                else if (type.IsSubclassOf(typeof(IContentReader.IContentReader))
                     && !type.IsAbstract
 #pragma warning disable IL2062
                     && Activator.CreateInstance(type) is IContentReader.IContentReader reader) {
 #pragma warning restore IL2062
                     ContentManager.ReaderList.TryAdd(reader.Type, reader);
                 }
-                if (type.IsSubclassOf(typeof(Block))
+                else if (type.IsSubclassOf(typeof(Block))
                     && !type.IsAbstract) {
                     blockTypes.Add(type);
                 }
-                /*if (type.Namespace == "Game")
-                {
-                    Log.Warning("\"Game\" is not recommended as a namespace for mod class. It is only for Survivalcraft itself. " + type.AssemblyQualifiedName);
-                }*/
+                else if (type.IsSubclassOf(typeof(SubsystemCreatureSpawn.CreatureType))
+                    && !type.IsAbstract) {
+                    SubsystemCreatureSpawn.m_creatureSpawnRules.TryAdd(type.FullName, type);
+                }
             }
             BlockTypes.AddRange(blockTypes);
         }

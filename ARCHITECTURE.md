@@ -24,18 +24,9 @@
 
 ```mermaid
 graph TB
-    subgraph Engine层
-    end
-    
-    subgraph EntitySystem层
-    end
-    
-    subgraph Survivalcraft层
-    end
-    
-    Engine层 --> EntitySystem层
-    Engine层 --> Survivalcraft层
-    EntitySystem层 --> Survivalcraft层
+    E1["Engine 层"] --> E2["EntitySystem 层"]
+    E1 --> S["Survivalcraft 层"]
+    E2 --> S
 ```
 
 ### 层级职责
@@ -44,7 +35,7 @@ graph TB
 |------|------|----------|
 | **Engine** | 底层引擎服务 | 窗口管理、图形渲染、音频播放、输入处理、媒体解码、序列化 |
 | **EntitySystem** | 实体系统框架 | Entity（实体）、Component（组件）、Subsystem（子系统）、模板数据库 |
-| **Survivalcraft** | 游戏业务逻辑 | 方块定义、具体管理器/子系统/实体组件实现、UI 界面、模组加载 |
+| **Survivalcraft** | 游戏业务逻辑 | 方块定义、具体管理器/子系统/实体组件实现、UI 界面、模组支持 |
 
 ---
 
@@ -239,7 +230,40 @@ using NativeFileDialogCore;
 
 ---
 
-## 7. 模组系统
+## 7. 资源管线
+
+使用 `ContentManager.Get<T>(string name)` 方法来获取转换为指定类型的资源，大致流程如下
+
+```mermaid
+flowchart TD
+    A["调用 Get<T>(string name)"]
+    A --> B{从 Caches<br/>获取缓存}
+
+    B -- 找到 --> Z[返回缓存]
+
+    B -- 未找到 --> C{根据 T 获取<br/>IContentReader}
+
+    C -- 未找到 --> Y[返回 null]
+
+    C -- 找到 --> D[遍历 reader.DefaultSuffix]
+    D --> E[从 ContentManager<br/>.Resources 获取<br/>ContentInfo]
+    E --> F{还有后缀?}
+
+    F -- 是 --> D
+    F -- 否 --> G["调用 reader<br/>.Get(contentInfos)"]
+    
+    G --> H[使用 Engine.Media<br/>将资源解码/反序列化]
+    H --> I[将结果加入缓存]
+    I --> J[返回结果]
+```
+
+> `DefaultSuffix` 中越靠前的后缀，读取优先级越高  
+> 该方法还有带后缀支持的重载，如果手动指定了后缀，将无视读取器的 `DefaultSuffix`  
+> 大部分读取器只读取列表中第一个文件，部分读取器需要同时输入两个文件  
+
+---
+
+## 8. 模组系统
 
 ### 模组加载流程
 
@@ -310,10 +334,13 @@ public class TemplateModLoader : ModLoader {
     }
 }
 ```
+### 示例模组项目
+
+[点此打开](https://gitee.com/SC-SPM/SurvivalcraftTemplateModForAPI)
 
 ---
 
-## 8. 关键管理器速查
+## 9. 关键管理器速查
 
 | 管理器 | 职责 |
 |--------|------|
@@ -330,7 +357,7 @@ public class TemplateModLoader : ModLoader {
 
 ---
 
-## 9. 开发建议
+## 10. 开发建议
 
 ### 对于插件版开发者
 - 修改 `Engine/` 目录下的代码时，注意跨平台兼容性，推荐使用 `#if` 条件编译处理平台差异

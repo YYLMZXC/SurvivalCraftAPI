@@ -32,14 +32,14 @@
             </StackPanelWidget>
             <CanvasWidget Size="0, Infinity" />
             <StackPanelWidget Direction="Horizontal" HorizontalAlignment="Center">
-                <BevelledButtonWidget Name="RunJsDialog.RunButton" Text="[RunJsDialog:1]" Style="{Styles/ButtonStyle_160x60}" />
-                <CanvasWidget Size="40, 0" />
-                <BevelledButtonWidget Name="RunJsDialog.CopyOutputButton" Text="[RunJsDialog:8]" Style="{Styles/ButtonStyle_160x60}" />
+                <BevelledButtonWidget Name="RunJsDialog.RunButton" Text="[RunJsDialog:1]" Style="{Styles/ButtonStyle_250x60}" />
+                <CanvasWidget Size="20, 0" />
+                <BevelledButtonWidget Name="RunJsDialog.CopyOutputButton" Text="[RunJsDialog:8]" Style="{Styles/ButtonStyle_250x60}" />
             </StackPanelWidget>
             <StackPanelWidget Direction="Horizontal" HorizontalAlignment="Center">
-                <BevelledButtonWidget Name="RunJsDialog.ServerButton" Text="[RunJsDialog:7]" Style="{Styles/ButtonStyle_160x60}" CenterColor="50, 150, 35" BevelColor="50, 150, 35" />
-                <CanvasWidget Size="40, 0" />
-                <BevelledButtonWidget Name="RunJsDialog.CloseButton" Text="[RunJsDialog:2]" Style="{Styles/ButtonStyle_160x60}" />
+                <BevelledButtonWidget Name="RunJsDialog.ServerButton" Text="[RunJsDialog:7]" Style="{Styles/ButtonStyle_250x60}" CenterColor="50, 150, 35" BevelColor="50, 150, 35" />
+                <CanvasWidget Size="20, 0" />
+                <BevelledButtonWidget Name="RunJsDialog.CloseButton" Text="[RunJsDialog:2]" Style="{Styles/ButtonStyle_250x60}" />
             </StackPanelWidget>
         </StackPanelWidget>
     </CanvasWidget>

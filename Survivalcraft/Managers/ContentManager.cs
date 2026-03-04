@@ -88,8 +88,8 @@ namespace Game {
                 List<ContentInfo> contents = [];
                 string p;
                 if (suffix == null) {
-                    for (int i = 0; i < reader.DefaultSuffix.Length; i++) {
-                        p = $"{name}.{reader.DefaultSuffix[i]}";
+                    foreach (string suffix1 in reader.DefaultSuffix) {
+                        p = $"{name}.{suffix1}";
                         if (Caches.TryGetValue(p, out List<object> cacheList2)) {
                             obj = cacheList2.Find(f => f.GetType() == type);
                         }

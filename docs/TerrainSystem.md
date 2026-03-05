@@ -194,13 +194,21 @@ public class TerrainChunk : IDisposable {
 
 **单元格索引计算**：
 
+源码中有两种实现方式：
+
 ```cs
-// 优化后的索引计算（避免乘法）
+// 方式1：位运算（用于 CalculateCellIndex，支持超范围 Y 坐标）
 public static int CalculateCellIndex(int x, int y, int z) {
-    // 索引 = y + x * Height + z * Height * Size
-    return y + (x << HeightBits) | (z << 12);
+    return y | (x << HeightBits) | (z << 12);  // HeightBits=8, 12=8+4
+}
+
+// 方式2：乘法运算（用于 GetCellValueFast/SetCellValueFast）
+public int GetCellValueFast(int x, int y, int z) {
+    return Cells[y + x * Height + z * Height * Size];  // Height=256, Size=16
 }
 ```
+
+两种方式数学上等价。
 
 **Shaft 值编码**（每列一个，存储环境信息）：
 

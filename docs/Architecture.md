@@ -218,7 +218,8 @@ using NativeFileDialogCore;
 
 ## 7. 资源管线
 
-使用 `ContentManager.Get<T>(string name)` 方法来获取转换为指定类型的资源，大致流程如下
+游戏加载过程会将 `Content.zip/Assets/` 和所有模组的 `*.scmod/Assets/` 合并到 `ContentManager<br/>.Resources` 中，具有相同路径的文件将按加载顺序覆盖  
+游戏运行时，通过 `ContentManager.Get<T>(string name)` 方法来获取转换为指定类型的资源，大致流程如下
 
 ```mermaid
 flowchart TD

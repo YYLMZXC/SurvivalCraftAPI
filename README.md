@@ -74,11 +74,11 @@
 
 ## 模组开发者引用、仓库构建说明等
 
-详见开发文档 [docs/Development.md](https://github.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/Development.md)
+详见开发文档 [docs/Development.md](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/Development.md)
 
 ## 更新日志
 
-详见 [CHANGELOG.md](https://github.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/CHANGELOG.md)
+详见 [CHANGELOG.md](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/CHANGELOG.md)
 
 ## 感谢
 

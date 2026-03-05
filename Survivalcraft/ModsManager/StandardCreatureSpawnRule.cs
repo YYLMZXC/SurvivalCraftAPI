@@ -2,8 +2,13 @@
 using TemplatesDatabase;
 
 namespace Game {
+    // CreatureType 的方便封装，方便从 XML 直接编写生物生成规则
+    // 你也能参考此类实现一个自定义规则类，需要具体实现参数为 (SubsystemCreatureSpawn subsystem, ValuesDictionary valuesDictionary) 的构造方法
+    // 也可以选择继承此类，覆写 GetSpawnSuitability 方法来添加更多规则，覆写 Spawn 方法来生成更多生物
     public class StandardCreatureSpawnRule : SubsystemCreatureSpawn.CreatureType {
         public SubsystemCreatureSpawn m_subsystem;
+
+        //以下是生成条件，满足时 SpawnSuitabilityFunction 将返回 Suitability
         public int MinTemperature;
         public int MaxTemperature;
         public int MinHumidity;

@@ -2,8 +2,8 @@
 description: 新会话开始时，执行此规则
 alwaysApply: false
 enabled: true
-updatedAt: 2026-03-02T10:34:47.292Z
+updatedAt: 2026-03-05T11:37:15.000Z
 provider: 
 ---
 
-阅读项目根目录的`ARCHITECTURE.md`
+阅读项目根目录的`docs/Architecture.md`

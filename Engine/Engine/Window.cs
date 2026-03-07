@@ -222,6 +222,8 @@ namespace Engine {
             }
         }
 
+        public static float Scale { get; set; } = 1.0f;
+
         public static bool HasWideNotch { get; set; }
 
         /// <summary>
@@ -561,15 +563,13 @@ namespace Engine {
         }
 
         internal static void ResizeHandler(Vector2D<int> _) {
-#if MOBILE
             if (m_state != State.Uncreated) {
                 Display.Resize();
+#if !BROWSER
+                Scale = m_view.FramebufferSize.X / m_view.Size.X;
+#endif
                 Resized?.Invoke();
             }
-#else
-            Display.Resize();
-            Resized?.Invoke();
-#endif
         }
 #if BROWSER
         internal static void FileDropHandler(Stream stream, string fileName) => FileDropped?.Invoke([(stream, fileName)]);

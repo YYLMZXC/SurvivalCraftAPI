@@ -508,6 +508,9 @@ namespace Engine.Input {
             builder.SetMessage(description);
             EditText editText = new(Window.Activity);
             editText.Text = defaultText;
+            if (passwordMode) {
+                editText.InputType = Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationPassword;
+            }
             builder.SetView(editText);
             builder.SetPositiveButton("Ok", delegate { enter(editText.Text); });
             builder.SetNegativeButton("Cancel", delegate { cancel(); });
@@ -516,10 +519,12 @@ namespace Engine.Input {
                     if (alertDialog == null) {
                         return;
                     }
+                    alertDialog.Window?.SetSoftInputMode(SoftInput.StateVisible);
                     alertDialog.DismissEvent += delegate { cancel(); };
                     alertDialog.CancelEvent += delegate { cancel(); };
                     alertDialog.Window?.Attributes?.Gravity = GravityFlags.Center;
                     alertDialog.Show();
+                    editText.RequestFocus();
                 }
             );
 #elif BROWSER

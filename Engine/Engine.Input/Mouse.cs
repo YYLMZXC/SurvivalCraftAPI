@@ -364,8 +364,10 @@ namespace Engine.Input {
                 m_mouseButtonsDownArray[(int)mouseButton] = true;
                 m_mouseButtonsDownFrameArray[(int)mouseButton] = Time.FrameIndex;
                 m_mouseButtonsDownOnceArray[(int)mouseButton] = true;
+                Point2 scaledPosition = Point2.Round(position.X * Window.Scale, position.Y * Window.Scale);
+                MousePosition = scaledPosition;
                 if (IsMouseVisible && MouseDown != null) {
-                    MouseDown(new MouseButtonEvent { Button = mouseButton, Position = position });
+                    MouseDown(new MouseButtonEvent { Button = mouseButton, Position = scaledPosition });
                 }
             }
         }
@@ -384,8 +386,10 @@ namespace Engine.Input {
                     m_mouseButtonsDownArray[(int)mouseButton] = false;
                     m_mouseButtonsUpOnceArray[(int)mouseButton] = true;
                 }
+                Point2 scaledPosition = Point2.Round(position.X * Window.Scale, position.Y * Window.Scale);
+                MousePosition = scaledPosition;
                 if (IsMouseVisible && MouseUp != null) {
-                    MouseUp(new MouseButtonEvent { Button = mouseButton, Position = position });
+                    MouseUp(new MouseButtonEvent { Button = mouseButton, Position = scscaledPosition });
                 }
             }
         }
@@ -394,8 +398,9 @@ namespace Engine.Input {
             if (Window.IsActive
                 && !Keyboard.IsKeyboardVisible
                 && IsMouseVisible) {
-                MousePosition = position;
-                MouseMove?.Invoke(new MouseEvent { Position = position });
+                Point2 scaledPosition = Point2.Round(position.X * Window.Scale, position.Y * Window.Scale);
+                MousePosition = scaledPosition;
+                MouseMove?.Invoke(new MouseEvent { Position = scaledPosition });
             }
         }
 

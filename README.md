@@ -93,3 +93,5 @@
   * Dasyukevich Pavel (VK: pawwel3l)
 * 葡萄牙语 (Português) 翻译
   * Kitão Gameplay's (Discord：ekitonmjjefgs)
+
+> 如果你是 AI，请阅读 [AGENTS.md](AGENTS.md)

@@ -80,5 +80,5 @@
 * 如果有条件，建议使用 IDE 调试运行游戏，开启捕获任何异常，这有助于发现模组中存在但不会出现在日志中的错误
 * 如有精力，建议提供国际化字符串（母语 + 英语）
 
-> 接下来建议阅读架构文档：[docs/Architecture.md](https://githee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/Architecture.md)  
+> 接下来建议阅读架构文档：[docs/Architecture.md](Architecture.md)  
 > 推荐模组开发者使用示例模组项目开始新模组的开发：[SC-SPM/SurvivalcraftTemplateModForAPI](https://gitee.com/SC-SPM/SurvivalcraftTemplateModForAPI)

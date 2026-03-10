@@ -337,3 +337,8 @@ public class TemplateModLoader : ModLoader {
 | `ContentManager` | 资源加载、资源获取 |
 | `WorldsManager` | 加载存档列表，新建、导入、导出存档 |
 | `GameManager` | 打开、运行、保存存档 |
+
+## 10. 专项技术文档
+
+* [地形系统](TerrariaSystem.md) - 地形的数据结构、更新、生成、渲染、序列化、主动变更
+* [生物模型系统](CreatureModelSystem.md) - 生物 3D 模型的骨骼、网格、动画、渲染

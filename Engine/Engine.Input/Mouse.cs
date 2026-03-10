@@ -389,7 +389,7 @@ namespace Engine.Input {
                 Point2 scaledPosition = Point2.Round(position.X * Window.Scale, position.Y * Window.Scale);
                 MousePosition = scaledPosition;
                 if (IsMouseVisible && MouseUp != null) {
-                    MouseUp(new MouseButtonEvent { Button = mouseButton, Position = scscaledPosition });
+                    MouseUp(new MouseButtonEvent { Button = mouseButton, Position = scaledPosition });
                 }
             }
         }

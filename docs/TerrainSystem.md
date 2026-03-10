@@ -402,12 +402,12 @@ void UpdateChunkSingleStep(TerrainChunk chunk, int skylightValue) {
         case TerrainChunkState.InvalidVertices1:
             // 等待邻居准备就绪
             CalculateChunkSliceContentsHashes(chunk);
-            GenerateChunkVertices(chunk, 0);  // 奇数切片
+            GenerateChunkVertices(chunk, 0);  // 奇数切片，最终用于渲染
             chunk.ThreadState = TerrainChunkState.InvalidVertices2;
             break;
             
         case TerrainChunkState.InvalidVertices2:
-            GenerateChunkVertices(chunk, 1);  // 偶数切片
+            GenerateChunkVertices(chunk, 1);  // 偶数切片，最终用于渲染
             chunk.NewGeometryData = true;     // 通知渲染器
             chunk.ThreadState = TerrainChunkState.Valid;
             break;
@@ -598,6 +598,10 @@ sequenceDiagram
 ---
 
 ## 5. 地形渲染机制
+
+三角形顶点数据在 `TerrainUpdater.GenerateChunkVertices` 方法中生成，它会调用 `Block.GenerateTerrainVertices` 方法来为每个方块生成顶点数据，要查阅特定方块是如何生成它的顶点数据的，请阅读该方块的此方法的源码。
+
+以下是 `TerrainRenderer` 的具体流程
 
 ### 5.1 渲染流程
 

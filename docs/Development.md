@@ -2,7 +2,8 @@
 
 ## 开始
 
-1. 首先使用 Git 克隆此仓库
+1. 如果未安装 .NET 10 SDK，请到 [官网](https://dotnet.microsoft.com/download/dotnet/10.0) 下载安装
+2. 如果此仓库不在本地，请使用 Git 克隆此仓库
 
     ```bat
     git clone https://gitee.com/SC-SPM/SurvivalcraftApi.git
@@ -10,8 +11,8 @@
 
    > 还没有 Git？[官网下载](https://git-scm.com/downloads)
 
-2. 进入此仓库，使用 [Visual Studio](https://visualstudio.microsoft.com/) 或 [Rider](https://www.jetbrains.com/zh-cn/rider/) 打开 `SurvivalcraftApi` 目录中的 `SurvivalCraftApi.sln`
-3. 如果只是在 Windows 系统上进行调试，请在 Windows 以外的文件夹上右键，点击 `卸载项目`，之后在 Windows 文件夹中的 `Survivalcraft.Windows` 项目上右键，点击 `构建所选项目`，最后启动调试即可
+3. 进入此仓库，使用 [Visual Studio](https://visualstudio.microsoft.com/) 或 [Rider](https://www.jetbrains.com/zh-cn/rider/) 打开 `SurvivalcraftApi` 目录中的 `SurvivalCraftApi.sln`
+4. 如果只是在 Windows 系统上进行调试，请在 Windows 以外的文件夹上右键，点击 `卸载项目`，之后在 Windows 文件夹中的 `Survivalcraft.Windows` 项目上右键，点击 `构建所选项目`，最后启动调试即可
 
 ## 构建
 
@@ -82,3 +83,45 @@
 
 > 接下来建议阅读架构文档：[docs/Architecture.md](Architecture.md)  
 > 推荐模组开发者使用示例模组项目开始新模组的开发：[SC-SPM/SurvivalcraftTemplateModForAPI](https://gitee.com/SC-SPM/SurvivalcraftTemplateModForAPI)
+
+## 本仓库代码风格
+
+### 格式化（源自 .editorconfig）
+
+* **缩进**：4 个空格，不使用 Tab
+* **换行符**：CRLF
+* **大括号**：同行放置 (K&R 风格)
+* **最大行宽**：150 个字符
+* **截断分行**：数组元素、参数数量超过 6 个时将它们截断并分行
+* **编码**：UTF-8
+
+### 命名规范
+
+| 元素 | 规范 | 示例 |
+| --- | --- | --- |
+| 属性/公有静态字段/常量 | PascalCase (大驼峰) | `float LastFrameTime { get; set; }` |
+| 实例字段 | `m_` 前缀 + camelCase (小驼峰) | `float m_frameBeginTime` |
+| 方法 | PascalCase (大驼峰) | `public void Update()` |
+| 参数/局部变量 | camelCase (小驼峰) | `float deltaTime` |
+
+### C# 偏好设置
+
+* **避免使用 `var`**：请使用显式类型，例如 `string path = ...` 而非 `var path = ...`
+* **禁用可空类型 (Nullable)**：项目使用 `<Nullable>disable</Nullable>`
+* **允许不安全代码**：`<AllowUnsafeBlocks>true</AllowUnsafeBlocks>`
+* **语言版本**：preview (允许使用 C# 最新特性)
+
+## 错误处理
+
+* 使用 `Log.Error()` 和 `Log.Information()` 进行日志记录
+* Mod 中的异常应当被捕获并记录，而不应导致游戏崩溃
+* 在文件操作和外部代码调用处使用 `try/catch`
+
+```csharp
+try {
+    // 操作
+}
+catch (Exception e) {
+    Log.Error($"Failed to load: {e}");
+}
+```

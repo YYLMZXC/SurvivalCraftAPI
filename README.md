@@ -87,6 +87,7 @@
   * Kike13 (Discord: .kike.04)
 * 越南语 (Tiếng Việt) 翻译
   * Long (Discord: daylong89)
+  * Tue (Discord: tuegaming3710)
 * 罗马尼亚语 (Română) 翻译
   * NBG (Discord: nbgr)
 * 俄语 (Русский) 补充翻译

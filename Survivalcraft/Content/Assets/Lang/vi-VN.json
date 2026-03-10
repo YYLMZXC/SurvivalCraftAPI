@@ -1,9 +1,9 @@
-﻿{
+{
   "Language": {
     "Name": "Tiếng Việt"
   },
   "DiskExternalContentProvider": {
-    "DisplayName": "Ổ đĩa",
+    "DisplayName": "Ổ dĩa",
     "Description": "Không cần đăng nhập; Lưu vào ổ đĩa"
   },
   "FurnitureBlock": [
@@ -26,8 +26,8 @@
     "5": "Lưu bộ nhớ đệm Nội dung Cộng đồng thất bại."
   },
   "ModsManager": {
-    "1": "Do you allow a mod to replace \"{1}\" with \"{2}\"? (Database Guid=\"{0}\")",
-    "2": "\nIf you choose Yes, other mods may not work properly; if you choose No, the mod may not work properly. Additionally, either choice may cause the entire game to malfunction.",
+    "1": "Bạn muốn cho phép mod để thay thế \"{1}\" với \"{2}\"? (Database Guid=\"{0}\")",
+    "2": "\nNếu chọn Có, các mod khác có thể không hoạt động đúng. Nếu chọn Không, mod này có thể không hoạt động đúng. Cả hai lựa chọn đều có thể khiến trò chơi bị lỗi.",
     "3": "Đã Bật Thay đổi",
     "4": "Đã Tắt Thay đổi",
     "5": "Tải Mod Thành công",
@@ -38,115 +38,141 @@
   },
   "ContentScreen": {
     "1": "Quản lý Mod",
-    "2": "Quản lý Nội dung"
+    "2": "Quản lý nội dung",
+    "3": "Chọn file bạn muốn nhập",
+    "4": "Nhập {0} Thành công",
+    "5": "Chọn cộng đồng",
+    "6": "Chọn file thất bại. Đường dẫn File: \"{0}\". Lý do trong nhật ký trò chơi.",
+    "ExtensionName": {
+      ".scworld": "Thế giới",
+      ".scbtex": "Texture Khối",
+      ".scskin": "Skin người chơi",
+      ".scfpack": "Khối nội thất",
+      ".scmod": "Mod"
+    },
+    "CommunityType": {
+      "OriginalCommunity": "Cộng Đồng Gốc",
+      "ChineseCommunity": "Cộng Đồng TQ",
+      "ChineseCommunityWebsite": "Cộng Đồng TQ (Trang Web)"
+    }
   },
   "ModsManageContentScreen": {
     "1": "Quản lý nội dung mod",
     "2": "Thư mục",
-    "3": "Phiên bản:{0}    Tác giả:{1}   Kích thước tệp:{2}KB",
+    "3": "Phiên bản:{0}    Tác giả:{1}   Kích thước:{2}KB",
     "4": "Mẹo",
     "5": "Không thể vào thư mục:",
     "6": "Giới thiệu:",
     "7": "Tên gói:",
-    "8": "Có xóa mod không",
+    "8": "Bạn có muốn xóa mod này không?",
     "9": "Xóa",
     "10": "Hủy",
-    "11": "Nhấp đúp vào tệp mod để xem mô tả mod.\n\nQuét nhanh thư mục bên dưới:",
-    "12": "Nếu mod bạn đã tải không nằm trong một trong các thư mục này, bạn có thể chọn thư mục thủ công để quét.",
-    "13": "Hiện không có đường dẫn quét nhanh",
+    "11": "Nhấp đúp vào tệp mod để xem mô tả và xóa nó.\n\nCác thư mục quét nhanh như sau:",
+    "12": "Nếu mod bạn tải về không nằm trong các thư mục này, bạn có thể tự chọn thư mục để quét.",
+    "13": "Không có đường dẫn quét nhanh khả dụng",
     "14": "Hướng dẫn",
     "15": "OK",
-    "16": "Quét Toàn bộ",
+    "16": "Quét toàn bộ bộ nhớ",
     "17": "Thư mục mặc định",
-    "18": "Đã tắt",
-    "19": "Đã bật",
+    "18": "Tắt",
+    "19": "Bật",
     "20": "Quét",
     "21": "Xử lý",
-    "22": "Gỡ cài đặt Thành công",
-    "23": "Cài đặt Thành công",
-    "24": "Cài đặt Thất bại",
-    "25": "Một tệp mod có cùng tên gói đã được cài đặt hoặc tồn tại",
+    "22": "Đã tắt thành công",
+    "23": "Đã bật thành công",
+    "24": "Bật thất bại",
+    "25": "Một tệp mod có cùng tên gói đã được bật hoặc đã tồn tại",
     "26": "Đang quét",
     "27": "Đang quét tất cả mod trong thư mục hiện tại",
-    "28": "Quét Thành công",
-    "29": "Đã tìm thấy tệp mod hợp lệ mới với số lượng {0}, có kiểm tra kết quả không",
+    "28": "Quét thành công",
+    "29": "Đã tìm thấy {0} tệp mod hợp lệ mới. Xem kết quả?",
     "30": "Xem",
     "31": "Để sau",
-    "32": "Quét nhanh tất cả mod trong các thư mục thông dụng",
-    "33": "Không tìm thấy tệp mod mới nào. Bạn có muốn tải xuống từ cộng đồng Trung Quốc không",
-    "34": "Đi",
-    "35": "Đã tìm thấy tệp mod hợp lệ mới với số lượng {0}",
-    "36": "Chưa cài đặt mod",
-    "37": "Đã cài đặt mod",
-    "38": "Khởi động lại trò chơi để các thay đổi mod mới có hiệu lực, có khởi động lại không?",
+    "32": "Đang quét nhanh tất cả mod trong các thư mục phổ biến",
+    "33": "Không tìm thấy tệp mod mới. Bạn có muốn tải từ Cộng đồng Trung Quốc không",
+    "34": "Có",
+    "35": "Đã tìm thấy {0} tệp mod hợp lệ mới",
+    "36": "Mod đã tắt",
+    "37": "Mod đã bật",
+    "38": "Các thay đổi mod sẽ có hiệu lực sau khi khởi động lại game. Khởi động lại ngay?",
     "39": "Khởi động lại",
     "40": "Thư mục hiện tại:",
     "41": "Thư mục:{0}\nKhông thể quét.",
     "42": "Quản lý",
     "43": "Đang tải",
-    "44": "Gỡ cài đặt",
-    "45": "Đã cài đặt",
-    "46": "Lưu ý: Phát hiện thiết bị của bạn không thể truy cập thư mục /Android/data, không thể quét tệp mod đã tải xuống bằng QQ, khuyến nghị sử dụng trình duyệt của riêng bạn để tải mod về cộng đồng Trung Quốc.",
-    "47": "Sau khi tải xuống mod, bạn có thể thực hiện quét toàn bộ, và thư mục được quét đến mod sẽ tự động được liệt kê trong thư mục quét tự động.",
-    "48": "Dưới đây là các thư mục được quét tự động khi vào trình quản lý:",
-    "49": "Bạn có chắc chắn gỡ cài đặt mod không?",
-    "50": "Gỡ cài đặt mod thất bại",
+    "44": "Đã tắt",
+    "45": "Đã bật",
+    "46": "Lưu ý: Phát hiện thiết bị của bạn không thể truy cập thư mục /Android/data, vì vậy các mod tải qua QQ không thể được quét. Khuyến nghị dùng trình duyệt để tải mod từ Cộng đồng Trung Quốc.",
+    "47": "Sau khi tải mod, bạn có thể quét toàn bộ bộ nhớ. Thư mục chứa mod sẽ được tự động thêm vào danh sách quét tự động.",
+    "48": "Các thư mục sau sẽ được tự động quét khi mở trình quản lý:",
+    "49": "Bạn có chắc muốn tắt mod này không?",
+    "50": "Không thể tắt mod",
     "51": "Đã xảy ra ngoại lệ:",
-    "52": "Đã cài đặt cùng một mod",
-    "53": "Các phiên bản Mod đã cài đặt nhất quán và không cần cài đặt trùng lặp",
-    "54": "Phiên bản Mod hiện tại là {0}, phiên bản Mod đã cài đặt là {1}, có thay thế không?",
-    "55": "Đã cài đặt cùng một mod",
-    "56": "Thay thế Mod thất bại",
+    "52": "Đã tồn tại mod trùng lặp",
+    "53": "Phiên bản mod đã bật giống hệt, không cần bật lại",
+    "54": "Phiên bản mod hiện tại là {0}, phiên bản đã cài là {1}. Bạn có muốn thay thế không?",
+    "55": "Một mod cùng phiên bản đã được bật",
+    "56": "Thay thế thất bại",
     "57": "Tệp đã tồn tại",
-    "58": "Không thể quét các đường dẫn sau:",
-    "59": "Đã quét {0} tệp MOD hợp lệ\n",
+    "58": "Các đường dẫn sau không thể quét:",
+    "59": "Đã quét {0} tệp mod hợp lệ\n",
     "60": "Cập nhật",
-    "61": "Tính năng đang được phát triển",
+    "61": "Tính năng này đang được phát triển",
     "62": "Xử lý nền",
-    "63": "Đang tăng cường",
-    "64": "Những điều cần xem xét khi tăng cường Mod",
-    "65": "Tăng cường mod sẽ thay thế tệp mod hiện tại, sau khi tăng cường thường có nghĩa là không thể khôi phục, vui lòng sao lưu tệp trước khi thao tác. \nNếu tệp dự án gốc vô tình bị mất sau khi tăng cường, bạn có thể liên hệ với quản trị viên cộng đồng để khôi phục tệp mod đã tăng cường. \nNgười chơi bình thường có thể bỏ qua tính năng này.",
-    "66": "Tệp mod hiện tại đã được tăng cường và không cần tăng cường",
-    "67": "Tệp mod hiện tại tăng cường thất bại với lỗi không xác định:",
-    "68": "Mod phiên bản API cũ (API {0}) không khả dụng",
-    "69": "Mod này là mod API 1.3 không thể sử dụng trong phiên bản API này (API 1.8)",
-    "70": "Mod này là mod phiên bản API cũ, không có hiệu lực ở đây và nên được gỡ bỏ",
-    "71": "Vào thư mục thất bại",
-    "72": "Thiết bị của bạn không thể truy cập "
+    "63": "Gia cố",
+    "64": "Lưu ý về gia cố mod",
+    "65": "Gia cố mod sẽ thay thế tệp mod hiện tại. Sau khi gia cố thường không thể hoàn tác, vì vậy hãy sao lưu tệp trước.\nNếu mất tệp dự án gốc sau khi gia cố, bạn có thể liên hệ quản trị viên Cộng đồng Trung Quốc để khôi phục tệp mod đã gia cố.\nNgười không phải nhà phát triển có thể bỏ qua lưu ý này.",
+    "66": "Tệp mod này đã được bảo vệ, không cần bảo vệ lại",
+    "67": "Bảo vệ module thất bại do lỗi không xác định:",
+    "68": "Mod plugin phiên bản cũ (API {0}) có thể không hoạt động",
+    "69": "Mod này dành cho plugin phiên bản 1.3 hoặc cũ hơn và không thể dùng trong phiên bản hiện tại",
+    "70": "Mod này dành cho plugin phiên bản cũ và không hoạt động trong phiên bản hiện tại. Khuyến nghị xóa.",
+    "71": "Truy cập thư mục thất bại",
+    "72": "Xin lỗi, thiết bị của bạn không thể truy cập",
+    "73": "Bỏ bảo vệ",
+    "74": "Không thể tải biểu tượng cho {0}. Lý do: {1}",
+    "75": "Không thể tải thông tin mod từ modinfo.json của {0}. Lý do: {1}",
+    "76": "Mod này dành cho plugin phiên bản {0} và có thể không hoạt động trong phiên bản plugin hiện tại",
+    "77": "Mở trang chủ",
+    "78": "Mod này không có liên kết trang chủ.",
+    "79": "Phiên bản Module: {0}  Phiên bản API: {1}  Tác giả: {2}  Kích thước: {3}",
+    "80": "Chi tiết",
+    "81": "*Cần khởi động lại"
   },
   "ManageContentScreen": {
-    "1": "Kết cấu Khối | {0}x{1}",
+    "1": "Texture khối | {0}x{1}",
     "2": " | trong {0} thế giới",
-    "3": "Gói Nội thất | {0} thiết kế",
-    "4": "Skin Nhân vật | {0}x{1}",
+    "3": "Gói nội thất | {0} thiết kế",
+    "4": "Skin nhân vật | {0}x{1}",
     "5": "[{0}] sẽ bị xóa vĩnh viễn.",
-    "6": "[{0}] sẽ bị xóa vĩnh viễn.\n(được sử dụng bởi {1} thế giới, chúng sẽ quay lại sử dụng mặc định)",
-    "7": "Chọn Bộ lọc Vật phẩm",
-    "8": "Tất cả Vật phẩm",
+    "6": "[{0}] sẽ bị xóa vĩnh viễn.\n(được dùng bởi {1} thế giới, chúng sẽ quay về mặc định)",
+    "7": "Chọn bộ lọc mục",
+    "8": "Tất cả mục",
     "9": "Bạn có chắc không?",
-    "10": "Loại vật phẩm không hợp lệ.",
-    "11": "Cấu hình đã được thay đổi. Bạn có muốn tải lại không?"
+    "10": "Loại mục không hợp lệ.",
+    "11": "Cấu hình đã thay đổi. Bạn có muốn tải lại không?"
   },
   "MainMenuScreen": {
-    "1": "Không thể Lấy Thông báo",
-    "2": "Hiện không có thông báo nào.\nHoặc kết nối với máy chủ bị thất bại.",
-    "3": "Không cần cập nhật cho phiên bản hiện tại",
-    "4": "Đã tìm thấy phiên bản mới: {0}\nPhiên bản hiện tại: {1}\nBạn có muốn đi đến trang tải xuống API không?",
-    "5": "Đi",
-    "6": "Đang tìm bản cập nhật...",
+    "1": "Không thể lấy thông báo",
+    "2": "Hiện không có thông báo.\nHoặc kết nối tới máy chủ thất bại.",
+    "3": "Phiên bản hiện tại không cần cập nhật",
+    "4": "Đã tìm thấy phiên bản mới: {0}\nPhiên bản hiện tại: {1}\nBạn có muốn tới trang tải API không?",
+    "5": "Đi tới",
+    "6": "Đang kiểm tra cập nhật...",
     "7": "Thông báo cập nhật",
     "8": "Phát hành"
   },
   "SubsystemFurnitureBlockBehavior": {
-    "0": "Tìm thấy khối không phù hợp",
-    "1": "Tìm thấy khối không phù hợp",
+    "0": "Phát hiện khối không phù hợp",
+    "1": "Phát hiện khối không phù hợp",
     "2": "Thiết kế nội thất quá lớn",
-    "3": "Quá nhiều thiết kế nội thất khác nhau",
-    "4": "Không được phép xây dựng nội thất bằng các khối tự nhiên",
-    "5": "Độ bền của búa không đủ để xây dựng nội thất"
+    "3": "Có quá nhiều thiết kế nội thất khác nhau",
+    "4": "Quét đã dừng vì chạm chunk hoang",
+    "5": "Độ bền búa không đủ để xây nội thất",
+    "6": "Không tìm thấy khối phù hợp"
   },
   "SubsystemEggBlockBehavior": {
-    "1": "Không thể sinh ra sinh vật, kiểm tra nhật ký trò chơi."
+    "1": "Không thể sinh sinh vật, kiểm tra log game."
   },
   "SubsystemFireworksBlockBehavior": {
     "1": "Chúc mừng năm mới!",
@@ -154,52 +180,58 @@
   },
   "ExternalContentManager": {
     "1": "Tên trống.",
-    "2": "Tên quá dài. Tối đa cho phép 50 ký tự.",
-    "3": "Tên không thể bắt đầu hoặc kết thúc bằng dấu cách.",
-    "4": "Loại nội dung bên ngoài không được hỗ trợ.",
+    "2": "Tên quá dài. Tối đa 50 ký tự.",
+    "3": "Tên không được bắt đầu hoặc kết thúc bằng khoảng trắng.",
+    "4": "Loại nội dung ngoài không được hỗ trợ.",
     "5": "Đang đăng nhập",
-    "6": "Yêu cầu Đăng nhập",
-    "7": "Bạn có muốn đăng nhập vào {0}?",
+    "6": "Yêu cầu đăng nhập",
+    "7": "Bạn có muốn đăng nhập vào {0} không?",
     "8": "Đăng nhập",
-    "9": "Chọn Điểm đến Tải lên",
+    "9": "Chọn nơi tải lên",
     "10": "Đang tải lên",
     "11": "Không thể tải lên mục này.",
     "12": "Loại nội dung không được hỗ trợ.",
     "13": "Đang nén thế giới",
     "14": "Đang tải lên",
-    "15": "{0} đã tải lên.",
+    "15": "{0} đã được tải lên.",
+    "16": "Chia sẻ",
+    "17": "Đóng",
+    "18": "Nhập thành công: \"{0}\"",
+    "19": "Nhập thất bại: \"{0}\", lý do: {1}",
+    "20": "Hoàn tất",
     "Directory": "Thư mục",
     "World": "Thế giới",
-    "Blocks Texture": "Kết cấu Khối",
-    "Character Skin": "Skin Nhân vật",
-    "Furniture Pack": "Gói Nội thất",
+    "Blocks Texture": "Texture khối",
+    "Character Skin": "Skin nhân vật",
+    "Furniture Pack": "Gói nội thất",
     "Mod": "Mod"
   },
   "ComponentHealth": {
-    "1": "Bị thiêu cháy bởi dung nham",
-    "2": "Té gãy cổ chết",
-    "3": "Bạn Đang Rời khỏi thế giới",
-    "4": "Quay lại nhanh thằng ngu!",
-    "5": "Bị nướng thành KFC",
-    "6": "Bị mắc cạn trên đất liền",
-    "7": "Ngỏm vì đuối nước"
+    "1": "Bị magma thiêu",
+    "2": "Va chạm với mặt đất",
+    "3": "Rời khỏi thế giới",
+    "4": "Quay lại đi!",
+    "5": "Cháy đến chết",
+    "6": "Mắc kẹt trên cạn",
+    "7": "Ngạt thở",
+    "8": "Bị nổ tung"
   },
   "PlayerWidget": [
-    "{0} Được điều khiển bởi {1}",
-    "Trong trò chơi được {0} ngày",
-    "Chưa bao giờ sinh ra"
+    "{0} được điều khiển bởi {1}",
+    "Đã chơi {0} ngày",
+    "Chưa từng xuất hiện"
   ],
   "CrossbowWidget": {
     "0": "Kéo dây",
-    "1": "Nạp đạn",
-    "2": "Sẵn sàng bắn ~**"
+    "1": "Nạp tên",
+    "2": "Sẵn sàng bắn"
   },
   "SubsystemMusketBlockBehavior": {
     "0": "Nạp thuốc súng trước",
-    "1": "Không có đạn, bắn mù"
+    "1": "Không có đạn, bắn khống"
   },
   "SubsystemBucketBlockBehavior": {
-    "1": "Cần ô trống trong túi đồ cho xô chứa chất lỏng",
+    "1": "Cần ô trống trong túi đồ cho xô chất lỏng",
     "2": "Cần ô trống trong túi đồ cho xô sữa",
     "3": "Cần ô trống trong túi đồ cho xô rỗng"
   },
@@ -208,94 +240,139 @@
     "1": "Sẵn sàng bắn"
   },
   "SubsystemBowBlockBehavior": {
-    "0": "Nạp mũi tên trước"
+    "0": "Hãy nạp mũi tên trước"
   },
   "CraftingRecipesManager": {
-    "0": "Sử dụng lò nung để nấu chảy vật phẩm này",
-    "1": "Cần nhiều nhiệt hơn để nấu chảy vật phẩm này, sử dụng nhiên liệu tốt hơn",
+    "0": "Dùng lò nung để nấu chảy vật phẩm này",
+    "1": "Cần nhiệt cao hơn để nấu chảy vật phẩm này, hãy dùng nhiên liệu tốt hơn",
     "2": "Bạn phải đạt cấp {0} để chế tạo vật phẩm này",
     "3": "Bạn phải đạt cấp {0} để nấu chảy vật phẩm này"
   },
   "BlocksTexturesManager": {
-    "1": "Could not find blocks texture \"{0}\".",
-    "2": "Could not load blocks texture \"{0}\". Reason: {1}.",
-    "3": "Unable to delete blocks texture \"{0}\"",
-    "4": "Blocks texture is larger than 65536x65536 pixels (size={0}x{1})",
-    "5": "Blocks texture does not have power-of-two size (size={0}x{1})"
+    "1": "Không tìm thấy texture khối \"{0}\".",
+    "2": "Không thể tải texture khối \"{0}\". Lý do: {1}.",
+    "3": "Không thể xóa texture khối \"{0}\"",
+    "4": "Texture khối lớn hơn 65536x65536 pixel (kích thước={0}x{1})",
+    "5": "Texture khối không có kích thước lũy thừa của 2 (kích thước={0}x{1})"
+  },
+  "GameManager": {
+    "1": "Đã tải thế giới, GameMode={0}, StartingPosition={1}, WorldName={2}, VisibilityRange={3}, Resolution={4}",
+    "2": "Lỗi khi lưu game",
+    "3": "Chi tiết nằm trong log game",
+    "4": "Đã lưu project, {0}ms"
+  },
+  "ModSettingsManager": {
+    "1": "Lỗi khi ghi file cài đặt mod:",
+    "2": "Đã tải cài đặt mod",
+    "3": "Lỗi khi tải cài đặt mod:",
+    "4": "Lỗi khi lưu cài đặt mod của [{0}]:",
+    "5": "Lỗi khi lưu file cài đặt mod:",
+    "6": "Đã lưu cài đặt mod",
+    "7": "Đã đặt lại cài đặt phím mod",
+    "8": "Đã đặt lại cài đặt quản lý camera mod",
+    "9": "Đã đặt lại cài đặt tay cầm mod"
+  },
+  "SettingsManager": {
+    "1": "Không có cài đặt ánh xạ bàn phím nào tên \"{0}\"!",
+    "2": "Không có cài đặt camera nào tên \"{0}\"!",
+    "3": "Không thể tải cài đặt \"{0}\". Lý do: {1}",
+    "4": "Đã tải cài đặt.",
+    "5": "Tải cài đặt thất bại.",
+    "6": "Không thể lưu cài đặt \"{0}\". Lý do: {1}",
+    "7": "Đã lưu cài đặt",
+    "8": "Lưu cài đặt thất bại."
+  },
+  "FileAssociationManager": {
+    "1": "Đăng ký liên kết tệp thất bại, không thể lấy đường dẫn chương trình",
+    "2": "Đăng ký liên kết tệp thất bại, không thể tạo định danh chương trình trong registry",
+    "3": "Đăng ký liên kết tệp thất bại, không thể tạo lệnh mở trong registry",
+    "4": "Đăng ký liên kết tệp thất bại, không thể tạo phương thức mở cho {0} trong registry",
+    "5": "Đăng ký liên kết tệp thất bại, lý do:",
+    "6": "Đã đăng ký liên kết tệp thành công.",
+    "7": "Hủy đăng ký liên kết tệp thất bại, lý do:",
+    "8": "Đã hủy đăng ký liên kết tệp thành công.",
+    "ExtensionDescription": {
+      ".scworld": "Thế giới Survivalcraft",
+      ".scbtex": "Texture khối Survivalcraft",
+      ".scskin": "Skin người chơi Survivalcraft",
+      ".scfpack": "Gói nội thất Survivalcraft",
+      ".scmod": "Mod API Survivalcraft",
+      ".scmodList": "Danh sách mod API Survivalcraft"
+    }
   },
   "SubsystemCrossbowBlockBehavior": {
-    "0": "Lên cò nỏ trước",
-    "1": "Nạp đạn trước"
+    "0": "Hãy kéo nỏ trước",
+    "1": "Hãy nạp tên trước"
   },
   "MusketWidget": {
     "0": "Nạp thuốc súng",
-    "1": "Nạp miếng lót",
+    "1": "Nạp bông chặn",
     "2": "Nạp đạn",
     "3": "Sẵn sàng bắn"
   },
   "PlayerData": {
     "1": "Không thể thay đổi lớp người chơi khi dữ liệu người chơi đã tồn tại.",
-    "2": "Hồi sinh {0} (Cấp {1})",
-    "3": "Vật phẩm của bạn sẽ còn lại trong thời gian ngắn tại nơi chết.",
-    "4": "Sinh ra {0} (Cấp {1})",
-    "5": "Chế độ sinh ra không hợp lệ.",
+    "2": "Đang hồi sinh {0} (Cấp {1})",
+    "3": "Đồ của bạn sẽ còn lại trong một thời gian ngắn tại nơi bạn chết.",
+    "4": "Đang sinh ra {0} (Cấp {1})",
+    "5": "Chế độ sinh không hợp lệ.",
     "6": "BẠN ĐÃ CHẾT",
     "7": "{0}\n\nKhông thể hồi sinh trong chế độ chơi \"{1}\"",
-    "8": "{0}\n\nChạm để khởi động lại cuộc phiêu lưu",
+    "8": "{0}\n\nChạm để bắt đầu lại cuộc phiêu lưu",
     "9": "{0}\n\nChạm để hồi sinh",
-    "10": "Có nhiều hơn 1 người chơi với Chỉ số Người chơi {0} được thêm vào thế giới.",
+    "10": "Có hơn 1 người chơi với PlayerIndex {0} được thêm vào thế giới.",
     "11": "Không tìm thấy GameWidget cho người chơi.",
     "12": "Không xác định",
     "13": "Nguyên nhân tử vong: {0}"
   },
   "GameLoadingScreen": {
-    "1": "Lỗi tải thế giới"
+    "1": "Lỗi khi tải thế giới"
   },
   "LoadingScreen": {
-    "1": "Thực thi nhiệm vụ OnLoadingStart.",
-    "2": "Khởi tạo TextureAtlasManager.",
+    "1": "Đang thực thi nhiệm vụ OnLoadingStart.",
+    "2": "Đang khởi tạo TextureAtlasManager.",
     "3": "Đang tải cơ sở dữ liệu.",
-    "4": "Khởi tạo BlocksManager.",
+    "4": "Đang khởi tạo BlocksManager.",
     "5": "Đang tải cài đặt mod.",
-    "6": "Thực thi nhiệm vụ OnLoadingFinished.",
-    "7": "Khởi tạo các thành phần phụ."
+    "6": "Đang thực thi nhiệm vụ OnLoadingFinished.",
+    "7": "Đang khởi tạo dữ liệu phụ."
   },
   "ModEntity": {
-    "1": "Đang tải tệp dữ liệu khối .csv.",
+    "1": "Đang tải tệp blocksdata .csv.",
     "2": "Đang tải tệp cơ sở dữ liệu .xdb.",
-    "3": "Đang tải tệp dữ liệu trang phục .clo.",
+    "3": "Đang tải tệp dữ liệu quần áo .clo.",
     "4": "Đang tải tệp công thức chế tạo .cr.",
     "5": "Đang tải tệp javascript .js."
   },
   "SurvivalCraftModEntity": {
-    "1": "Đang tải dữ liệu khối.",
+    "1": "Đang tải blocksdata.",
     "2": "Đang tải cơ sở dữ liệu.",
     "3": "Đang tải công thức chế tạo.",
-    "4": "Đang tải dữ liệu trang phục."
+    "4": "Đang tải dữ liệu quần áo."
   },
   "FurnitureDesign": {
     "1": "Tên không hợp lệ.",
     "2": "Chuỗi giá trị nội thất không hợp lệ.",
-    "3": "Độ phân giải",
-    "4": "Giá trị",
+    "3": "độ phân giải",
+    "4": "giá trị",
     "5": "Nội thất {0} trạng thái",
-    "6": "Nút Nội thất",
-    "7": "Công tắc Nội thất",
-    "8": "Nội thất Kết nối {0} trạng thái",
+    "6": "Nút nội thất",
+    "7": "Công tắc nội thất",
+    "8": "Nội thất kết nối {0} trạng thái",
     "9": "Nội thất"
   },
   "BuildFurnitureDialog": {
     "1": "Độ phức tạp {0}/{1}{2}",
     "2": " (OK)",
-    "3": " (Quá phức tạp)",
-    "4": "Góc nhìn Bên",
-    "5": "Góc nhìn Trên",
-    "6": "Góc nhìn Trước",
-    "7": "Đổi tên Nội thất Gốc",
-    "8": "Đổi tên Nội thất Đã sửa đổi",
-    "9": "Đặt tên Nội thất Đã sửa đổi",
-    "10": "Đổi tên Nội thất",
-    "11": "Đặt tên Nội thất"
+    "3": "(quá phức tạp)",
+    "4": "Xem bên",
+    "5": "Xem сверху",
+    "6": "Xem trước",
+    "7": "Đổi tên nội thất gốc",
+    "8": "Đổi tên nội thất đã chỉnh sửa",
+    "9": "Đặt tên nội thất đã chỉnh sửa",
+    "10": "Đổi tên nội thất",
+    "11": "Đặt tên nội thất"
   },
   "EditAdjustableDelayGateDialog": {
     "1": "{0} giây"
@@ -305,21 +382,27 @@
     "2": "Cao"
   },
   "EditColorDialog": {
-    "1": "Chỉnh sửa Màu sắc",
+    "1": "Chỉnh sửa màu",
     "2": "Đỏ:",
-    "3": "Lục:",
-    "4": "Lam:",
-    "5": "Nhập Màu",
-    "6": "Màu Không hợp lệ",
-    "7": "Sử dụng ký hiệu R,G,B hoặc #HEX, ví dụ 255,92,13 hoặc #FF5C0D"
+    "3": "Xanh lá:",
+    "4": "Xanh dương:",
+    "5": "Nhập màu",
+    "6": "Màu không hợp lệ",
+    "7": "Dùng ký hiệu R,G,B hoặc #HEX, ví dụ: 255,92,13 hoặc #FF5C0D"
   },
   "EditPaletteDialog": {
     "1": "Đặt lại",
-    "2": "Chỉnh sửa Tên Màu",
+    "2": "Chỉnh sửa tên màu",
     "3": "Tên không hợp lệ"
   },
   "EditPistonDialog": {
-    "1": "{0} khối"
+    "1": "{0} khối",
+    "Speed": {
+      "0": "Nhanh",
+      "1": "Trung bình",
+      "2": "Chậm",
+      "3": "Rất chậm"
+    }
   },
   "EditTruthTableDialog": {
     "1": "Bảng",
@@ -328,22 +411,30 @@
   "ViewGameLogDialog": {
     "1": "Xóa",
     "2": "Lỗi",
-    "3": "Vui lòng đăng nhập và gửi nhật ký",
+    "3": "Vui lòng đăng nhập và gửi log",
     "4": "OK",
     "5": "Hủy",
-    "6": "Đang tải lên nhật ký",
+    "6": "Đang tải log lên",
     "7": "Tải lên thành công",
     "8": "Tải lên thất bại",
-    "9": "Lỗi Chạy Thế giới",
-    "10": "Liên hệ với nhà phát triển mod kèm tệp Nhật ký để Giải quyết vấn đề.",
-    "11": "Lỗi tải thế giới",
-    "12": "Lỗi Sinh ra Người chơi",
-    "13": "Sao chép Nhật ký này",
-    "14": "Các tệp thế giới có thể đang bị chiếm bởi một chương trình khác."
+    "9": "Lỗi khi chạy thế giới",
+    "10": "Liên hệ nhà phát triển mod kèm file Log để giải quyết vấn đề.",
+    "11": "Lỗi khi tải thế giới",
+    "12": "Lỗi khi sinh người chơi",
+    "13": "Sao chép log này",
+    "14": "Tệp thế giới có thể đang bị chương trình khác sử dụng.",
+    "15": "Tất cả",
+    "16": "Cảnh báo",
+    "17": "Lỗi"
   },
   "MoreCommunityLinkDialog": {
-    "1": "Không có Người dùng",
-    "2": "Chọn Người dùng Đang hoạt động"
+    "1": "Không có người dùng",
+    "2": "Chọn người dùng đang hoạt động"
+  },
+  "EditWorldSeedDialog": {
+    "1": "(không có)",
+    "2": "(True seed đã được chỉnh sửa)",
+    "3": "True seed phải là số nguyên từ -2147483648 đến 2147483647"
   },
   "FurnitureDesignWidget": [
     "Trước",
@@ -354,175 +445,214 @@
     "{0} thiết kế"
   ],
   "FurnitureInventoryPanel": {
-    "1": "{0} thiết kế đã được thêm. ",
-    "2": "{0} thiết kế đã tồn tại trong thế giới và đã bị bỏ qua. ",
-    "3": "{0} thiết kế đã bị bỏ qua vì đã đạt giới hạn {1} thiết kế.",
-    "4": "Nhập Thành công",
-    "5": "Nhập Thất bại",
+    "1": "Đã thêm {0} thiết kế. ",
+    "2": "{0} thiết kế đã tồn tại trong thế giới và bị bỏ qua. ",
+    "3": "{0} thiết kế bị bỏ qua vì đã đạt giới hạn {1} thiết kế.",
+    "4": "Nhập thành công",
+    "5": "Nhập thất bại",
     "6": "Mới",
-    "7": "Nhập Từ Nội dung",
-    "8": "Thêm Bộ Nội thất",
+    "7": "Nhập từ nội dung",
+    "8": "Thêm bộ nội thất",
     "9": "Đổi tên",
     "10": "Xóa",
-    "11": "Di chuyển Lên",
-    "12": "Di chuyển Xuống",
-    "13": "Xuất Ra Nội dung",
-    "14": "Hành động Bộ Nội thất",
-    "15": "Tên Bộ Nội thất",
-    "16": "Bộ Mới",
-    "17": "Tên Bộ Nội thất",
-    "18": "Không có Gói Nội thất",
-    "19": "Không tìm thấy gói nội thất trong nội dung của bạn. Tải xuống một số từ Nội dung Cộng đồng.",
-    "20": "Chọn Gói Nội thất",
+    "11": "Di chuyển lên",
+    "12": "Di chuyển xuống",
+    "13": "Xuất ra nội dung",
+    "14": "Hành động bộ nội thất",
+    "15": "Tên bộ nội thất",
+    "16": "Bộ mới",
+    "17": "Tên bộ nội thất",
+    "18": "Không có gói nội thất",
+    "19": "Không tìm thấy gói nội thất trong nội dung của bạn. Hãy tải từ Community Content.",
+    "20": "Chọn gói nội thất",
     "21": "Đã xuất",
     "22": "Gói nội thất [{0}] đã được xuất ra nội dung.",
-    "23": "Xuất Thất bại",
+    "23": "Xuất thất bại",
     "24": "Quá nhiều bộ nội thất",
-    "25": "Xóa một số bộ nội thất trước khi thêm cái mới.",
-    "26": "Tất cả nội thất trong bộ sẽ trở thành chưa phân loại và sẽ bị xóa nếu không được sử dụng trong thế giới.",
+    "25": "Hãy xóa bớt bộ nội thất trước khi thêm bộ mới.",
+    "26": "Tất cả nội thất trong bộ sẽ trở thành chưa phân loại và sẽ bị xóa nếu không được dùng trong thế giới.",
     "27": "Xóa",
-    "28": "Hủy"
+    "28": "Hủy",
+    "29": "Chia sẻ",
+    "30": "Đóng"
+  },
+  "ExternalContentScreen": {
+    "1": "Vào",
+    "2": "Tải xuống",
+    "3": "Nội dung của {0}",
+    "4": "Chưa đăng nhập",
+    "5": "Đăng xuất",
+    "6": "Đăng nhập",
+    "7": "Chọn nguồn nội dung",
+    "8": "Đang tạo liên kết",
+    "9": "Đang lấy thư mục",
+    "10": "Đang tải xuống",
+    "11": " | (đã tải)",
+    "12": "Đang nhập",
+    "13": "Không thể mở tệp",
+    "14": "Loại tệp không được hỗ trợ: "
   },
   "FourLedBlock": {
-    "1": "Làm đèn LED 4 bóng màu từ đồng, kính và sơn"
+    "1": "Tạo đèn LED 4 bóng màu từ đồng, kính và sơn"
   },
   "MulticoloredLedBlock": {
-    "1": "Làm đèn LED nhiều màu từ đồng, kính và dây điện"
+    "1": "Tạo đèn LED nhiều màu từ đồng, kính và dây điện"
   },
   "OneLedBlock": {
-    "1": "Làm đèn LED 1 bóng màu từ đồng, kính và sơn"
+    "1": "Tạo đèn LED 1 bóng màu từ đồng, kính và sơn"
   },
   "LedBlock": {
     "0": "Trắng",
-    "1": "Xanh lơ",
+    "1": "Lục lam",
     "2": "Đỏ",
     "3": "Xanh dương",
     "4": "Vàng",
     "5": "Xanh lá",
     "6": "Cam",
     "7": "Tím",
-    "Format": "{1} {0}",
-    "CRDescription": "Làm đèn LED màu từ đồng, kính và sơn"
+    "Format": "{0} {1}",
+    "CRDescription": "Tạo đèn LED màu từ đồng, kính và sơn"
   },
   "AirBlock": {
-    "1": "Khối Không xác định"
+    "1": "Khối không xác định"
   },
   "SevenSegmentDisplayBlock": {
-    "1": "Làm màn hình 7 đoạn từ đồng, kính và sơn"
+    "1": "Tạo màn hình 7 đoạn từ đồng, kính và sơn"
   },
   "PaintBucketBlock": {
-    "1": "Make {0} Paint"
+    "1": "Tạo sơn {0}"
   },
   "PumpkinSoupBucketBlock": {
-    "1": "Cook pumpkin soup"
+    "1": "Nấu súp bí ngô"
   },
   "GameMenuDialog": {
-    "1": "Thiết bị của bạn nhanh",
-    "2": "Hãy cân nhắc tăng tầm nhìn hoặc độ phân giải để có đồ họa tốt hơn. Để làm vậy, vào cài đặt hiệu năng.",
+    "1": "Thiết bị của bạn chạy nhanh",
+    "2": "Hãy cân nhắc tăng khoảng nhìn hoặc độ phân giải để có đồ họa tốt hơn. Vào cài đặt hiệu năng để thay đổi.",
     "3": "Thiết bị của bạn không đủ nhanh",
-    "4": "Hãy cân nhắc giảm tầm nhìn hoặc độ phân giải. Để làm vậy, vào cài đặt hiệu năng.",
-    "5": "Thống kê Trò chơi",
-    "6": "Chế độ Chơi",
-    "7": "Loại Địa hình",
-    "8": "Hạt giống Thế giới",
-    "9": "(không)",
-    "10": "Mực nước Biển",
+    "4": "Hãy cân nhắc giảm khoảng nhìn hoặc độ phân giải. Vào cài đặt hiệu năng để thay đổi.",
+    "5": "Thống kê trò chơi",
+    "6": "Chế độ chơi",
+    "7": "Loại địa hình",
+    "8": "Seed thế giới",
+    "9": "(không có)",
+    "10": "Mực nước biển",
     "11": "Nhiệt độ",
     "12": "Độ ẩm",
-    "13": "Kích thước Quần xã",
-    "14": "Thiết kế Nội thất Đang dùng",
-    "15": "Thế giới Tạo trong Phiên bản",
+    "13": "Kích thước quần xã",
+    "14": "Thiết kế nội thất đang dùng",
+    "15": "Thế giới được tạo ở phiên bản",
     "16": "trước 1.22",
-    "17": "Thống kê Người chơi",
+    "17": "Thống kê người chơi",
     "18": "Tên",
     "19": "Giới tính",
     "20": " ngày trước",
-    "21": "Chưa bao giờ sinh ra",
-    "22": "Lần Sinh đầu tiên",
+    "21": "Chưa từng xuất hiện",
+    "22": "Xuất hiện lần đầu",
     "23": " ngày",
-    "24": "Chưa bao giờ sinh ra",
-    "25": "Thời gian Sống sót",
-    "26": "Đã hồi sinh",
+    "24": "Chưa từng xuất hiện",
+    "25": "Sống sót",
+    "26": "Hồi sinh",
     "27": " lần",
-    "28": "Cấp độ Cao nhất Đạt được",
+    "28": "Cấp cao nhất đạt được",
     "29": "Cấp {0}",
     "30": "Vị trí",
-    "31": "{0},{1} ở độ cao {2}",
+    "31": "{0}, {1} ở độ cao {2}",
     "32": "(không khả dụng trong {0})",
-    "33": "Thống kê Chiến đấu",
-    "34": "Người chơi Đã giết",
-    "35": "Sinh vật Đất liền Đã giết",
-    "36": "Sinh vật Nước Đã giết",
-    "37": "Sinh vật Bay Đã giết",
-    "38": "Tấn công Cận chiến",
-    "39": "Trúng Cận chiến",
-    "40": "Tấn công Tầm xa",
-    "41": "Trúng Tầm xa",
-    "42": "Số lần bị Trúng",
-    "43": "Thống kê Lao động",
-    "44": "Khối Đã đào",
-    "45": "Khối Đã đặt",
-    "46": "Khối Đã tương tác",
-    "47": "Vật phẩm Đã chế tạo/Nung chảy",
-    "48": "Nội thất Đã làm",
-    "49": "Thống kê Di chuyển",
-    "50": "Tổng Khoảng cách Đã đi",
-    "51": "Khoảng cách Đi bộ",
-    "52": "Khoảng cách Rơi",
-    "53": "Khoảng cách Leo",
-    "54": "Khoảng cách Bay",
-    "55": "Khoảng cách Bơi",
-    "56": "Khoảng cách Cưỡi",
-    "57": "Độ cao Thấp nhất",
-    "58": "Độ cao Cao nhất",
-    "59": "Độ sâu Lặn",
-    "60": "Số lần Nhảy",
-    "61": "Thống kê Cơ thể",
-    "62": "Tổng Máu Đã mất",
-    "63": "Thức ăn Đã ăn",
+    "33": "Thống kê chiến đấu",
+    "34": "Người chơi đã giết",
+    "35": "Sinh vật trên cạn đã giết",
+    "36": "Sinh vật dưới nước đã giết",
+    "37": "Sinh vật trên không đã giết",
+    "38": "Đòn cận chiến",
+    "39": "Đòn cận chiến trúng",
+    "40": "Đòn tấn công tầm xa",
+    "41": "Đòn tầm xa trúng",
+    "42": "Số lần bị đánh trúng",
+    "43": "Thống kê làm việc",
+    "44": "Khối đã đào",
+    "45": "Khối đã đặt",
+    "46": "Khối đã tương tác",
+    "47": "Vật phẩm đã chế tạo/nung",
+    "48": "Đồ nội thất đã làm",
+    "49": "Thống kê di chuyển",
+    "50": "Tổng quãng đường di chuyển",
+    "51": "Quãng đường đi bộ",
+    "52": "Quãng đường rơi",
+    "53": "Quãng đường leo",
+    "54": "Quãng đường bay",
+    "55": "Quãng đường bơi",
+    "56": "Quãng đường cưỡi",
+    "57": "Độ cao thấp nhất",
+    "58": "Độ cao cao nhất",
+    "59": "Lặn sâu nhất",
+    "60": "Số lần nhảy",
+    "61": "Thống kê cơ thể",
+    "62": "Tổng máu đã mất",
+    "63": "Thức ăn đã ăn",
     "64": " vật phẩm",
     "65": "Đã đi ngủ",
     "66": " lần",
-    "67": "Tổng Thời gian Ngủ",
+    "67": "Tổng thời gian ngủ",
     "68": " ngày",
-    "69": "Đã nôn",
-    "70": "Đã mắc Cúm",
-    "71": "Đã bị Bệnh",
-    "72": "Thống kê Khác",
+    "69": "Nôn mửa",
+    "70": "Bị cúm",
+    "71": "Bị bệnh",
+    "72": "Thống kê khác",
     "73": "Bị sét đánh",
-    "74": "Chế độ Chơi Dễ nhất Đã dùng",
-    "75": "Nhật ký Tử vong",
+    "74": "Chế độ chơi dễ nhất đã dùng",
+    "75": "Kỷ lục tử vong",
     "76": "Buổi sáng của",
     "77": "Buổi chiều của",
     "78": "Buổi tối của",
     "79": "Ban đêm của",
     "80": "{1} ngày {0:0}",
-    "81": "Không có thống kê người chơi vì thế giới được bắt đầu trong phiên bản cũ của trò chơi.",
-    "82": "Khởi động lại Cuộc phiêu lưu",
-    "83": "Đặt lại Cuộc phiêu lưu?",
+    "81": "Không có thống kê người chơi vì thế giới được tạo ở phiên bản cũ của trò chơi.",
+    "82": "Bắt đầu lại cuộc phiêu lưu",
+    "83": "Đặt lại cuộc phiêu lưu?",
     "84": "Cuộc phiêu lưu sẽ bắt đầu lại từ đầu.",
     "85": "Đánh giá",
-    "86": "Chọn Nội dung để Đánh giá",
-    "87": "Chỉnh sửa Người chơi",
+    "86": "Chọn nội dung để đánh giá",
+    "87": "Chỉnh sửa người chơi",
     "88": "Cài đặt",
     "89": "Trợ giúp",
-    "90": "Điều khiển Bàn phím",
-    "91": "Điều khiển Tay cầm",
-    "92": "Thêm Hành động",
+    "90": "Điều khiển bàn phím",
+    "91": "Điều khiển tay cầm",
+    "92": "Hành động khác",
     "93": "Nam",
     "94": "Nữ",
     "95": "Chạy Javascript",
-    "96": "Độ dài của Năm",
+    "96": "Độ dài năm",
     "97": "Mùa",
-    "98": "(mùa cố định)"
+    "98": "(mùa cố định)",
+    "99": "Nhiệt độ",
+    "100": "Địa hình {0}, Mùa {1}, Môi trường {2}, Cuối {3}",
+    "101": "Độ ẩm",
+    "102": "Địa hình {0}, Mùa {1}, Cuối {2}",
+    "103": "Vị trí xuất hiện"
+  },
+  "ModDetailsDialog": {
+    "1": "Lý do bị vô hiệu hóa: ",
+    "2": "Phiên bản mod:",
+    "3": "Phiên bản API: ",
+    "4": "Tác giả: ",
+    "5": "Dung lượng: ",
+    "6": "Mô tả: ",
+    "7": "Trang chủ: ",
+    "8": "Tên file: ",
+    "9": "Tên gói: ",
+    "10": "Phụ thuộc: ",
+    "11": "Bạn có chắc muốn xóa?",
+    "12": "\"{0}\" sẽ bị xóa.",
+    "13": "Không thể xóa \"{0}\". Lý do: {1}",
+    "14": "Xóa \"{0}\" thành công."
   },
   "BlocksManager": {
-    "1": "Không tìm thấy Khối có loại {0}.",
-    "2": "Không đủ giá trị trường cho khối \"{0}\".",
-    "3": "Không tìm thấy khối \"{0}\" khi tải dữ liệu khối.",
-    "4": "Dữ liệu cho khối \"{0}\" được chỉ định nhiều hơn một lần khi tải dữ liệu khối.",
-    "5": "Trường \"{0}\" không tìm thấy hoặc không thể truy cập khi tải dữ liệu khối.",
-    "6": "Không tìm thấy khối tham chiếu \"{0}\" khi tải dữ liệu khối.",
+    "1": "Không tìm thấy block với loại {0} trong tất cả assembly đã tải.",
+    "2": "Số trường của block \"{0}\" không đủ trong BlocksData.",
+    "3": "Không tìm thấy block \"{0}\" trong BlocksData.",
+    "4": "Dữ liệu cho block \"{0}\" được chỉ định nhiều hơn một lần trong BlocksData.",
+    "5": "Trường \"{0}\" không tồn tại hoặc không thể truy cập trong BlocksData.",
+    "6": "Block tham chiếu \"{0}\" không tìm thấy trong BlocksData.",
     "Terrain": "Địa hình",
     "Minerals": "Khoáng sản",
     "Plants": "Thực vật",
@@ -531,23 +661,23 @@
     "Tools": "Công cụ",
     "Weapons": "Vũ khí",
     "Clothes": "Quần áo",
-    "Electrics": "Điện tử",
+    "Electrics": "Điện",
     "Food": "Thức ăn",
-    "Spawner Eggs": "Trứng Sinh sản",
+    "Spawner Eggs": "Trứng sinh vật",
     "Painted": "Đã sơn",
     "Dyed": "Đã nhuộm",
     "Fireworks": "Pháo hoa",
-    "All Blocks": "Tất cả Khối",
+    "All Blocks": "Tất cả khối",
     "Not Dyed": "Chưa nhuộm"
   },
   "BestiaryDescriptionScreen": {
     "1": "Có thể cưỡi:\n",
     "2": "({0}% thời gian)",
-    "resilience": "sức bền:\n",
+    "resilience": "độ bền:\n",
     "attack": "tấn công:\n",
-    "herding": "bản năng bầy đàn:\n",
+    "herding": "bầy đàn:\n",
     "speed": "tốc độ:\n",
-    "jump height": "chiều cao nhảy:\n",
+    "jump height": "độ cao nhảy:\n",
     "length unit": "mét\n",
     "speed unit": "km/h\n",
     "weight unit": "kg\n",
@@ -555,72 +685,72 @@
     "range": "{0} đến {1}"
   },
   "CommunityContentScreen": {
-    "1": "Đang tải {0}",
-    "2": "Đang lấy Nội dung",
+    "1": "Đang tải xuống {0}",
+    "2": "Đang lấy nội dung",
     "3": "Đang xóa {0}",
     "4": "Bạn có chắc không?",
     "5": "Liên kết sẽ bị xóa khỏi máy chủ.",
-    "6": "Đã Xóa Liên kết",
+    "6": "Đã xóa liên kết",
     "7": "Nó sẽ ngừng xuất hiện trong danh sách sau vài phút.",
-    "8": "Chỉ Vật phẩm của Bạn",
-    "9": "Tất cả Vật phẩm",
+    "8": "Chỉ vật phẩm của bạn",
+    "9": "Tất cả vật phẩm",
     "10": "Bộ lọc không hợp lệ.",
-    "11": "Xếp hạng Cao nhất",
+    "11": "Xếp hạng cao nhất",
     "12": "Mới thêm gần đây",
     "13": "Thứ tự không hợp lệ.",
-    "14": "Ngôi sao",
+    "14": "Boutique",
     "15": "Thêm vào Boutique",
     "16": "Xóa khỏi Boutique",
-    "17": "Hoạt động",
+    "17": "Thao tác",
     "18": "Vui lòng nhập đánh giá, giá trị mặc định là 5.",
-    "19": "Thêm vào Boutique Thành công:",
-    "20": "Hoạt động Hoàn thành",
-    "21": "Xác nhận Xóa khỏi Boutique?",
-    "22": "Xóa khỏi Boutique Thành công:",
+    "19": "Thêm vào Boutique thành công:",
+    "20": "Thao tác hoàn tất",
+    "21": "Xác nhận xóa khỏi Boutique?",
+    "22": "Xóa khỏi Boutique thành công:",
     "23": "Xóa",
-    "24": "Xuất bản",
+    "24": "Công bố",
     "25": "Ẩn",
-    "26": "Xác nhận Xóa",
-    "27": "Xóa Thành công:",
-    "28": "Xuất bản Thành công:",
-    "29": "Ẩn Thành công:",
-    "30": "Chưa xuất bản",
-    "31": "Theo Hạng",
-    "32": "Theo Thời gian",
-    "33": "Theo Boutique",
-    "34": "Theo Ẩn",
+    "26": "Xác nhận xóa",
+    "27": "Xóa thành công:",
+    "28": "Công bố thành công:",
+    "29": "Ẩn thành công:",
+    "30": "Chưa công bố",
+    "31": "TheoXếpHạng",
+    "32": "TheoThờiGian",
+    "33": "TheoBoutique",
+    "34": "TheoẨn",
     "35": "Tải thêm",
     "Unknown": "Không xác định",
     "Directory": "Thư mục",
     "World": "Thế giới",
-    "BlocksTexture": "Kết cấu Khối",
-    "CharacterSkin": "Skin Nhân vật",
-    "FurniturePack": "Gói Nội thất",
-    "ByRank": "Theo Hạng",
-    "ByTime": "Theo Thời gian",
-    "Order Type": "Kiểu Sắp xếp",
+    "BlocksTexture": "Texture khối",
+    "CharacterSkin": "Skin nhân vật",
+    "FurniturePack": "Gói nội thất",
+    "ByRank": "TheoXếpHạng",
+    "ByTime": "TheoThờiGian",
+    "Order Type": "Kiểu sắp xếp",
     "Filter": "Bộ lọc"
   },
   "OriginalCommunityContentScreen": {
-    "1": "Chọn Thứ tự Sắp xếp",
-    "2": "Chọn Bộ lọc Vật phẩm",
-    "3": "Vật phẩm của Người dùng Đã chọn",
-    "4": "Xếp hạng Cao nhất",
-    "5": "Gần đây Nhất",
-    "6": "Tải xuống Nhiều nhất",
+    "1": "Chọn thứ tự sắp xếp",
+    "2": "Chọn bộ lọc vật phẩm",
+    "3": "Vật phẩm của người dùng đã chọn",
+    "4": "Xếp hạng cao nhất",
+    "5": "Mới nhất",
+    "6": "Tải xuống nhiều nhất",
     "7": "Lớn nhất",
-    "8": "Phiên bản Mới nhất",
-    "9": "Phiên bản Cũ nhất",
+    "8": "Phiên bản mới nhất",
+    "9": "Phiên bản cũ nhất",
     "10": "lượt tải"
   },
   "ComponentClothing": {
     "1": "Phải đạt cấp {0} để mặc {1}",
-    "2": "Quần áo của bạn đã bị mòn"
+    "2": "Quần áo của bạn đã bị hỏng"
   },
   "SkyRenderingMode": {
     "Full": "Đầy đủ",
-    "NoClouds": "Không có Mây",
-    "Disabled": "Đã tắt"
+    "NoClouds": "Không mây",
+    "Disabled": "Tắt"
   },
   "ViewAngleMode": {
     "Normal": "Bình thường",
@@ -646,8 +776,9 @@
     "Larger": "Lớn hơn"
   },
   "ScreenshotSize": {
-    "ScreenSize": "Kích thước Màn hình",
-    "FullHD": "FullHD (1920x1080)"
+    "ScreenSize": "Kích thước màn hình",
+    "FullHD": "FullHD",
+    "Custom": "Tùy chỉnh"
   },
   "StartingPositionMode": {
     "Easy": "Dễ",
@@ -655,32 +786,39 @@
     "Hard": "Khó"
   },
   "CommunityContentMode": {
-    "Disabled": "Đã tắt",
+    "Disabled": "Tắt",
     "Strict": "Nghiêm ngặt",
     "Normal": "Bình thường",
-    "ShowAll": "Hiện Tất cả"
+    "ShowAll": "Hiển thị tất cả"
   },
   "MoveControlMode": {
-    "Pad": "Bàn di",
+    "Pad": "Pad",
     "Buttons": "Nút"
+  },
+  "CameraManage": {
+    "Game.FppCamera": "Camera góc nhìn thứ nhất",
+    "Game.TppCamera": "Camera góc nhìn thứ ba",
+    "Game.OrbitCamera": "Camera xoay quanh",
+    "Game.FixedCamera": "Camera cố định",
+    "Game.DebugCamera": "Camera debug"
   },
   "DigMethod": {
     "Shovel": "Xẻng",
-    "Quarry": "Cuốcchim",
-    "Hack": "Rìu/Công cụ khác",
+    "Quarry": "Khai thác",
+    "Hack": "Chặt",
     "None": "Không"
   },
   "LookControlMode": {
-    "Pad": "Bàn di",
-    "EntireScreen": "Toàn bộ Màn hình",
-    "SplitTouch": "Chia Màn hình Cảm ứng"
+    "Pad": "Pad",
+    "EntireScreen": "Toàn màn hình",
+    "SplitTouch": "Chia chạm"
   },
   "SettingsUiScreen": {
     "1": "Thông báo",
     "2": "Bạn có muốn áp dụng cài đặt này không?"
   },
   "EnvironmentBehaviorMode": {
-    "Living": "Sống động",
+    "Living": "Sinh động",
     "Static": "Tĩnh"
   },
   "TimeOfDayMode": {
@@ -692,247 +830,309 @@
   },
   "GameMode": {
     "Creative": "Sáng tạo",
-    "Harmless": "An toàn",
+    "Harmless": "Vô hại",
     "Survival": "Sinh tồn",
     "Challenging": "Thử thách",
     "Adventure": "Phiêu lưu",
-    "Cruel": "Tàn khốc"
+    "Cruel": "Khắc nghiệt"
   },
   "ComponentLocomotion": {
-    "1": "Chạy chân trần rất chậm, hãy mang giày"
+    "1": "Chạy chân trần sẽ chậm, hãy mang giày"
   },
   "EggBlock": {
-    "1": "Đã nấu chín",
+    "1": "Đã nấu",
     "2": "Đã đẻ",
-    "3": "Sinh ra ",
-    "4": "Nấu trứng để tăng giá trị dinh dưỡng của nó"
+    "3": "sinh ra ",
+    "4": "Nấu trứng để tăng giá trị dinh dưỡng"
   },
   "CreativeInventoryWidget": {
     "1": "Nội thất",
     "2": "Người dùng"
   },
+  "InventorySlotWidget": {
+    "1": "Chia"
+  },
   "SettingsControlsScreen": [
-    "{0} khối",
-    "Pixel",
+    "{0}khối",
+    "Pix",
     "Chính",
     "API"
   ],
   "SettingsPerformanceScreen": {
     "1": "{0} khối",
-    "2": "(Máy yếu quá khỏi chơi!!!)",
-    "3": "(khuyến nghị 1GB RAM, Dành cho thiết bị lỏ)",
-    "4": "(khuyến nghị 2GB RAM và thiết bị tầm trung",
-    "5": "(khuyến nghị 4GB RAM và thiết bị tốt)",
-    "6": "(khuyến nghị 8GB RAM và thiết bị VIP)",
-    "7": "(khuyến nghị 16GB RAM và thiết bị được cực VIP)",
+    "2": "(tốt cho thiết bị chậm)",
+    "3": "(khuyến nghị 1GB RAM)",
+    "4": "(khuyến nghị 2GB RAM và\nthiết bị nhanh)",
+    "5": "(khuyến nghị 4GB RAM và\nthiết bị rất nhanh)",
+    "6": "(khuyến nghị 8GB RAM và\nthiết bị rất nhanh)",
+    "7": "(khuyến nghị 16GB RAM và\nthiết bị cực nhanh)",
     "8": "{0} vsync",
     "9": "Không giới hạn",
-    "10": "Tầm nhìn Lớn",
-    "11": "Trò chơi có thể bị treo ngẫu nhiên nếu thiết bị của bạn không có đủ bộ nhớ để xử lý tầm nhìn bạn đã chọn.",
-    "12": "API",
-    "13": "Chính",
+    "10": "Tầm nhìn xa",
+    "11": "Trò chơi có thể bị crash ngẫu nhiên nếu thiết bị của bạn không đủ bộ nhớ để xử lý tầm nhìn bạn đã chọn.",
+    "12": "Mượt",
+    "13": "Tiêu chuẩn",
     "14": "1 VSYNC",
     "15": "2 VSYNC",
-    "16": "Stop Refreshing",
-    "17": "Every Frame"
+    "16": "Dừng làm mới",
+    "17": "Mỗi khung hình",
+    "18": "(khuyến nghị 32GB RAM và\nthiết bị cực nhanh)"
   },
   "RecipaediaDescriptionScreen": {
-    "Luminosity": "Độ sáng",
-    "Fuel Value": "Giá trị Nhiên liệu",
-    "Is Stackable": "Có thể Xếp chồng",
-    "Is Flammable": "Có thể Cháy",
+    "Luminosity": "Độ phát sáng",
+    "Fuel Value": "Giá trị nhiên liệu",
+    "Is Stackable": "Có thể xếp chồng",
+    "Is Flammable": "Có thể cháy",
     "Nutrition": "Dinh dưỡng",
-    "Max Storage Time": "Thời gian Lưu trữ Tối đa",
-    "Digging Method": "Phương pháp Đào",
-    "Digging Resilience": "Độ bền Khai thác",
-    "Explosion Resilience": "Độ bền Nổ",
-    "Explosive Power": "Sức công phá Nổ",
-    "Melee Power": "Sức mạnh Cận chiến",
-    "Melee Hit Ratio": "Tỷ lệ Trúng Cận chiến",
-    "Projectile Power": "Sức mạnh Đạn",
-    "Shoveling": "Dùng xẻng",
-    "Hacking": "Dùng rìu/khác",
-    "Quarrying": "Dùng cuốc",
+    "Max Storage Time": "Thời gian bảo quản tối đa",
+    "Digging Method": "Phương pháp đào",
+    "Digging Resilience": "Độ bền khi đào",
+    "Explosion Resilience": "Khả năng chống nổ",
+    "Explosive Power": "Sức mạnh nổ",
+    "Melee Power": "Sức mạnh cận chiến",
+    "Melee Hit Ratio": "Tỷ lệ trúng cận chiến",
+    "Projectile Power": "Sức mạnh bắn",
+    "Shoveling": "Đào bằng xẻng",
+    "Hacking": "Chặt",
+    "Quarrying": "Khai thác",
     "Durability": "Độ bền",
-    "Experience Orbs": "Quả cầu Kinh nghiệm",
-    "Can Be Dyed": "Có thể Nhuộm",
-    "Armor Protection": "Bảo vệ Áo giáp",
-    "Armor Durability": "Độ bền Áo giáp",
+    "Experience Orbs": "Cầu kinh nghiệm",
+    "Can Be Dyed": "Có thể nhuộm",
+    "Armor Protection": "Bảo vệ giáp",
+    "Armor Durability": "Độ bền giáp",
     "Insulation": "Cách nhiệt",
-    "Movement Speed": "Tốc độ Di chuyển",
-    "Dynamic Index": "Chỉ số Động",
-    "1": "Có (lên đến {0})",
+    "Movement Speed": "Tốc độ di chuyển",
+    "Dynamic Index": "Nội dung khối động",
+    "Block Data": "Dữ liệu khối",
+    "1": "Có (tối đa {0})",
     "2": "{0} ngày"
   },
   "ComponentVitalStats": {
-    "1": "Bạn cảm thấy bệnh sắp chết tới nơi nên không thể ăn món này",
-    "2": "Bạn quá no, không thể ăn thêm!\nNote: No lòng đói con mắt",
-    "3": "Nó có vị tệ hơn cả cứt, không ăn nữa!",
-    "4": "Nó có vị khá kì lạ, không ăn nữa",
-    "5": "Ăn món khác đi, muốn bị ngộ độc thực phẩm chết hả?",
-    "6": "Bạn ăn món này quá thường xuyên",
-    "7": "Bạn đã ăn ngon miệng",
-    "8": "Ngon, nhưng bạn muốn ăn thêm",
+    "1": "Bạn quá bệnh để ăn cái này",
+    "2": "Bạn đã no rồi, không ăn thêm!",
+    "3": "Vị kinh khủng, không ăn nữa!",
+    "4": "Vị hơi lạ, thôi đủ rồi",
+    "5": "Hãy ăn thứ khác, bạn sẽ bị bệnh!",
+    "6": "Bạn ăn cái này quá thường xuyên",
+    "7": "Bạn đã ăn no",
+    "8": "Ngon, nhưng bạn vẫn muốn thêm",
     "9": "Chết đói",
-    "10": "Bạn đang chết đói, tìm thức ăn đi!",
-    "11": "Bạn sắp ngủm vì đói",
-    "12": "Đến lúc ăn gì đó rồi",
-    "13": "Bạn có vẻ hơi đói",
-    "14": "Bạn đang thở hổn hển, chậm lại",
-    "15": "Bạn đang thở hổn hển, ra khỏi nước đi không chết đuối bây giờ",
+    "10": "Bạn đang chết đói, hãy tìm thức ăn!",
+    "11": "Bạn sắp chết đói",
+    "12": "Đến lúc ăn gì đó",
+    "13": "Bạn hơi đói",
+    "14": "Bạn đang thở dốc, chậm lại",
+    "15": "Bạn đang thở dốc, ra khỏi nước",
     "16": "Chết đuối",
-    "17": "Bạn đang chết đuối!",
-    "18": "Nghỉ ngơi một lát!",
-    "19": "Bạn sắp ngất, đi ngủ đi!",
-    "20": "Bạn đang ngã quỵ, ngủ đi",
-    "21": "Bạn rất mệt, ngủ đi",
-    "22": "Bạn mệt rồi, ngủ một giấc đi",
-    "23": "Không thể đi tiếp được nữa",
-    "24": "Aáớ...",
+    "17": "Bạn đang bị đuối nước!",
+    "18": "Nghỉ ngơi một chút!",
+    "19": "Bạn sắp ngất, hãy ngủ!",
+    "20": "Bạn sắp ngã, hãy ngủ",
+    "21": "Bạn rất mệt, hãy ngủ",
+    "22": "Bạn mệt rồi, chợp mắt đi",
+    "23": "Không thể tiếp tục nữa",
+    "24": "Aaa...",
     "25": "Chết cóng",
     "26": "Hạ thân nhiệt",
-    "27": "{0} của bạn đang đóng băng, làm khô quần áo!",
-    "28": "{0} của bạn đang đóng băng, tìm nơi trú ẩn!",
-    "29": "{0} của bạn đang đóng băng, mặc quần áo vào!",
-    "30": "{0} của bạn đang bị lạnh, làm khô quần áo",
-    "31": "{0} của bạn đang bị lạnh, tìm nơi trú ẩn",
-    "32": "{0} của bạn đang bị lạnh, mặc quần áo vào",
+    "27": "{0} của bạn đang đóng băng, hãy làm khô quần áo!",
+    "28": "{0} của bạn đang đóng băng, hãy tìm nơi trú!",
+    "29": "{0} của bạn đang đóng băng, hãy mặc thêm quần áo!",
+    "30": "{0} của bạn đang lạnh dần, hãy làm khô quần áo",
+    "31": "{0} của bạn đang lạnh dần, hãy tìm nơi trú",
+    "32": "{0} của bạn đang lạnh dần, hãy mặc thêm quần áo",
     "33": "Bạn cảm thấy hơi lạnh",
-    "34": "Trời nóng như cái lò thiêu, đi chỗ khác!",
+    "34": "Quá nóng, hãy chạy đi!",
     "35": "Quá nhiệt",
     "36": "Bạn cảm thấy nóng",
-    "37": "Ughhh...",
-    "38": "Bạn ướt như chuột lội",
+    "37": "Ugh...",
+    "38": "Bạn bị ướt hoàn toàn",
     "39": "Bạn đang bị ướt",
-    "40": "Bạn không còn ướt nữa",
-    "41": "đầu",
-    "42": "ngực",
-    "43": "chân",
-    "44": "bàn chân"
+    "40": "Bạn không còn bị ướt nữa",
+    "41": "đầu đang",
+    "42": "ngực đang",
+    "43": "chân đang",
+    "44": "bàn chân đang"
   },
   "RecipaediaScreen": {
     "1": "công thức",
     "2": "công thức",
-    "3": "Không có công thức nào"
+    "3": "Không có công thức"
   },
   "ComponentMiner": {
-    "1": "Phải đạt cấp {0} để sử dụng {1}",
+    "1": "Phải đạt cấp {0} để dùng {1}",
     "2": "Trượt",
-    "3": "Tấn công người chơi khác bị vô hiệu hoá",
-    "4": "bởi {0} {1}",
-    "5": "bất khả kháng",
+    "3": "Tấn công giữa người chơi đã bị tắt",
+    "4": "{0} bởi {1}",
+    "5": "thiên tai",
     "6": "tai nạn",
     "7": "xui xẻo",
-    "8": "kẻ tấn công không xác định",
-    "9": "sai nơi sai thời điểm",
-    "10": "không may mắn",
-    "11": "Tay không chậm lắm, dùng gậy đi cu, đập lá mà lấy",
-    "12": "Sử dụng {0} của bạn để đào nhanh hơn",
+    "8": "kẻ tấn công không rõ",
+    "9": "sai chỗ sai thời điểm",
+    "10": "không may",
+    "11": "Đào bằng tay không rất chậm, hãy dùng gậy",
+    "12": "Dùng {0} của bạn để đào nhanh hơn",
     "killed": "giết",
     "kicked": "đá",
-    "stung": "đốt",
+    "stung": "chích",
     "crushed": "nghiền nát",
-    "dismembered": "mukbang:P",
+    "dismembered": "xé xác",
     "hunted": "săn",
-    "eaten": "ăn thịt",
-    "mauled": "cắn xé thành từng mảnh",
+    "eaten": "ăn",
+    "mauled": "vồ",
     "trampled": "giẫm đạp",
-    "bitten": "Jack cắn",
+    "bitten": "cắn",
     "massacred": "tàn sát",
-    "ripped open": "xé xác",
-    "murdered": "ám sát"
+    "ripped open": "xé toạc",
+    "murdered": "sát hại"
   },
   "ComponentIntro": {
-    "1": "Vứt nó ở đây, mặc xác nó.\nViệt Hoá Bởi DayScVN",
-    "2": "Này tên, trên thuyền!\nBản Dịch Tiếng Việt Chuẩn Xác, Hoàn Thiện",
-    "3": "Này tên, trên bờ!\nBản Dịch Tiếng Việt Chuẩn Xác, Hoàn Thiện",
-    "4": "Bọn tao sẽ bỏ mày lại đây mãi mãi!\nChúc Bạn Một Trải Nghiệm Chơi Vui Vẻ"
+    "1": "Vứt nó ở đây, mặc xác nó.",
+    "2": "Này tên kia, trên thuyền!",
+    "3": "Này tên kia, trên bờ!",
+    "4": "Bọn tao sẽ bỏ mày lại đây mãi mãi!"
   },
   "ComponentLevel": {
     "1": "Bạn đã lên cấp!",
     "2": "Cấp {0}",
     "3": "{0}% Thể lực",
-    "4": "Ốm yếu",
-    "5": "Không Ốm yếu",
-    "6": "Đang Nôn",
-    "7": "Không Nôn",
-    "8": "Bị Cúm",
-    "9": "Không bị Cúm",
-    "10": "Đang Ho",
-    "11": "Không Ho",
+    "4": "Bệnh",
+    "5": "Không bệnh",
+    "6": "Nôn mửa",
+    "7": "Không nôn",
+    "8": "Cúm",
+    "9": "Không cúm",
+    "10": "Ho",
+    "11": "Không ho",
     "12": "Chế độ {0}"
   },
   "ComponentSleep": {
     "1": "Bạn phải ở trên đất khô",
-    "2": "Bạn quá chảnh nên nơi này không thoải mái để ngủ",
-    "3": "Đừng lãng phí thời gian nữa, những cái loại ngủ quá giờ trưa ý, đêm thì thức, xong chỉ đi\n ăn bám ăn ké, đi chỗ nào thấy ăn là tìm đến, thấy đói là tìm đi,\n làm không làm, cả đời không khá được.  ",
+    "2": "Quá khó chịu để ngủ",
+    "3": "Bạn chưa đủ mệt",
     "4": "Bạn quá ướt",
-    "5": "Bạn cần một nơi trú ẩn tốt hơn",
-    "6": "Brrr, ướt!",
+    "5": "Bạn cần nơi trú tốt hơn",
+    "6": "Brrr, ướt quá!",
     "7": "Ehh... mấy giờ rồi?",
     "8": "Chạm để thức dậy sớm",
-    "9": "Bạn đã ngất đi vì thiếu ngủ",
+    "9": "Bạn ngất đi vì thiếu ngủ",
     "10": "Zzz..."
   },
   "WorldOptionsScreen": {
-    "1": "Chọn Loại Thế giới",
-    "2": "Chọn Khối",
-    "3": "Chọn Kết cấu Khối",
+    "1": "Chọn loại thế giới",
+    "2": "Chọn khối",
+    "3": "Chọn texture khối",
     "4": "Không khả dụng",
-    "5": "Địa hình phẳng chỉ khả dụng trong Chế độ Sáng tạo",
+    "5": "Địa hình phẳng chỉ có trong chế độ Sáng tạo",
     "6": "Bình thường",
-    "7": "Thời gian trong Ngày:",
-    "8": " ngày"
+    "7": "Thời gian trong ngày:",
+    "8": " ngày",
+    "9": "Nhập nội dung khối thủ công",
+    "10": "Nội dung khối không hợp lệ",
+    "11": "Phiên bản tạo địa hình"
+  },
+  "KeyboardMappingScreen": {
+    "MoveLeft": "Di chuyển trái",
+    "MoveRight": "Di chuyển phải",
+    "MoveUp": "Di chuyển lên",
+    "MoveDown": "Di chuyển xuống",
+    "MoveFront": "Di chuyển tới",
+    "MoveBack": "Di chuyển lùi",
+    "Jump": "Nhảy",
+    "Dig": "Đào",
+    "Hit": "Đánh",
+    "Aim": "Ngắm",
+    "Interact": "Tương tác, đặt",
+    "ToggleCrouch": "Bật/Tắt cúi",
+    "ToggleMount": "Bật/Tắt cưỡi",
+    "ToggleFly": "Bật/Tắt bay",
+    "PickBlockType": "Chọn loại khối",
+    "ToggleInventory": "Bật/Tắt túi đồ",
+    "ToggleClothing": "Bật/Tắt quần áo",
+    "TakeScreenshot": "Chụp màn hình",
+    "SwitchCameraMode": "Đổi chế độ camera",
+    "TimeOfDay": "Đổi thời gian trong ngày",
+    "Lightning": "Sét",
+    "Precipitation": "Bật/Tắt mưa",
+    "Fog": "Bật/Tắt sương mù",
+    "Drop": "Vứt",
+    "EditItem": "Chỉnh sửa vật phẩm",
+    "KeyboardHelp": "Thiết lập phím",
+    "GamepadHelp": "Thiết lập tay cầm",
+    "GameMenu": "Menu game",
+    "Back": "Quay lại"
+  },
+  "KeyboardMappingScreenKeys": {
+    "Left": "Chuột trái",
+    "Right": "Chuột phải",
+    "Middle": "Chuột giữa",
+    "Ext1": "Nút chuột lùi",
+    "Ext2": "Nút chuột tiến",
+    "LeftArrow": "←",
+    "RightArrow": "→",
+    "UpArrow": "↑",
+    "DownArrow": "↓"
+  },
+  "GamepadMappingScreenKeys": {
+    "LeftThumb": "LS - Nhấn cần trái",
+    "RightThumb": "RS - Nhấn cần phải",
+    "Left": "LT - Cò trái",
+    "Right": "RT - Cò phải",
+    "LeftShoulder": "LB - Nút vai trái",
+    "RightShoulder": "RB - Nút vai phải",
+    "DPadLeft": "←",
+    "DPadRight": "→",
+    "DPadUp": "↑",
+    "DPadDown": "↓"
   },
   "ComponentSickness": {
-    "1": "Bệnh tật",
+    "1": "Bệnh",
     "2": "Bạn cảm thấy buồn nôn"
   },
   "ComponentPlayer": {
-    "1": "Rón rén để cải thiện độ chính xác nhắm bắn"
+    "1": "Cúi xuống để ngắm chính xác hơn"
   },
   "ComponentGui": {
     "1": "Nhấn H để xem điều khiển bàn phím\n(hoặc xem TRỢ GIÚP)",
     "2": "Nhấn START/PAUSE để xem điều khiển tay cầm\n(hoặc xem TRỢ GIÚP)",
-    "3": "Đang rón rén",
-    "4": "Đang đứng thẳng",
+    "3": "Đang cúi",
+    "4": "Đứng lên",
     "5": "Đã cưỡi",
     "6": "Đã xuống",
-    "7": "Bật chế độ bay",
-    "8": "Tắt chế độ bay",
+    "7": "Chế độ bay bật",
+    "8": "Chế độ bay tắt",
     "9": "Camera góc nhìn thứ ba",
-    "10": "Camera quỹ đạo",
+    "10": "Camera xoay quanh",
     "11": "Camera cố định",
     "12": "Camera góc nhìn thứ nhất",
-    "13": "Ảnh đã lưu vào thư viện ảnh",
-    "14": "Lỗi chụp ảnh, kiểm tra nhật ký trò chơi",
+    "13": "Ảnh đã lưu trong thư viện hình ảnh",
+    "14": "Lỗi chụp ảnh, kiểm tra log game",
     "15": "Bình minh",
     "16": "Buổi trưa",
     "17": "Hoàng hôn",
     "18": "Nửa đêm",
     "19": "Camera debug",
-    "20": "Tắt Hiện tượng Thời tiết",
-    "21": "Bật Hiện tượng Thời tiết",
-    "22": "Tắt Sương mù",
-    "23": "Bật Sương mù"
+    "20": "Tắt mưa",
+    "21": "Bật mưa",
+    "22": "Tắt sương mù",
+    "23": "Bật sương mù"
   },
   "ComponentFlu": {
     "1": "Giữ ấm, bạn sẽ bị cúm!",
-    "2": "Tìm nơi ấm áp, bạn bị cúm rồi!",
-    "3": "Bạn bị cúm, hơi ấm đang chữa lành",
+    "2": "Hãy đến chỗ ấm, bạn bị cúm rồi!",
+    "3": "Bạn bị cúm, giữ ấm sẽ giúp hồi phục",
     "4": "Cúm"
   },
   "SubsystemBoatBlockBehavior": {
     "1": "Quá nhiều thuyền"
   },
   "Block": {
-    "1": "Khối {0} có Độ bền Công cụ < -1 hoặc > 65535."
+    "1": "Khối {0} có ToolDurability < -1 hoặc > 65535."
   },
   "SoilBlock": {
-    "1": "Phân Ủ ẩm",
-    "2": "Phân Ủ",
-    "3": "Đất Ẩm",
-    "4": "Đất Canh tác"
+    "1": "Phân ủ ẩm",
+    "2": "Phân ủ",
+    "3": "Đất ẩm",
+    "4": "Đất"
   },
   "LightbulbBlock": {
     "1": "Bóng đèn"
@@ -940,35 +1140,50 @@
   "PlayerScreen": {
     "Male": "Nam",
     "Female": "Nữ",
-    "1": "Chọn Skin Nhân vật",
-    "2": "Chọn Thiết bị Đầu vào",
-    "3": "Người chơi sẽ bị xóa khỏi thế giới vĩnh viễn. Tất cả vật phẩm trong túi đồ và chỉ số sẽ bị mất.",
+    "1": "Chọn skin nhân vật",
+    "2": "Chọn thiết bị nhập",
+    "3": "Người chơi sẽ bị xóa khỏi thế giới vĩnh viễn. Tất cả vật phẩm trong túi và thống kê sẽ mất.",
     "4": "Chuột & Bàn phím",
     "5": "Tay cầm 1",
     "6": "Tay cầm 2",
     "7": "Tay cầm 3",
     "8": "Tay cầm 4",
     "9": "(không tìm thấy)",
-    "10": "Màn hình Cảm ứng",
-    "11": "Thực tế Ảo",
-    "12": "Tên người chơi không hợp lệ. Chỉ cho phép chữ cái, chữ số và dấu cách. Không quá ngắn, cũng không quá dài."
+    "10": "Màn hình cảm ứng",
+    "11": "Thực tế ảo",
+    "12": "Tên người chơi không hợp lệ. Phải có ít nhất một ký tự."
   },
   "ModifyWorldScreen": {
-    "1": "Bạn có chắc không? ",
+    "1": "Bạn có chắc không?",
     "2": "Thế giới sẽ bị xóa vĩnh viễn.",
-    "3": "Hủy bỏ thay đổi?",
-    "4": "Bạn đã thay đổi một số thuộc tính thế giới, nhưng chúng chưa được áp dụng.",
-    "5": "Nhập \"yes\" để tiếp tục"
+    "3": "Hủy thay đổi?",
+    "4": "Bạn đã thay đổi một số thuộc tính của thế giới, nhưng chúng chưa được áp dụng.",
+    "5": "Nhập \"yes\" để tiếp tục",
+    "6": "(không có)"
   },
   "PlayScreen": {
     "1": "Cảnh báo không tương thích mod!",
     "2": "Tiếp tục",
-    "3": "Thiếu các mod sau: ",
-    "4": "Tên mod: {0}, phiên bản: {1}",
+    "3": "Các mod sau bị thiếu: ",
+    "4": "Tên mod: {0}, Phiên bản: {1}",
     "5": "Các mod sau có phiên bản không tương thích:",
-    "6": "Tên mod: {0}, phiên bản yêu cầu: {1}, phiên bản hiện tại: {2}",
-    "7": "Bạn có chắc muốn tiếp tục không?",
-    "8": "Thiếu mod"
+    "6": "Tên mod: {0}, Phiên bản yêu cầu: {1}, Phiên bản hiện tại: {2}",
+    "7": "Bạn có chắc muốn tiếp tục?",
+    "8": "Thiếu mod",
+    "9": "{0} thế giới, {1}",
+    "10": "{0} thế giới, {1}",
+    "11": "Không có thế giới"
+  },
+  "NewWorldScreen": {
+    "1": "Để trống để dùng seed ngẫu nhiên",
+    "2": "Seed thật {0} đã được đặt"
+  },
+  "SettingsCompatibilityScreen": {
+    "1": "Vui lòng đính kèm file log khi báo cáo lỗi.",
+    "2": "Sau khi bật liên kết file, bạn có thể mở các file liên kết bằng API để nhập chúng.",
+    "3": "Sau khi bật chế độ an toàn, API sẽ ngừng tải mọi mod.",
+    "4": "Khởi động lại game để áp dụng ",
+    "5": "Vui lòng mở Console trong DevTools của trình duyệt thủ công."
   },
   "JsInterface": {
     "1": "Đã có một script đang chạy.",
@@ -982,7 +1197,7 @@
     "yes": "Có",
     "no": "Không",
     "exist": "Tồn tại",
-    "none": "Không",
+    "none": "Không có",
     "nothing": "Không có gì",
     "ok": "OK",
     "error": "Lỗi",
@@ -1000,19 +1215,21 @@
     "delete": "Xóa",
     "gameName": "Survivalcraft",
     "debug": "DEBUG",
-    "api": "API"
+    "api": "API",
+    "safeMode": "Chế độ an toàn"
   },
   "CRMessage": {
-    "0": "Không phải Minecraft Oke? Thay vào đó hãy làm rìu đá",
-    "1": "Không phải Minecraft Oke? Thay vào đó hãy làm cào gỗ"
+    "0": "Hãy làm rìu đá thay vào đó",
+    "1": "Hãy làm cào gỗ thay vào đó"
   },
   "GameLogSink": {
-    "1": "Tệp nhật ký có thể bị chiếm bởi chương trình khác, dẫn đến tải thất bại."
+    "1": "File log có thể đang bị chương trình khác sử dụng nên tải thất bại.",
+    "2": "Log nằm trong Console của DevTools trình duyệt."
   },
   "BasePumpkinBlock": {
     "1": "Bí ngô",
     "2": "Bí ngô {0}",
-    "3": "Bí ngô {1} {0}",
+    "3": "Bí ngô {0} {1}",
     "4": "Thối",
     "5": "Chưa chín"
   },
@@ -1021,29 +1238,29 @@
     "Bông dại"
   ],
   "ArrowBlock": [
-    "Mũi tên Gỗ",
-    "Mũi tên Đá",
-    "Mũi tên Sắt",
-    "Mũi tên Kim cương",
-    "Mũi tên Lửa",
-    "Nỏ tên Sắt",
-    "Nỏ tên Sắt Mũi Kim cương",
-    "Nỏ tên Nổ",
-    "Mũi tên Đồng"
+    "Mũi tên đầu gỗ",
+    "Mũi tên đầu đá",
+    "Mũi tên đầu sắt",
+    "Mũi tên đầu kim cương",
+    "Mũi tên lửa",
+    "Bu lông sắt",
+    "Bu lông sắt đầu kim cương",
+    "Bu lông nổ",
+    "Mũi tên đầu đồng"
   ],
   "BulletBlock": [
-    "Đạn Súng hỏa mai",
+    "Đạn súng hỏa mai",
     "Đạn ghém",
-    "Viên Đạn ghém"
+    "Bi đạn ghém"
   ],
   "PressurePlateBlock": [
-    "Tấm áp suất Gỗ",
-    "Tấm áp suất Đá"
+    "Bàn đạp gỗ",
+    "Bàn đạp đá"
   ],
   "PistonBlock": [
-    "Piston",
-    "Piston Kéo",
-    "Piston Kéo Nghiêm ngặt"
+    "Pít-tông",
+    "Pít-tông kéo",
+    "Pít-tông kéo chặt"
   ],
   "DeciduousLeavesBlock": [
     "Mùa hè ",
@@ -1052,19 +1269,36 @@
     "Mùa xuân "
   ],
   "SubsystemSeasons": [
-    "Đầu Hè",
-    "Hè",
-    "Cuối Hè",
-    "Đầu Thu",
-    "Thu",
-    "Cuối Thu",
-    "Đầu Đông",
-    "Đông",
-    "Cuối Đông",
-    "Đầu Xuân",
-    "Xuân",
-    "Cuối Xuân"
+    "Đầu mùa hè",
+    "Mùa hè",
+    "Cuối mùa hè",
+    "Đầu mùa thu",
+    "Mùa thu",
+    "Cuối mùa thu",
+    "Đầu mùa đông",
+    "Mùa đông",
+    "Cuối mùa đông",
+    "Đầu mùa xuân",
+    "Mùa xuân",
+    "Cuối mùa xuân"
   ],
+  "ModDisableReason": {
+    "Unknown": "Không xác định",
+    "Manually": "Thủ công",
+    "NoModInfo": "Không có file modinfo.json trong mod này hoặc file bị lỗi.",
+    "DependencyError": "Lỗi phụ thuộc. Kiểm tra log game.",
+    "Duplicated": "Mod bị trùng lặp.",
+    "InvalidPackageName": "Tên gói của mod này chứa dấu \";\""
+  },
+  "LevelFactorDialog": {
+    "1": "-Vô cực",
+    "2": "Vô cực",
+    "3": "TỔNG"
+  },
+  "PlayerClass": {
+    "Male": "Nam",
+    "Female": "Nữ"
+  },
   "Blocks": {
     "AirBlock:0": {
       "DisplayName": "Không Khí",
@@ -2580,56 +2814,56 @@
     }
   },
   "Help": {
-    "1": {
-      "value": "\\n Left Stick - Di chuyển\\n Right Stick - Nhìn xung quanh\\n Left Trigger - Đào/Tấn công/Nhắm\\n Right Trigger - Đặt khối/Sử dụng/Tương tác\\n D-Pad Lên/Xuống - Cuộn túi đồ, trang trước/sau\\n D-Pad Trái/Phải - Chuyển ô hoạt động\\n Nút A - Nhảy\\n Nhấn Left Thumb - Đặt khối hoặc gắn thú/phương tiện\\n Nhấn Right Thumb - Thay đổi chế độ camera\\n Nút B - Thả vật phẩm đang cầm\\n Nút X - Mở bảng túi đồ\\n Nút Y - Mở bảng cơ thể\\n Back/Select - Hiện menu trò chơi\\n Start/Pause - Hiện menu trò chơi\\n Nhấn Left Shoulder - Bật/tắt rón rén\\n Nhấn Right Shoulder - Nhảy (như A)\\n Left Trigger + A - Tự động di chuyển vật phẩm trong túi đồ\\n A hai lần nhanh - Bật/tắt chế độ bay (Sáng tạo)\\n \\n\\n\\n Bất kỳ tay cầm nào tương thích XInput đều hoạt động.\\n Một số tay cầm tương thích DirectInput cũng hoạt động, nhưng các nút có thể bị ánh xạ sai.\\n Sơ đồ điều khiển có thể không giống trên tất cả các thiết bị Android, nhưng những điều khiển cơ bản nên hoạt động.\\n ",
-      "Name": "Gamepad",
-      "Title": "Điều khiển Tay cầm"
-    },
-    "2": {
-      "value": "\\n W/A/S/D - Di chuyển\\n Chuột - Nhìn xung quanh\\n Phím cách - Nhảy\\n Shift trái - Rón rén (giữ)\\n E - Mở bảng túi đồ\\n C - Mở bảng cơ thể\\n Q - Thả vật phẩm đang cầm\\n V - Thay đổi chế độ camera\\n R - Gắn thú/phương tiện\\n G - Chỉnh sửa khối hoặc vật phẩm\\n P - Chụp ảnh màn hình\\n L - Triệu hồi sét (Sáng tạo)\\n T - Thay đổi thời gian trong ngày (Sáng tạo)\\n 0-9 - Chọn ô hoạt động\\n F hoặc Phím cách hai lần - Bật/tắt chế độ bay (Sáng tạo)\\n Phím cách/Shift trái - Bay lên/xuống (Sáng tạo)\\n Chuột trái (nhấn) - Đào/Tấn công/Nhắm\\n Chuột phải (nhấn) - Đặt khối/Sử dụng/Tương tác\\n Chuột trái (kéo) - Di chuyển tất cả vật phẩm\\n Chuột phải (kéo) - Di chuyển một vật phẩm\\n Chuột trái (giữ) - Đánh dấu ngăn xếp để chia đôi\\n Shift trái + Chuột trái - Tự động di chuyển vật phẩm trong túi đồ\\n Bánh xe chuột - Cuộn túi đồ, thay đổi ô hoạt động\\n Escape - Hiện menu trò chơi\\n H - Hiện/Ẩn trợ giúp điều khiển này\\n J - Bật/tắt sương mù (Sáng tạo)\\n K - Bật/tắt mưa/tuyết (Sáng tạo)\\n ",
-      "Name": "Keyboard",
-      "Title": "Điều khiển Bàn phím"
-    },
-    "3": {
-      "value": "\\n Sử dụng bàn di cảm ứng ở phía dưới bên trái màn hình để di chuyển.\\n Chạm một lần để nhảy.\\n Điều này cũng có thể được cấu hình để sử dụng các nút điều hướng thay vì bàn di.\\n \\n\\n\\n Sử dụng bàn di cảm ứng ở phía dưới bên phải màn hình để nhìn xung quanh.\\n Chạm một lần để nhảy.\\n Bạn cũng có thể kéo ngón tay qua bất kỳ vùng nào của màn hình để nhìn (có thể cấu hình trong cài đặt).\\n \\n\\n\\n Bạn có thể điều chỉnh sơ đồ điều khiển của trò chơi trong cài đặt Điều khiển và Độ nhạy.\\n Thử nghiệm với các tùy chọn khác nhau, ví dụ bạn có thể thích nút hơn bàn di, hoặc chia màn hình cảm ứng với tâm ngắm hơn điều khiển thông thường.\\n Điều khiển trò chơi góc nhìn thứ nhất trên màn hình cảm ứng nhỏ có thể trông khó khăn, nhưng một khi bạn quen với nó, nó không khác gì sử dụng tay cầm hoặc chuột.\\n Vì bạn có thể chạm vào bất kỳ phần nào của màn hình bất cứ lúc nào, một số hành động như đào khối hoặc đặt khối thậm chí có thể dễ dàng hơn.\\n \\n\\n\\n Một số thiết bị rẻ tiền hoặc cũ có màn hình cảm ứng chất lượng thấp hoặc trình điều khiển cảm ứng có lỗi.\\n Chúng có thể thỉnh thoảng bỏ qua các điểm chạm đang hoạt động, hoặc trộn lẫn chúng nếu chạm vào nhiều hơn một điểm cùng lúc.\\n Tốt nhất nên tránh những thiết bị này vì chơi trên chúng rất khó chịu.\\n ",
-      "Name": "TouchScreen",
-      "Title": "Điều khiển Màn hình Cảm ứng"
-    },
-    "4": {
-      "value": "\\n Rón rén hữu ích nếu bạn muốn di chuyển chậm và cẩn thận, ví dụ để tránh rơi gần mép của một vách đá cao.\\n \\n\\n\\n Để bật/tắt chế độ rón rén, nhấn nút rón rén ở phía bên phải màn hình.\\n Khi chế độ rón rén được bật, chuyển động của bạn sẽ bị hạn chế ở các mép để ngăn bạn rơi xuống.\\n \\n\\n\\n Rón rén cũng làm cho chuyển động của bạn yên tĩnh hơn nhiều, cho phép bạn đến gần hơn với một số động vật mà không làm chúng sợ hãi. \\n Ví dụ, bạn có thể sử dụng rón rén để đến gần một con chim mà không làm nó sợ bay đi. \\n Chỉ cần đảm bảo bạn không tiếp cận nó từ phía trước, vì nó sẽ nhìn thấy bạn và bay đi. \\n \\n\\n\\n Rón rén cũng giúp tăng độ chính xác khi bắn cung/nỏ.",
-      "Name": "Sneaking",
-      "Title": "Rón rén (Sneaking)"
-    },
-    "5": {
-      "value": "\\n Bay chỉ có sẵn trong Chế độ Sáng tạo.\\n Để bật/tắt chế độ bay, chạm vào nút bay ở phía bên phải màn hình. \\n Nhảy hai lần nhanh chóng cũng sẽ bật/tắt chế độ bay.\\n \\n\\n\\n Để bay lên hoặc xuống, sử dụng nút lên/xuống xuất hiện bên cạnh nút bay.\\n Bay nhanh hơn nhiều so với đi bộ và cho phép bạn nhanh chóng đến các khu vực mà nếu không sẽ không thể tiếp cận được.\\n ",
-      "Name": "Flying",
-      "Title": "Bay"
-    },
-    "6": {
-      "value": "\\n Thang có thể được chế tạo từ gậy gỗ hoặc thanh sắt.\\n Một khi được đặt trên tường thẳng đứng, chúng cho phép bạn dễ dàng leo lên tường.\\n \\n\\n\\n An toàn nhất là leo thang khi đối mặt với nó.\\n Điều này đúng cả khi leo lên và xuống.\\n \\n\\n\\n Do đó, cách tốt nhất để leo xuống thang là tiếp cận nó từ phía sau, như bạn sẽ làm trong thực tế.\\n \\n\\n\\n Bạn có thể nhảy khỏi thang bất cứ lúc nào\\n ",
-      "Name": "Ladder",
-      "Title": "Leo Thang"
-    },
-    "7": {
-      "value": "\\n Thanh máu được hiển thị trong màn hình trò chơi dưới dạng những trái tim nhỏ.\\n Đó là lượng sinh mệnh còn lại của người chơi.\\n Khi nó giảm xuống 0, người chơi sẽ chết.\\n \\n\\n\\n Nó từ từ hồi phục khi người chơi no đủ, nó hồi phục nhanh hơn khi ngủ.\\n Hãy cẩn thận khi máu của bạn thấp, ngay cả một vết thương nhẹ cũng có thể giết chết bạn.\\n \\n\\n\\n Khi người chơi bị bệnh, các trái tim trở thành màu xanh lá bẩn.\\n Đừng ăn thức ăn đáng ngờ để tránh bị bệnh.\\n Khi người chơi bị cúm, các trái tim trở thành màu xanh dương.\\n Đừng bị lạnh trong thời gian dài để tránh bị cúm.\\n ",
-      "Name": "Health",
-      "Title": "Máu (Health)"
-    },
-    "8": {
-      "value": "\\n Khi bạn ăn thịt sống, trứng chưa nấu hoặc bất kỳ thức ăn nào đã bị để thối rữa, người chơi có thể bị bệnh.\\n \\n\\n\\n Bệnh tật là một tình trạng không dễ chịu. \\n Máu của bạn sẽ từ từ giảm xuống còn một trái tim, khiến bạn rất dễ bị tổn thương.\\n Các hoạt động của bạn sẽ liên tục bị gián đoạn bởi các cơn nôn và buồn nôn.\\n Bạn sẽ di chuyển chậm, yếu và dễ mệt mỏi.\\n Bạn sẽ không thể ăn một số loại thức ăn nhất định.\\n \\n\\n\\n Tốt nhất là đi ngủ, có thể sáng mai dạ dày của bạn sẽ khá hơn.\\n ",
-      "Name": "Sickness",
-      "Title": "Bệnh tật (Sickness)"
-    },
-    "9": {
-      "value": "\\n Khi nhiệt độ cơ thể của bạn ở mức thấp trong thời gian dài, người chơi sẽ bắt đầu hắt hơi.\\n Đây là dấu hiệu cảnh báo rằng bạn có thể sẽ bị cúm sớm.\\n Hãy làm ấm người nhanh chóng.\\n \\n\\n\\n Cúm là một tình trạng nguy hiểm.\\n Máu của bạn sẽ từ từ giảm xuống còn hai trái tim, khiến bạn rất dễ bị tổn thương.\\n Các hoạt động của bạn sẽ thường xuyên bị gián đoạn bởi các cơn ho.\\n Bạn sẽ di chuyển chậm, yếu và dễ mệt mỏi.\\n Bạn cũng sẽ trở nên rất buồn ngủ.\\n \\n\\n\\n Tốt nhất là đến một nơi ấm áp và ngủ để khỏi cúm, có thể sáng mai bạn sẽ khá hơn.\\n Cúm rất khó chữa khi bạn đang lạnh.\\n ",
-      "Name": "Flu",
-      "Title": "Cúm (Flu)"
-    },
-    "10": {
-      "value": "\\n Thanh đói được hiển thị trong màn hình trò chơi dưới dạng những miếng thịt nhỏ (thay vì cá).\\n Nếu bạn không ăn trong thời gian dài, nhân vật của bạn sẽ bắt đầu phàn nàn về điều đó và cuối cùng mất máu, cho đến khi bạn chết.\\n Ngoài ra, nếu bạn đói, bạn không hồi phục máu.\\n \\n\\n\\n Để ăn, kéo một vật phẩm có thể ăn được lên hình người chơi trong bảng Cơ thể/Thức ăn.\\n Nhân vật của bạn sẽ cho bạn biết liệu bạn có còn đói không.\\n \\n\\n\\n Thức ăn có thể được lấy từ nhiều nguồn trong trò chơi.\\n Nguồn rõ ràng nhất là săn bắt động vật ăn được, như bò, chim và lợn rừng.\\n Hãy nhớ rằng săn bắn có thể nguy hiểm, và nguồn cung cấp động vật sẽ nhanh chóng cạn kiệt ở các khu vực gần đó, buộc bạn phải tìm kiếm xa hơn.\\n \\n\\n\\n Một lựa chọn thay thế cho săn bắn là trồng trọt (ví dụ: lúa mạch đen) hoặc câu cá.\\n Trồng trọt cho phép bạn tạo ra một nguồn thức ăn bền vững, mặc dù có thể cần nhiều công việc chuẩn bị và bảo trì thêm.\\n ",
-      "Name": "Hunger",
-      "Title": "Đói (Hunger)"
-    },
+  "1": {
+    "value": "",
+    "Name": "Gamepad",
+    "Title": "Điều khiển bằng tay cầm"
+  },
+  "2": {
+    "value": "",
+    "Name": "Bàn phím",
+    "Title": "Điều khiển bằng bàn phím"
+  },
+  "3": {
+    "value": "\\n Sử dụng bàn điều khiển cảm ứng ở góc dưới bên trái màn hình để di chuyển.\\n Chạm một lần để nhảy.\\n Bạn cũng có thể cấu hình dùng các nút hướng thay cho bàn cảm ứng.\\n \\n\\n\\n Sử dụng bàn cảm ứng ở góc dưới bên phải màn hình để nhìn xung quanh.\\n Chạm một lần để nhảy.\\n Bạn cũng có thể kéo ngón tay trên bất kỳ vị trí nào của màn hình để nhìn.\\n \\n\\n\\n Bạn có thể chỉnh sơ đồ điều khiển trong phần Cài đặt Điều khiển và Độ nhạy.\\n Hãy thử các tùy chọn khác nhau, ví dụ bạn có thể thích dùng nút thay vì bàn cảm ứng, hoặc điều khiển tách đôi với tâm ngắm.\\n Điều khiển game góc nhìn thứ nhất trên màn hình nhỏ có thể khó lúc đầu, nhưng khi quen thì không khác nhiều so với tay cầm hay chuột.\\n Vì bạn có thể chạm vào bất kỳ phần nào của màn hình bất cứ lúc nào, một số hành động như đào hoặc đặt khối thậm chí còn dễ hơn.\\n \\n\\n\\n Một số thiết bị rẻ hoặc cũ có màn hình cảm ứng kém hoặc driver lỗi.\\n Chúng có thể bị mất điểm chạm hoặc nhầm lẫn khi chạm nhiều điểm cùng lúc.\\n Tốt nhất nên tránh các thiết bị này vì chơi sẽ rất khó chịu.\\n ",
+    "Name": "Màn hình cảm ứng",
+    "Title": "Điều khiển màn hình cảm ứng"
+  },
+  "4": {
+    "value": "\\n Đi lén rất hữu ích nếu bạn muốn di chuyển chậm và cẩn thận, ví dụ để tránh rơi khi đứng gần mép vực sâu.\\n \\n\\n\\n Để bật/tắt chế độ đi lén, nhấn nút đi lén ở bên phải màn hình.\\n Khi bật chế độ này, nhân vật sẽ không rơi khỏi mép.\\n \\n\\n\\n Đi lén cũng làm tiếng động di chuyển nhỏ hơn, giúp bạn tiếp cận động vật mà không làm chúng sợ.\\n Ví dụ bạn có thể lén lại gần một con chim.\\n Nhưng đừng đi từ phía trước vì nó sẽ thấy bạn và bay đi.\\n ",
+    "Name": "Đi lén",
+    "Title": "Đi lén"
+  },
+  "5": {
+    "value": "\\n Bay chỉ có trong Chế độ Sáng tạo.\\n Nhấn nút bay ở bên phải màn hình để bật/tắt.\\n Nhảy hai lần nhanh cũng bật/tắt chế độ bay.\\n \\n\\n\\n Bay nhanh hơn đi bộ rất nhiều và giúp bạn tới những nơi khó tiếp cận.\\n ",
+    "Name": "Bay",
+    "Title": "Bay"
+  },
+  "6": {
+    "value": "\\n Thang có thể được chế tạo từ que gỗ.\\n Khi đặt lên tường, bạn có thể leo lên dễ dàng.\\n \\n\\n\\n Leo thang an toàn nhất khi quay mặt về phía thang.\\n Điều này đúng cả khi leo lên và leo xuống.\\n \\n\\n\\n Vì vậy cách tốt nhất để leo xuống là quay lưng lại như ngoài đời.\\n \\n\\n\\n Bạn có thể nhảy khỏi thang bất cứ lúc nào.\\n ",
+    "Name": "Thang",
+    "Title": "Leo thang"
+  },
+  "7": {
+    "value": "\\n Thanh máu hiển thị bằng các trái tim nhỏ trên màn hình.\\n Nó thể hiện lượng sinh mạng còn lại của người chơi.\\n Khi về 0, người chơi sẽ chết.\\n \\n\\n\\n Máu sẽ hồi từ từ khi bạn không đói và hồi nhanh hơn khi ngủ.\\n Hãy cẩn thận khi máu thấp, chỉ một chấn thương nhỏ cũng có thể giết bạn.\\n \\n\\n\\n Khi người chơi bị bệnh, trái tim sẽ chuyển màu xanh bẩn.\\n Đừng ăn thức ăn hỏng để tránh bị bệnh.\\n Khi bị cúm, trái tim sẽ chuyển màu xanh dương.\\n Đừng để cơ thể bị lạnh quá lâu để tránh cúm.\\n ",
+    "Name": "Máu",
+    "Title": "Máu"
+  },
+  "8": {
+    "value": "\\n Khi bạn ăn thịt sống, trứng chưa nấu hoặc thức ăn bị thối, người chơi có thể bị bệnh.\\n \\n\\n\\n Bệnh là trạng thái rất khó chịu.\\n Máu sẽ giảm dần xuống còn một trái tim khiến bạn rất yếu.\\n Hoạt động sẽ bị gián đoạn bởi nôn mửa và buồn nôn.\\n Bạn di chuyển chậm, yếu và dễ mệt.\\n Bạn cũng không thể ăn một số loại thức ăn.\\n \\n\\n\\n Tốt nhất là ngủ để hồi phục, có thể sáng hôm sau bạn sẽ đỡ hơn.\\n ",
+    "Name": "Bệnh",
+    "Title": "Bệnh"
+  },
+  "9": {
+    "value": "\\n Khi nhiệt độ cơ thể thấp lâu, người chơi sẽ bắt đầu hắt hơi.\\n Đây là dấu hiệu bạn sắp bị cúm.\\n Hãy làm ấm cơ thể ngay.\\n \\n\\n\\n Cúm là trạng thái nguy hiểm.\\n Máu sẽ giảm dần xuống còn hai trái tim.\\n Hoạt động sẽ bị gián đoạn bởi các cơn ho.\\n Bạn di chuyển chậm, yếu và dễ mệt.\\n Bạn cũng sẽ rất buồn ngủ.\\n \\n\\n\\n Tốt nhất hãy đến nơi ấm áp và ngủ để khỏi cúm.\\n Cúm rất khó chữa khi bạn đang lạnh.\\n ",
+    "Name": "Cúm",
+    "Title": "Cúm"
+  },
+  "10": {
+    "value": "\\n Thanh đói hiển thị bằng các con cá nhỏ trên màn hình.\\n Nếu không ăn lâu, nhân vật sẽ bắt đầu phàn nàn và cuối cùng mất máu cho đến khi chết.\\n Khi đói bạn cũng không hồi máu.\\n \\n\\n\\n Để ăn, kéo thức ăn vào nhân vật trong bảng cơ thể.\\n Nhân vật sẽ cho biết bạn còn đói hay không.\\n \\n\\n\\n Thức ăn có thể lấy từ nhiều nguồn.\\n Ví dụ như săn động vật như bò, chim, lợn rừng.\\n Nhưng săn bắn có thể nguy hiểm và động vật sẽ dần cạn ở khu vực gần.\\n \\n\\n\\n Một lựa chọn khác là trồng trọt.\\n Trồng trọt tạo nguồn thức ăn bền vững nhưng cần nhiều công chuẩn bị.\\n ",
+    "Name": "Đói",
+    "Title": "Đói"
+  },
     "11": {
       "value": "\\n Thể lực là thước đo mức độ mệt mỏi của nhân vật của bạn, hiển thị qua thanh màu xanh lam.\\n Khi bạn thực hiện một hành động mệt mỏi trong thời gian dài không nghỉ (chạy, nhảy, bơi, đào, chiến đấu), thanh thể lực sẽ giảm và bạn sẽ bắt đầu thở hổn hển.\\n \\n\\n\\n Khi bạn đang thở hổn hển (thanh thể lực thấp), hiệu suất của bạn thấp hơn khi bạn đã nghỉ ngơi.\\n Bạn sẽ di chuyển và đào chậm hơn, và bạn sẽ không thể thực hiện nhảy.\\n \\n\\n\\n Rất nguy hiểm khi bị mệt khi bạn đang ở trong nước, vì bạn không thể nghỉ ngơi trong khi bơi và sẽ bắt đầu mất máu (đuối nước).\\n Theo dõi thanh thể lực, và ra khỏi nước ngay lập tức khi nó xuống thấp.\\n Khi bạn kiệt sức trong khi ở trong nước, bạn sẽ chết đuối trừ khi bờ rất gần.\\n \\n\\n\\n Hãy cẩn thận, rất dễ bị mệt khi chạy trốn khỏi động vật nguy hiểm.\\n ",
       "Name": "Stamina",
@@ -2679,6 +2913,107 @@
       "value": "\\n Một số khối có thể tương tác khi chạm vào.\\n Ví dụ: cửa, cổng, cửa sập, rương, bàn chế tạo, lò nung, nút bấm, công tắc, thùng thuốc súng (dùng diêm), lửa trại (thêm nhiên liệu), khối nội thất tương tác.\\n \\n\\n\\n Để tương tác với một khối, chỉ cần chạm vào nó một lần.\\n Hành động tương ứng sẽ được kích hoạt.\\n \\n\\n\\n Ví dụ, chạm vào một cánh cửa đóng sẽ mở nó, chạm vào lò nung sẽ mở giao diện lò nung, chạm vào nút bấm sẽ kích hoạt tín hiệu điện tạm thời.\\n Tương tác với khối nội thất có thể bật/tắt đèn, mở/đóng cửa tủ, v.v., tùy thuộc vào thiết kế nội thất.\\n ",
       "Name": "Interacting",
       "Title": "Tương tác Với Khối (Interacting With Blocks)"
+    },
+    "21": {
+      "value": "\\n Một số khối (block) có thể chỉnh sửa được.\\n Ví dụ về các khối có thể chỉnh sửa: nỏ (crossbow), băng nhớ (memory bank), súng hỏa mai (musket), bảng chân lý (truth table).\\n \\n\\n\\n Các khối có thể chỉnh sửa được đánh dấu bằng biểu tượng chỉnh sửa trong túi đồ của bạn.\\n \\n\\n\\n Để chỉnh sửa một khối trong túi đồ, hãy chọn nó để bạn cầm trên tay.\\n Nếu khối được chọn có thể chỉnh sửa, nút ngồi xổm (sneak) sẽ chuyển thành nút chỉnh sửa (edit).\\n \\n\\n\\n Để chỉnh sửa một khối đã được đặt trên mặt đất, hãy đứng gần nó và chỉ tâm màn hình vào khối đó.\\n Nếu khối trước mặt bạn có thể chỉnh sửa, nó sẽ nổi bật lên và nút ngồi xổm sẽ chuyển thành nút chỉnh sửa.\\n \\n\\n\\n Chỉnh sửa cho phép bạn thay đổi các thuộc tính nâng cao của khối.\\n Ví dụ: chỉnh sửa một chiếc nỏ sẽ cho phép bạn kéo dây và nạp mũi tên.\\n Chỉnh sửa bảng chân lý cho phép bạn xem và thiết lập các giá trị nhị phân.\\n Để khám phá vật phẩm nào có thể chỉnh sửa, hãy chú ý đến biểu tượng chỉnh sửa trên vật phẩm trong túi đồ.\\n \\n\\n\\n Nếu bạn vừa cầm một vật phẩm có thể chỉnh sửa trên tay, vừa nhìn vào một khối có thể chỉnh sửa trên địa hình, vật phẩm trên địa hình sẽ được ưu tiên hơn.\\n ",
+      "Name": "Editing",
+      "Title": "Chỉnh sửa Khối (Edit)"
+    },
+    "22": {
+      "value": "\\n Một số vật phẩm nhất định có thể ném được.\\n Một vài ví dụ về vật phẩm có thể ném: cục đá, giáo, gạch, quả cầu tuyết.\\n \\n\\n\\n Để ném một vật phẩm, hãy chọn nó trong túi đồ của bạn để cầm nó trên tay.\\n Nhấn và giữ một điểm trên màn hình nơi bạn muốn ném tới.\\n Tâm ngắm ném sẽ xuất hiện.\\n \\n\\n\\n Bạn có thể di chuyển tâm ngắm để tinh chỉnh hướng ném.\\n Khi bạn thả ngón tay ra, vật phẩm sẽ được ném đi.\\n Để hủy ném, hãy di chuyển tâm ngắm ra rìa màn hình.\\n \\n\\n\\n Giáo là vũ khí ném uy lực, gây ra lượng sát thương lớn khi trúng mục tiêu.\\n ",
+      "Name": "Throwing",
+      "Title": "Ném Vật phẩm (Throw)"
+    },
+    "23": {
+      "value": "\\n Tất cả vật phẩm và khối đều có thể vứt bỏ nếu bạn không còn cần chúng nữa.\\n \\n\\n\\n Để vứt một vật phẩm hoặc khối, hãy kéo nó từ ô túi đồ và thả lên màn hình.\\n Vật phẩm sẽ bay đi một khoảng ngắn và rơi xuống đất.\\n \\n\\n\\n Hãy cẩn thận, nếu bạn đứng quá gần, bạn sẽ ngay lập tức nhặt lại vật phẩm vừa vứt.\\n \\n\\n\\n Vứt vật phẩm vào lửa hoặc dung nham sẽ phá hủy chúng.\\n ",
+      "Name": "Dropping",
+      "Title": "Vứt Vật phẩm (Drop)"
+    },
+    "24": {
+      "value": "\\n Chế tạo là quá trình tạo ra các vật phẩm phức tạp hơn từ những thứ đơn giản, sử dụng bàn chế tạo (workbench) hoặc khu vực chế tạo.\\n \\n\\n\\n Để chế tạo, bạn cần đặt các nguyên liệu vào các ô chế tạo theo một khuôn mẫu cụ thể của vật phẩm đang làm.\\n Tất cả các công thức chế tạo đều có trong RECIPAEDIA (Từ điển công thức).\\n \\n\\n\\n Có hai kích thước khu vực chế tạo: 2x2 và 3x3.\\n Khu vực nhỏ hơn luôn có sẵn và có thể mở bằng cách nhấn vào nút chế tạo.\\n Để chế tạo các vật phẩm phức tạp hơn trên khu vực 3x3, bạn cần làm một cái bàn chế tạo, đặt nó ở đâu đó trong thế giới và nhấn vào nó.\\n ",
+      "Name": "Crafting",
+      "Title": "Chế tạo (Crafting)"
+    },
+    "25": {
+      "value": "\\n Nung chảy là quá trình xử lý nhiệt các chất trong lò nung (furnace).\\n Có thể đặt tối đa 2 chất vào lò nung cùng một lúc.\\n \\n\\n\\n Lò nung cần nhiên liệu để hoạt động.\\n Bạn có thể sử dụng bất cứ thứ gì dễ cháy làm nhiên liệu, nhưng một số nhiên liệu sẽ tốt hơn (cháy lâu hơn) so với những loại khác.\\n Nhiên liệu tốt nhất là than đá (coal).\\n \\n\\n\\n Bạn có thể rời khỏi lò nung trong khi nó đang hoạt động. Quá trình nung sẽ tiếp tục khi bạn đi vắng.\\n Tất cả các công thức nung đều có trong RECIPAEDIA.\\n ",
+      "Name": "Smelting",
+      "Title": "Nung chảy (Smelting)"
+    },
+    "26": {
+      "value": "\\n Nhấn và giữ ô chứa ngăn xếp (stack) bạn muốn chia nhỏ trong khoảng 1 giây.\\n Một viền đỏ sẽ xuất hiện xung quanh nó.\\n Ô này hiện đang ở chế độ chia nhỏ.\\n Chạm vào bất kỳ ô trống nào khác, và một vật phẩm sẽ được lấy từ ô đang đánh dấu và đặt vào ô vừa chạm.\\n \\n\\n\\n Kỹ thuật này cũng có thể được sử dụng để nhanh chóng phân bổ vật phẩm từ một ngăn xếp sang nhiều ô khác, ví dụ như trên bàn chế tạo.\\n ",
+      "Name": "Splitting",
+      "Title": "Chia nhỏ vật phẩm (Splitting)"
+    },
+    "27": {
+      "value": "\\n Bạn cần khai thác để thu thập các tài nguyên cần thiết cho việc chế tạo và nung chảy.\\n Khai thác có thể đơn giản như việc đào bới ở một nơi ngẫu nhiên bằng tay không.\\n Tuy nhiên, bạn sẽ sớm nhận ra rằng đó không phải là cách khai thác hiệu quả, vì việc đào đá cứng bằng tay mất rất nhiều thời gian.\\n \\n\\n\\n Trước tiên, bạn cần chế tạo các công cụ khai thác như xẻng và cúp.\\n Bạn cũng cần đào ở nhiều nơi khác nhau để tìm các tài nguyên cụ thể.\\n Các hang động là một điểm khởi đầu tốt, vì chúng cho bạn thấy miễn phí một mặt cắt ngang lớn qua địa hình.\\n \\n\\n\\n Cần lưu ý rằng một số tài nguyên, chẳng hạn như kim cương hoặc đá khổng tước (malachite), yêu cầu công cụ làm bằng vật liệu cứng mới có thể khai thác được.\\n ",
+      "Name": "Mining",
+      "Title": "Khai thác (Mining)"
+    },
+    "28": {
+      "value": "\\n Trồng trọt cho phép bạn gieo trồng nhiều loại cây cho mục đích trang trí hoặc làm lương thực.\\n Để trồng cây, bạn cần có hạt giống của nó, thường lấy từ một mẫu cây đã trưởng thành hoàn toàn.\\n \\n\\n\\n Một số cây sẽ rớt ra hạt giống ngay khi thu hoạch, một số khác yêu cầu chế tạo để tách hạt.\\n Một số hạt giống sẽ chịu đựng được đất cằn cỗi, như đất thường hoặc cỏ.\\n Những loại khác, như lúa mạch đen (rye) hoặc bí ngô, yêu cầu đất cày cuốc chất lượng cao, có độ ẩm và đã được bón phân bằng diêm tiêu (saltpeter).\\n Để đảm bảo đất có độ ẩm, hãy dùng xô để tạo các rãnh nước cách đó không quá vài khối.\\n Đất ẩm có màu sẫm hơn đất khô.\\n Để cải thiện chất lượng đất hơn nữa, hãy rắc diêm tiêu (nguồn cung cấp nitơ) lên đó.\\n \\n\\n\\n Bạn cũng có thể để một số thực phẩm phân hủy, điều này sẽ tạo ra phân trộn (compost). Phân trộn đã chứa sẵn nitơ và có thể dùng thay đất để trồng cây.\\n \\n\\n\\n Cây cối có thể mất một thời gian dài để phát triển, hãy kiên nhẫn.\\n ",
+      "Name": "Farming",
+      "Title": "Trồng trọt (Farming)"
+    },
+    "29": {
+      "value": "\\n Xô được dùng để vận chuyển chất lỏng, chẳng hạn như nước hoặc dung nham.\\n Để làm đầy xô rỗng bằng chất lỏng, bạn cần tìm một khối nguồn của chất lỏng đó.\\n Ví dụ: tất cả các khối đại dương đều là khối nguồn của nước.\\n \\n\\n\\n Cầm xô rỗng trên tay, chạm vào khối nguồn để thu thập nó.\\n Khối đó sẽ bị xóa khỏi thế giới và được đặt vào trong xô.\\n \\n\\n\\n Để đổ chất lỏng ra khỏi xô, hãy chạm vào địa hình.\\n Một khối nguồn chất lỏng mới sẽ được tạo ra, và chất lỏng sẽ lan rộng từ đó.\\n Bạn có thể dùng xô rỗng để thu thập lại khối nguồn đã đặt.\\n ",
+      "Name": "Buckets",
+      "Title": "Cái xô (Bucket)"
+    },
+    "30": {
+      "value": "\\n Một số khối và vật phẩm có thể được nhuộm hoặc sơn.\\n \\n\\n\\n Để sơn gạch, đá, gỗ hoặc các khối khác, hãy làm một thùng sơn có màu thích hợp và sử dụng nó lên vật phẩm bạn muốn sơn.\\n Một thùng sơn đủ để sơn vài chục khối, sau đó nó sẽ cạn.\\n \\n\\n\\n Chất tẩy sơn (Paint stripper) có thể được dùng để tẩy sơn và khôi phục các khối về hình dạng ban đầu.\\n \\n\\n\\n Để nhuộm quần áo, hãy đặt một món đồ cùng với một thùng đầy sơn vào lò nung.\\n Bạn có thể nhuộm quần áo nhiều lần, kết hợp các màu sắc với nhau.\\n \\n\\n\\n Bạn cũng có thể nhuộm thảm theo cách tương tự.\\n \\n\\n\\n Các màu sơn có sẵn (bảng màu) có thể được tùy chỉnh trong màn hình tùy chọn thế giới.\\n Bạn cũng có thể tùy chỉnh tên của các màu.\\n Tổng số màu luôn là 16, vì vậy để tạo một màu mới, bạn cần phải hy sinh một trong những màu hiện có.\\n Việc tùy chỉnh màu sắc cũng ảnh hưởng đến quần áo, thuốc nhuộm và đồ nội thất.\\n ",
+      "Name": "Dyeing",
+      "Title": "Nhuộm và Sơn (Dye)"
+    },
+    "31": {
+      "value": "\\n Điện là một cơ chế mạnh mẽ trong trò chơi, có thể được dùng để điều khiển hoạt động của một số khối nhất định.\\n Ví dụ: một bóng đèn sẽ phát sáng khi được kết nối với nguồn điện, cửa sẽ mở hoặc đóng nếu được kích hoạt bằng tín hiệu điện, và nhiều thứ khác nữa.\\n \\n\\n\\n Nếu bạn biết một chút về điện tử trong thế giới thực, bạn sẽ cảm thấy quen thuộc trong Survivalcraft.\\n Tất cả các thiết bị quen thuộc, chẳng hạn như cổng logic (AND, OR, NOT, v.v.) đều có mặt và tín hiệu được đặc trưng bởi điện áp.\\n Bạn có thể kết hợp các cổng logic để xây dựng các mạch phức tạp, thậm chí cả máy tính hoặc trò chơi điện tử (hãy xem Nội dung Cộng đồng để biết những công trình tuyệt vời của các bậc thầy thợ điện).\\n Ngoài ra còn có các cảm biến, chẳng hạn như đĩa áp lực (pressure plate), đi-ốt quang (photodiode), v.v. tạo ra các tín hiệu thay đổi tùy theo điều kiện xung quanh chúng.\\n \\n\\n\\n Để xem mô tả về tất cả các thiết bị điện có sẵn, hãy xem RECIPAEDIA.\\n \\n\\n\\n Tín hiệu điện trong trò chơi được truyền qua dây đồng và có điện áp từ 0V đến 1.5V, tăng theo từng mức 0.1V.\\n Điều này tạo ra 16 giá trị điện áp khác nhau.\\n \\n\\n\\n Các thiết bị kỹ thuật số (Digital), chẳng hạn như nút bấm, công tắc hoặc cửa chỉ hoạt động với tín hiệu kỹ thuật số có hai giá trị: thấp (0, false, tắt, không) và cao (1, true, bật, có).\\n Trong trường hợp này, điện áp dưới 0.8V biểu thị mức thấp, từ 0.8V trở lên biểu thị mức cao.\\n Thông thường nhất, tín hiệu kỹ thuật số có điện áp 0V cho mức thấp và 1.5V cho mức cao, nhưng bất kỳ giá trị nào dưới 0.8V sẽ được hiểu là mức thấp.\\n \\n\\n\\n Các thiết bị tương tự (Analog), chẳng hạn như đĩa áp lực, máy phát hiện chuyển động hoặc bóng đèn hoạt động với tín hiệu tương tự.\\n Chúng sẽ phản ứng với từng giá trị điện áp khác nhau giữa 0 và 1.5V, chứ không chỉ trạng thái thấp và cao.\\n Ví dụ: đầu vào âm lượng và cao độ của máy phát âm thanh được điều khiển bằng điện áp tương tự.\\n Âm lượng và cao độ sẽ tăng đều đặn khi điện áp cao hơn.\\n \\n\\n\\n Hãy nhớ rằng cả tín hiệu tương tự và kỹ thuật số thực chất đều giống nhau khi truyền qua dây dẫn, là một mức điện áp từ 0V đến 1.5V.\\n Chỉ có cách thiết bị diễn giải điện áp tín hiệu mới quyết định đó là tín hiệu kỹ thuật số hay tương tự.\\n \\n\\n\\n Điện áp cũng có thể được hiểu là một con số, với 0V đại diện cho 0 và 1.5V đại diện cho 15.\\n Một số thiết bị, chẳng hạn như màn hình hiển thị, bộ chuyển đổi DAC/ADC hoặc bộ đếm sử dụng cách diễn giải này.\\n \\n\\n\\n Tất cả các thiết bị điện đều có các điểm kết nối (đầu vào và đầu ra) ở các cạnh, và đôi khi ở mặt sau (mặt dính vào tường).\\n Trên các thiết bị phức tạp, chúng được biểu thị bằng các dấu chấm màu xanh dương và màu đỏ trên các cạnh của bộ phận.\\n Màu xanh dương nghĩa là đầu vào, màu đỏ nghĩa là đầu ra.\\n Số lượng dấu chấm tương đương với số thứ tự của kết nối.\\n Các thiết bị đơn giản như nút bấm, công tắc hoặc bóng đèn không có các dấu chấm này, vì chúng chỉ dùng một đầu vào/đầu ra duy nhất và có thể kết nối từ bất kỳ phía nào.\\n \\n\\n\\n Các thiết bị điện có thể được đặt trên tường, trên sàn/trần nhà (với một số ngoại lệ).\\n Khi đã đặt, chúng có thể được xoay để dễ dàng kết nối các đầu vào và đầu ra phù hợp với nhau bằng dây dẫn.\\n \\n\\n\\n Có một loại khối đặc biệt trong trò chơi, gọi là khối xuyên dây (wire-through-block), là một khối bình thường được khoan một lỗ và có đường dây điện luồn qua đó.\\n Nó rất hữu ích khi bạn muốn giấu dây điện, luồn dây xuyên qua tường, hoặc ngăn chúng kết nối với các dây khác.\\n Đó cũng là cách duy nhất để tiếp cận kết nối \"mặt sau\" của các thiết bị có tính năng này.\\n \\n\\n\\n Điện trong Survivalcraft được xử lý ở tần số 100Hz.\\n Có nghĩa là điện áp truyền từ thiết bị này sang thiết bị khác trong 0.01 giây, bất kể chiều dài của dây dẫn.\\n Nếu cần làm trễ tín hiệu, bạn có thể đặt một số phần tử trung tính trên đường đi của nó (ví dụ: cổng OR hoặc một cặp cổng NOT).\\n Mỗi phần tử thêm vào trên đường truyền sẽ làm trễ tín hiệu đi 0.01 giây.\\n Để có độ trễ lâu hơn, hãy sử dụng Cổng Trễ Có Thể Điều Chỉnh (Adjustable Delay Gate), có thể tạo ra độ trễ lên tới 2.55 giây.\\n \\n\\n\\n Điện là một chủ đề phức tạp và việc tạo ra các cỗ máy lớn hoạt động được đòi hỏi phải học hỏi, nhưng sẽ rất thỏa mãn.\\n Tuy nhiên, ai cũng có thể chế tạo các thiết bị đơn giản.\\n Ví dụ: hãy thử đặt một nút bấm cạnh bản lề của một cánh cửa.\\n Bạn sẽ thấy một sợi dây điện xuất hiện, việc bấm nút giờ đây sẽ điều khiển cánh cửa!\\n Tất cả những lời giải thích nghe có vẻ đáng sợ về điện áp, tín hiệu, kỹ thuật số và tương tự, nhưng trên thực tế nó lại đơn giản đến vậy.\\n \\n\\n\\n Một công trình dễ làm khác có thể là công tắc đèn.\\n Đặt một bóng đèn trên trần nhà và một công tắc (không phải nút bấm) trên tường.\\n Sau đó nối chúng lại bằng một sợi dây.\\n Công tắc lúc này sẽ điều khiển đèn, giống y hệt như trong một căn phòng thực sự!\\n \\n\\n\\n Survivalcraft hướng đến sự chân thực nhiều hơn các trò chơi cùng thể loại, và điện cũng không ngoại lệ.\\n Những gì bạn học được ở đây có thể vô giá khi bạn được học những điều này ở trường, hoặc phải dùng nó để kiếm sống.\\n \\n\\n\\n Hãy khám phá và vui chơi nhé!\\n ",
+      "Name": "Electricity",
+      "Title": "Điện (Electric)"
+    },
+    "32": {
+      "value": "\\n Trong Survivalcraft, bạn có thể thiết kế và sử dụng các khối nội thất (furniture) tùy chỉnh.\\n \\n\\n\\n Các khối nội thất được tạo hình từ tối đa 256x256x256 các khối phụ (sub-blocks) nhỏ hơn.\\n Các khối phụ trong một khối nội thất có thể được làm từ các vật liệu khác nhau và sơn thành các màu khác nhau.\\n Thông qua việc chế tạo, các khối nội thất có thể được kết hợp, làm thành dạng tương tác hoặc kết nối để hoạt động bằng điện.\\n Các thiết kế nội thất có thể được kết hợp thành các gói, chia sẻ giữa các thế giới và tải lên Nội dung Cộng đồng.\\n \\n\\n\\n Để thiết kế và tạo nội thất, hãy dùng công cụ búa.\\n Bạn cần xây dựng thiết kế từ các khối thông thường trong thế giới, sau đó dùng búa gõ vào cấu trúc thu được để thu nhỏ nó lại.\\n Cửa sổ thiết kế nội thất sẽ xuất hiện, nơi bạn có thể tinh chỉnh bằng cách di chuyển, xoay và thay đổi độ phân giải (từ 2x2x2 đến 256x256x256).\\n Khi đã hài lòng với thiết kế, bạn có thể xác nhận.\\n \\n\\n\\n Trong chế độ sáng tạo, thiết kế sẽ biến thành một khối nội thất duy nhất, và các khối nguồn ban đầu tạo nên thiết kế đó sẽ vẫn còn trong thế giới.\\n Trong chế độ sinh tồn, thiết kế sẽ biến thành nhiều bản sao của khối nội thất (số lượng tùy thuộc vào độ phân giải) và các khối nguồn sẽ bị tiêu thụ.\\n Khối nội thất có thể đặt trong thế giới theo 4 hướng, tương tự như lò nung hoặc cái thang.\\n \\n\\n\\n Không phải khối nào cũng dùng được cho thiết kế nội thất.\\n Ví dụ: đất hoặc cỏ sẽ bị công cụ búa bỏ qua.\\n Các vật liệu được phép bao gồm: ván gỗ, đá granite, đá bazan, cát, đất sét, đá cuội, gạch đá, sa thạch, đá cẩm thạch, gạch, than đá, đá khổng tước, kim cương, đồng, sắt, kính, thảm, đuốc, đèn liễu gai, nước, dung nham.\\n Các khối nguồn của thiết kế có thể được sơn hoặc nhuộm để làm cho món đồ nhiều màu sắc hơn.\\n Nội thất hoàn thiện cũng có thể được sơn, nó sẽ bao phủ đè lên bất kỳ màu sắc nào của các khối nguồn ban đầu.\\n \\n\\n\\n Một số khối nguồn có chức năng đặc biệt.\\n Ví dụ, khối đuốc/đèn sẽ khiến món đồ nội thất có ngọn lửa bám vào ngay tại vị trí đặt khối đó.\\n Thiết kế đó cũng sẽ phát ra ánh sáng.\\n \\n\\n\\n Bạn phải cẩn thận khi cấu trúc đồ nội thất để tránh đặt thiết kế trên một nền làm bằng vật liệu được cho phép (ví dụ như cát).\\n Công cụ búa sẽ không phân biệt được đâu là khối bạn đặt và đâu là khối nền, và sẽ cố gắng gộp luôn phần nền vào thiết kế.\\n Điều này rất có thể gây ra lỗi \"thiết kế quá lớn\" (design too large), bởi vì kích thước tối đa của một thiết kế ở bất kỳ chiều nào là 256 khối.\\n \\n\\n\\n Khi khối nội thất đã được tạo, bạn có thể dùng bàn chế tạo để kết hợp nó với các khối khác theo nhiều cách.\\n Các cách kết hợp sau đây là khả thi:\\n \\n\\n\\n * Kết hợp nhiều món nội thất thành một để tạo ra nội thất tương tác.\\n Nội thất tương tác sẽ chuyển đổi qua lại giữa các thiết kế cấu thành nó khi bạn nhấn vào hoặc có tín hiệu điện.\\n Bạn có thể tạo cửa đóng mở, đèn bật tắt, bệ nâng, v.v.\\n Có thể kết hợp tối đa 9 món nội thất (sức chứa tối đa của bàn chế tạo).\\n \\n\\n\\n * Kết hợp chính xác một thiết kế nội thất với một nút bấm điện để tạo thành nút bấm tùy chỉnh.\\n Món đồ nội thất tạo ra sẽ hoạt động y như một nút bấm.\\n \\n\\n\\n * Kết hợp chính xác hai thiết kế nội thất với một công tắc điện để tạo thành công tắc tùy chỉnh.\\n Món đồ nội thất tạo ra sẽ hoạt động y như một công tắc, với hai món nội thất đóng vai trò là hai trạng thái của công tắc đó.\\n \\n\\n\\n * Kết hợp nhiều món nội thất bằng một đường dây điện để tạo ra nội thất tương tác được kết nối.\\n Món đồ này sẽ hoạt động giống như nội thất tương tác, nhưng việc chuyển đổi trạng thái của nó cũng sẽ chuyển đổi tất cả các món đồ nội thất tương tác lân cận được kết nối với nó.\\n Bạn có thể tạo ra các cấu trúc nhiều khối có khả năng chuyển đổi trạng thái, ví dụ như những cánh cửa lớn.\\n \\n\\n\\n Tại bảng nội thất trong túi đồ sáng tạo, bạn có thể xem và sắp xếp các thiết kế của mình.\\n Bạn hãy tạo các bộ nội thất được đặt tên để phân loại chúng.\\n Các thiết kế mới tạo sẽ được đưa vào bộ \"Chưa phân loại\" (Uncategorized). Bộ này có một chức năng đặc biệt.\\n Bất kỳ thiết kế nào nằm trong bộ này, nếu không tồn tại ở đâu khác trong thế giới (không có dưới dạng vật phẩm hay khối đã đặt) sẽ tự động bị tái chế.\\n Hãy cẩn thận và di chuyển các thiết kế có giá trị sang các bộ nội thất được đặt tên để tránh vô tình làm mất chúng.\\n Mỗi bộ nội thất đã đặt tên có thể chuyển thành một gói nội thất và xuất ra khỏi thế giới.\\n Sau này bạn có thể nhập nó vào các thế giới khác hoặc tải lên Dropbox/Thẻ SD để chia sẻ với mọi người.\\n Các gói nội thất cũng có thể được tải lên nội dung cộng đồng.\\n \\n\\n\\n Hệ thống nội thất có những hạn chế nhất định:\\n \\n\\n\\n * Một khối nội thất có thể được làm từ tối đa 256x256x256 khối phụ.\\n \\n\\n\\n * Khối lượng hình học cho một thiết kế không được vượt quá 65535 hình tam giác.\\n Trò chơi sử dụng một thuật toán chia lưới thông minh giúp tối ưu hóa hình học, nên 65535 hình tam giác là quá đủ cho các thiết kế khá phức tạp, trừ khi bạn thực sự làm quá tay.\\n Để giảm số lượng hình tam giác, bạn có thể giảm bớt các chi tiết nhỏ, giảm số khối được sơn và lấp đầy các lỗ hổng bên trong thiết kế.\\n \\n\\n\\n * Bạn chỉ có thể lưu giữ tối đa 8192 thiết kế nội thất độc nhất trong thế giới.\\n Mỗi khi bạn sơn một món nội thất hoặc kết hợp nó với món khác, bạn đang tạo ra những thiết kế mới được tính vào tổng số đó.\\n Những thiết kế không được sử dụng (không tồn tại trong thế giới dưới dạng vật phẩm hoặc khối, và đang nằm trong bộ \"chưa phân loại\" ở túi đồ) sẽ tự động bị tái chế.\\n ",
+      "Name": "Furniture",
+      "Title": "Đồ nội thất (Furniture)"
+    },
+    "33": {
+      "value": "\\n Pít-tông (Pistons) là các khối có thể đẩy hoặc kéo các khối khác. \\n Pít-tông sẽ vươn ra hoặc co lại tùy thuộc vào điện áp truyền cho chúng.\\n Chúng có thể được đặt hướng về bất kỳ phía nào.\\n \\n\\n\\n Có 3 loại pít-tông: pít-tông đẩy (push piston), pít-tông kéo (pull piston) và pít-tông kéo nghiêm ngặt (strict pull piston).\\n \\n\\n\\n Pít-tông đẩy có thể đẩy tối đa 8 khối khi vươn ra, nhưng chúng không kéo các khối đó lại khi co vào.\\n \\n\\n\\n Pít-tông kéo hoạt động giống pít-tông đẩy, nhưng ngoài ra chúng còn kéo tối đa 8 khối ngược trở lại khi co vào.\\n \\n\\n\\n Pít-tông kéo nghiêm ngặt hoạt động giống pít-tông kéo bình thường, nhưng chúng sẽ không co vào trừ khi kéo đủ số lượng khối.\\n \\n\\n\\n Điện áp truyền cho pít-tông quyết định độ dài vươn ra.\\n Bất kỳ điện áp nào dưới 0.8V pít-tông sẽ co lại. 0.8V là vươn ra một khối, 0.9V là hai khối, v.v.\\n 1.5V tương đương với việc vươn ra tối đa 8 khối.\\n Pít-tông sẽ chỉ phản ứng với sự thay đổi điện áp khi nó không di chuyển.\\n Nó sẽ luôn hoàn thành bước di chuyển hiện tại trước khi bắt đầu một lệnh di chuyển khác.\\n \\n\\n\\n Pít-tông có thể được chỉnh sửa.\\n Bạn có thể điều chỉnh độ vươn tối đa, số lượng khối được kéo và tốc độ di chuyển.\\n \\n\\n\\n Một số khối nhất định không thể bị pít-tông dịch chuyển.\\n Chúng bao gồm khối kim cương và bất kỳ pít-tông nào đang vươn ra.\\n\\n Trong phiên bản API, các khối chứa túi đồ (như rương, bàn chế tạo, lò nung, v.v.) hiện đã có thể bị pít-tông đẩy.\\n Tuy nhiên, pít-tông đang co lại có thể bị các pít-tông khác dịch chuyển.\\n Điều này mở ra một thế giới đầy tiềm năng với những cỗ máy phức tạp, nơi pít-tông di chuyển các pít-tông khác.\\n Pít-tông cũng sẽ chặn chất lỏng khi vươn ra, vì vậy bạn có thể dùng chúng để làm van.\\n \\n\\n\\n Hãy dùng pít-tông để làm cửa, thang máy, bệ di động và đủ loại máy móc tinh xảo khác.\\n ",
+      "Name": "Pistons",
+      "Title": "Pít-tông (Pistons)"
+    },
+    "34": {
+      "value": "\\n Mặc quần áo giúp giữ ấm ở vùng khí hậu lạnh và tăng cường áo giáp bảo vệ khi chiến đấu.\\n Bạn cần quần áo dày để sống sót trong bất kỳ khoảng thời gian nào ở các khu vực lạnh giá trên thế giới.\\n \\n\\n\\n Mức độ cách nhiệt được đo bằng đơn vị CLO.\\n Ví dụ: 0.0 CLO là cơ thể trần truồng, 1.0 CLO là quần áo mỏng, 3.0 CLO là cách nhiệt mạnh.\\n \\n\\n\\n Bạn có thể mở giao diện quần áo bằng nút Quần áo (Clothing).\\n Có 4 ô quần áo trên cơ thể bạn: đầu, thân, chân và bàn chân.\\n Mỗi ô có thể mặc nhiều món đồ, xếp chồng lên nhau.\\n Hiệu quả của nhiều món quần áo sẽ được cộng dồn lại.\\n \\n\\n\\n Không phải thứ gì cũng có thể mặc đè lên nhau, ví dụ bạn không thể mặc một chiếc áo thun bên ngoài một chiếc áo khoác lông thú.\\n \\n\\n\\n Mặc quần áo dày ở một vị trí nhưng lại để trần ở vị trí khác sẽ không mang lại nhiều hiệu quả cách nhiệt.\\n Bắt buộc phải che kín toàn bộ cơ thể để thực sự nhận được lợi ích từ quần áo.\\n Món đồ mỏng nhất trên người chính là thứ quyết định lượng nhiệt mà nhân vật sẽ mất đi.\\n ",
+      "Name": "Clothing",
+      "Title": "Quần áo (Clothing)"
+    },
+    "35": {
+      "value": "\\n Mặc áo giáp hoặc quần áo dày sẽ giảm bớt hoặc thậm chí loại bỏ hoàn toàn các chấn thương khi chiến đấu.\\n Áo giáp sẽ hấp thụ các đòn đánh, sao cho chúng làm hỏng áo giáp thay vì làm thân thể bạn bị thương.\\n Khi áo giáp chịu quá nhiều sát thương, nó sẽ vỡ vụn.\\n \\n\\n\\n Khi bị tấn công, bạn sẽ nhận một đòn đánh ngẫu nhiên vào một trong bốn vị trí trên cơ thể: đầu, thân, chân hoặc bàn chân.\\n Nếu không có áo giáp ở vị trí đó, bạn sẽ phải chịu toàn bộ sát thương, bất kể bạn có mặc bao nhiêu áo giáp ở chỗ khác.\\n Vị trí có nguy cơ bị trúng đòn cao nhất là phần thân, tiếp theo là chân.\\n Mặc giáp phần thân sẽ chặn được 60% đòn đánh, kết hợp cả thân và chân sẽ chặn được 80%.\\n Giáp đầu và bàn chân ít quan trọng hơn, trừ khi bạn muốn an toàn tuyệt đối 100%.\\n \\n\\n\\n Áo giáp mạnh nhất được làm từ sắt và kim cương.\\n Giai đoạn đầu game, bạn có thể chế tạo áo giáp thân bằng gỗ từ que gỗ và sợi chỉ.\\n Nó không chắc chắn lắm nhưng sẽ chịu được vài đòn đánh, có khả năng cứu mạng bạn.\\n \\n\\n\\n Ngay cả quần áo thường cũng có chỉ số giáp nhất định, đặc biệt là loại dày làm từ da và lông thú.\\n Chúng không ngăn chặn được mọi đòn đánh mà chỉ giảm bớt một phần sát thương.\\n \\n\\n\\n Mặc áo giáp nặng sẽ làm bạn chìm xuống đáy và chết đuối, hãy cẩn thận khi ở gần vùng nước sâu.\\n ",
+      "Name": "Armor",
+      "Title": "Áo giáp (Armor)"
+    },
+    "36": {
+      "value": "\\n Thuyền có thể được dùng để di chuyển qua các vùng nước lớn một cách nhanh chóng và an toàn.\\n \\n\\n\\n Nếu không có thuyền, bạn có nguy cơ chết đuối do kiệt sức hoặc bị tấn công bởi những sinh vật nguy hiểm dưới nước.\\n \\n\\n\\n Để chế tạo thuyền, bạn cần rất nhiều gỗ và một cái bàn chế tạo.\\n Sau khi thuyền được chế tạo, nó có thể được đặt trên bờ và bạn có thể leo lên giống y hệt như cưỡi ngựa.\\n \\n\\n\\n Bạn chỉ có thể điều khiển thuyền khi nó ở dưới nước.\\n ",
+      "Name": "Boats",
+      "Title": "Thuyền (Boat)"
+    },
+    "37": {
+      "value": "\\n Đôi khi bạn bị mắc kẹt, lựa chọn duy nhất là buộc hồi sinh (force respawn) tại chỗ ngủ cuối cùng của bạn.\\n \\n\\n\\n Để làm điều đó, hãy mở màn hình cơ thể và nhấn liên tục vào nút hình hộp sọ và xương chéo.\\n ",
+      "Name": "ForceRespawn",
+      "Title": "Buộc Hồi sinh (Force Respawn)"
+    },
+    "38": {
+      "value": "\\n Trò chơi sử dụng dịch vụ Dropbox để cho phép bạn tải xuống và tải lên dữ liệu từ/vào thiết bị của mình.\\n \\n\\n\\n Thông qua Dropbox, bạn có thể sao lưu và chia sẻ các thế giới với người khác.\\n Bạn cũng có thể tải xuống các gói kết cấu khối (texture) tùy chỉnh, skin nhân vật, gói nội thất.\\n \\n\\n\\n Để đăng nhập vào Dropbox, hãy nhấn vào nút đăng nhập trên màn hình Dropbox.\\n Nếu bạn chưa có tài khoản Dropbox, bạn có thể tạo một tài khoản trong lúc đăng nhập.\\n \\n\\n\\n Sau khi đăng nhập, màn hình Dropbox sẽ hiển thị cho bạn nội dung các thư mục Dropbox trực tuyến của bạn và cho phép bạn tải các tệp đó về thiết bị.\\n \\n\\n\\n Xem trang web https://dropbox.com để biết thêm chi tiết.\\n ",
+      "Name": "Dropbox",
+      "Title": "Dropbox"
+    },
+    "39": {
+      "value": "\\n Trò chơi cho phép bạn nhập và xuất các thế giới vào Thẻ SD với mục đích chia sẻ và sao lưu.\\n \\n\\n\\n Nếu thiết bị của bạn không có Thẻ SD, thư mục lưu trữ ngoài chung sẽ được sử dụng.\\n Vị trí của dữ liệu trên thiết bị thường nằm tại /sdcard/Survivalcraft2.4_API1.8\\n ",
+      "Name": "SDCard",
+      "Title": "Thẻ SD (SDCard)",
+      "DisabledPlatforms": "Ios, Windows81, WindowsPhone81, Desktop"
+    },
+    "40": {
+      "value": "\\n Trò chơi cho phép bạn duyệt qua danh sách các thế giới, kết cấu khối và các vật phẩm khác được chia sẻ bởi những thành viên khác trong cộng đồng Survivalcraft, và tải chúng xuống.\\n \\n\\n\\n Khi bạn tạo ra được thứ gì đó thú vị, bạn cũng có thể xuất bản nó thông qua dịch vụ này, và nó sẽ hiện lên trong danh sách để bất kỳ ai cũng có thể tải về.\\n \\n\\n\\n Để xuất bản thứ gì đó, trước tiên bạn cần đưa nó lên mạng để mọi người đều có thể truy cập.\\n Nơi dễ sử dụng nhất là Dropbox, mặc dù bạn có thể dùng bất kỳ nhà cung cấp nào khác.\\n Sau khi hoàn tất, bạn có thể xuất bản liên kết tải thông qua hộp thoại \"Xuất bản Liên kết\" (Publish Link) trong trò chơi.\\n \\n\\n\\n Lưu ý: máy chủ không lưu trữ nội dung của bạn, chỉ lưu liên kết.\\n Nó hoạt động giống y như một công cụ tìm kiếm.\\n Bạn chịu trách nhiệm duy trì dữ liệu để người khác có thể truy cập thông qua liên kết đã xuất bản.\\n Hãy cẩn trọng về việc vượt quá giới hạn băng thông của nhà cung cấp, vì việc có một liên kết nằm gần đầu danh sách sẽ khiến nội dung của bạn nhận được hàng nghìn lượt tải chỉ trong thời gian ngắn.\\n ",
+      "Name": "Community",
+      "Title": "Nội dung Cộng đồng (Community)"
     }
   },
   "Strings": {
@@ -2762,43 +3097,48 @@
       "2": "Vật phẩm rơi ra:"
     },
     "BestiaryScreen": {
-      "1": "Sách Sinh vật (Bestiary)"
+      "1": "Sách sinh vật (Bestiary)"
     },
     "CommunityContentScreen": {
-      "1": "Nội dung Cộng đồng Trung Quốc",
+      "1": "Nội dung cộng đồng Trung Quốc",
       "2": "-",
       "3": "...",
       "4": "-",
       "5": "...",
-      "6": "Tải xuống",
+      "6": "Tải Xuống",
       "7": "Xóa",
       "8": "...",
-      "9": "Nhập Từ khóa",
-      "10": "Tìm kiếm"
+      "9": "Nhập",
+      "10": "Tìm kiếm",
+      "11": "Boutique",
+      "12": "Trang Web",
+      "13": "Đăng nhập"
     },
     "OriginalCommunityContentScreen": {
-      "1": "Nội dung Cộng đồng Gốc",
+      "1": "Nội dung Cộng đồng gốc",
       "2": "-",
       "3": "...",
-      "4": "Tải xuống",
+      "4": "Tải Xuống",
       "5": "Xóa",
       "6": "Tìm kiếm",
       "7": "x"
     },
     "ContentScreen": {
-      "1": "Chọn Loại Nội dung",
+      "1": "Chọn loại nội dung",
       "2": "Truy cập nội dung đã tải lên trước đó vào một trong các không gian lưu trữ công cộng của bạn",
       "3": "Riêng tư",
       "4": "Truy cập nội dung do các thành viên cộng đồng khác tạo và đăng ký quyền truy cập công cộng",
       "5": "Cộng đồng",
       "6": "Tải xuống tệp trực tiếp từ liên kết web, nếu bạn biết (tốt nhất nên sử dụng sao chép/dán để nhập liên kết)",
-      "7": "Từ Liên kết",
+      "7": "Từ liên kết",
       "8": "Quản lý nội dung đã tải xuống",
-      "9": "Quản lý Nội dung",
+      "9": "Quản lý nội dung",
       "10": "Truy cập nội dung do các thành viên cộng đồng Gốc khác tạo và đăng ký quyền truy cập công cộng",
-      "11": "Cộng đồng Gốc",
+      "11": "Cộng đồng gốc",
       "12": "Quản lý mod đã tải xuống",
-      "13": "Quản lý Mod"
+      "13": "Quản lý mod",
+      "14": "Nhập nội dung từ trình chọn tập tin của hệ thống.",
+      "15": "Thiết bị"
     },
     "ExternalContentScreen": {
       "1": "",
@@ -2806,7 +3146,7 @@
       "3": "...",
       "4": "-",
       "5": "-",
-      "6": "Sao chép Liên kết"
+      "6": "Sao chép liên kết"
     },
     "GameLoadingScreen": {
       "1": "Đang tải Thế giới"
@@ -2827,12 +3167,13 @@
       "4": "Cài đặt",
       "5": "Trợ giúp",
       "6": "Phiên bản Đầy đủ...",
-      "7": "Bản quyền 2011-2025 Candy Rufus Games. Việt Hoá Bởi DayScVN",
+      "7": "Bản quyền 2011-2025 Candy Rufus Games.",
       "8": "Truy cập ",
       "9": "kaalus.wordpress.com",
       "10": " để biết thêm thông tin.",
       "11": "Xem Thông báo",
-      "12": "API Home Page: "
+      "12": "API Home Page: ",
+      "13": "Tắt chế độ an toàn"
     },
     "ManageContentScreen": {
       "1": "Quản lý Nội dung",
@@ -2873,7 +3214,9 @@
       "7": "Thay đổi Tùy chọn Thế giới:",
       "8": "Tùy chọn...",
       "9": "Lỗi: tên thế giới không hợp lệ!",
-      "10": "Thiết lập Người chơi"
+      "10": "Thiết lập Người chơi",
+      "11": "Nhập Hạt giống Thế giới",
+      "12": "Một loại hạt giống khác sẽ tạo ra một thế giới khác."
     },
     "PlayScreen": {
       "1": "Thế giới Hiện có",
@@ -2940,7 +3283,13 @@
       "7": "...",
       "8": "Đặt lại về Mặc định:",
       "9": "Đặt lại",
-      "10": "Báo cáo Lỗi API"
+      "10": "Báo cáo Lỗi API",
+      "11": "Nhật ký trò chơi:",
+      "12": "Xem Nhật ký",
+      "13": "Tệp tin nhật ký",
+      "14": "Liên kết tệp",
+      "15": "Chia sẻ tệp nhật ký",
+      "16": "Chế độ An toàn"
     },
     "SettingsControlsScreen": [
       "Điều chỉnh Cài đặt Điều khiển",
@@ -2965,8 +3314,31 @@
       "Độ lệch Joystick Màn hình Cảm ứng",
       "Độ lệch Joystick X Màn hình Cảm ứng",
       "Độ lệch Joystick Y Màn hình Cảm ứng",
-      "Cài đặt Bàn phím"
+      "Đặt phím",
+      "Danh sách Camera:",
+      "Quản Lý",
+      "Ngưỡng kích hoạt tay cầm:",
+      "Vòng lặp kho ngắn:",
+      "Gán phím bàn phím:",
+      "Gán nút tay cầm:"
     ],
+    "CameraManageScreen": {
+    "Enable": "Bật",
+    "Disable": "Tắt",
+    "Enabled": "Bật",
+    "Disabled": "Tắt",
+    "Tip": "Quản lý thứ tự chuyển đổi góc nhìn. Các camera bị tắt sẽ bị bỏ qua. Bật ít nhất hai camera.",
+    "Reset": "Đặt lại",
+    "ResetTitle": "Đặt Lại Tất Cả Camera",
+    "ResetText": "Bạn chắc chứ?\nThao tác này sẽ đặt lại danh sách camera về mặc định."
+   },
+   "KeyboardMappingScreen": {
+     "SetKey": "Đặt phím",
+     "DisableKey": "Tắt phím",
+     "Reset": "Đặt lại",
+     "ResetTitle": "Đặt lại tất cả phím",
+     "ResetText": "Bạn chắc chứ?\nThao tác này sẽ đặt tất cả các phím về mặt định."
+  },
     "SettingsGraphicsScreen": {
       "1": "Điều chỉnh Cài đặt Đồ họa",
       "2": "Thực tế Ảo:",
@@ -2986,7 +3358,7 @@
       "10": "Hiển thị Dải băng FPS:",
       "11": "Hạn chế Game Chạy ở FPS Thấp:",
       "12": "Phương pháp Tăng tốc Thời gian Khi ngủ:",
-      "13": "Animated Texture Refresh Limit:"
+      "13": "Giới hạn cập nhật Texture động:"
     },
     "SettingsScreen": {
       "1": "Chọn Danh mục Cài đặt",
@@ -3010,7 +3382,11 @@
       "Nội dung Cộng đồng Trung Quốc:",
       "Hiện Nhật ký Tải:",
       "Nhập \"yes\" để xóa thế giới:",
-      "Nội dung Cộng đồng Gốc"
+      "Nội dung Cộng đồng Gốc",
+      "Giấu Crosshair:",
+      "Chiều cao ảnh chụp",
+      "Tỷ lệ ảnh chụp",
+      "Hiển thị tràn viền"
     ],
     "TrialEndedScreen": {
       "1": "Ngày đã kết thúc",
@@ -3051,7 +3427,8 @@
       "25": "Tấn công Người chơi-Người chơi:",
       "26": "Thay đổi Mùa:",
       "27": "Độ dài Năm:",
-      "28": "Mùa:"
+      "28": "Mùa:",
+      "29": "Phiên bản trình tạo địa hình:"
     },
     "ReleasesScreen": {
       "1": "Danh sách phiên bản {0}",
@@ -3497,7 +3874,8 @@
       "4": "Đầu vào:",
       "5": "Đầu ra:",
       "6": "Thời gian:",
-      "7": "Điều khiển Từ xa"
+      "7": "Điều khiển Từ xa",
+      "8": "Sao chép đầu ra"
     },
     "RemoteControlDialog": {
       "1": "Điều khiển Javascript Từ xa",
@@ -3511,6 +3889,15 @@
       "9": "Mật khẩu: ",
       "10": "Thay đổi Mật khẩu",
       "11": "Đóng"
+    },
+    "EditWorldSeedDialog": {
+      "1": "Chỉnh sửa hạt giống thế giới",
+      "2": "Sau khi chỉnh sửa giá trị hạt giống thực, hạt giống sẽ được cố định thành chuỗi rỗng.\n Giá trị hạt giống thực là một số nguyên nằm giữa -2147483648 và 2147483647.",
+      "3": "Hạt giống",
+      "4": "Hạt giống thật sự",
+      "5": "Cài lại",
+      "6": "OK",
+      "7": "Hủy"
     }
   },
   "FireworksBlock": {
@@ -3715,7 +4102,7 @@
       "41": "Động vật có vú ăn thực vật cỡ trung bình. Rất nhút nhát và không hung dữ. Thịt ngon.",
       "42": "Loài chim lớn không biết bay. Khá hung dữ và có móng vuốt rất sắc có thể gây thương tích nghiêm trọng cho kẻ tấn công không cảnh giác. Thỉnh thoảng đẻ trứng lớn, ăn được.",
       "43": "Phụ nữ di chuyển nhanh và không cần nhiều thức ăn, nhưng yếu hơn đàn ông và không thể chịu được nhiều thương tích.",
-      "44": "Một người đàn ông mạnh mẽ, men lì, đẹp zai, không bỏ con như Jack và có thể đánh mạnh và chịu được nhiều thương tích, nhưng di chuyển chậm hơn phụ nữ và cần nhiều thức ăn hơn để sống sót.",
+      "44": "Một người đàn ông mạnh mẽ, có thể đánh mạnh và chịu được nhiều thương tích, nhưng di chuyển chậm hơn phụ nữ và cần nhiều thức ăn hơn để sống sót.",
       "45": "",
       "46": "Loài chim nhỏ sống ở vùng ôn đới. Thỉnh thoảng đẻ trứng nhỏ, ăn được. Không ăn được.",
       "47": "Loài chim nhỏ bé sống ở vùng ôn đới. Thỉnh thoảng đẻ trứng rất nhỏ nhưng ăn được. Không ăn được."

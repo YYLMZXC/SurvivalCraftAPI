@@ -8,7 +8,11 @@ namespace Engine.Serialization {
 
         public object ConvertFromString(Type type, string data) {
             float[] array = HumanReadableConverter.ValuesListFromString<float>(',', data);
-            return array.Length == 2 ? (object)new Vector2(array[0], array[1]) : throw new Exception();
+            switch (array.Length) {
+                case 1: return new Vector2(array[0]);
+                case >= 2: return new Vector2(array[0], array[1]);
+            }
+            throw new Exception();
         }
     }
 }

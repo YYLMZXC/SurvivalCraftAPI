@@ -39,7 +39,7 @@
     "NonPersistentMod": {
       "type": "boolean",
       "default": false,
-      "description": "Non-persistent Mod. When true, the mod will not be recorded in world saves. \n非持久性模组。该项为 true 时，将不会在存档中记录该模组，适用于不存储数据、不添加方块和实体的模组。"
+      "description": "Non-persistent Mod. When true, the mod will not be recorded in world saves. \n非持久性模组，默认为 false。该项为 true 时，将不会在存档中记录该模组，适用于不存储数据、不添加方块和实体的模组。"
     },
     "GameplayImpactLevel": {
       "type": "string",
@@ -50,7 +50,7 @@
         "Break",
         "Godmode"
       ],
-      "description": "Gameplay Impact Level. Used to identify how much the mod affects game balance. \n玩法影响等级，用于标识模组对游戏平衡性的影响程度：\n- Cosmetic: 纯装饰品，例如材质包、字体包、光影\n- Assist: 轻度辅助，例如小地图（不透视）、箱子整理、显示生物血量\n- Turbo: 强力辅助，例如一键撸树、自动化、矿物雷达\n- Break: 规则破坏，例如无/低成本飞行、传送门、掉落物/产量倍增\n- Godmode: 上帝模式，例如无敌、瞬移、无限资源"
+      "description": "Gameplay Impact Level. Used to identify how much the mod affects game balance. \n玩法影响等级，用于标识模组对游戏平衡性的影响程度 \nOptions 可选项: Cosmetic, Assist, Turbo, Break, Godmode \nDetails 详见：https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.8/docs/ModInfoConfig.md"
     },
     "Link": {
       "type": "string",
@@ -66,7 +66,7 @@
       "description": "Mod package name. Used for identification. \n模组包名，用于区分不同模组，如果有若干个模组有相同包名，它们将全部不会加载。"
     },
     "Dependencies": {
-      "description": "Other mods that this mod depends on. Details: \n该模组依赖的其他模组，支持 Nuget 风格和 SemVer 风格的版本范围规则。详见：\n\nhttps://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.8/CHANGELOG.md#modinfojson%E9%87%8D%E5%A4%A7%E6%9B%B4%E6%96%B0",
+      "description": "Other mods that this mod depends on. Details: \n该模组依赖的其他模组，支持 Nuget 风格和 SemVer 风格的版本范围规则。详见：\nhttps://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.8/docs/ModInfoConfig.md",
       "anyOf": [
         {
           "type": "object",

@@ -290,6 +290,10 @@ public static class ModsManager {
                     if (dependency.Value.ValueKind == JsonValueKind.String) {
                         string dependencyPackageName = dependency.Name;
                         string dependencyVersion = dependency.Value.GetString()?.Trim();
+                        if (string.IsNullOrEmpty(dependencyVersion)) {
+                            modInfo.DependencyRanges.Add(dependencyPackageName, VersionRange.All);
+                            continue;
+                        }
                         if (TryParseVersionRange(dependencyVersion, out VersionRange dependencyVersionRange)) {
                             modInfo.DependencyRanges.Add(dependencyPackageName, dependencyVersionRange);
                         }

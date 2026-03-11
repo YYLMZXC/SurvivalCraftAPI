@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Survivalcraft Mod Information",
+  "definitions": {
+    "versionRange": {
+      "type": "string",
+      "description": "Nuget 或 SemVer 风格的版本范围校验",
+      "pattern": "^(([\\d\\.]+)(-.*)?|[\\(\\[][\\d\\.]*,[\\d\\.]*[\\)\\]]|[=><!^~]=?[\\d\\.]+.*)$"
+    }
+  },
+  "description": "生存战争模组信息配置文件",
+  "type": "object",
+  "properties": {
+    "Name": {
+      "type": "string",
+      "description": "Mod name <br/>模组名称"
+    },
+    "Version": {
+      "description": "Mod version, Semver standard is recommended: https://semver.org/ \n模组版本，建议符合 Semver 标准：https://semver.org/lang/zh-CN/",
+      "$ref": "#/definitions/versionRange"
+    },
+    "ApiVersion": {
+      "description": "Target API version. If it is below 1.8, the game will show a compatibility warning. Supports version ranges (Nuget or SemVer style). \n模组适配的 API 版本，低于 1.8 将警告可能无法使用。支持 Nuget 或 SemVer 风格的范围版本写法。",
+      "$ref": "#/definitions/versionRange"
+    },
+    "Description": {
+      "type": "string",
+      "description": "Mod description \n模组描述"
+    },
+    "ScVersion": {
+      "type": "string",
+      "description": "Target Survivalcraft game version (no functional impact) \n模组适配的生存战争游戏版本，没有实际用处"
+    },
+    "LoadOrder": {
+      "type": "integer",
+      "default": 0,
+      "description": "Mod loading priority. Smaller values load earlier. Default is 0. \nSuggested: Theme mod -100000~-10000, assistant mod 10000~100000. \n模组加载顺序，值越小越先加载，默认为 0。 \n建议：主题模组 -100000~-10000，辅助模组 10000~100000。"
+    },
+    "NonPersistentMod": {
+      "type": "boolean",
+      "default": false,
+      "description": "Non-persistent Mod. When true, the mod will not be recorded in world saves. \n非持久性模组。该项为 true 时，将不会在存档中记录该模组，适用于不存储数据、不添加方块和实体的模组。"
+    },
+    "GameplayImpactLevel": {
+      "type": "string",
+      "enum": [
+        "Cosmetic",
+        "Assist",
+        "Turbo",
+        "Break",
+        "Godmode"
+      ],
+      "description": "Gameplay Impact Level. Used to identify how much the mod affects game balance. \n玩法影响等级，用于标识模组对游戏平衡性的影响程度：\n- Cosmetic: 纯装饰品，例如材质包、字体包、光影\n- Assist: 轻度辅助，例如小地图（不透视）、箱子整理、显示生物血量\n- Turbo: 强力辅助，例如一键撸树、自动化、矿物雷达\n- Break: 规则破坏，例如无/低成本飞行、传送门、掉落物/产量倍增\n- Godmode: 上帝模式，例如无敌、瞬移、无限资源"
+    },
+    "Link": {
+      "type": "string",
+      "format": "uri",
+      "description": "Mod link. Accessible from the mod management screen. \n模组链接，玩家能从模组管理界面打开；建议设置为带有详细介绍或能反馈 Bug 的链接。"
+    },
+    "Author": {
+      "type": "string",
+      "description": "Mod author \n模组作者"
+    },
+    "PackageName": {
+      "type": "string",
+      "description": "Mod package name. Used for identification. \n模组包名，用于区分不同模组，如果有若干个模组有相同包名，它们将全部不会加载。"
+    },
+    "Dependencies": {
+      "description": "Other mods that this mod depends on. Details: \n该模组依赖的其他模组，支持 Nuget 风格和 SemVer 风格的版本范围规则。详见：\n\nhttps://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.8/CHANGELOG.md#modinfojson%E9%87%8D%E5%A4%A7%E6%9B%B4%E6%96%B0",
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/versionRange"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^:]+(:.+)?$"
+          },
+          "description": "旧写法：字符串数组，格式为“包名:版本号”。例如：[\"PackageNameOfModA:1.2\"]"
+        }
+      ]
+    }
+  },
+  "required": [
+    "Name",
+    "Version",
+    "ApiVersion",
+    "PackageName"
+  ]
+}

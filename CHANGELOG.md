@@ -105,7 +105,7 @@
 
 <details>
     <summary>点击展开</summary>
-在之前的插件版中，Dependencies只支持固定的一个版本号，从该发布版开始，Dependencies 将支持范围版本，写法上支持 Nuget 风格和少量 SemVer 风格，规则如下表：
+在之前的插件版中，Dependencies 只支持固定的一个版本号，从该发布版开始，Dependencies 将支持范围版本，写法上支持 Nuget 风格和少量 SemVer 风格，规则如下表：
 
 | Nuget 示例 | 范围 | 说明 |
 | --- | --- | --- |

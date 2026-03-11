@@ -380,22 +380,19 @@ public static class ModsManager {
         if (!Storage.DirectoryExists(ModsPath)) {
             Storage.CreateDirectory(ModsPath);
         }
-        if (!Storage.DirectoryExists(ProcessModListPath)) {
+        /*if (!Storage.DirectoryExists(ProcessModListPath)) {
             Storage.CreateDirectory(ProcessModListPath);
-        }
+        }*/
         string realName = name;
         if (!realName.EndsWith(ModSuffix)) {
             realName = realName + ModSuffix;
         }
         string nameWithoutSuffix = Storage.GetFileNameWithoutExtension(realName);
         string path = Storage.CombinePaths(ModsPath, realName);
-        int num = 1;
-        while (Storage.FileExists(path)) {
-            realName = $"{nameWithoutSuffix}({num}){ModSuffix}";
-            path = Storage.CombinePaths(ModsPath, realName);
-            num++;
+        if (Storage.FileExists(path)) {
+            throw new FileAlreadyExistsException(path);
         }
-        using (Stream fileStream = Storage.OpenFile(path, OpenFileMode.CreateOrOpen)) {
+        using (Stream fileStream = Storage.OpenFile(path, OpenFileMode.Create)) {
             stream.CopyTo(fileStream);
         }
         return realName;

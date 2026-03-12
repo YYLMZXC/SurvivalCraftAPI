@@ -129,11 +129,11 @@ sequenceDiagram
 
 ### 关键步骤说明
 
-1. **程序入口** `Program.cs`
+1. **程序入口** [Program.cs](../Survivalcraft/Game/Program.cs)
    - `Main()` 方法处理命令行参数（Windows 端）
    - 调用 `EntryPoint()` 进入游戏初始化
 
-2. **窗口创建** `Window.cs`
+2. **窗口创建** [Window.cs](../Engine/Engine/Window.cs)
    - 使用 Silk.NET 创建跨平台窗口，初始化 OpenGL ES 上下文
    - 触发窗口 `Load` 事件，调用 `LoadHandler()` 进行引擎初始化和注册窗口事件
    - 触发窗口 `Render` 事件，首帧时开始游戏初始化
@@ -142,7 +142,7 @@ sequenceDiagram
    - 初始化 `SettingsManager`、`ScreensManager` 等管理器
    - 进入 `LoadingScreen`
 
-4. **内容加载** `LoadingScreen`
+4. **内容加载** [LoadingScreen](../Survivalcraft/Screen/LoadingScreen.cs)
    - 加载模组列表并排序
    - 合并资源，完成后正式开始渲染游戏画面
    - 合并方块表、数据库、合成表等数据
@@ -285,7 +285,7 @@ sequenceDiagram
 
 ### ModLoader 钩子系统
 
-模组通过继承 `ModLoader` 类并重写方法来介入游戏逻辑：
+模组通过继承 [ModLoader](../Survivalcraft/ModsManager/ModLoader.cs) 类并重写方法来介入游戏逻辑：
 
 ```cs
 public class TemplateModLoader : ModLoader {
@@ -324,6 +324,8 @@ public class TemplateModLoader : ModLoader {
 [点此打开](https://gitee.com/SC-SPM/SurvivalcraftTemplateModForAPI)
 
 ## 9. 关键管理器速查
+
+> 位置：[Survivalcraft/Managers](../Survivalcraft/Managers/)
 
 | 管理器 | 职责 |
 |--------|------|

@@ -252,7 +252,7 @@ namespace Game {
             Dictionary<string, string> header = new() { { "Content-Type", "application/x-www-form-urlencoded" } };
             Dictionary<string, string> dictionary = new() { { "Operater", SettingsManager.ScpboxAccessToken }, { "Content", dataString } };
             WebManager.Post(
-                "https://m.schub.top/com/api/zh/setnotice",
+                "https://m.suancaixianyu.cn/com/api/zh/setnotice",
                 null,
                 header,
                 WebManager.UrlParametersToStream(dictionary),

@@ -120,21 +120,23 @@ namespace Game {
                         break;
                     default:
                         string key = null;
-                        List<string> value = [];
-                        foreach (var arg in args) {
+                        string value = null;
+                        foreach (string arg in args) {
                             if (arg.StartsWith("-")) {
-                                StartupParameters.TryAdd(key, string.Join(' ', value));
-                                value.Clear();
-                                key = arg.TrimStart('-');
-                            }
-                            else {
                                 if (key != null) {
-                                    value.Add(arg);
+                                    StartupParameters.TryAdd(key, value ?? string.Empty);
                                 }
+                                key = arg.TrimStart('-');
+                                if (key.Length == 0) {
+                                    key = null;
+                                }
+                            }
+                            else if (key != null) {
+                                value = arg;
                             }
                         }
                         if (key != null) {
-                            StartupParameters.TryAdd(key, string.Join(' ', value));
+                            StartupParameters.TryAdd(key, value ?? string.Empty);
                         }
                         break;
                 }

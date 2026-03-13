@@ -604,7 +604,8 @@ namespace Game {
         }
 
         public static void IsAdmin(CancellableProgress progress, Action<bool> success, Action<Exception> failure) {
-            progress ??= new CancellableProgress();
+            success(false);
+            /*progress ??= new CancellableProgress();
             if (!WebManager.IsInternetConnectionAvailable()) {
                 failure(new InvalidOperationException(LanguageControl.Get(fName, "1")));
                 return;
@@ -628,7 +629,7 @@ namespace Game {
                     }
                 },
                 failure
-            );
+            );*/
         }
 
         public static string CalculateContentHashString(byte[] data) => Convert.ToBase64String(SHA384.HashData(data));

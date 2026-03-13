@@ -112,7 +112,7 @@ namespace Game {
                                 }
                                 break;
                             default:
-                                if (args[0].StartsWith("-")) {
+                                if (args[0].StartsWith('-') && !args[1].StartsWith('-')) {
                                     StartupParameters.TryAdd(args[0].TrimStart('-'), args[1]);
                                 }
                                 break;
@@ -122,7 +122,7 @@ namespace Game {
                         string key = null;
                         string value = null;
                         foreach (string arg in args) {
-                            if (arg.StartsWith("-")) {
+                            if (arg.StartsWith('-')) {
                                 if (key != null) {
                                     StartupParameters.TryAdd(key, value ?? string.Empty);
                                 }
@@ -189,7 +189,11 @@ namespace Game {
             SystemLanguage = CultureInfo.CurrentUICulture.Name;
 #endif
 #if ANDROID
-            LoadingScreen.m_worldDirectoryToPlayAfterLoading = MainActivity.m_worldDirectoryToPlayAfterLoading;
+            if (MainActivity.m_startupParameters != null) {
+                foreach ((string key, string value) in MainActivity.m_startupParameters) {
+                    StartupParameters.Add(key, value);
+                }
+            }
 #endif
             if (string.IsNullOrEmpty(SystemLanguage)) {
                 SystemLanguage = RegionInfo.CurrentRegion.DisplayName != "United States" ? "zh-CN" : "en-US";

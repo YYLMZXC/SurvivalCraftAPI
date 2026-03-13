@@ -2,6 +2,125 @@
 
 > 说明：此更新日志和发布页的更新日志略有不同
 
+## API 1.9 (2026-03-14)
+
+## 新增
+
+* 新增网页版，性能约为各系统专用版的一半，需要支持 SharedArrayBuffer、OffscreenCanvas、Origin Private File System 等现代浏览器特性的浏览器，例如最新的 Chrome。打开 [https://scapiweb.netlify.app/](https://scapiweb.netlify.app/) 即可游玩
+* 新增手动添加/选择社区服务器的功能，并更新中文社区默认网址
+* “设备兼容和日志”界面新增“管理类替换”界面的入口，在这个新界面，你可以管理子系统、实体组件使用哪个模组中的版本，游戏启动时的弹窗也得到改进
+* 游戏启动时传入 `-play <存档所在文件夹名称>` 参数，将在启动游戏后自动进入存档
+* 模组管理界面新增手动调整模组加载顺序的功能
+* 感谢 Kitão Gameplay's（Discord：ekitonmjjefgs）添加葡萄牙语
+
+## 提示
+
+* 最低安卓版本要求提升至 6.0
+
+## 修复
+
+* 完全修复 Android 系统鼠标相关问题
+* 修复隐藏移动查看图标后不能跳跃的问题
+* 修复一些方块下方是半砖时，底面不渲染的问题
+* 修复模组包名不合法时仍然会加载等多个模组加载问题
+* 修复游戏过程中启用展示加载日志后，进入存档时会出错的问题
+* 修复一个可能导致文本输入框无法使用的问题
+* Linux 系统可能的鼠标位置错误问题
+* 修复一些界面显示问题
+
+## 改进
+
+* 新的基于 [ANGLE](https://github.com/google/angle) 的 Windows 系统专用兼容包，它通过更广泛支持的 Direct3D 图形接口来接管 OpenGL ES 图形接口，以实现在不支持 OpenGL ES 的显卡驱动上运行游戏；但只支持到 OpenGL ES 3.0
+* Android 系统点击文本输入框后会立即弹出键盘
+* 性能图示的绿线位置现在会根据屏幕刷新率调整
+* 安全模式也能在“模组管理界面”管理模组了
+* 导出文件后会显示其路径（之前只显示文件名）
+* `modinfo.json` 损坏/不合法时会输出更友好的错误日志
+* 不再允许导入文件名相同的模组
+* 改善一些中文翻译、越南语翻译
+
+## 对于开发者
+
+**<center>欢迎来到 AI 模组开发时代！</center>**
+**<center>推荐使用 HarmonyX 注入方法！</center>**
+
+* 新增适合 AI Agent 从零开始开发模组的文档 [docs/HowToDevelopAMod.md](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/HowToDevelopAMod.md)，你可以尝试向你的 AI Agent 这么说，就能快速得到一个可用的模组（可能存在少量问题）
+
+```
+请阅读此文档，帮我做一个在游戏中显示当前天气+距离晴天/下雨还有多久的生存战争插件版模组，最后把做好的 .scmod 文件发给我
+https://gitee.com/SC-SPM/SurvivalcraftApi/raw/SCAPI1.9/docs/HowToDevelopAMod.md
+```
+> AI Agent： 例如 [OpenClaw](https://openclaw.ai/)、[Claude Code](https://claude.com/product/claude-code)、[OpenCode](https://opencode.ai/)、[CodeBuddy](https://www.codebuddy.cn/)
+
+* 项目结构已重构，详见新增的 [架构文档](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/Architecture.md)
+* 新增多篇 AI 生成技术文档，详见 [docs](https://gitee.com/SC-SPM/SurvivalcraftApi/tree/SCAPI1.9/docs)
+* 新增 [HarmonyX](https://github.com/BepInEx/HarmonyX) 包引用，通过它你可以非常方便地注入、修改、替换方法，使用方法详见此处：[HarmonyX Wiki](https://github.com/BepInEx/HarmonyX/wiki)
+* 改进以下三个 xml 数据文件的合并方式（旧写法仍然兼容），同时新增一个专门用来移除继承来的组件的空组件 `ComponentNoEffect`
+
+| 数据类型 | 游戏内文件 | 模组内文件 | 合并方式 |
+|----------|------------|------------|----------|
+| 衣物表 | `Clothes.xml` | `*.clo` | 按 Index 匹配，支持 `New-` 前缀修改多个属性、`Remove` 删除元素 |
+| 合成表 | `CraftingRecipes.xml` | `*.cr` | 追加新合成配方，支持 `New-` 前缀修改单个属性、`Remove` 删除元素（需要其他每个属性都相同） |
+| 数据库 | `Database.xml` | `*.xdb` | 追加新数据，按 Guid 匹配，支持 `New-` 前缀修改单个属性、`Remove` 删除元素 |
+
+* `ModsManager.HookAction` 方法新增带有 `int priority` 参数的重载，越小优先级越高
+* `ModLoader.OnMinerPlace` 接口方法新增带有 `BlockPlacementData placementData` 参数的重载
+* `ModLoader` 类新增以下接口：`OnSwitchScreen`、`OnShowDialog`、`OnHideDialog`
+* `Engine.Touch` 新增 `IsTouched` 字段
+* `Engine.Window` 新增 `Scale` 字段，用以表示窗口实际渲染大小 / 系统返回的窗口大小
+* `ListPanelWidget` 新增 `SwapItems` 方法
+* 游戏启动时传入的参数将储存到 `Program` 类的 `Dictionary<string, string> StartupParameters` 字段中，例如：
+```bat
+Survivalcraft.exe -play World1 -yourCustomParameter 123
+```
+将设置 `Program.StartupParameters["play"]` 为 `"World1"`，`Program.StartupParameters["yourCustomParameter"]` 为 `"123"`  
+对于 Android，等效的代码是
+```kotlin
+startActivity(Intent().apply {
+    component = ComponentName("com.candy.survivalcraftAPI1_9", "com.candy.survivalcraftAPI1_9.crc64251ea0d6925f8f9e.MainActivity")
+    putExtra("play", "World1")
+    putExtra("yourCustomParameter", "123")
+    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+})
+```
+* `modinfo.json` 新增 `GameplayImpactLevel`（玩法影响等级）字段，用于标识模组对游戏平衡性的影响程度，会保存到存档中，默认为 `Cosmetic`，有以下选项：
+
+| 可选值 | 中文名 | 示例 |
+| :----: | :----: | :--- |
+| `Cosmetic` | 纯装饰品 | 材质包、字体包、光影 |
+| `Assist` | 轻度辅助 | 小地图（不透视）、箱子整理、显示生物血量、合适成本提升玩家能力 |
+| `Turbo` | 强力辅助 | 一键撸树、自动化、矿物雷达、低成本提升玩家能力、合适成本的规则破坏 |
+| `Break` | 规则破坏 | 无/低成本地大幅提升玩家能力、飞行、传送门、掉落物/产量倍增 |
+| `Godmode` | 上帝模式 | 无敌、瞬移、无限资源 |
+
+* 新增 `modinfo-scheme.json` 文件，能在 IDE 中验证 `modinfo.json` 的数据结构是否正确
+* 支持在 `.xdb` 数据库中直接编写生物生成规则，具体且查看 `Game.StandardCreatureSpawnRule` 类，写法举例：
+
+```xml
+<ParameterSet Name="CreatureSpawnRules" Guid="98c19e0b-ff62-4acc-8e58-def30e6257a3">
+  <ParameterSet Name="TemplateRuleWerewolf">
+    <Parameter Name="Name" Value="Duck" Type="string" /><!-- 必填，你要生成的 EntityTemplate 的名称 -->
+    <Parameter Name="Class" Value="Game.StandardCreatureSpawnRule" Type="string" /><!-- 必填，生成规则的类 -->
+    <Parameter Name="SpawnLocationType" Value="Surface" Type="Game.SpawnLocationType" /><!-- 默认: Surface -->
+    <Parameter Name="RandomSpawn" Value="True" Type="bool" /><!-- 默认: False -->
+    <Parameter Name="ConstantSpawn" Value="false" Type="bool" /><!-- 默认: False -->
+    <Parameter Name="MinTemperature" Value="5" Type="int" /><!-- 默认: 0 -->
+    <Parameter Name="MaxTemperature" Value="15" Type="int" /><!-- 默认: 15 -->
+    <Parameter Name="MinHumidity" Value="9" Type="int" /><!-- 默认: 0 -->
+    <Parameter Name="MaxHumidity" Value="15" Type="int" /><!-- 默认: 15 -->
+    <Parameter Name="AboveTopBlock" Value="True" Type="bool" /><!-- 默认: False -->
+    <Parameter Name="MinShoreDistance" Value="40" Type="float" /><!-- 默认: -Infinity -->
+    <Parameter Name="MaxShoreDistance" Value="Infinity" Type="float" /><!-- 默认: Infinity -->
+    <Parameter Name="Blocks" Value="LeavesBlock;WaterBlock;GrassBlock;DirtBlock" Type="string" /><!-- 默认: （无） -->
+    <Parameter Name="Suitability" Value="2.5" Type="float" /><!-- 默认: 1 -->
+    <Parameter Name="Count" Value="1" Type="int" /><!-- 默认: 1 -->
+  </ParameterSet>
+</ParameterSet>
+```
+
+* 不再删除着色器中的 `highp`、`mediump` 、`lowp`
+* 移除无人使用且不完善的 ModList 功能
+
 ## API 1.8.2.3 (2026-01-01)
 
 ### 新增

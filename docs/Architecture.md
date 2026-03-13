@@ -319,6 +319,7 @@ public class TemplateModLoader : ModLoader {
     }
 }
 ```
+
 ### 示例模组项目
 
 [点此打开](https://gitee.com/SC-SPM/SurvivalcraftTemplateModForAPI)

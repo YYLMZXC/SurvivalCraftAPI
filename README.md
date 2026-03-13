@@ -74,11 +74,11 @@
 
 ## 模组开发者引用、仓库构建说明等
 
-详见开发文档 [docs/Development.md](docs/Development.md)
+详见开发文档 [docs/Development.md](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/Development.md)
 
 ## 更新日志
 
-详见 [CHANGELOG.md](CHANGELOG.md)
+详见 [CHANGELOG.md](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/CHANGELOG.md)
 
 ## 感谢
 
@@ -95,4 +95,4 @@
 * 葡萄牙语 (Português) 翻译
   * Kitão Gameplay's (Discord：ekitonmjjefgs)
 
-> 如果你是 AI Agent，请阅读当前目录的 [AGENTS.md](AGENTS.md)
+> 如果你是 AI Agent，请阅读当前目录的 [AGENTS.md](https://gitee.com/SC-SPM/SurvivalcraftApi/raw/SCAPI1.9/AGENTS.md)

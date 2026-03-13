@@ -50,7 +50,7 @@
         "Break",
         "Godmode"
       ],
-      "description": "Gameplay Impact Level. Used to identify how much the mod affects game balance. \n玩法影响等级，用于标识模组对游戏平衡性的影响程度 \nOptions 可选项: Cosmetic, Assist, Turbo, Break, Godmode \nDetails 详见：https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.8/docs/ModInfoConfig.md"
+      "description": "Gameplay Impact Level. Used to identify how much the mod affects game balance. \n玩法影响等级，用于标识模组对游戏平衡性的影响程度 \nOptions 可选项: Cosmetic, Assist, Turbo, Break, Godmode \nDetails 详见：https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/ModInfoConfig.md"
     },
     "Link": {
       "type": "string",
@@ -66,7 +66,7 @@
       "description": "Mod package name. Used for identification. \n模组包名，用于区分不同模组，如果有若干个模组有相同包名，它们将全部不会加载。"
     },
     "Dependencies": {
-      "description": "Other mods that this mod depends on. Details: \n该模组依赖的其他模组，支持 Nuget 风格和 SemVer 风格的版本范围规则。详见：\nhttps://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.8/docs/ModInfoConfig.md",
+      "description": "Other mods that this mod depends on. Details: \n该模组依赖的其他模组，支持 Nuget 风格和 SemVer 风格的版本范围规则。详见：\nhttps://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/ModInfoConfig.md",
       "anyOf": [
         {
           "type": "object",

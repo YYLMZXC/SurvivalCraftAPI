@@ -32,7 +32,8 @@ namespace SC4Android {
              | ConfigChanges.SmallestScreenSize
              | ConfigChanges.Keyboard
              | ConfigChanges.KeyboardHidden,
-         ScreenOrientation = ScreenOrientation.Landscape
+         ScreenOrientation = ScreenOrientation.Landscape,
+         Exported = true
      ),
      IntentFilter(
          ["android.intent.action.VIEW"],
@@ -42,7 +43,7 @@ namespace SC4Android {
         public static bool GraterThanAndroid11 { get; } = Build.VERSION.SdkInt >= BuildVersionCodes.R;
         public static bool GraterThanAndroid6 { get; } = Build.VERSION.SdkInt >= BuildVersionCodes.M;
 
-        public static string m_worldDirectoryToPlayAfterLoading;
+        public static Dictionary<string, string> m_startupParameters;
 
         public static bool CheckAndRequestPermission(Activity activity) {
             bool arePermissionsGranted = true;
@@ -130,7 +131,16 @@ namespace SC4Android {
             if (Build.VERSION.SdkInt >= BuildVersionCodes.S) {
                 SplashScreen.SetOnExitAnimationListener(new SplashScreenOnExitAnimationListener());
             }
-            m_worldDirectoryToPlayAfterLoading = Intent?.GetStringExtra("play") ?? null;
+            ICollection<string> keySet = Intent?.Extras?.KeySet();
+            if (keySet != null && keySet.Count > 0) {
+                m_startupParameters = new Dictionary<string, string>(keySet.Count);
+                foreach (string key in keySet) {
+                    string value = Intent?.Extras?.GetString(key);
+                    if (value != null) {
+                        m_startupParameters.Add(key, value);
+                    }
+                }
+            }
         }
 
         public class ViewTreeObserverListener : Java.Lang.Object, ViewTreeObserver.IOnPreDrawListener {

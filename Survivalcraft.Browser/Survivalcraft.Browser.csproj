@@ -28,41 +28,44 @@
         <WasmExtraFilesToDeploy Include="wwwroot\main.js" TargetPath="%(RecursiveDir)main.js" />
         <WasmExtraFilesToDeploy Include="wwwroot\favicon.webp" TargetPath="%(RecursiveDir)favicon.webp" />
         <WasmExtraFilesToDeploy Include="wwwroot\manifest.json" TargetPath="%(RecursiveDir)manifest.json" />
-        <WasmExtraFilesToDeploy Include="wwwroot\service-worker.js" TargetPath="%(RecursiveDir)service-worker.js" />
         <WasmExtraFilesToDeploy Include="wwwroot\_headers" TargetPath="%(RecursiveDir)_headers" />
         <WasmExtraFilesToDeploy Include="wwwroot\dashboard.html" TargetPath="%(RecursiveDir)dashboard.html" />
         <WasmExtraFilesToDeploy Include="wwwroot\assets\**" TargetPath="%(RecursiveDir)assets\%(Filename)%(Extension)" />
         <WasmExtraFilesToDeploy Include="wwwroot\.netlify\**" TargetPath="%(RecursiveDir).netlify\%(Filename)%(Extension)" />
         <WasmExtraFilesToDeploy Include="..\Survivalcraft\Content.zip" TargetPath="%(RecursiveDir)assets\Content.zip" />
-        <WasmExtraFilesToDeploy Include="wwwroot\_frameworkPublish\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(IsPublishing)' == 'true'" />
-        <WasmExtraFilesToDeploy Include="wwwroot\_frameworkBuild\**" TargetPath="%(RecursiveDir)_framework\%(Filename)%(Extension)" Condition="'$(IsPublishing)' != 'true'" />
     </ItemGroup>
     <ItemGroup>
         <TrimmerRootAssembly Include="Survivalcraft" />
         <TrimmerRootAssembly Include="Engine" />
     </ItemGroup>
-    <UsingTask TaskName="GenerateContentInfo" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="GenerateContentInfoTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <ContentFilePath ParameterType="System.String" Required="true" />
         </ParameterGroup>
         <Task>
             <Using Namespace="System.IO" />
-            <Code Type="Fragment" Language="cs">
-<![CDATA[
-var info = new FileInfo(ContentFilePath);
-long size = info.Exists ? info.Length : 0;
-string content = $@"namespace Game {{
-    public static class ContentFileInfo {{
-        public const long FileSize = {size};
-    }}
-}}";
-File.WriteAllText("ContentFileInfo.g.cs", content);
-]]>
-            </Code>
+            <Code Type="Fragment" Language="cs" Source="$(MSBuildProjectDirectory)\GenerateContentInfo.csx" />
         </Task>
     </UsingTask>
     <Target Name="UpdateContentFileSize" BeforeTargets="BeforeBuild">
-        <GenerateContentInfo ContentFilePath="..\Survivalcraft\Content.zip" />
+        <Error Condition="'$(Configuration)' == 'Debug'" Text="Debug is disabled for this project! Set Configuration to Release to build." />
+        <GenerateContentInfoTask ContentFilePath="..\Survivalcraft\Content.zip" />
         <Message Text="Updated ContentFileInfo.g.cs" Importance="high" />
+    </Target>
+    <UsingTask TaskName="PatchJsTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <DotnetNativePath ParameterType="System.String" Required="true" />
+            <DotnetNativeWorkerPath ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System.IO" />
+            <Using Namespace="System.Text" />
+            <Using Namespace="System.Collections.Generic" />
+            <Code Type="Fragment" Language="cs" Source="$(MSBuildProjectDirectory)\PatchJs.csx" />
+        </Task>
+    </UsingTask>
+    <Target Name="PatchJs" AfterTargets="_WasmGenerateAppBundle">
+        <PatchJsTask DotnetNativePath="$(TargetDir)AppBundle\_framework\dotnet.native.js" DotnetNativeWorkerPath="$(TargetDir)AppBundle\_framework\dotnet.native.worker.mjs" />
+        <Message Text="Patched dotnet.native.js and dotnet.native.worker.mjs" Importance="high" />
     </Target>
 </Project>

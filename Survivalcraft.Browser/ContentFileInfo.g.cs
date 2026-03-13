@@ -1,5 +1,5 @@
 namespace Game {
     public static class ContentFileInfo {
-        public const long FileSize = 15534347;
+        public const long FileSize = 15617635;
     }
 }

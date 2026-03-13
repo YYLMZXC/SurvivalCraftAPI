@@ -35,6 +35,8 @@ namespace Game {
 
         public static float LastCpuFrameTime { get; set; }
 
+        public static Dictionary<string, string> StartupParameters = [];
+
         public static event Action<Uri> HandleUri;
 #if ANDROID || BROWSER
         public static bool m_firstFramePrepared;
@@ -109,9 +111,30 @@ namespace Game {
                                     }
                                 }
                                 break;
-                            case "-p" or "--play":
-                                LoadingScreen.m_worldDirectoryToPlayAfterLoading = args[1];
+                            default:
+                                if (args[0].StartsWith("-")) {
+                                    StartupParameters.TryAdd(args[0].TrimStart('-'), args[1]);
+                                }
                                 break;
+                        }
+                        break;
+                    default:
+                        string key = null;
+                        List<string> value = [];
+                        foreach (var arg in args) {
+                            if (arg.StartsWith("-")) {
+                                StartupParameters.TryAdd(key, string.Join(' ', value));
+                                value.Clear();
+                                key = arg.TrimStart('-');
+                            }
+                            else {
+                                if (key != null) {
+                                    value.Add(arg);
+                                }
+                            }
+                        }
+                        if (key != null) {
+                            StartupParameters.TryAdd(key, string.Join(' ', value));
                         }
                         break;
                 }

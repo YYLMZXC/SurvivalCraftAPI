@@ -569,7 +569,7 @@ namespace Game {
                 HorizontalCreativeFlight = false;
                 DropboxAccessToken = string.Empty;
                 ScpboxAccessToken = string.Empty;
-                MotdUpdateUrl = $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}/com/motd?v={0}&l={1}";
+                MotdUpdateUrl = $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}com/motd?v={0}&l={1}";
                 MotdUpdateCheckUrl = $"{CommunityServerManager.CurrentChineseInfo.ApiUrl}com/motd?v={0}&cmd=version_check&platform={1}&apiv={2}&l={3}";
                 MotdUpdatePeriodHours = 12.0;
                 MotdLastUpdateTime = DateTime.MinValue;

@@ -389,6 +389,7 @@ namespace Game {
             BlocksManager.Blocks[ClothingBlock.Index].Initialize();
             BlocksManager.Blocks[EggBlock.Index].Initialize();
             ClothingSlot.Initialize();
+            SubsystemPalette.m_nameFormat = LanguageControl.Get("SubsystemPalette", "1");
             ScreensManager.SwitchScreen("MainMenu");
         }
 

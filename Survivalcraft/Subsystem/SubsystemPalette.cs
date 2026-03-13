@@ -5,6 +5,7 @@ using TemplatesDatabase;
 namespace Game {
     public class SubsystemPalette : Subsystem {
         public static readonly Color[] m_defaultFabricColors;
+        public static string m_nameFormat = LanguageControl.Get("SubsystemPalette", "1");
 
         public string[] m_names;
 
@@ -74,7 +75,7 @@ namespace Game {
             if (index.HasValue) {
                 string text = LanguageControl.GetWorldPalette(index.Value);
                 if (!string.IsNullOrEmpty(suffix)) {
-                    return $"{text} {suffix}";
+                    return string.Format(m_nameFormat, text, suffix);
                 }
                 return text;
             }

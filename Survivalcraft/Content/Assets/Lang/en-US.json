@@ -314,6 +314,9 @@
     "0": "Draw the crossbow first",
     "1": "Load a bolt first"
   },
+  "SubsystemPalette": {
+    "1": "{0} {1}"
+  },
   "MusketWidget": {
     "0": "Load gunpowder",
     "1": "Load cotton wad",

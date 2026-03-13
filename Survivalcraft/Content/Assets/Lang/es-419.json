@@ -195,6 +195,9 @@
     "0": "Prepara la ballesta primero.",
     "1": "Debiste preparar una flecha antes."
   },
+  "SubsystemPalette": {
+    "1": "{1} {0}"
+  },
   "MusketWidget": {
     "0": "Carga la pólvora",
     "1": "Introduzca algodón",

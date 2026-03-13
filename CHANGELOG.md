@@ -4,20 +4,20 @@
 
 ## API 1.9 (2026-03-14)
 
-## 新增
+### 新增
 
-* 新增网页版，性能约为各系统专用版的一半，需要支持 SharedArrayBuffer、OffscreenCanvas、Origin Private File System 等现代浏览器特性的浏览器，例如最新的 Chrome。打开 [https://scapiweb.netlify.app/](https://scapiweb.netlify.app/) 即可游玩
+* 新增网页版，性能约为各系统专用版的一半，需要支持 SharedArrayBuffer、OffscreenCanvas、Origin Private File System 等现代浏览器特性的浏览器，例如最新的 Chrome。打开 [https://scapiweb.netlify.app/](https://scapiweb.netlify.app/) 即可游玩（感谢 Nome Criativo 的初步技术验证和过程帮助）
 * 新增手动添加/选择社区服务器的功能，并更新中文社区默认网址
 * “设备兼容和日志”界面新增“管理类替换”界面的入口，在这个新界面，你可以管理子系统、实体组件使用哪个模组中的版本，游戏启动时的弹窗也得到改进
 * 游戏启动时传入 `-play <存档所在文件夹名称>` 参数，将在启动游戏后自动进入存档
 * 模组管理界面新增手动调整模组加载顺序的功能
 * 感谢 Kitão Gameplay's（Discord：ekitonmjjefgs）添加葡萄牙语
 
-## 提示
+### 提示
 
 * 最低安卓版本要求提升至 6.0
 
-## 修复
+### 修复
 
 * 完全修复 Android 系统鼠标相关问题
 * 修复隐藏移动查看图标后不能跳跃的问题
@@ -28,7 +28,7 @@
 * Linux 系统可能的鼠标位置错误问题
 * 修复一些界面显示问题
 
-## 改进
+### 改进
 
 * 新的基于 [ANGLE](https://github.com/google/angle) 的 Windows 系统专用兼容包，它通过更广泛支持的 Direct3D 图形接口来接管 OpenGL ES 图形接口，以实现在不支持 OpenGL ES 的显卡驱动上运行游戏；但只支持到 OpenGL ES 3.0
 * Android 系统点击文本输入框后会立即弹出键盘
@@ -39,7 +39,7 @@
 * 不再允许导入文件名相同的模组
 * 改善一些中文翻译、越南语翻译
 
-## 对于开发者
+### 对于开发者
 
 **<center>欢迎来到 AI 模组开发时代！</center>**
 **<center>推荐使用 HarmonyX 注入方法！</center>**

@@ -30,6 +30,7 @@
         <WasmExtraFilesToDeploy Include="wwwroot\manifest.json" TargetPath="%(RecursiveDir)manifest.json" />
         <WasmExtraFilesToDeploy Include="wwwroot\_headers" TargetPath="%(RecursiveDir)_headers" />
         <WasmExtraFilesToDeploy Include="wwwroot\dashboard.html" TargetPath="%(RecursiveDir)dashboard.html" />
+        <WasmExtraFilesToDeploy Include="wwwroot\service-worker.js" TargetPath="%(RecursiveDir)service-worker.js" />
         <WasmExtraFilesToDeploy Include="wwwroot\assets\**" TargetPath="%(RecursiveDir)assets\%(Filename)%(Extension)" />
         <WasmExtraFilesToDeploy Include="wwwroot\.netlify\**" TargetPath="%(RecursiveDir).netlify\%(Filename)%(Extension)" />
         <WasmExtraFilesToDeploy Include="..\Survivalcraft\Content.zip" TargetPath="%(RecursiveDir)assets\Content.zip" />

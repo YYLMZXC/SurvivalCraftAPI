@@ -115,6 +115,16 @@ public class ModsManageContentScreen : Screen {
                 UpdateMoveUpAndDownEnable(ModsManager.ModListAll.IndexOf(entity));
             }
         };
+        m_modsContentList.SelectionChanged += () => {
+            if (m_modsContentList.SelectedItem is not ModEntity) {
+                m_viewDetailButton.IsEnabled = false;
+                m_triggerEnableButton.IsEnabled = false;
+                m_triggerEnableButton.Text = LanguageControl.Get(fName, "18");
+                m_moveUpButton.IsEnabled = false;
+                m_moveDownButton.IsEnabled = false;
+                m_openHomepageButton.IsEnabled = false;
+            }
+        };
     }
 
     public override void Enter(object[] parameters) {

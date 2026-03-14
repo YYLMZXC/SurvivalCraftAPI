@@ -122,13 +122,14 @@ namespace Game {
         private static int m_screenshotSizeCustomWidthIndex;
 
         public static int ScreenshotSizeCustomWidthIndex {
-            get { return m_screenshotSizeCustomWidthIndex; }
+            get => m_screenshotSizeCustomWidthIndex;
             set {
                 m_screenshotSizeCustomWidthIndex = MathUtils.Clamp(value, 0, ScreenshotSizeCustomWidths.Length - 1);
                 int widthMax = Math.Min(Display.MaxTextureSize, 16384);
-                if(widthMax <= ScreenshotSizeCustomWidths[m_screenshotSizeCustomWidthIndex]) {
+                if (widthMax <= ScreenshotSizeCustomWidths[m_screenshotSizeCustomWidthIndex]) {
                     value = ScreenshotSizeCustomWidths.GetLastIndexOfAnyInRange(0,widthMax);
                 }
+                m_screenshotSizeCustomWidthIndex = value;
             }
         }
 

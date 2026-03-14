@@ -465,7 +465,10 @@ namespace Game {
 
         public override bool Equals(object obj) {
             if (obj is ModEntity px) {
-                return px.modInfo.PackageName == modInfo.PackageName && px.modInfo.NuGetVersion.Equals(modInfo.NuGetVersion);
+                return px.modInfo.PackageName == modInfo.PackageName
+                    && (px.modInfo.NuGetVersion == null
+                        ? px.modInfo.Version == modInfo.Version
+                        : px.modInfo.NuGetVersion.Equals(modInfo.NuGetVersion));
             }
             return false;
         }

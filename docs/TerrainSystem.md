@@ -11,6 +11,7 @@
 5. [地形渲染机制](#5-地形渲染机制)
 6. [地形序列化与存储](#6-地形序列化与存储)
 7. [核心流程图](#7-核心流程图)
+8. [生物群系生成机制](#8-生物群系生成机制)
 
 ---
 
@@ -952,6 +953,9 @@ classDiagram
         +GenerateChunkContentsPass2()
         +GenerateChunkContentsPass3()
         +GenerateChunkContentsPass4()
+        +CalculateTemperature()
+        +CalculateHumidity()
+        +CalculateMountainRangeFactor()
     }
     
     class TerrainBrush {
@@ -959,6 +963,25 @@ classDiagram
         +Paint()
         +AddBox()
         +AddRay()
+    }
+    
+    class PlantsManager {
+        <<static>>
+        +m_treeBrushesByType
+        +m_treeTrunksByType
+        +m_treeLeavesByType
+        +GenerateRandomTreeType()
+        +GenerateRandomPlantValue()
+        +CalculateTreeProbability()
+        +GetTreeBrushes()
+    }
+    
+    class WorldSettings {
+        +BiomeSize
+        +TemperatureOffset
+        +HumidityOffset
+        +TerrainGenerationMode
+        +IslandSize
     }
     
     SubsystemTerrain --> Terrain
@@ -970,7 +993,338 @@ classDiagram
     TerrainRenderer --> TerrainChunk
     ITerrainContentsGenerator --> TerrainBrush
     ITerrainContentsGenerator --> TerrainChunk
+    ITerrainContentsGenerator --> PlantsManager
+    ITerrainContentsGenerator --> WorldSettings
+    PlantsManager --> TerrainBrush
 ```
+
+---
+
+## 8. 生物群系生成机制
+
+Survivalcraft 没有显式的 "Biome" 类，而是通过**温度、湿度、山地因子**等参数的组合来隐式定义不同类型的地形区域。这种设计使得生物群系之间的过渡更加自然平滑。
+
+### 8.1 核心环境参数
+
+```mermaid
+flowchart LR
+    subgraph "噪声输入"
+        S[世界种子 Seed]
+        TO[m_temperatureOffset]
+        HO[m_humidityOffset]
+        MO[m_mountainsOffset]
+    end
+    
+    subgraph "Simplex Noise 生成"
+        TN[温度噪声<br/>频率: 0.0015/BiomeSize]
+        HN[湿度噪声<br/>频率: 0.0012/BiomeSize]
+        MN[山地噪声<br/>频率: 0.0006/BiomeSize]
+    end
+    
+    subgraph "输出参数"
+        T[温度 Temperature<br/>范围: 0-15]
+        H[湿度 Humidity<br/>范围: 0-15]
+        M[山地因子 MountainFactor<br/>范围: 0-1]
+    end
+    
+    S --> TN
+    S --> HN
+    S --> MN
+    TO --> TN
+    HO --> HN
+    MO --> MN
+    
+    TN --> T
+    HN --> H
+    MN --> M
+```
+
+#### 参数计算公式
+
+```cs
+// 温度计算 (值范围 0-15)
+int CalculateTemperature(float x, float z) {
+    return Math.Clamp(
+        (int)(MathUtils.Saturate(
+            3f * SimplexNoise.OctavedNoise(
+                x + m_temperatureOffset.X, 
+                z + m_temperatureOffset.Y, 
+                0.0015f / TGBiomeScaling,  // 频率
+                5,                          // octave 数
+                2f,                         // 振幅倍增
+                0.6f                        // 持久度
+            ) - 1.1f + m_worldSettings.TemperatureOffset / 16f
+        ) * 16f),
+        0, 15
+    );
+}
+
+// 湿度计算 (值范围 0-15)
+int CalculateHumidity(float x, float z) {
+    return Math.Clamp(
+        (int)(MathUtils.Saturate(
+            3f * SimplexNoise.OctavedNoise(
+                x + m_humidityOffset.X, 
+                z + m_humidityOffset.Y, 
+                0.0012f / TGBiomeScaling,
+                5, 2f, 0.6f
+            ) - 0.9f + m_worldSettings.HumidityOffset / 16f
+        ) * 16f),
+        0, 15
+    );
+}
+
+// 山地因子计算 (值范围 0-1)
+float CalculateMountainRangeFactor(float x, float z) {
+    return SimplexNoise.OctavedNoise(
+        x + m_mountainsOffset.X,
+        z + m_mountainsOffset.Y,
+        TGMountainRangeFreq / TGBiomeScaling,  // 默认 0.0006/BiomeSize
+        3, 1.91f, 0.75f, true
+    );
+}
+```
+
+#### 可调参数（WorldSettings）
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `BiomeSize` | 生物群系大小倍率 | 1.0 |
+| `TemperatureOffset` | 全局温度偏移 | 0 |
+| `HumidityOffset` | 全局湿度偏移 | 0 |
+
+### 8.2 生物群系类型与条件
+
+游戏通过参数组合隐式定义以下生物群系类型：
+
+```mermaid
+flowchart TD
+    A[位置坐标 x, z] --> B{温度 > 8?<br/>湿度 < 8?<br/>山地因子 < 0.97?}
+    
+    B -- 是 --> C[沙漠/沙滩<br/>沙子基底]
+    B -- 否 --> D{温度 <= 8?}
+    
+    D -- 是 --> E[寒冷地区<br/>雪、冰]
+    D -- 否 --> F{湿度范围?}
+    
+    F -- 湿度 >= 6 --> G[森林/草原<br/>草地基底]
+    F -- 湿度 < 6 --> H[干旱平原<br/>草地/沙地]
+    
+    C --> I{海岸距离 < 16?}
+    I -- 是 --> J[沙滩]
+    I -- 否 --> K[沙漠]
+    
+    E --> L{高度 > 120?}
+    L -- 是 --> M[高山雪原]
+    L -- 否 --> N[冰原/冻土]
+```
+
+#### 生物群系判定逻辑
+
+| 生物群系 | 温度 | 湿度 | 山地因子 | 其他条件 |
+|----------|------|------|----------|----------|
+| **沙漠** | > 8 | < 8 | < 0.97 | 距海 > 16 格 |
+| **沙滩** | > 8 | < 8 | < 0.97 | 距海 ≤ 16 格 |
+| **冰原** | ≤ 8 | 任意 | 任意 | 高度 ≤ 120 |
+| **高山雪原** | ≤ 8 | 任意 | 任意 | 高度 > 120 |
+| **森林** | 4-15 | ≥ 6 | < 0.9 | - |
+| **草原** | 4-15 | ≥ 6 | ≥ 0.9 | - |
+| **干旱平原** | > 4 | < 6 | < 0.9 | - |
+
+### 8.3 地表方块生成
+
+在 `GenerateSurface` 方法中，根据环境参数决定地表方块类型：
+
+```cs
+void GenerateSurface(TerrainChunk chunk) {
+    // 遍历每个水平位置
+    for (int i = 0; i < 16; i++) {
+        for (int j = 0; j < 16; j++) {
+            int temperature = terrain.GetTemperature(x, z);
+            int humidity = terrain.GetHumidity(x, z);
+            
+            // 根据温度和高度决定地表方块
+            if (height > 120 && IsPlaceFrozen(temperature, height)) {
+                surfaceBlock = 62;  // 冰
+            }
+            else if (temperature > 4 && temperature < 7) {
+                surfaceBlock = 6;   // 沙砾（过渡带）
+            }
+            else {
+                surfaceBlock = 7;   // 沙子（沙漠）
+            }
+            // ... 更多条件
+        }
+    }
+}
+```
+
+**方块 ID 对照表**：
+
+| ID | 方块 | 生成条件 |
+|----|------|----------|
+| 2 | 草地 | 默认地表 |
+| 3 | 泥土 | 地下 |
+| 4 | 沙子 | 沙漠/海岸 |
+| 6 | 沙砾 | 过渡带 |
+| 7 | 沙子（沙漠） | 高温低湿 |
+| 8 | 草地（高草） | 高湿度 |
+| 61 | 雪 | 寒冷地表 |
+| 62 | 冰 | 寒冷水域 |
+| 66 | 沙岩 | 特殊条件 |
+| 72 | 湿沙 | 水边 |
+
+### 8.4 植被生成
+
+植被生成在 Pass 4 中进行，根据温度和湿度选择合适的植被类型。
+
+#### 树木类型选择
+
+```mermaid
+graph LR
+    subgraph "温度-湿度矩阵"
+        T0["温度 0"] --> S["云杉 Spruce<br/>高云杉 TallSpruce"]
+        T4["温度 4"] --> O["橡树 Oak"]
+        T8["温度 8"] --> B["白桦 Birch"]
+        T12["温度 12"] --> P["白杨 Poplar"]
+    end
+    
+    subgraph "特殊条件"
+        LowH["湿度 < 6"] --> M["含羞草 Mimosa<br/>（沙漠边缘）"]
+        HighY["高度 > 85"] --> TP["白杨 Poplar"]
+    end
+```
+
+#### 树木生成概率函数
+
+`PlantsManager.CalculateTreeProbability` 定义了每种树木的生成概率：
+
+| 树类型 | 温度范围 | 湿度范围 | 高度范围 | 特点 |
+|--------|----------|----------|----------|------|
+| **Oak 橡树** | 4-10 最佳 | 6+ | < 82 | 温暖湿润地区 |
+| **Birch 白桦** | 5-11 | 任意 | < 82 | 温带地区 |
+| **Spruce 云杉** | 0-6（寒冷） | 3-12 | 任意 | 寒冷地区 |
+| **TallSpruce 高云杉** | 0-6 | 9-15 | < 95 | 高海拔湿润寒冷 |
+| **Mimosa 含羞草** | 2-12 | 0-4 | 任意 | 干旱温暖地区 |
+| **Poplar 白杨** | 4-12 | 3+ | 85-92 | 中高海拔 |
+
+```cs
+// 概率计算示例：橡树
+float CalculateTreeProbability(TreeType.Oak, int temperature, int humidity, int y) {
+    return RangeProbability(temperature, 4f, 10f, 15f, 15f)  // 温度 4-10 最佳
+         * RangeProbability(humidity, 6f, 8f, 15f, 15f)      // 湿度 6+ 最佳
+         * RangeProbability(y, 0f, 0f, 82f, 87f);            // 高度 < 82
+}
+
+// RangeProbability: 梯形概率函数
+// v < a: 0
+// a <= v < b: 线性增长 0→1
+// b <= v <= c: 1 (最佳区)
+// c < v <= d: 线性下降 1→0
+// v > d: 0
+```
+
+#### 其他植被生成
+
+| 植被类型 | 条件 | 说明 |
+|----------|------|------|
+| **高草** | 湿度 ≥ 6 | 草地地表 |
+| **花** | 湿度 ≥ 6，随机 | 低概率 |
+| **仙人掌** | 温度 > 8，湿度 < 6 | 沙漠地区 |
+| **南瓜** | 温度 > 6，湿度 ≥ 10 | 湿润地区 |
+| **海草/海带** | 海岸附近 | 水下植被 |
+| **常春藤** | 温度 ≥ 10，湿度 ≥ 10 | 热带湿润地区 |
+
+### 8.5 雪和冰生成
+
+在 `GenerateSnowAndIce` 方法中处理：
+
+```cs
+void GenerateSnowAndIce(TerrainChunk chunk) {
+    for (int i = 0; i < 16; i++) {
+        for (int j = 0; j < 16; j++) {
+            int temperature = chunk.GetTemperatureFast(i, j);
+            
+            // 检查是否冻结（温度 <= 8 且高度足够）
+            if (!SubsystemWeather.IsPlaceFrozen(temperature, height)) {
+                continue;
+            }
+            
+            if (block is WaterBlock) {
+                // 水面结冰
+                chunk.SetCellValueFast(i, height, j, 62);  // 冰
+                // 可能覆盖雪
+                if (ShaftHasSnowOnIce(x, z)) {
+                    chunk.SetCellValueFast(i, height + 1, j, 61);  // 雪
+                }
+            }
+            else if (CanSupportSnow(block)) {
+                // 陆地覆盖雪
+                chunk.SetCellValueFast(i, height + 1, j, 61);  // 雪
+            }
+        }
+    }
+}
+```
+
+### 8.6 生物群系过渡与平滑
+
+由于使用连续的噪声函数，生物群系之间会自然过渡：
+
+```mermaid
+graph LR
+    A[沙漠] -->|温度下降| B[草原]
+    B -->|温度继续下降| C[森林]
+    C -->|温度很低| D[冰原]
+    
+    A -->|湿度上升| E[稀树草原]
+    D -->|湿度下降| F[冻土]
+```
+
+**关键过渡参数**：
+- `TGBiomeScaling`：控制噪声频率，值越大生物群系越大
+- `m_temperatureOffset` / `m_humidityOffset`：随机偏移，确保每个世界的生物群系分布不同
+
+### 8.7 地形高度与生物群系的关系
+
+```cs
+float CalculateHeight(float x, float z) {
+    float mountainFactor = CalculateMountainRangeFactor(x, z);
+    
+    // 山地因子影响地形高度
+    float hillsStrength = TGHillsStrength * Squish(mountainFactor, 0.72f, 0.89f);
+    float mountainsStrength = TGMountainsStrength * Squish(mountainFactor, 0.89f, 1.0f);
+    
+    // 湿度影响（湿度高时降低山地）
+    float humidityFactor = mountainFactor - 0.01f * humidity;
+    
+    // 最终高度
+    return baseHeight + hillsStrength * hillsNoise + mountainsStrength * mountainsNoise;
+}
+```
+
+### 8.8 模组扩展点
+
+模组可以通过以下方式自定义生物群系：
+
+1. **TerrainContentsGenerator24Initialize 钩子**：修改生成参数
+   ```cs
+   public override void TerrainContentsGenerator24Initialize(
+       TerrainContentsGenerator24 generator, SubsystemTerrain subsystemTerrain) {
+       // 修改参数
+       generator.TGBiomeScaling = 2.0f;  // 更大的生物群系
+       generator.TGHillsStrength = 50f;  // 更高的丘陵
+   }
+   ```
+
+2. **添加新的 ChunkGenerationStep**：
+   ```cs
+   generator.ChunkGenerationStep4.Add(
+       new ChunkGenerationStep(1500, chunk => GenerateCustomBiome(chunk))
+   );
+   ```
+
+3. **PlantsManager 扩展**：添加新的树木类型
 
 ---
 
@@ -983,5 +1337,6 @@ Survivalcraft 的地形系统是一个精心设计的高性能体素引擎，具
 3. **多线程更新**：主线程和更新线程通过事件同步
 4. **高效存储**：RLE + Deflate 压缩，区域文件组织
 5. **灵活渲染**：分 Pass 渲染，支持多种材质和透明度
+6. **隐式生物群系**：通过温度/湿度/山地因子组合实现自然的生物群系过渡
 
 理解这些核心机制，有助于进行模组开发、性能优化或功能扩展。

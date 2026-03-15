@@ -343,3 +343,4 @@ healthchecksdb
 
 # Local Netlify folder
 .netlify
+Survivalcraft.Browser/ContentFileInfo.g.cs

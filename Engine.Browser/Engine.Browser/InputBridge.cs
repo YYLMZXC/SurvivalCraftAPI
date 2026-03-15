@@ -60,7 +60,6 @@ namespace Engine.Browser {
         static void ProcessEvents() {
             byte* ptr = _currentReadBuffer->EventData;
             byte* end = ptr + _currentReadBuffer->UsedBytes;
-
             while (ptr < end) {
                 InputEventType type = (InputEventType)(*ptr);
                 if (type == InputEventType.None) {

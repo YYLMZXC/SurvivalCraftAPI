@@ -20,9 +20,4 @@
         <!-- Normal,JustInterp,Full,FullInterp,Hybrid,LLVMOnly,LLVMOnlyInterp -->
         <!-- <AOTMode>LLVMOnly</AOTMode> -->
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-        <DebuggerSupport>false</DebuggerSupport>
-        <WasmEnableExceptionHandling>false</WasmEnableExceptionHandling>
-        <WasmStripILAfterAOT>true</WasmStripILAfterAOT>
-    </PropertyGroup>
 </Project>

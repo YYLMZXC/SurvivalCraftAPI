@@ -21,9 +21,14 @@ namespace Game {
         public string Description => LanguageControl.Get(fName, "Description");
 
         public DiskExternalContentProvider() {
-            if (!Directory.Exists(LocalPath)) {
-                Directory.CreateDirectory(LocalPath);
+            if (!Storage.DirectoryExists(LocalPath)) {
+                Storage.CreateDirectory(LocalPath);
             }
+#if BROWSER
+            if (!Storage.DirectoryExists(Path.Combine(LocalPath, "Uploads"))) {
+                Storage.CreateDirectory(Path.Combine(LocalPath, "Uploads"));
+            }
+#endif
         }
 
         public void Dispose() { }
@@ -77,8 +82,12 @@ namespace Game {
             ThreadPool.QueueUserWorkItem(
                 delegate {
                     try {
+#if BROWSER
+                        string destinationPath = Path.Combine(LocalPath, "Uploads", path);
+#else
                         string destinationPath = Path.Combine(LocalPath, path);
-                        using (FileStream destination = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None)) {
+#endif
+                        using (Stream destination = Storage.OpenFile(destinationPath, OpenFileMode.Create)) {
                             stream.CopyTo(destination);
                         }
                         Dispatcher.Dispatch(delegate { success(destinationPath); });

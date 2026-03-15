@@ -53,7 +53,7 @@ async function downloadContent() {
         }
     }
 }
-downloadContent();
+downloadContent().then();
 
 // TODO: 加上 withResourceLoader
 const runtime = await dotnet.withModuleConfig({
@@ -480,7 +480,6 @@ runtime.setModuleImports("main.js", {
 
         const keyDown = e => {
             e.stopPropagation();
-            checkAndRequestPointerLock();
             let translatedKeyCode = translateKeyCode(e.code);
             if (translatedKeyCode >= 0) {
                 writeSmallEvent(1, translatedKeyCode, e.key.length === 1 ? e.key.charCodeAt(0) : 0);
@@ -642,7 +641,6 @@ runtime.setModuleImports("main.js", {
     openUrlInNewTab: url => globalThis.open(url, "_blank"),
     setNeedPointerLock: need => {
         needPointerLock = need;
-        checkAndRequestPointerLock();
     },
     showOpenFilePicker: async (descAndExtArray, extCounts, defaultPath) => {
         let types = [];
@@ -687,11 +685,11 @@ runtime.setModuleImports("main.js", {
     returnSelf: value => value,
     showSaveFilePicker: async (fileName, mimeType) => {
         if (mimeType === null) {
-            return await globalThis.showSaveFilePicker({
+            return globalThis.showSaveFilePicker({
                 suggestedName: fileName
             });
         }
-        return await globalThis.showSaveFilePicker({
+        return globalThis.showSaveFilePicker({
             suggestedName: fileName,
             types: [
                 {

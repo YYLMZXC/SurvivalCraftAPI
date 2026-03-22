@@ -384,6 +384,7 @@ namespace Game {
             set {
                 bool originValue = HasFocus;
                 if (value) {
+                    FocusedTextBox?.HasFocus = false;
                     FocusedTextBox = this;
                     if (!TasksQueue.OfType<SetCursorPositionTask>().Any()) {
                         TasksQueue.Enqueue(new SetCursorPositionTask());
@@ -1443,6 +1444,10 @@ namespace Game {
                 if (!TasksQueue.OfType<SetCursorPositionTask>().Any()) {
                     TasksQueue.Enqueue(new SetCursorPositionTask());
                 }
+            };
+            FocusLost += widget => {
+                widget.CompositionText = null;
+                widget.CompositionTextCaret = 0;
             };
         }
 

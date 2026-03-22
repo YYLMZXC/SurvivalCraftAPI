@@ -14,7 +14,7 @@ namespace Game {
 
         public static string fName = "DiskExternalContentProvider";
 
-        public static string LocalPath = AppDomain.CurrentDomain.BaseDirectory;
+        public static string LocalPath = "app:";
 
         public bool IsLocalProvider => true;
 

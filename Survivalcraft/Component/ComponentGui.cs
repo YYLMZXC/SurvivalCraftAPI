@@ -190,9 +190,8 @@ namespace Game {
         }
 
         // ReSharper disable MethodOverloadWithOptionalParameter
-        public virtual void DisplaySmallMessage(string text, Color color, bool blinking, bool playNotificationSound, float fontScale = 1f)
+        public virtual void DisplaySmallMessage(string text, Color color, bool blinking, bool playNotificationSound, float fontScale = 1f) {
             // ReSharper restore MethodOverloadWithOptionalParameter
-        {
             MessageWidget.Message message = new(text, color, blinking, fontScale);
             DisplaySmallMessage(message, playNotificationSound);
         }

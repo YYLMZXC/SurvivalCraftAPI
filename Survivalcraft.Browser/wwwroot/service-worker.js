@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = "v20260214";
+﻿const CACHE_NAME = "v20260320";
 const BASE = self.registration.scope;
 const ASSETS = [
     "",
@@ -36,7 +36,7 @@ const cacheFirst = async ({request, preloadResponse, event}) => {
 
     // for navigation requests, fallback to cached index.html
     if (request.mode === 'navigate') {
-        let requestUrl = request.url.endsWith('/dashboard.html') ? new URL("dashboard.html", BASE).href : new URL("index.html", BASE).href;
+        let requestUrl = request.url.includes('dashboard.html') ? new URL("dashboard.html", BASE).href : new URL("index.html", BASE).href;
         let cachedIndex = await caches.match(requestUrl);
         if (cachedIndex) {
             return cachedIndex;
@@ -67,7 +67,8 @@ const cacheFirst = async ({request, preloadResponse, event}) => {
         return responseFromNetwork;
     } catch (error) {
         if (request.mode === 'navigate') {
-            const cachedIndex = await caches.match(new URL("index.html", BASE).href);
+            let requestUrl = request.url.includes('dashboard.html') ? new URL("dashboard.html", BASE).href : new URL("index.html", BASE).href;
+            const cachedIndex = await caches.match(requestUrl);
             if (cachedIndex) {
                 return cachedIndex;
             }

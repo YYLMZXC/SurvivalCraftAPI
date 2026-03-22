@@ -8,7 +8,9 @@
       <StackPanelWidget Direction="Vertical" Margin="10, 10">
         <CanvasWidget>
           <BevelledRectangleWidget Style="{Styles/Area}" />
-          <ScrollPanelWidget Name="Scroll" Direction="Vertical" Margin="3, 3" />
+          <ScrollPanelWidget Name="Scroll" Direction="Vertical" Margin="3, 3">
+            <StackPanelWidget Name="Substitutes" Direction="Vertical" />
+          </ScrollPanelWidget>
         </CanvasWidget>
       </StackPanelWidget>
     </StackPanelWidget>

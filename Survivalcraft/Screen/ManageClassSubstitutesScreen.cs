@@ -125,9 +125,9 @@ namespace Game {
             XElement node = ContentManager.Get<XElement>("Screens/ManageClassSubstitutesScreen");
             LoadContents(this, node);
             m_backButton = Children.Find<ButtonWidget>("TopBar.Back");
-            ScrollPanelWidget scrollPanel = Children.Find<ScrollPanelWidget>("Scroll");
+            StackPanelWidget substitutesWidget = Children.Find<StackPanelWidget>("Substitutes");
             foreach ((string guid, List<ModsManager.ClassSubstitute> substitutes) in ModsManager.ClassSubstitutes) {
-                scrollPanel.AddChildren(new SubstitutesGroupWidget(this, substitutes, guid));
+                substitutesWidget.AddChildren(new SubstitutesGroupWidget(this, substitutes, guid));
             }
         }
 

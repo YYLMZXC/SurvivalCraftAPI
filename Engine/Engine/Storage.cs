@@ -323,34 +323,34 @@ namespace Engine {
 
         public static string ProcessPath(string path, bool writeAccess, bool failIfApp) {
             ArgumentNullException.ThrowIfNull(path);
-            if (Path.DirectorySeparatorChar != '/') {
-                path = path.Replace('/', Path.DirectorySeparatorChar);
+            switch (Path.DirectorySeparatorChar) {
+                case '/':
+                    path = path.Replace('\\', Path.DirectorySeparatorChar);
+                    break;
+                case '\\':
+                    path = path.Replace('/', Path.DirectorySeparatorChar);
+                    break;
             }
-            if (Path.DirectorySeparatorChar != '\\') {
-                path = path.Replace('\\', Path.DirectorySeparatorChar);
-            }
-            string text;
+            string baseDirectory;
             if (path.StartsWith("app:")) {
-                text = GetAppDirectory(failIfApp);
+                baseDirectory = GetAppDirectory(failIfApp);
                 path = path.Substring(4).TrimStart(Path.DirectorySeparatorChar);
             }
             else if (path.StartsWith("data:")) {
-                text = GetDataDirectory(writeAccess);
+                baseDirectory = GetDataDirectory(writeAccess);
                 path = path.Substring(5).TrimStart(Path.DirectorySeparatorChar);
             }
-            else {
-                if (!path.StartsWith("system:")) {
-#if BROWSER
-                    EnsurePathLinked(path);
-                    return path;
-#else
-                    throw new InvalidOperationException("Invalid path.");
-#endif
-                }
-                text = string.Empty;
+            else if (path.StartsWith("system:")) {
+                baseDirectory = string.Empty;
                 path = path.Substring(7);
             }
-            string result = string.IsNullOrEmpty(text) ? path : Path.Combine(text, path);
+            else {
+#if BROWSER
+                EnsurePathLinked(path);
+#endif
+                return path;
+            }
+            string result = string.IsNullOrEmpty(baseDirectory) ? path : Path.Combine(baseDirectory, path);
 #if BROWSER
             EnsurePathLinked(result);
 #endif

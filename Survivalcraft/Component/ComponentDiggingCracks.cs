@@ -24,9 +24,7 @@ namespace Game {
 
         public int m_value;
 
-        public static int[] m_drawOrders = [
-            200 //原版是1
-        ];
+        public static int[] m_drawOrders = [1];
 
         public int[] DrawOrders => m_drawOrders;
 

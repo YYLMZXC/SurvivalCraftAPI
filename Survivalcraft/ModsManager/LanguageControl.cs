@@ -408,6 +408,7 @@ namespace Game {
                             "ru-RU" => "русский (Россия)",
                             "es-419" => "español (Latinoamérica)",
                             "vi-VN" => "Tiếng Việt (Việt Nam)",
+                            "pt-BR" => "Português (Brasil)",
                             "zh-CN-old" => "[旧] 中文 (中国）",
                             _ => $"{name}"
                         }

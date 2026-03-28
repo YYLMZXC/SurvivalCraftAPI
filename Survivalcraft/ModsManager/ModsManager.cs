@@ -170,18 +170,19 @@ public static class ModsManager {
         }
     }
 
-    public static Dictionary<string, PriorityQueue<ModLoader, int>> m_tempModHooks = [];
+    public static Dictionary<string, PriorityQueue<ModLoader, long>> m_tempModHooks = [];
+    static ushort m_registerHookTimes = 0;
 
     /// <summary>
     ///     注册Hook，优先级默认为 0<br/>
     ///     优先级相同时，执行顺序将不确定
     /// </summary>
     public static void RegisterHook(string hookName, ModLoader modLoader) {
-        if (!m_tempModHooks.TryGetValue(hookName, out PriorityQueue<ModLoader, int> pq)) {
-            pq = new PriorityQueue<ModLoader, int>();
+        if (!m_tempModHooks.TryGetValue(hookName, out PriorityQueue<ModLoader, long> pq)) {
+            pq = new PriorityQueue<ModLoader, long>();
             m_tempModHooks.Add(hookName, pq);
         }
-        pq.Enqueue(modLoader, 0);
+        pq.Enqueue(modLoader, m_registerHookTimes++);
     }
 
     /// <summary>
@@ -192,22 +193,19 @@ public static class ModsManager {
     /// <param name="modLoader"></param>
     /// <param name="priority">优先级，越小越优先</param>
     public static void RegisterHook(string hookName, ModLoader modLoader, int priority) {
-        if (!m_tempModHooks.TryGetValue(hookName, out PriorityQueue<ModLoader, int> pq)) {
-            pq = new PriorityQueue<ModLoader, int>();
+        if (!m_tempModHooks.TryGetValue(hookName, out PriorityQueue<ModLoader, long> pq)) {
+            pq = new PriorityQueue<ModLoader, long>();
             m_tempModHooks.Add(hookName, pq);
         }
-        pq.Enqueue(modLoader, priority);
+        pq.Enqueue(modLoader, ((long)priority << 16) | m_registerHookTimes++);
     }
 
     public static void DealWithTempModHooks() {
-        foreach ((string hookName, PriorityQueue<ModLoader, int> pq) in m_tempModHooks) {
+        foreach ((string hookName, PriorityQueue<ModLoader, long> pq) in m_tempModHooks) {
             ModHook modHook = new(hookName);
             ModHooks.Add(hookName, modHook);
-            HashSet<ModLoader> hashSet = [];
             while (pq.TryDequeue(out ModLoader modLoader, out _)) {
-                if (hashSet.Add(modLoader)) {
-                    modHook.Add(modLoader);
-                }
+                modHook.Add(modLoader);
             }
         }
         m_tempModHooks.Clear();

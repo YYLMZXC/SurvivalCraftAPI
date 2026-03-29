@@ -98,19 +98,65 @@ namespace Engine.Media {
         }
 
         static void ConvertBones(ModelRoot modelRoot, ModelData modelData, List<Node> allNodes, Dictionary<Node, int> nodeToIndex) {
-            foreach (Node node in allNodes) {
-                ModelBoneData bone = new() {
+            // 创建临时映射：Node -> 临时索引
+            Dictionary<Node, int> nodeToTempIndex = new();
+            for (int i = 0; i < allNodes.Count; i++) {
+                nodeToTempIndex[allNodes[i]] = i;
+            }
+
+            // 创建临时骨骼数据数组
+            ModelBoneData[] tempBones = new ModelBoneData[allNodes.Count];
+            for (int i = 0; i < allNodes.Count; i++) {
+                Node node = allNodes[i];
+                tempBones[i] = new ModelBoneData {
                     Name = node.Name ?? $"Node{node.LogicalIndex}",
-                    Transform = ConvertMatrix(node.LocalMatrix)
+                    Transform = ConvertMatrix(node.LocalMatrix),
+                    ParentBoneIndex = -1 // 先设为 -1，后面再更新
                 };
+            }
 
-                // 查找父节点索引
+            // 设置父骨骼索引（使用临时索引）
+            for (int i = 0; i < allNodes.Count; i++) {
+                Node node = allNodes[i];
                 Node parent = node.VisualParent;
-                bone.ParentBoneIndex = parent != null && nodeToIndex.TryGetValue(parent, out int parentIndex)
-                    ? parentIndex
-                    : -1;
+                if (parent != null && nodeToTempIndex.TryGetValue(parent, out int parentIndex)) {
+                    tempBones[i].ParentBoneIndex = parentIndex;
+                }
+            }
 
+            // 拓扑排序：确保父骨骼在子骨骼之前
+            // 计算每个骨骼的深度，按深度排序
+            int[] depths = new int[allNodes.Count];
+            for (int i = 0; i < allNodes.Count; i++) {
+                depths[i] = CalculateDepth(i, tempBones);
+            }
+
+            // 创建排序映射：旧索引 -> 新索引
+            int[] oldToNew = new int[allNodes.Count];
+            List<int> sortedIndices = new();
+            for (int i = 0; i < allNodes.Count; i++) {
+                sortedIndices.Add(i);
+            }
+            sortedIndices.Sort((a, b) => depths[a].CompareTo(depths[b]));
+
+            for (int newIndex = 0; newIndex < sortedIndices.Count; newIndex++) {
+                oldToNew[sortedIndices[newIndex]] = newIndex;
+            }
+
+            // 按排序顺序添加骨骼，并更新父索引
+            foreach (int oldIndex in sortedIndices) {
+                ModelBoneData bone = tempBones[oldIndex];
+                if (bone.ParentBoneIndex >= 0) {
+                    bone.ParentBoneIndex = oldToNew[bone.ParentBoneIndex];
+                }
                 modelData.Bones.Add(bone);
+            }
+
+            // 更新 nodeToIndex 映射（用于后续的蒙皮和网格处理）
+            nodeToIndex.Clear();
+            foreach (int oldIndex in sortedIndices) {
+                Node node = allNodes[oldIndex];
+                nodeToIndex[node] = oldToNew[oldIndex];
             }
 
             // 如果没有节点，创建一个默认根节点
@@ -121,6 +167,16 @@ namespace Engine.Media {
                     Transform = Matrix.Identity
                 });
             }
+        }
+
+        static int CalculateDepth(int boneIndex, ModelBoneData[] bones) {
+            int depth = 0;
+            int current = boneIndex;
+            while (bones[current].ParentBoneIndex >= 0 && depth < bones.Length) {
+                current = bones[current].ParentBoneIndex;
+                depth++;
+            }
+            return depth;
         }
 
         /// <summary>
@@ -342,6 +398,7 @@ namespace Engine.Media {
             }
 
             // 构建顶点声明
+            // 注意：着色器期望 Position, Normal, TexCoord 都是必需的
             List<VertexElement> elements = new();
             int offset = 0;
 
@@ -349,19 +406,17 @@ namespace Engine.Media {
             elements.Add(new VertexElement(offset, VertexElementFormat.Vector3, VertexElementSemantic.Position));
             offset += 12;
 
-            // Normal (Vector3)
+            // Normal (Vector3) - 始终添加，着色器期望有 NORMAL
+            // 如果模型没有法线数据，使用默认值 (0, 1, 0)
             bool hasNormals = normals != null;
-            if (hasNormals) {
-                elements.Add(new VertexElement(offset, VertexElementFormat.Vector3, VertexElementSemantic.Normal));
-                offset += 12;
-            }
+            elements.Add(new VertexElement(offset, VertexElementFormat.Vector3, VertexElementSemantic.Normal));
+            offset += 12;
 
-            // UV0 (Vector2)
+            // UV0 (Vector2) - 始终添加，着色器期望有 TEXCOORD
+            // 如果模型没有 UV 数据，使用默认值 (0, 0)
             bool hasUV0 = uv0 != null;
-            if (hasUV0) {
-                elements.Add(new VertexElement(offset, VertexElementFormat.Vector2, VertexElementSemantic.TextureCoordinate));
-                offset += 8;
-            }
+            elements.Add(new VertexElement(offset, VertexElementFormat.Vector2, VertexElementSemantic.TextureCoordinate));
+            offset += 8;
 
             // BlendIndices (Vector4 - 作为 4 个 float 存储)
             // BlendWeights (Vector4)
@@ -389,19 +444,23 @@ namespace Engine.Media {
                 WriteVector3(vertexBuffer, baseOffset + currentOffset, pos.X, pos.Y, pos.Z);
                 currentOffset += 12;
 
-                // Normal
+                // Normal - 始终写入，没有数据时使用默认向上法线
                 if (hasNormals) {
                     var normal = normals[i];
                     WriteVector3(vertexBuffer, baseOffset + currentOffset, normal.X, normal.Y, normal.Z);
-                    currentOffset += 12;
+                } else {
+                    WriteVector3(vertexBuffer, baseOffset + currentOffset, 0f, 1f, 0f);
                 }
+                currentOffset += 12;
 
-                // UV0
+                // UV0 - 始终写入，没有数据时使用默认值
                 if (hasUV0) {
                     var uv = uv0[i];
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, uv.X, uv.Y);
-                    currentOffset += 8;
+                } else {
+                    WriteVector2(vertexBuffer, baseOffset + currentOffset, 0f, 0f);
                 }
+                currentOffset += 8;
 
                 // BlendIndices 和 BlendWeights
                 if (hasSkinning) {

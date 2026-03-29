@@ -377,7 +377,8 @@ namespace Game {
             skinnedShader.HazeStartDensity = new Vector2(m_subsystemSky.ViewHazeStart, m_subsystemSky.ViewHazeDensity);
             skinnedShader.FogYMultiplier = m_subsystemSky.VisibilityRangeYMultiplier;
             skinnedShader.WorldUp = Vector3.TransformNormal(Vector3.UnitY, camera.ViewMatrix);
-            skinnedShader.Transforms.View = Matrix.Identity;
+            // 蒙皮模型需要设置 View 矩阵（非蒙皮模型通过 AbsoluteBoneTransformsForCamera 已包含视图变换）
+            skinnedShader.Transforms.View = camera.ViewMatrix;
             skinnedShader.Transforms.Projection = camera.ProjectionMatrix;
 
             if (alphaThreshold.HasValue) {
@@ -397,41 +398,76 @@ namespace Game {
             skinnedShader.SamplerState = model.GetDefaultSamplerState() ?? SamplerState.PointClamp;
 
             // Calculate joint matrices for GPU skinning
-            // JointMatrix = InverseBindMatrix * JointWorldMatrix
+            // Standard formula: jointMatrix = inverseBind * jointWorld
+            // But for models with coordinate system conversion (like Z-up to Y-up),
+            // we need to handle the coordinate transform correctly.
+            //
+            // Matrix system: C# uses row-major (v * M), GLSL uses column-major (mat * vec)
+            // Matrices are passed without transpose, so GLSL treats them as transposed.
+            // This means v * M in C# equals mat * vec in GLSL.
+            //
+            // Bone hierarchy: absoluteTransform = localTransform * parentTransform
+            // The root bone transform is at the rightmost position of the chain.
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
+
+            // Get inverted view matrix to convert camera-space transforms back to world space
+            Matrix invertedView = camera.InvertedViewMatrix;
+
+            // Get root bone transform for coordinate conversion
+            Matrix rootBoneTransform = model.Bones.Count > 0 ? model.Bones[0].Transform : Matrix.Identity;
+            Matrix invRootBoneTransform = Matrix.Invert(rootBoneTransform);
 
             for (int i = 0; i < jointCount; i++) {
                 if (i < skin.Joints.Count && skin.Joints[i] != null) {
                     ModelBone joint = skin.Joints[i];
-                    Matrix jointWorld = componentModel.GetBoneTransform(joint.Index) ?? Matrix.Identity;
+                    // jointWorld is in game space (includes root bone transform from hierarchy)
+                    Matrix jointWorld = componentModel.AbsoluteBoneTransformsForCamera[joint.Index] * invertedView;
+
+                    // inverseBind is in glTF space (no coordinate conversion)
                     Matrix inverseBind = i < skin.InverseBindMatrices?.Length
                         ? skin.InverseBindMatrices[i]
                         : Matrix.Identity;
-                    m_jointMatricesBuffer[i] = inverseBind * jointWorld;
+
+                    // Convert jointWorld to glTF space by removing the coordinate conversion
+                    // In our matrix system, rootBoneTransform is at the rightmost of the chain,
+                    // so we right-multiply the inverse to remove it:
+                    // jointWorld = localTransforms * rootBoneTransform
+                    // jointWorld * invRootBoneTransform = localTransforms (glTF space)
+                    Matrix jointWorldGlTF = jointWorld * invRootBoneTransform;
+
+                    // Final joint matrix:
+                    // jointMatrix = inverseBind * jointWorldGlTF * rootBoneTransform
+                    // In T-pose: inverseBind * jointWorldGlTF ≈ Identity
+                    // So: jointMatrix ≈ rootBoneTransform (correct coordinate conversion)
+                    m_jointMatricesBuffer[i] = inverseBind * jointWorldGlTF * rootBoneTransform;
                 } else {
                     m_jointMatricesBuffer[i] = Matrix.Identity;
                 }
             }
             skinnedShader.JointMatrices = m_jointMatricesBuffer;
 
-            // Set world matrix (single instance for skinned model)
+            // Set world matrix for the model
+            // For skinned models, the World matrix positions the entire model in world space
+            // Use identity for now to debug - the model should appear at origin
             skinnedShader.Transforms.World[0] = Matrix.Identity;
 
-            // Get instanced model data (contains vertex buffer with skinning attributes)
-            InstancedModelData instancedModelData = InstancedModelsManager.GetInstancedModelData(
-                model,
-                componentModel.MeshDrawOrders
-            );
+            // Draw model meshes directly (not using InstancedModelsManager which doesn't support skinned vertices)
+            foreach (int meshIndex in componentModel.MeshDrawOrders) {
+                ModelMesh mesh = model.Meshes[meshIndex];
+                foreach (ModelMeshPart meshPart in mesh.MeshParts) {
+                    if (meshPart.IndicesCount == 0) continue;
 
-            Display.DrawIndexed(
-                PrimitiveType.TriangleList,
-                skinnedShader,
-                instancedModelData.VertexBuffer,
-                instancedModelData.IndexBuffer,
-                0,
-                instancedModelData.IndexBuffer.IndicesCount
-            );
+                    Display.DrawIndexed(
+                        PrimitiveType.TriangleList,
+                        skinnedShader,
+                        meshPart.VertexBuffer,
+                        meshPart.IndexBuffer,
+                        meshPart.StartIndex,
+                        meshPart.IndicesCount
+                    );
+                }
+            }
             ModelsDrawn++;
         }
 

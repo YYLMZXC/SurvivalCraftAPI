@@ -111,7 +111,9 @@ void main(
 // <Semantic Name='NORMAL' Attribute='a_normal' />
 // <Semantic Name='COLOR' Attribute='a_color' />
 // <Semantic Name='TEXCOORD' Attribute='a_texcoord' />
+#ifndef USE_SKINNING
 // <Semantic Name='INSTANCE' Attribute='a_instance' />
+#endif
 // <Semantic Name='BLENDINDICES' Attribute='a_joints' />
 // <Semantic Name='BLENDWEIGHTS' Attribute='a_weights' />
 
@@ -146,7 +148,9 @@ uniform vec2 u_hazeStartDensity;
 attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec2 a_texcoord;
+#ifndef USE_SKINNING
 attribute float a_instance;
+#endif
 #ifdef USE_SKINNING
 attribute vec4 a_joints;
 attribute vec4 a_weights;
@@ -186,8 +190,12 @@ void main()
 	// Texture
 	v_texcoord = a_texcoord;
 
-	// Instancing
+	// Instancing (skinned models always use instance 0)
+#ifdef USE_SKINNING
+	int instance = 0;
+#else
 	int instance = int(a_instance);
+#endif
 
 	// Apply skinning if enabled
 	vec3 skinnedPosition = a_position;

@@ -321,11 +321,13 @@ namespace Game {
                     // 设置采样器状态（glTF 使用 LinearWrap，Collada 使用 PointClamp）
                     modelShader.SamplerState = componentModel.Model?.GetDefaultSamplerState()
                         ?? SamplerState.PointClamp;
+
                     Array.Copy(
                         componentModel.AbsoluteBoneTransformsForCamera,
                         modelShader.Transforms.World,
                         componentModel.AbsoluteBoneTransformsForCamera.Length
                     );
+
                     InstancedModelData instancedModelData = InstancedModelsManager.GetInstancedModelData(
                         componentModel.Model,
                         componentModel.MeshDrawOrders
@@ -398,48 +400,35 @@ namespace Game {
             skinnedShader.SamplerState = model.GetDefaultSamplerState() ?? SamplerState.PointClamp;
 
             // Calculate joint matrices for GPU skinning
-            // Standard formula: jointMatrix = inverseBind * jointWorld
-            // But for models with coordinate system conversion (like Z-up to Y-up),
-            // we need to handle the coordinate transform correctly.
-            //
-            // Matrix system: C# uses row-major (v * M), GLSL uses column-major (mat * vec)
-            // Matrices are passed without transpose, so GLSL treats them as transposed.
-            // This means v * M in C# equals mat * vec in GLSL.
-            //
-            // Bone hierarchy: absoluteTransform = localTransform * parentTransform
-            // The root bone transform is at the rightmost position of the chain.
+            // Reference: Plan/GPUSkinningPitfalls.md
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
 
             // Get inverted view matrix to convert camera-space transforms back to world space
             Matrix invertedView = camera.InvertedViewMatrix;
 
-            // Get root bone transform for coordinate conversion
-            Matrix rootBoneTransform = model.Bones.Count > 0 ? model.Bones[0].Transform : Matrix.Identity;
+            // Get root bone transform (coordinate conversion) and its inverse
+            Matrix rootBoneTransform = model.RootBone.Transform;
             Matrix invRootBoneTransform = Matrix.Invert(rootBoneTransform);
 
             for (int i = 0; i < jointCount; i++) {
                 if (i < skin.Joints.Count && skin.Joints[i] != null) {
                     ModelBone joint = skin.Joints[i];
-                    // jointWorld is in game space (includes root bone transform from hierarchy)
+
+                    // Step 1: Get joint world transform (in game space, includes entity position)
                     Matrix jointWorld = componentModel.AbsoluteBoneTransformsForCamera[joint.Index] * invertedView;
 
-                    // inverseBind is in glTF space (no coordinate conversion)
+                    // Step 2: Convert to glTF space (remove root bone's coordinate conversion)
+                    Matrix jointWorldGlTF = jointWorld * invRootBoneTransform;
+
+                    // Step 3: Get inverse bind matrix (in glTF space)
                     Matrix inverseBind = i < skin.InverseBindMatrices?.Length
                         ? skin.InverseBindMatrices[i]
                         : Matrix.Identity;
 
-                    // Convert jointWorld to glTF space by removing the coordinate conversion
-                    // In our matrix system, rootBoneTransform is at the rightmost of the chain,
-                    // so we right-multiply the inverse to remove it:
-                    // jointWorld = localTransforms * rootBoneTransform
-                    // jointWorld * invRootBoneTransform = localTransforms (glTF space)
-                    Matrix jointWorldGlTF = jointWorld * invRootBoneTransform;
-
-                    // Final joint matrix:
+                    // Step 4: Calculate joint matrix
                     // jointMatrix = inverseBind * jointWorldGlTF * rootBoneTransform
-                    // In T-pose: inverseBind * jointWorldGlTF ≈ Identity
-                    // So: jointMatrix ≈ rootBoneTransform (correct coordinate conversion)
+                    // This transforms: vertex(glTF) -> bind space -> glTF world -> game world
                     m_jointMatricesBuffer[i] = inverseBind * jointWorldGlTF * rootBoneTransform;
                 } else {
                     m_jointMatricesBuffer[i] = Matrix.Identity;
@@ -447,9 +436,9 @@ namespace Game {
             }
             skinnedShader.JointMatrices = m_jointMatricesBuffer;
 
-            // Set world matrix for the model
-            // For skinned models, the World matrix positions the entire model in world space
-            // Use identity for now to debug - the model should appear at origin
+            // World matrix is Identity for skinned models
+            // The entity position is already included in AbsoluteBoneTransformsForCamera
+            // (set in ComponentSimpleModel.Animate())
             skinnedShader.Transforms.World[0] = Matrix.Identity;
 
             // Draw model meshes directly (not using InstancedModelsManager which doesn't support skinned vertices)

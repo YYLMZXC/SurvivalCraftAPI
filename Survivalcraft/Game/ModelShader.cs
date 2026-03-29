@@ -175,6 +175,8 @@ namespace Game {
 
         public override void PrepareForDrawingOverride() {
             Transforms.UpdateMatrices(m_instancesCount, false, false, true);
+
+            // SetValue 内部已有变更检测，只有值真正改变时才会更新 GPU
             m_worldViewProjectionMatrixParameter.SetValue(Transforms.WorldViewProjection, InstancesCount);
             m_worldMatrixParameter.SetValue(Transforms.World, InstancesCount);
         }

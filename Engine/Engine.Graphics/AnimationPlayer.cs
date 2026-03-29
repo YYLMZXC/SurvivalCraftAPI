@@ -90,44 +90,62 @@ namespace Engine.Graphics {
         public void SampleBoneTransforms(Matrix?[] boneTransforms) {
             if (_animation == null || _model == null || boneTransforms == null) return;
 
+            // 按骨骼分组通道，合并同一骨骼的所有属性
+            Dictionary<int, (Vector3? translation, Quaternion? rotation, Vector3? scale)> boneTransformsData = new();
+
             foreach (var channel in _animation.Channels) {
                 if (!_boneNameToIndex.TryGetValue(channel.TargetBoneName, out int boneIndex))
                     continue;
 
-                Matrix transform = SampleChannel(channel, _time);
+                var sampler = channel.Sampler;
+                if (sampler == null || sampler.KeyTimes == null || sampler.KeyTimes.Length == 0)
+                    continue;
+
+                // 获取或创建该骨骼的变换数据
+                if (!boneTransformsData.TryGetValue(boneIndex, out var data)) {
+                    data = (null, null, null);
+                }
+
+                switch (channel.Property) {
+                    case ModelAnimation.AnimationProperty.Translation:
+                        if (sampler.Translations != null && sampler.Translations.Length > 0) {
+                            data.translation = SampleVector3(sampler.Translations, sampler.KeyTimes, _time, sampler.Interpolation);
+                        }
+                        break;
+                    case ModelAnimation.AnimationProperty.Rotation:
+                        if (sampler.Rotations != null && sampler.Rotations.Length > 0) {
+                            data.rotation = SampleQuaternion(sampler.Rotations, sampler.KeyTimes, _time, sampler.Interpolation);
+                        }
+                        break;
+                    case ModelAnimation.AnimationProperty.Scale:
+                        if (sampler.Scales != null && sampler.Scales.Length > 0) {
+                            data.scale = SampleVector3(sampler.Scales, sampler.KeyTimes, _time, sampler.Interpolation);
+                        }
+                        break;
+                }
+
+                boneTransformsData[boneIndex] = data;
+            }
+
+            // 为每个骨骼构建完整的变换矩阵
+            foreach (var kvp in boneTransformsData) {
+                int boneIndex = kvp.Key;
+                var (translation, rotation, scale) = kvp.Value;
+
+                // 构建变换矩阵: Scale * Rotation * Translation
+                Matrix transform = Matrix.Identity;
+                if (scale.HasValue) {
+                    transform *= Matrix.CreateScale(scale.Value);
+                }
+                if (rotation.HasValue) {
+                    transform *= Matrix.CreateFromQuaternion(rotation.Value);
+                }
+                if (translation.HasValue) {
+                    transform *= Matrix.CreateTranslation(translation.Value);
+                }
+
                 boneTransforms[boneIndex] = transform;
             }
-        }
-
-        Matrix SampleChannel(ModelAnimation.AnimationChannel channel, float time) {
-            var sampler = channel.Sampler;
-            if (sampler == null || sampler.KeyTimes == null || sampler.KeyTimes.Length == 0)
-                return Matrix.Identity;
-
-            switch (channel.Property) {
-                case ModelAnimation.AnimationProperty.Translation:
-                    if (sampler.Translations != null && sampler.Translations.Length > 0) {
-                        var translation = SampleVector3(sampler.Translations, sampler.KeyTimes, time, sampler.Interpolation);
-                        return Matrix.CreateTranslation(translation);
-                    }
-                    break;
-
-                case ModelAnimation.AnimationProperty.Rotation:
-                    if (sampler.Rotations != null && sampler.Rotations.Length > 0) {
-                        var rotation = SampleQuaternion(sampler.Rotations, sampler.KeyTimes, time, sampler.Interpolation);
-                        return Matrix.CreateFromQuaternion(rotation);
-                    }
-                    break;
-
-                case ModelAnimation.AnimationProperty.Scale:
-                    if (sampler.Scales != null && sampler.Scales.Length > 0) {
-                        var scale = SampleVector3(sampler.Scales, sampler.KeyTimes, time, sampler.Interpolation);
-                        return Matrix.CreateScale(scale);
-                    }
-                    break;
-            }
-
-            return Matrix.Identity;
         }
 
         Vector3 SampleVector3(Vector3[] values, float[] times, float time, ModelAnimation.InterpolationType interpolation) {

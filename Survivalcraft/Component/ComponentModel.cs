@@ -20,6 +20,8 @@ namespace Game {
 
         public float m_boundingSphereRadius;
 
+        AnimationPlayer m_animationPlayer;
+
         /// <summary>
         ///     模型偏移
         /// </summary>
@@ -93,7 +95,13 @@ namespace Game {
             if (flag) {
                 return;
             }
-            ProcessBoneHierarchy(Model.RootBone, camera.ViewMatrix, AbsoluteBoneTransformsForCamera);
+            // 先计算骨骼的世界变换（不包含视图矩阵）
+            ProcessBoneHierarchy(Model.RootBone, Matrix.Identity, AbsoluteBoneTransformsForCamera);
+
+            // 然后应用视图矩阵
+            for (int i = 0; i < AbsoluteBoneTransformsForCamera.Length; i++) {
+                AbsoluteBoneTransformsForCamera[i] = AbsoluteBoneTransformsForCamera[i] * camera.ViewMatrix;
+            }
         }
 
         public virtual void CalculateIsVisible(Camera camera) {
@@ -127,6 +135,7 @@ namespace Game {
 
         public virtual void Animate() {
             Animated = false;
+
             ModsManager.HookAction(
                 "OnAnimateModel",
                 loader => {
@@ -135,6 +144,20 @@ namespace Game {
                     return false;
                 }
             );
+
+            // 更新动画并采样骨骼变换
+            if (m_animationPlayer != null && m_animationPlayer.IsPlaying) {
+                // 清除上一帧的骨骼变换
+                for (int i = 0; i < m_boneTransforms.Length; i++) {
+                    m_boneTransforms[i] = null;
+                }
+
+                m_animationPlayer.Update(Time.FrameDuration);
+                m_animationPlayer.SampleBoneTransforms(m_boneTransforms);
+
+                // 标记动画已处理
+                Animated = true;
+            }
         }
 
         public virtual void DrawExtras(Camera camera) {
@@ -187,21 +210,29 @@ namespace Game {
                 m_boneTransforms = null;
                 AbsoluteBoneTransformsForCamera = null;
                 MeshDrawOrders = null;
+                m_animationPlayer = null;
             }
         }
 
         public virtual void ProcessBoneHierarchy(ModelBone modelBone, Matrix currentTransform, Matrix[] transforms) {
             Matrix m = modelBone.Transform;
             if (m_boneTransforms[modelBone.Index].HasValue) {
-                Vector3 translation = m.Translation;
-                m.Translation = Vector3.Zero;
-                m *= m_boneTransforms[modelBone.Index].Value;
-                m.Translation += translation;
-                Matrix.MultiplyRestricted(ref m, ref currentTransform, out transforms[modelBone.Index]);
+                if (Model.HasSkin) {
+                    // glTF 蒙皮模型：动画采样的是完整的局部变换，直接替换骨骼变换
+                    m = m_boneTransforms[modelBone.Index].Value;
+                } else {
+                    // DAE 模型：保留骨骼的原始平移，只替换旋转/缩放
+                    // 这是为了兼容 Mod 通过 SetBoneTransform 设置骨骼动画的场景
+                    Vector3 translation = m.Translation;
+                    m.Translation = Vector3.Zero;
+                    m *= m_boneTransforms[modelBone.Index].Value;
+                    m.Translation += translation;
+                }
             }
-            else {
-                Matrix.MultiplyRestricted(ref m, ref currentTransform, out transforms[modelBone.Index]);
-            }
+
+            // 骨骼世界变换 = 骨骼局部变换 * 父骨骼世界变换
+            Matrix.MultiplyRestricted(ref m, ref currentTransform, out transforms[modelBone.Index]);
+
             foreach (ModelBone childBone in modelBone.ChildBones) {
                 ProcessBoneHierarchy(childBone, transforms[modelBone.Index], transforms);
             }

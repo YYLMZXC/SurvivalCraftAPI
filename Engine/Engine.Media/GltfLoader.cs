@@ -262,13 +262,20 @@ namespace Engine.Media {
             }
 
             // 构建索引缓冲（统一使用 32 位索引，与 Collada 加载器保持一致）
+            // glTF 使用逆时针绕序 (CCW)，引擎使用 CullCounterClockwise，需要翻转绕序
+            System.Diagnostics.Debug.Assert(indices.Length % 3 == 0,
+                $"Index count {indices.Length} is not divisible by 3 - malformed triangle data");
             byte[] indexBuffer = new byte[indices.Length * 4];
-            for (int i = 0; i < indices.Length; i++) {
-                uint idx = indices[i];
-                indexBuffer[i * 4] = (byte)(idx & 0xFF);
-                indexBuffer[i * 4 + 1] = (byte)((idx >> 8) & 0xFF);
-                indexBuffer[i * 4 + 2] = (byte)((idx >> 16) & 0xFF);
-                indexBuffer[i * 4 + 3] = (byte)((idx >> 24) & 0xFF);
+            for (int triangle = 0; triangle < indices.Length / 3; triangle++) {
+                int baseIdx = triangle * 3;
+                // 翻转绕序：交换 v1 和 v2 (0,1,2 -> 0,2,1)
+                uint idx0 = indices[baseIdx];
+                uint idx1 = indices[baseIdx + 2]; // 交换
+                uint idx2 = indices[baseIdx + 1]; // 交换
+
+                WriteIndex32(indexBuffer, baseIdx, idx0);
+                WriteIndex32(indexBuffer, baseIdx + 1, idx1);
+                WriteIndex32(indexBuffer, baseIdx + 2, idx2);
             }
 
             // 创建缓冲数据
@@ -427,6 +434,14 @@ namespace Engine.Media {
             WriteFloat(buffer, offset + 4, y);
             WriteFloat(buffer, offset + 8, z);
             WriteFloat(buffer, offset + 12, w);
+        }
+
+        static void WriteIndex32(byte[] buffer, int elementIndex, uint value) {
+            int offset = elementIndex * 4;
+            buffer[offset] = (byte)(value & 0xFF);
+            buffer[offset + 1] = (byte)((value >> 8) & 0xFF);
+            buffer[offset + 2] = (byte)((value >> 16) & 0xFF);
+            buffer[offset + 3] = (byte)((value >> 24) & 0xFF);
         }
 
         static BoundingBox CalculateBoundingBoxFromPositions(SharpGLTF.Memory.IAccessorArray<System.Numerics.Vector3> positions, uint[] indices) {

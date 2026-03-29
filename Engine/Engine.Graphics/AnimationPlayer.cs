@@ -66,18 +66,21 @@ namespace Engine.Graphics {
         /// 更新动画时间
         /// </summary>
         public void Update(float deltaTime) {
-            if (!_playing || _animation == null) return;
+            if (!_playing) return;
 
             _time += deltaTime;
 
-            if (_looping && _animation.Duration > 0) {
-                while (_time >= _animation.Duration) {
-                    _time -= _animation.Duration;
+            // 如果有动画，处理循环和结束逻辑
+            if (_animation != null && _animation.Duration > 0) {
+                if (_looping) {
+                    while (_time >= _animation.Duration) {
+                        _time -= _animation.Duration;
+                    }
                 }
-            }
-            else if (_time >= _animation.Duration) {
-                _time = _animation.Duration;
-                _playing = false;
+                else if (_time >= _animation.Duration) {
+                    _time = _animation.Duration;
+                    _playing = false;
+                }
             }
         }
 

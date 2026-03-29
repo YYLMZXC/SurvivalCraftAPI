@@ -258,7 +258,9 @@ namespace Game {
                     modelShader.AmbientLightColor = new Vector3(LightingManager.LightAmbient * modelsDatum.Light);
                     modelShader.DiffuseLightColor1 = new Vector3(modelsDatum.Light);
                     modelShader.DiffuseLightColor2 = new Vector3(modelsDatum.Light);
-                    modelShader.Texture = componentModel.TextureOverride;
+                    // 优先使用外部指定的纹理，否则使用模型的嵌入纹理
+                    modelShader.Texture = componentModel.TextureOverride
+                        ?? componentModel.Model?.GetDefaultBaseColorTexture();
                     Array.Copy(
                         componentModel.AbsoluteBoneTransformsForCamera,
                         modelShader.Transforms.World,

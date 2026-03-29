@@ -55,26 +55,21 @@ namespace Engine.Graphics {
 
             // 延迟加载纹理
             ModelTextureInfo texInfo = ModelData.Textures[textureIndex];
-            texInfo.Load(); // 确保已加载像素数据
-
-            if (texInfo.Pixels == null) {
+            if (texInfo.SourceImage.IsEmpty) {
                 return null;
             }
 
-            // 创建 Texture2D
-            Texture2D texture = new(texInfo.Width, texInfo.Height, 1, ColorFormat.Rgba8888);
-            Color[] colors = new Color[texInfo.Pixels.Length / 4];
-            for (int i = 0; i < colors.Length; i++) {
-                int offset = i * 4;
-                colors[i] = new Color(
-                    texInfo.Pixels[offset],
-                    texInfo.Pixels[offset + 1],
-                    texInfo.Pixels[offset + 2],
-                    texInfo.Pixels[offset + 3]
-                );
+            // 直接从 Stream 创建 Texture2D
+            Texture2D texture = null;
+            try {
+                using var stream = texInfo.SourceImage.Open();
+                texture = Texture2D.Load(stream);
+                texture.Tag = texInfo.Name;
             }
-            texture.SetData(0, colors);
-            texture.Tag = texInfo.Name;
+            catch (System.Exception ex) {
+                System.Diagnostics.Debug.WriteLine($"[Model] Failed to load texture '{texInfo.Name}': {ex.Message}");
+                return null;
+            }
 
             m_loadedTextures[textureIndex] = texture;
             return texture;

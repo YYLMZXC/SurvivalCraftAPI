@@ -216,14 +216,14 @@ namespace Engine.Media {
             // Normal
             channel = gltfMaterial.FindChannel("Normal");
             if (channel != null) {
-                matData.NormalScale = GetFactorSafe(channel.Value, "Scale", 1f);
+                matData.NormalScale = GetFactorSafe(channel.Value, "NormalScale", 1f);
                 matData.NormalTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
             }
 
             // Occlusion
             channel = gltfMaterial.FindChannel("Occlusion");
             if (channel != null) {
-                matData.OcclusionStrength = GetFactorSafe(channel.Value, "Strength", 1f);
+                matData.OcclusionStrength = GetFactorSafe(channel.Value, "OcclusionStrength", 1f);
                 matData.OcclusionTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
             }
 

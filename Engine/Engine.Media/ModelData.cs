@@ -18,17 +18,45 @@ namespace Engine.Media {
         /// </summary>
         public List<ModelAnimation> Animations { get; set; } = [];
 
-        public static ModelFileFormat DetermineFileFormat(Stream stream) => Collada.IsColladaStream(stream)
-            ? ModelFileFormat.Collada
-            : throw new InvalidOperationException("Unsupported model file format.");
+        public static ModelFileFormat DetermineFileFormat(Stream stream) {
+            if (Collada.IsColladaStream(stream)) {
+                return ModelFileFormat.Collada;
+            }
+            stream.Position = 0;
+            byte[] header = new byte[4];
+            if (stream.Read(header, 0, 4) >= 4) {
+                // GLB 文件以 "glTF" 魔数开头 (0x67 0x6C 0x54 0x46)
+                if (header[0] == 0x67 && header[1] == 0x6C && header[2] == 0x54 && header[3] == 0x46) {
+                    return ModelFileFormat.Glb;
+                }
+                // glTF 文本格式以 '{' 开头 (JSON 格式)
+                if (header[0] == 0x7B) {
+                    return ModelFileFormat.Gltf;
+                }
+            }
+            throw new InvalidOperationException("Unsupported model file format.");
+        }
 
-        public static ModelFileFormat DetermineFileFormat(string extension) => extension.Equals(".dae", StringComparison.OrdinalIgnoreCase)
-            ? ModelFileFormat.Collada
-            : throw new InvalidOperationException("Unsupported model file format.");
+        public static ModelFileFormat DetermineFileFormat(string extension) {
+            if (extension.Equals(".dae", StringComparison.OrdinalIgnoreCase)) {
+                return ModelFileFormat.Collada;
+            }
+            if (extension.Equals(".gltf", StringComparison.OrdinalIgnoreCase)) {
+                return ModelFileFormat.Gltf;
+            }
+            if (extension.Equals(".glb", StringComparison.OrdinalIgnoreCase)) {
+                return ModelFileFormat.Glb;
+            }
+            throw new InvalidOperationException("Unsupported model file format.");
+        }
 
-        public static ModelData Load(Stream stream, ModelFileFormat format) => format == ModelFileFormat.Collada
-            ? Collada.Load(stream)
-            : throw new InvalidOperationException("Unsupported model file format.");
+        public static ModelData Load(Stream stream, ModelFileFormat format) {
+            return format switch {
+                ModelFileFormat.Collada => Collada.Load(stream),
+                ModelFileFormat.Gltf or ModelFileFormat.Glb => GltfLoader.Load(stream),
+                _ => throw new InvalidOperationException("Unsupported model file format.")
+            };
+        }
 
         public static ModelData Load(string fileName, ModelFileFormat format) {
             using (Stream stream = Storage.OpenFile(fileName, OpenFileMode.Read)) {

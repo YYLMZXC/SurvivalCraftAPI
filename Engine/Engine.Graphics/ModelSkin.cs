@@ -13,12 +13,12 @@ namespace Engine.Graphics {
         /// <summary>
         /// 逆绑定矩阵，每个关节一个
         /// </summary>
-        public Matrix[]? InverseBindMatrices { get; set; }
+        public Matrix[] InverseBindMatrices { get; set; }
 
         /// <summary>
         /// 根骨骼（骨骼层级根节点）
         /// </summary>
-        public ModelBone? SkeletonRoot { get; set; }
+        public ModelBone SkeletonRoot { get; set; }
 
         /// <summary>
         /// 关节数量

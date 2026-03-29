@@ -20,7 +20,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 蒙皮数据（如果有骨骼蒙皮）
         /// </summary>
-        public ModelSkin? Skin { get; set; }
+        public ModelSkin Skin { get; set; }
 
         /// <summary>
         /// 动画数据列表
@@ -170,6 +170,8 @@ namespace Engine.Graphics {
 
         internal void Initialize(ModelData modelData, bool keepSourceVertexDataInTags) {
             ModelData = modelData;
+            Skin = modelData.Skin;
+            Animations = modelData.Animations;
             ArgumentNullException.ThrowIfNull(modelData);
             InternalDispose();
             VertexBuffer[] array = new VertexBuffer[modelData.Buffers.Count];

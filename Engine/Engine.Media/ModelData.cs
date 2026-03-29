@@ -1,3 +1,5 @@
+using Engine.Graphics;
+
 namespace Engine.Media {
     public class ModelData {
         public List<ModelBoneData> Bones = [];
@@ -5,6 +7,16 @@ namespace Engine.Media {
         public List<ModelMeshData> Meshes = [];
 
         public List<ModelBuffersData> Buffers = [];
+
+        /// <summary>
+        /// 蒙皮数据（glTF 加载时填充）
+        /// </summary>
+        public ModelSkin Skin { get; set; }
+
+        /// <summary>
+        /// 动画数据列表（glTF 加载时填充）
+        /// </summary>
+        public List<ModelAnimation> Animations { get; set; } = [];
 
         public static ModelFileFormat DetermineFileFormat(Stream stream) => Collada.IsColladaStream(stream)
             ? ModelFileFormat.Collada

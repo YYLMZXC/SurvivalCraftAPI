@@ -1,3 +1,4 @@
+#nullable disable
 using Engine.Media;
 
 namespace Engine.Graphics {
@@ -15,6 +16,26 @@ namespace Engine.Graphics {
         public ReadOnlyList<ModelMesh> Meshes => new(m_meshes);
 
         public ModelData ModelData { get; set; }
+
+        /// <summary>
+        /// 蒙皮数据（如果有骨骼蒙皮）
+        /// </summary>
+        public ModelSkin? Skin { get; set; }
+
+        /// <summary>
+        /// 动画数据列表
+        /// </summary>
+        public List<ModelAnimation> Animations { get; set; } = [];
+
+        /// <summary>
+        /// 是否支持蒙皮
+        /// </summary>
+        public bool HasSkin => Skin != null;
+
+        /// <summary>
+        /// 是否有动画
+        /// </summary>
+        public bool HasAnimations => Animations.Count > 0;
 
         public ModelBone FindBone(string name, bool throwIfNotFound = true) {
             foreach (ModelBone bone in m_bones) {

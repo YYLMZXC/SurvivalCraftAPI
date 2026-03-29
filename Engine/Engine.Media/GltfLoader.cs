@@ -88,6 +88,9 @@ namespace Engine.Media {
             // 转换网格数据
             ConvertMeshes(modelRoot, modelData, allNodes, nodeToIndex, textureToIndex, materialToIndex);
 
+            // 转换蒙皮数据
+            ConvertSkins(modelRoot, modelData, nodeToIndex);
+
             // 转换动画数据
             ConvertAnimations(modelRoot, modelData);
 
@@ -457,6 +460,56 @@ namespace Engine.Media {
             }
 
             return meshPart;
+        }
+
+        static void ConvertSkins(ModelRoot modelRoot, ModelData modelData, Dictionary<Node, int> nodeToIndex) {
+            // 查找第一个有 Skin 的节点
+            // 注意：glTF 允许一个模型有多个 Skin（用于不同的网格），但大多数模型只有一个
+            // 这是一个简化处理，未来可以扩展为支持多个 Skin
+            Skin firstSkin = null;
+            foreach (Node node in modelRoot.LogicalNodes) {
+                if (node.Skin != null) {
+                    firstSkin = node.Skin;
+                    break;
+                }
+            }
+
+            if (firstSkin == null) {
+                return; // 没有蒙皮数据
+            }
+
+            // 提取关节索引
+            IReadOnlyList<Node> skinJoints = firstSkin.Joints;
+            int jointCount = skinJoints.Count;
+
+            int[] jointIndices = new int[jointCount];
+            for (int i = 0; i < jointCount; i++) {
+                Node joint = skinJoints[i];
+                jointIndices[i] = nodeToIndex.TryGetValue(joint, out int idx) ? idx : 0;
+            }
+
+            // 提取逆绑定矩阵
+            IReadOnlyList<System.Numerics.Matrix4x4> inverseBindMatrices = firstSkin.InverseBindMatrices;
+            Matrix[] ibm = new Matrix[jointCount];
+            for (int i = 0; i < jointCount; i++) {
+                if (i < inverseBindMatrices.Count) {
+                    ibm[i] = ConvertMatrix(inverseBindMatrices[i]);
+                } else {
+                    ibm[i] = Matrix.Identity;
+                }
+            }
+
+            // 获取骨架根节点索引
+            int skeletonRootIndex = -1;
+            if (firstSkin.Skeleton != null && nodeToIndex.TryGetValue(firstSkin.Skeleton, out int rootIdx)) {
+                skeletonRootIndex = rootIdx;
+            }
+
+            modelData.Skin = new ModelSkin {
+                JointIndices = jointIndices,
+                InverseBindMatrices = ibm,
+                SkeletonRootIndex = skeletonRootIndex
+            };
         }
 
         static void ConvertAnimations(ModelRoot modelRoot, ModelData modelData) {

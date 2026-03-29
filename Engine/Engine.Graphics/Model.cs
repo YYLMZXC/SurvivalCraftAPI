@@ -275,6 +275,8 @@ namespace Engine.Graphics {
             foreach (ModelBoneData bone in modelData.Bones) {
                 NewBone(bone.Name, bone.Transform, bone.ParentBoneIndex >= 0 ? m_bones[bone.ParentBoneIndex] : null);
             }
+            // 解析蒙皮骨骼引用
+            Skin?.ResolveJoints(m_bones);
             foreach (ModelMeshData mesh in modelData.Meshes) {
                 ModelMesh modelMesh = NewMesh(mesh.Name, m_bones[mesh.ParentBoneIndex], mesh.BoundingBox);
                 m_meshes.Add(modelMesh);

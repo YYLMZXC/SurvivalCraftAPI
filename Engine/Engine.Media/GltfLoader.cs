@@ -261,26 +261,14 @@ namespace Engine.Media {
                 }
             }
 
-            // 构建索引缓冲（转换为 16 位或 32 位）
-            byte[] indexBuffer;
-            bool use16BitIndices = vertexCount <= 65536;
-
-            if (use16BitIndices) {
-                indexBuffer = new byte[indices.Length * 2];
-                for (int i = 0; i < indices.Length; i++) {
-                    ushort idx = (ushort)indices[i];
-                    indexBuffer[i * 2] = (byte)(idx & 0xFF);
-                    indexBuffer[i * 2 + 1] = (byte)((idx >> 8) & 0xFF);
-                }
-            } else {
-                indexBuffer = new byte[indices.Length * 4];
-                for (int i = 0; i < indices.Length; i++) {
-                    uint idx = indices[i];
-                    indexBuffer[i * 4] = (byte)(idx & 0xFF);
-                    indexBuffer[i * 4 + 1] = (byte)((idx >> 8) & 0xFF);
-                    indexBuffer[i * 4 + 2] = (byte)((idx >> 16) & 0xFF);
-                    indexBuffer[i * 4 + 3] = (byte)((idx >> 24) & 0xFF);
-                }
+            // 构建索引缓冲（统一使用 32 位索引，与 Collada 加载器保持一致）
+            byte[] indexBuffer = new byte[indices.Length * 4];
+            for (int i = 0; i < indices.Length; i++) {
+                uint idx = indices[i];
+                indexBuffer[i * 4] = (byte)(idx & 0xFF);
+                indexBuffer[i * 4 + 1] = (byte)((idx >> 8) & 0xFF);
+                indexBuffer[i * 4 + 2] = (byte)((idx >> 16) & 0xFF);
+                indexBuffer[i * 4 + 3] = (byte)((idx >> 24) & 0xFF);
             }
 
             // 创建缓冲数据

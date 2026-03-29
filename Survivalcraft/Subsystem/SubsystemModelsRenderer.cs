@@ -37,9 +37,23 @@ namespace Game {
 
         public static ModelShader ShaderAlphaTested;
 
+        // Skinned shaders for skeletal animation
+        public static ModelShader ShaderSkinnedOpaque;
+
+        public static ModelShader ShaderSkinnedAlphaTested;
+
         public ModelShader m_shaderOpaque;
 
         public ModelShader m_shaderAlphaTested;
+
+        public ModelShader m_shaderSkinnedOpaque;
+
+        public ModelShader m_shaderSkinnedAlphaTested;
+
+        /// <summary>
+        /// Maximum number of joints per model for GPU skinning
+        /// </summary>
+        public const int MaxJointsCount = 64;
 
         public int MaxInstancesCount;
 
@@ -48,6 +62,11 @@ namespace Game {
         public List<ModelData> m_modelsToPrepare = [];
 
         public List<ModelData>[] m_modelsToDraw = [[], [], [], []];
+
+        // Pre-allocated buffers for skinning (avoid GC pressure)
+        readonly Matrix[] m_jointMatricesBuffer = new Matrix[MaxJointsCount];
+        readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
+        readonly List<ModelData> m_skinnedModelsBuffer = [];
 
         public static bool DisableDrawingModels = false;
 
@@ -155,6 +174,7 @@ namespace Game {
                     return false;
                 }
             );
+            // Non-skinned shaders
             m_shaderOpaque = new ModelShader(
                 ShaderCodeManager.GetFast("Shaders/Model.vsh"),
                 ShaderCodeManager.GetFast("Shaders/Model.psh"),
@@ -166,6 +186,21 @@ namespace Game {
                 ShaderCodeManager.GetFast("Shaders/Model.psh"),
                 true,
                 MaxInstancesCount
+            );
+            // Skinned shaders (support GPU skinning with MaxJointsCount joints)
+            m_shaderSkinnedOpaque = new ModelShader(
+                ShaderCodeManager.GetFast("Shaders/Model.vsh"),
+                ShaderCodeManager.GetFast("Shaders/Model.psh"),
+                false,
+                MaxInstancesCount,
+                MaxJointsCount
+            );
+            m_shaderSkinnedAlphaTested = new ModelShader(
+                ShaderCodeManager.GetFast("Shaders/Model.vsh"),
+                ShaderCodeManager.GetFast("Shaders/Model.psh"),
+                true,
+                MaxInstancesCount,
+                MaxJointsCount
             );
         }
 
@@ -200,7 +235,29 @@ namespace Game {
         }
 
         public virtual void DrawModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
-            DrawInstancedModels(camera, modelsData, alphaThreshold);
+            // Separate skinned and non-skinned models (use pre-allocated buffers)
+            m_nonSkinnedModelsBuffer.Clear();
+            m_skinnedModelsBuffer.Clear();
+
+            foreach (var modelData in modelsData) {
+                if (modelData.ComponentModel.Model?.HasSkin == true) {
+                    m_skinnedModelsBuffer.Add(modelData);
+                } else {
+                    m_nonSkinnedModelsBuffer.Add(modelData);
+                }
+            }
+
+            // Draw non-skinned models with instancing
+            if (m_nonSkinnedModelsBuffer.Count > 0) {
+                DrawInstancedModels(camera, m_nonSkinnedModelsBuffer, alphaThreshold);
+            }
+
+            // Draw skinned models individually (no instancing for skinned models)
+            foreach (var skinnedModel in m_skinnedModelsBuffer) {
+                DrawSkinnedModel(camera, skinnedModel, alphaThreshold);
+            }
+
+            // Draw extras (shadows, etc.)
             DrawModelsExtras(camera, modelsData);
         }
 
@@ -292,6 +349,90 @@ namespace Game {
                     }
                 );
             }
+        }
+
+        /// <summary>
+        /// Draw a single skinned model with GPU skinning
+        /// </summary>
+        public virtual void DrawSkinnedModel(Camera camera, ModelData modelData, float? alphaThreshold) {
+            ComponentModel componentModel = modelData.ComponentModel;
+            Model model = componentModel.Model;
+
+            if (model?.Skin == null) return;
+
+            // Select skinned shader
+            ModelShader skinnedShader = ShaderSkinnedOpaque != null && ShaderSkinnedAlphaTested != null
+                ? alphaThreshold.HasValue ? ShaderSkinnedAlphaTested : ShaderSkinnedOpaque
+                : alphaThreshold.HasValue ? m_shaderSkinnedAlphaTested : m_shaderSkinnedOpaque;
+
+            // Set shader parameters
+            skinnedShader.LightDirection1 = -Vector3.TransformNormal(LightingManager.DirectionToLight1, camera.ViewMatrix);
+            skinnedShader.LightDirection2 = -Vector3.TransformNormal(LightingManager.DirectionToLight2, camera.ViewMatrix);
+            skinnedShader.FogColor = new Vector3(m_subsystemSky.ViewFogColor);
+            skinnedShader.FogBottomTopDensity = new Vector3(
+                m_subsystemSky.ViewFogBottom - camera.ViewPosition.Y,
+                m_subsystemSky.ViewFogTop - camera.ViewPosition.Y,
+                m_subsystemSky.ViewFogDensity
+            );
+            skinnedShader.HazeStartDensity = new Vector2(m_subsystemSky.ViewHazeStart, m_subsystemSky.ViewHazeDensity);
+            skinnedShader.FogYMultiplier = m_subsystemSky.VisibilityRangeYMultiplier;
+            skinnedShader.WorldUp = Vector3.TransformNormal(Vector3.UnitY, camera.ViewMatrix);
+            skinnedShader.Transforms.View = Matrix.Identity;
+            skinnedShader.Transforms.Projection = camera.ProjectionMatrix;
+
+            if (alphaThreshold.HasValue) {
+                skinnedShader.AlphaThreshold = alphaThreshold.Value;
+            }
+
+            // Material properties
+            Vector3 diffuseColor = componentModel.DiffuseColor ?? Vector3.One;
+            float opacity = componentModel.Opacity ?? 1f;
+            skinnedShader.InstancesCount = 1; // Skinned models use single instance
+            skinnedShader.MaterialColor = new Vector4(diffuseColor * opacity, opacity);
+            skinnedShader.EmissionColor = componentModel.EmissionColor ?? Vector4.Zero;
+            skinnedShader.AmbientLightColor = new Vector3(LightingManager.LightAmbient * modelData.Light);
+            skinnedShader.DiffuseLightColor1 = new Vector3(modelData.Light);
+            skinnedShader.DiffuseLightColor2 = new Vector3(modelData.Light);
+            skinnedShader.Texture = componentModel.TextureOverride ?? model.GetDefaultBaseColorTexture();
+            skinnedShader.SamplerState = model.GetDefaultSamplerState() ?? SamplerState.PointClamp;
+
+            // Calculate joint matrices for GPU skinning
+            // JointMatrix = InverseBindMatrix * JointWorldMatrix
+            ModelSkin skin = model.Skin;
+            int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
+
+            for (int i = 0; i < jointCount; i++) {
+                if (i < skin.Joints.Count && skin.Joints[i] != null) {
+                    ModelBone joint = skin.Joints[i];
+                    Matrix jointWorld = componentModel.GetBoneTransform(joint.Index) ?? Matrix.Identity;
+                    Matrix inverseBind = i < skin.InverseBindMatrices?.Length
+                        ? skin.InverseBindMatrices[i]
+                        : Matrix.Identity;
+                    m_jointMatricesBuffer[i] = inverseBind * jointWorld;
+                } else {
+                    m_jointMatricesBuffer[i] = Matrix.Identity;
+                }
+            }
+            skinnedShader.JointMatrices = m_jointMatricesBuffer;
+
+            // Set world matrix (single instance for skinned model)
+            skinnedShader.Transforms.World[0] = Matrix.Identity;
+
+            // Get instanced model data (contains vertex buffer with skinning attributes)
+            InstancedModelData instancedModelData = InstancedModelsManager.GetInstancedModelData(
+                model,
+                componentModel.MeshDrawOrders
+            );
+
+            Display.DrawIndexed(
+                PrimitiveType.TriangleList,
+                skinnedShader,
+                instancedModelData.VertexBuffer,
+                instancedModelData.IndexBuffer,
+                0,
+                instancedModelData.IndexBuffer.IndicesCount
+            );
+            ModelsDrawn++;
         }
 
         public virtual void DrawModelsExtras(Camera camera, List<ModelData> modelsData) {

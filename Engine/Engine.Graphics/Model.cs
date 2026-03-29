@@ -93,6 +93,22 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
+        /// 获取默认采样器状态（根据模型格式）
+        /// glTF 默认使用 LinearWrap，Collada 默认使用 PointClamp
+        /// </summary>
+        public SamplerState GetDefaultSamplerState() {
+            // 如果有纹理信息，使用第一个纹理的采样器
+            if (ModelData?.Textures.Count > 0) {
+                var texInfo = ModelData.Textures[0];
+                if (texInfo.SamplerState != null) {
+                    return texInfo.SamplerState;
+                }
+            }
+            // 回退到默认的 PointClamp（Collada 默认）
+            return SamplerState.PointClamp;
+        }
+
+        /// <summary>
         /// 获取指定索引的材质数据
         /// </summary>
         public ModelMaterialData GetMaterial(int materialIndex) {

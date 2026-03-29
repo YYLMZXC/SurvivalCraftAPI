@@ -220,7 +220,7 @@ namespace Game {
             modelShader.WorldUp = Vector3.TransformNormal(Vector3.UnitY, camera.ViewMatrix);
             modelShader.Transforms.View = Matrix.Identity;
             modelShader.Transforms.Projection = camera.ProjectionMatrix;
-            modelShader.SamplerState = SamplerState.PointClamp;
+            // SamplerState 会在每个模型绘制时根据模型类型设置
             if (alphaThreshold.HasValue) {
                 modelShader.AlphaThreshold = alphaThreshold.Value;
             }
@@ -261,6 +261,9 @@ namespace Game {
                     // 优先使用外部指定的纹理，否则使用模型的嵌入纹理
                     modelShader.Texture = componentModel.TextureOverride
                         ?? componentModel.Model?.GetDefaultBaseColorTexture();
+                    // 设置采样器状态（glTF 使用 LinearWrap，Collada 使用 PointClamp）
+                    modelShader.SamplerState = componentModel.Model?.GetDefaultSamplerState()
+                        ?? SamplerState.PointClamp;
                     Array.Copy(
                         componentModel.AbsoluteBoneTransformsForCamera,
                         modelShader.Transforms.World,

@@ -153,6 +153,9 @@ namespace Engine.Media {
                     IsSrgb = isSrgb
                 };
 
+                // 设置采样器状态
+                texInfo.SetSampler(gltfTexture.Sampler);
+
                 modelData.Textures.Add(texInfo);
             }
 

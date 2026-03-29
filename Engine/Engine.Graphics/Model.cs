@@ -37,6 +37,76 @@ namespace Engine.Graphics {
         /// </summary>
         public bool HasAnimations => Animations.Count > 0;
 
+        // 已加载的纹理缓存
+        Dictionary<int, Texture2D> m_loadedTextures = new();
+
+        /// <summary>
+        /// 获取指定索引的纹理（延迟加载）
+        /// </summary>
+        public Texture2D GetTexture(int textureIndex) {
+            if (ModelData == null || textureIndex < 0 || textureIndex >= ModelData.Textures.Count) {
+                return null;
+            }
+
+            // 检查缓存
+            if (m_loadedTextures.TryGetValue(textureIndex, out Texture2D cached)) {
+                return cached;
+            }
+
+            // 延迟加载纹理
+            ModelTextureInfo texInfo = ModelData.Textures[textureIndex];
+            texInfo.Load(); // 确保已加载像素数据
+
+            if (texInfo.Pixels == null) {
+                return null;
+            }
+
+            // 创建 Texture2D
+            Texture2D texture = new(texInfo.Width, texInfo.Height, 1, ColorFormat.Rgba8888);
+            Color[] colors = new Color[texInfo.Pixels.Length / 4];
+            for (int i = 0; i < colors.Length; i++) {
+                int offset = i * 4;
+                colors[i] = new Color(
+                    texInfo.Pixels[offset],
+                    texInfo.Pixels[offset + 1],
+                    texInfo.Pixels[offset + 2],
+                    texInfo.Pixels[offset + 3]
+                );
+            }
+            texture.SetData(0, colors);
+            texture.Tag = texInfo.Name;
+
+            m_loadedTextures[textureIndex] = texture;
+            return texture;
+        }
+
+        /// <summary>
+        /// 获取默认材质的 BaseColor 纹理
+        /// </summary>
+        public Texture2D GetDefaultBaseColorTexture() {
+            if (ModelData?.Materials.Count > 0) {
+                int texIndex = ModelData.Materials[0].BaseColorTextureIndex;
+                if (texIndex >= 0) {
+                    return GetTexture(texIndex);
+                }
+            }
+            // 回退到旧方式（第一个纹理）
+            if (ModelData?.Textures.Count > 0) {
+                return GetTexture(0);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 获取指定索引的材质数据
+        /// </summary>
+        public ModelMaterialData GetMaterial(int materialIndex) {
+            if (ModelData == null || materialIndex < 0 || materialIndex >= ModelData.Materials.Count) {
+                return null;
+            }
+            return ModelData.Materials[materialIndex];
+        }
+
         public ModelBone FindBone(string name, bool throwIfNotFound = true) {
             foreach (ModelBone bone in m_bones) {
                 if (bone.Name == name) {
@@ -174,6 +244,7 @@ namespace Engine.Graphics {
             Animations = modelData.Animations;
             ArgumentNullException.ThrowIfNull(modelData);
             InternalDispose();
+            // 纹理延迟加载，不在初始化时创建
             VertexBuffer[] array = new VertexBuffer[modelData.Buffers.Count];
             IndexBuffer[] array2 = new IndexBuffer[modelData.Buffers.Count];
             for (int i = 0; i < modelData.Buffers.Count; i++) {
@@ -202,7 +273,8 @@ namespace Engine.Graphics {
                         array2[meshPart.BuffersDataIndex],
                         meshPart.StartIndex,
                         meshPart.IndicesCount,
-                        meshPart.BoundingBox
+                        meshPart.BoundingBox,
+                        meshPart.MaterialIndex
                     );
                 }
             }
@@ -212,6 +284,11 @@ namespace Engine.Graphics {
             m_rootBone = null;
             m_bones.Clear();
             Utilities.DisposeCollection(m_meshes);
+            // 清理缓存的纹理
+            foreach (var texture in m_loadedTextures.Values) {
+                texture?.Dispose();
+            }
+            m_loadedTextures.Clear();
         }
     }
 }

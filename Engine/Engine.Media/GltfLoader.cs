@@ -8,6 +8,10 @@ using Engine.Graphics;
 using SharpGLTF.Schema2;
 using SharpGLTF.Validation;
 using GltfPrimitiveType = SharpGLTF.Schema2.PrimitiveType;
+using SharpGLTF.Memory;
+using GltfImage = SharpGLTF.Schema2.Image;
+using GltfTexture = SharpGLTF.Schema2.Texture;
+using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Media {
     /// <summary>
@@ -73,11 +77,16 @@ namespace Engine.Media {
                 allNodes.Add(node);
             }
 
+            // 加载纹理和材质（在网格之前，因为需要建立索引映射）
+            Dictionary<Texture, int> textureToIndex = new();
+            Dictionary<Material, int> materialToIndex = new();
+            ConvertTexturesAndMaterials(modelRoot, modelData, textureToIndex, materialToIndex);
+
             // 转换骨骼/节点数据
             ConvertBones(modelRoot, modelData, allNodes, nodeToIndex);
 
             // 转换网格数据
-            ConvertMeshes(modelRoot, modelData, allNodes, nodeToIndex);
+            ConvertMeshes(modelRoot, modelData, allNodes, nodeToIndex, textureToIndex, materialToIndex);
 
             // 转换动画数据
             ConvertAnimations(modelRoot, modelData);
@@ -111,7 +120,148 @@ namespace Engine.Media {
             }
         }
 
-        static void ConvertMeshes(ModelRoot modelRoot, ModelData modelData, List<Node> allNodes, Dictionary<Node, int> nodeToIndex) {
+        /// <summary>
+        /// 加载纹理和材质，建立索引映射
+        /// </summary>
+        static void ConvertTexturesAndMaterials(ModelRoot modelRoot, ModelData modelData,
+            Dictionary<GltfTexture, int> textureToIndex, Dictionary<GltfMaterial, int> materialToIndex) {
+
+            // 1. 分析纹理用途，确定 sRGB vs Linear
+            Dictionary<int, bool> textureIsSrgb = new();
+            foreach (GltfTexture tex in modelRoot.LogicalTextures) {
+                textureIsSrgb[tex.LogicalIndex] = true; // 默认 sRGB
+            }
+            foreach (GltfMaterial material in modelRoot.LogicalMaterials) {
+                AnalyzeTextureColorSpace(material, textureIsSrgb);
+            }
+
+            // 2. 加载所有纹理（延迟加载模式）
+            foreach (GltfTexture gltfTexture in modelRoot.LogicalTextures) {
+                GltfImage image = gltfTexture.PrimaryImage ?? gltfTexture.FallbackImage;
+                if (image?.Content == null || image.Content.IsEmpty) {
+                    continue;
+                }
+
+                int texIndex = modelData.Textures.Count;
+                textureToIndex[gltfTexture] = texIndex;
+
+                bool isSrgb = textureIsSrgb.GetValueOrDefault(gltfTexture.LogicalIndex, true);
+
+                ModelTextureInfo texInfo = new() {
+                    Name = image.Name ?? $"Texture{image.LogicalIndex}",
+                    SourceImage = image.Content,
+                    IsSrgb = isSrgb
+                };
+
+                modelData.Textures.Add(texInfo);
+            }
+
+            // 3. 加载所有材质
+            foreach (GltfMaterial gltfMaterial in modelRoot.LogicalMaterials) {
+                int matIndex = modelData.Materials.Count;
+                materialToIndex[gltfMaterial] = matIndex;
+
+                ModelMaterialData matData = new() {
+                    Name = gltfMaterial.Name ?? $"Material{gltfMaterial.LogicalIndex}"
+                };
+
+                // 加载材质属性
+                LoadMaterialProperties(gltfMaterial, matData, textureToIndex);
+
+                modelData.Materials.Add(matData);
+            }
+        }
+
+        /// <summary>
+        /// 分析纹理颜色空间（sRGB vs Linear）
+        /// </summary>
+        static void AnalyzeTextureColorSpace(GltfMaterial material, Dictionary<int, bool> textureIsSrgb) {
+            // sRGB channels: BaseColor, Emissive
+            // Linear channels: Normal, MetallicRoughness, Occlusion
+
+            void MarkTexture(string channelKey, bool isSrgb) {
+                MaterialChannel? channel = material.FindChannel(channelKey);
+                if (channel?.Texture is { } tex) {
+                    textureIsSrgb[tex.LogicalIndex] = isSrgb;
+                }
+            }
+
+            MarkTexture("BaseColor", true);
+            MarkTexture("Emissive", true);
+            MarkTexture("Normal", false);
+            MarkTexture("MetallicRoughness", false);
+            MarkTexture("Occlusion", false);
+        }
+
+        /// <summary>
+        /// 加载材质属性
+        /// </summary>
+        static void LoadMaterialProperties(GltfMaterial gltfMaterial, ModelMaterialData matData, Dictionary<GltfTexture, int> textureToIndex) {
+            // BaseColor
+            MaterialChannel? channel = gltfMaterial.FindChannel("BaseColor");
+            if (channel != null) {
+                var color = channel.Value.Color;
+                matData.BaseColorFactor = new Vector4(color.X, color.Y, color.Z, color.W);
+                matData.BaseColorTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+            }
+
+            // MetallicRoughness
+            channel = gltfMaterial.FindChannel("MetallicRoughness");
+            if (channel != null) {
+                matData.MetallicFactor = GetFactorSafe(channel.Value, "MetallicFactor", 1f);
+                matData.RoughnessFactor = GetFactorSafe(channel.Value, "RoughnessFactor", 1f);
+                matData.MetallicRoughnessTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+            }
+
+            // Normal
+            channel = gltfMaterial.FindChannel("Normal");
+            if (channel != null) {
+                matData.NormalScale = GetFactorSafe(channel.Value, "Scale", 1f);
+                matData.NormalTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+            }
+
+            // Occlusion
+            channel = gltfMaterial.FindChannel("Occlusion");
+            if (channel != null) {
+                matData.OcclusionStrength = GetFactorSafe(channel.Value, "Strength", 1f);
+                matData.OcclusionTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+            }
+
+            // Emissive
+            channel = gltfMaterial.FindChannel("Emissive");
+            if (channel != null) {
+                var emissive = channel.Value.Color;
+                matData.EmissiveFactor = new Vector3(emissive.X, emissive.Y, emissive.Z);
+                matData.EmissiveTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+            }
+
+            // Alpha mode
+            matData.AlphaMode = gltfMaterial.Alpha switch {
+                AlphaMode.BLEND => ModelAlphaMode.Blend,
+                AlphaMode.MASK => ModelAlphaMode.Mask,
+                _ => ModelAlphaMode.Opaque
+            };
+            matData.AlphaCutoff = gltfMaterial.AlphaCutoff;
+            matData.DoubleSided = gltfMaterial.DoubleSided;
+        }
+
+        static float GetFactorSafe(MaterialChannel channel, string factorName, float defaultValue) {
+            try {
+                return channel.GetFactor(factorName);
+            } catch {
+                return defaultValue;
+            }
+        }
+
+        static int GetTextureIndex(GltfTexture texture, Dictionary<GltfTexture, int> textureToIndex) {
+            if (texture == null || !textureToIndex.TryGetValue(texture, out int index)) {
+                return -1;
+            }
+            return index;
+        }
+
+        static void ConvertMeshes(ModelRoot modelRoot, ModelData modelData, List<Node> allNodes,
+            Dictionary<Node, int> nodeToIndex, Dictionary<GltfTexture, int> textureToIndex, Dictionary<GltfMaterial, int> materialToIndex) {
             int bufferIndex = 0;
 
             // 获取默认场景或使用所有根节点
@@ -125,11 +275,12 @@ namespace Engine.Media {
             }
 
             foreach (Node node in nodesToProcess) {
-                ProcessNodeForMesh(node, modelData, allNodes, nodeToIndex, ref bufferIndex);
+                ProcessNodeForMesh(node, modelData, allNodes, nodeToIndex, ref bufferIndex, materialToIndex);
             }
         }
 
-        static void ProcessNodeForMesh(Node node, ModelData modelData, List<Node> allNodes, Dictionary<Node, int> nodeToIndex, ref int bufferIndex) {
+        static void ProcessNodeForMesh(Node node, ModelData modelData, List<Node> allNodes,
+            Dictionary<Node, int> nodeToIndex, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex) {
             if (node.Mesh != null) {
                 int boneIndex = nodeToIndex.TryGetValue(node, out int idx) ? idx : 0;
 
@@ -143,7 +294,7 @@ namespace Engine.Media {
                         continue;
                     }
 
-                    ModelMeshPartData meshPart = ProcessPrimitive(primitive, modelData, ref bufferIndex);
+                    ModelMeshPartData meshPart = ProcessPrimitive(primitive, modelData, ref bufferIndex, materialToIndex);
                     if (meshPart != null) {
                         meshData.MeshParts.Add(meshPart);
                     }
@@ -157,11 +308,11 @@ namespace Engine.Media {
             }
 
             foreach (Node child in node.VisualChildren) {
-                ProcessNodeForMesh(child, modelData, allNodes, nodeToIndex, ref bufferIndex);
+                ProcessNodeForMesh(child, modelData, allNodes, nodeToIndex, ref bufferIndex, materialToIndex);
             }
         }
 
-        static ModelMeshPartData ProcessPrimitive(MeshPrimitive primitive, ModelData modelData, ref int bufferIndex) {
+        static ModelMeshPartData ProcessPrimitive(MeshPrimitive primitive, ModelData modelData, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex) {
             // 获取顶点数据
             var posAccessor = primitive.GetVertexAccessor("POSITION");
             if (posAccessor == null) {
@@ -296,6 +447,11 @@ namespace Engine.Media {
                 IndicesCount = indices.Length,
                 BoundingBox = bbox
             };
+
+            // 设置材质索引
+            if (primitive.Material != null && materialToIndex.TryGetValue(primitive.Material, out int matIndex)) {
+                meshPart.MaterialIndex = matIndex;
+            }
 
             return meshPart;
         }

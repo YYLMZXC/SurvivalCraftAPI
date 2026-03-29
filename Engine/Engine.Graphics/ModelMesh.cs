@@ -23,7 +23,8 @@ namespace Engine.Graphics {
             IndexBuffer indexBuffer,
             int startIndex,
             int indicesCount,
-            BoundingBox boundingBox) {
+            BoundingBox boundingBox,
+            int materialIndex = -1) {
             ArgumentNullException.ThrowIfNull(vertexBuffer);
             ArgumentNullException.ThrowIfNull(indexBuffer);
             if (startIndex < 0
@@ -38,6 +39,7 @@ namespace Engine.Graphics {
             modelMeshPart.StartIndex = startIndex;
             modelMeshPart.IndicesCount = indicesCount;
             modelMeshPart.BoundingBox = boundingBox;
+            modelMeshPart.MaterialIndex = materialIndex;
             return modelMeshPart;
         }
     }

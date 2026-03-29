@@ -13,6 +13,11 @@ namespace Engine.Graphics {
 
         public int IndicesCount { get; set; }
 
+        /// <summary>
+        /// 材质索引 (-1 表示无材质)
+        /// </summary>
+        public int MaterialIndex { get; set; } = -1;
+
         public BoundingBox BoundingBox {
             get => m_boundingBox;
             set => m_boundingBox = value;

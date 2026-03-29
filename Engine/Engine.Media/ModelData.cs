@@ -9,6 +9,16 @@ namespace Engine.Media {
         public List<ModelBuffersData> Buffers = [];
 
         /// <summary>
+        /// 纹理信息列表（glTF 加载时填充，支持延迟加载）
+        /// </summary>
+        public List<ModelTextureInfo> Textures = [];
+
+        /// <summary>
+        /// 材质数据列表（glTF 加载时填充）
+        /// </summary>
+        public List<ModelMaterialData> Materials = [];
+
+        /// <summary>
         /// 蒙皮数据（glTF 加载时填充）
         /// </summary>
         public ModelSkin Skin { get; set; }

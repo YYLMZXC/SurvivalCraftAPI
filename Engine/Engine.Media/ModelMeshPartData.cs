@@ -7,5 +7,10 @@ namespace Engine.Media {
         public int IndicesCount;
 
         public BoundingBox BoundingBox;
+
+        /// <summary>
+        /// 材质索引 (-1 表示无材质)
+        /// </summary>
+        public int MaterialIndex = -1;
     }
 }

@@ -202,7 +202,7 @@ namespace Engine.Media {
             // UV0 (Vector2)
             bool hasUV0 = uv0 != null;
             if (hasUV0) {
-                elements.Add(new VertexElement(offset, VertexElementFormat.Vector2, VertexElementSemantic.TextureCoordinate0));
+                elements.Add(new VertexElement(offset, VertexElementFormat.Vector2, VertexElementSemantic.TextureCoordinate));
                 offset += 8;
             }
 

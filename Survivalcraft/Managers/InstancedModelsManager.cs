@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Engine;
 using Engine.Graphics;
 
@@ -5,63 +6,230 @@ namespace Game {
     public static class InstancedModelsManager {
         public struct SourceModelVertex {
             public float X;
-
             public float Y;
-
             public float Z;
-
             public float Nx;
-
             public float Ny;
-
             public float Nz;
-
             public float Tx;
-
             public float Ty;
         }
 
         public struct InstancedVertex {
             public float X;
-
             public float Y;
-
             public float Z;
-
             public float Nx;
-
             public float Ny;
-
             public float Nz;
-
             public float Tx;
-
             public float Ty;
-
             public float Instance;
         }
 
-        public static Dictionary<Model, InstancedModelData> m_cache;
+        /// <summary>
+        /// 缓存键：包含 Model 引用和 meshDrawOrders 哈希
+        /// </summary>
+        struct CacheKey : System.IEquatable<CacheKey> {
+            public readonly Model Model;
+            public readonly int MeshDrawOrdersHash;
+
+            public CacheKey(Model model, int[] meshDrawOrders) {
+                Model = model;
+                MeshDrawOrdersHash = ComputeMeshDrawOrdersHash(meshDrawOrders);
+            }
+
+            static int ComputeMeshDrawOrdersHash(int[] meshDrawOrders) {
+                if (meshDrawOrders == null || meshDrawOrders.Length == 0) {
+                    return 0;
+                }
+                int hash = 17;
+                foreach (int order in meshDrawOrders) {
+                    hash = hash * 31 + order;
+                }
+                return hash;
+            }
+
+            public bool Equals(CacheKey other) {
+                return Model == other.Model && MeshDrawOrdersHash == other.MeshDrawOrdersHash;
+            }
+
+            public override int GetHashCode() {
+                return System.HashCode.Combine(Model, MeshDrawOrdersHash);
+            }
+
+            public override bool Equals(object obj) {
+                return obj is CacheKey other && Equals(other);
+            }
+        }
+
+        /// <summary>
+        /// 缓存：CacheKey -> (MaterialIndex -> InstancedModelData)
+        /// MaterialIndex = -1 表示无材质
+        /// </summary>
+        static Dictionary<CacheKey, Dictionary<int, InstancedModelData>> m_cache = new();
 
         static InstancedModelsManager() {
-            m_cache = [];
             Display.DeviceReset += delegate {
-                foreach (InstancedModelData value in m_cache.Values) {
-                    value.VertexBuffer.Dispose();
-                    value.IndexBuffer.Dispose();
+                foreach (Dictionary<int, InstancedModelData> dict in m_cache.Values) {
+                    foreach (InstancedModelData value in dict.Values) {
+                        value.VertexBuffer?.Dispose();
+                        value.IndexBuffer?.Dispose();
+                    }
                 }
                 m_cache.Clear();
             };
         }
 
-        public static InstancedModelData GetInstancedModelData(Model model, int[] meshDrawOrders) {
-            if (!m_cache.TryGetValue(model, out InstancedModelData value)) {
-                value = CreateInstancedModelData(model, meshDrawOrders);
-                m_cache.Add(model, value);
+        /// <summary>
+        /// 获取模型的所有实例化数据（按材质分组）
+        /// </summary>
+        public static Dictionary<int, InstancedModelData> GetInstancedModelDataByMaterial(Model model, int[] meshDrawOrders) {
+            CacheKey key = new CacheKey(model, meshDrawOrders);
+            if (!m_cache.TryGetValue(key, out Dictionary<int, InstancedModelData> dataByMaterial)) {
+                dataByMaterial = CreateInstancedModelDataByMaterial(model, meshDrawOrders);
+                m_cache.Add(key, dataByMaterial);
             }
-            return value;
+            return dataByMaterial;
         }
 
+        /// <summary>
+        /// 兼容旧接口：获取合并的实例化数据（仅用于单材质模型）
+        /// 注意：对于多材质模型，返回的材质是不确定的
+        /// </summary>
+        public static InstancedModelData GetInstancedModelData(Model model, int[] meshDrawOrders) {
+            Dictionary<int, InstancedModelData> dataByMaterial = GetInstancedModelDataByMaterial(model, meshDrawOrders);
+            // 返回第一个材质的数据（兼容旧代码）
+            foreach (var kvp in dataByMaterial) {
+                return kvp.Value;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 按材质分组创建实例化数据
+        /// </summary>
+        public static Dictionary<int, InstancedModelData> CreateInstancedModelDataByMaterial(Model model, int[] meshDrawOrders) {
+            Dictionary<int, InstancedModelData> result = new();
+
+            // 按 MaterialIndex 分组收集顶点和索引数据
+            Dictionary<int, List<(int meshIndex, ModelMeshPart part)>> partsByMaterial = new();
+
+            for (int i = 0; i < meshDrawOrders.Length; i++) {
+                ModelMesh modelMesh = model.Meshes[meshDrawOrders[i]];
+                foreach (ModelMeshPart meshPart in modelMesh.MeshParts) {
+                    int materialIndex = meshPart.MaterialIndex;
+                    if (!partsByMaterial.TryGetValue(materialIndex, out List<(int, ModelMeshPart)> list)) {
+                        list = new List<(int, ModelMeshPart)>();
+                        partsByMaterial[materialIndex] = list;
+                    }
+                    list.Add((meshDrawOrders[i], meshPart));
+                }
+            }
+
+            // 为每个材质创建实例化数据
+            foreach (var kvp in partsByMaterial) {
+                int materialIndex = kvp.Key;
+                var parts = kvp.Value;
+
+                InstancedModelData data = CreateInstancedModelDataForParts(model, parts);
+                if (data != null) {
+                    result[materialIndex] = data;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 为指定的 mesh parts 创建实例化数据
+        /// </summary>
+        static InstancedModelData CreateInstancedModelDataForParts(Model model, List<(int meshIndex, ModelMeshPart part)> parts) {
+            DynamicArray<InstancedVertex> vertices = new();
+            DynamicArray<int> indices = new();
+
+            foreach (var (meshIndex, meshPart) in parts) {
+                ModelMesh modelMesh = model.Meshes[meshIndex];
+                VertexBuffer vertexBuffer = meshPart.VertexBuffer;
+                IndexBuffer indexBuffer = meshPart.IndexBuffer;
+
+                if (vertexBuffer == null || indexBuffer == null) {
+                    continue;
+                }
+
+                ReadOnlyList<VertexElement> vertexElements = vertexBuffer.VertexDeclaration.VertexElements;
+
+                // 验证顶点格式：必须是 Position + Normal + TextureCoordinate 格式
+                // 且偏移量符合预期（与 SourceModelVertex 结构匹配）
+                if (vertexElements.Count < 3 ||
+                    vertexElements[0].Offset != 0 ||
+                    vertexElements[0].Semantic != VertexElementSemantic.Position.GetSemanticString() ||
+                    vertexElements[1].Offset != 12 ||
+                    vertexElements[1].Semantic != VertexElementSemantic.Normal.GetSemanticString() ||
+                    vertexElements[2].Offset != 24 ||
+                    vertexElements[2].Semantic != VertexElementSemantic.TextureCoordinate.GetSemanticString()) {
+                    // 不支持的顶点格式，跳过此 part
+                    continue;
+                }
+
+                int[] indexData = BlockMesh.GetIndexData<int>(indexBuffer);
+                SourceModelVertex[] vertexData = BlockMesh.GetVertexData<SourceModelVertex>(vertexBuffer);
+
+                if (vertexData == null || vertexData.Length == 0 || indexData == null) {
+                    continue;
+                }
+
+                Dictionary<int, int> vertexRemap = new();
+
+                for (int j = meshPart.StartIndex; j < meshPart.StartIndex + meshPart.IndicesCount; j++) {
+                    if (j >= indexData.Length) {
+                        continue; // 防止索引越界
+                    }
+
+                    int originalIndex = indexData[j];
+                    if (originalIndex < 0 || originalIndex >= vertexData.Length) {
+                        continue; // 防止顶点索引越界
+                    }
+
+                    if (!vertexRemap.TryGetValue(originalIndex, out int newIndex)) {
+                        newIndex = vertices.Count;
+                        vertexRemap[originalIndex] = newIndex;
+
+                        InstancedVertex vertex = default;
+                        SourceModelVertex srcVertex = vertexData[originalIndex];
+                        vertex.X = srcVertex.X;
+                        vertex.Y = srcVertex.Y;
+                        vertex.Z = srcVertex.Z;
+                        vertex.Nx = srcVertex.Nx;
+                        vertex.Ny = srcVertex.Ny;
+                        vertex.Nz = srcVertex.Nz;
+                        vertex.Tx = srcVertex.Tx;
+                        vertex.Ty = srcVertex.Ty;
+                        vertex.Instance = modelMesh.ParentBone.Index;
+                        vertices.Add(vertex);
+                    }
+                    indices.Add(newIndex);
+                }
+            }
+
+            // 如果没有有效的顶点数据，返回 null
+            if (vertices.Count == 0 || indices.Count == 0) {
+                return null;
+            }
+
+            InstancedModelData data = new() {
+                VertexBuffer = new VertexBuffer(InstancedModelData.VertexDeclaration, vertices.Count),
+                IndexBuffer = new IndexBuffer(IndexFormat.ThirtyTwoBits, indices.Count)
+            };
+            data.VertexBuffer.SetData(vertices.Array, 0, vertices.Count);
+            data.IndexBuffer.SetData(indices.Array, 0, indices.Count);
+
+            return data;
+        }
+
+        /// <summary>
+        /// 旧方法：创建合并的实例化数据（保持向后兼容）
+        /// </summary>
         public static InstancedModelData CreateInstancedModelData(Model model, int[] meshDrawOrders) {
             DynamicArray<InstancedVertex> dynamicArray = new();
             DynamicArray<int> dynamicArray2 = new();

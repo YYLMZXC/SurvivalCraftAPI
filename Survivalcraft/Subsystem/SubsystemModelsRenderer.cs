@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Engine;
 using Engine.Graphics;
+using Engine.Media;
 using GameEntitySystem;
 using TemplatesDatabase;
 
@@ -309,25 +311,12 @@ namespace Game {
                     ComponentModel componentModel = modelsDatum.ComponentModel;
                     Model model = componentModel.Model;
 
-                    // 获取材质颜色：优先使用 ComponentModel 设置，否则使用模型的 BaseColorFactor
-                    Vector4 baseColor = componentModel.DiffuseColor.HasValue
-                        ? new Vector4(componentModel.DiffuseColor.Value, 1f)
-                        : model?.GetDefaultBaseColorFactor() ?? Vector4.One;
-                    float opacity = componentModel.Opacity ?? baseColor.W;
-                    Vector3 diffuseColor = new Vector3(baseColor.X, baseColor.Y, baseColor.Z);
-
+                    // 设置通用着色器参数
                     modelShader.InstancesCount = componentModel.AbsoluteBoneTransformsForCamera.Length;
-                    modelShader.MaterialColor = new Vector4(diffuseColor * opacity, opacity);
                     modelShader.EmissionColor = componentModel.EmissionColor ?? Vector4.Zero;
                     modelShader.AmbientLightColor = new Vector3(LightingManager.LightAmbient * modelsDatum.Light);
                     modelShader.DiffuseLightColor1 = new Vector3(modelsDatum.Light);
                     modelShader.DiffuseLightColor2 = new Vector3(modelsDatum.Light);
-                    // 优先使用外部指定的纹理，否则使用模型的嵌入纹理或默认白色纹理
-                    modelShader.Texture = componentModel.TextureOverride
-                        ?? model?.GetDefaultBaseColorTexture();
-                    // 设置采样器状态（glTF 使用 LinearWrap，Collada 使用 PointClamp）
-                    modelShader.SamplerState = model?.GetDefaultSamplerState()
-                        ?? SamplerState.PointClamp;
 
                     Array.Copy(
                         componentModel.AbsoluteBoneTransformsForCamera,
@@ -335,18 +324,51 @@ namespace Game {
                         componentModel.AbsoluteBoneTransformsForCamera.Length
                     );
 
-                    InstancedModelData instancedModelData = InstancedModelsManager.GetInstancedModelData(
+                    // 获取按材质分组的实例化数据
+                    Dictionary<int, InstancedModelData> dataByMaterial = InstancedModelsManager.GetInstancedModelDataByMaterial(
                         model,
                         componentModel.MeshDrawOrders
                     );
-                    Display.DrawIndexed(
-                        PrimitiveType.TriangleList,
-                        modelShader,
-                        instancedModelData.VertexBuffer,
-                        instancedModelData.IndexBuffer,
-                        0,
-                        instancedModelData.IndexBuffer.IndicesCount
-                    );
+
+                    // 按材质分别绘制
+                    foreach (var kvp in dataByMaterial) {
+                        int materialIndex = kvp.Key;
+                        InstancedModelData instancedData = kvp.Value;
+                        ModelMaterialData materialData = materialIndex >= 0 ? model.GetMaterial(materialIndex) : null;
+
+                        // 设置材质颜色
+                        Vector4 baseColor;
+                        if (componentModel.DiffuseColor.HasValue) {
+                            baseColor = new Vector4(componentModel.DiffuseColor.Value, 1f);
+                        } else if (materialData != null) {
+                            baseColor = materialData.BaseColorFactor;
+                        } else {
+                            baseColor = model?.GetDefaultBaseColorFactor() ?? Vector4.One;
+                        }
+                        float opacity = componentModel.Opacity ?? baseColor.W;
+                        modelShader.MaterialColor = new Vector4(new Vector3(baseColor.X, baseColor.Y, baseColor.Z) * opacity, opacity);
+
+                        // 设置纹理
+                        if (componentModel.TextureOverride != null) {
+                            modelShader.Texture = componentModel.TextureOverride;
+                        } else if (materialData?.BaseColorTextureIndex >= 0) {
+                            modelShader.Texture = model.GetTexture(materialData.BaseColorTextureIndex);
+                        } else {
+                            modelShader.Texture = Model.DefaultWhiteTexture;
+                        }
+
+                        // 设置采样器
+                        modelShader.SamplerState = model?.GetDefaultSamplerState() ?? SamplerState.LinearWrap;
+
+                        Display.DrawIndexed(
+                            PrimitiveType.TriangleList,
+                            modelShader,
+                            instancedData.VertexBuffer,
+                            instancedData.IndexBuffer,
+                            0,
+                            instancedData.IndexBuffer.IndicesCount
+                        );
+                    }
                     ModelsDrawn++;
                 }
                 //画名称
@@ -394,21 +416,11 @@ namespace Game {
                 skinnedShader.AlphaThreshold = alphaThreshold.Value;
             }
 
-            // Material properties - use BaseColorFactor if no DiffuseColor set
-            Vector4 baseColor = componentModel.DiffuseColor.HasValue
-                ? new Vector4(componentModel.DiffuseColor.Value, 1f)
-                : model.GetDefaultBaseColorFactor() ?? Vector4.One;
-            float opacity = componentModel.Opacity ?? baseColor.W;
-            Vector3 diffuseColor = new Vector3(baseColor.X, baseColor.Y, baseColor.Z);
-
             skinnedShader.InstancesCount = 1; // Skinned models use single instance
-            skinnedShader.MaterialColor = new Vector4(diffuseColor * opacity, opacity);
             skinnedShader.EmissionColor = componentModel.EmissionColor ?? Vector4.Zero;
             skinnedShader.AmbientLightColor = new Vector3(LightingManager.LightAmbient * modelData.Light);
             skinnedShader.DiffuseLightColor1 = new Vector3(modelData.Light);
             skinnedShader.DiffuseLightColor2 = new Vector3(modelData.Light);
-            skinnedShader.Texture = componentModel.TextureOverride ?? model.GetDefaultBaseColorTexture();
-            skinnedShader.SamplerState = model.GetDefaultSamplerState() ?? SamplerState.PointClamp;
 
             // Calculate joint matrices for GPU skinning
             // Reference: Plan/GPUSkinningPitfalls.md
@@ -457,6 +469,34 @@ namespace Game {
                 ModelMesh mesh = model.Meshes[meshIndex];
                 foreach (ModelMeshPart meshPart in mesh.MeshParts) {
                     if (meshPart.IndicesCount == 0) continue;
+
+                    // 获取该 mesh part 的材质
+                    int materialIndex = meshPart.MaterialIndex;
+                    ModelMaterialData materialData = materialIndex >= 0 ? model.GetMaterial(materialIndex) : null;
+
+                    // 设置材质颜色
+                    Vector4 baseColor;
+                    if (componentModel.DiffuseColor.HasValue) {
+                        baseColor = new Vector4(componentModel.DiffuseColor.Value, 1f);
+                    } else if (materialData != null) {
+                        baseColor = materialData.BaseColorFactor;
+                    } else {
+                        baseColor = model.GetDefaultBaseColorFactor() ?? Vector4.One;
+                    }
+                    float opacity = componentModel.Opacity ?? baseColor.W;
+                    skinnedShader.MaterialColor = new Vector4(new Vector3(baseColor.X, baseColor.Y, baseColor.Z) * opacity, opacity);
+
+                    // 设置纹理
+                    if (componentModel.TextureOverride != null) {
+                        skinnedShader.Texture = componentModel.TextureOverride;
+                    } else if (materialData?.BaseColorTextureIndex >= 0) {
+                        skinnedShader.Texture = model.GetTexture(materialData.BaseColorTextureIndex);
+                    } else {
+                        skinnedShader.Texture = Model.DefaultWhiteTexture;
+                    }
+
+                    // 设置采样器
+                    skinnedShader.SamplerState = model.GetDefaultSamplerState() ?? SamplerState.LinearWrap;
 
                     Display.DrawIndexed(
                         PrimitiveType.TriangleList,

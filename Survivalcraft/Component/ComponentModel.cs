@@ -205,6 +205,14 @@ namespace Game {
                 m_boneTransforms = new Matrix?[m_model.Bones.Count];
                 AbsoluteBoneTransformsForCamera = new Matrix[m_model.Bones.Count];
                 MeshDrawOrders = Enumerable.Range(0, m_model.Meshes.Count).ToArray();
+
+                // 自动播放第一个动画
+                // TODO: 不要提交
+                if (m_model.Animations.Count > 0) {
+                    m_animationPlayer = new AnimationPlayer();
+                    m_animationPlayer.SetAnimation(m_model, m_model.Animations[0]);
+                    m_animationPlayer.Play(loop: true);
+                }
             }
             else {
                 m_boneTransforms = null;

@@ -409,8 +409,11 @@ namespace Game {
             skinnedShader.HazeStartDensity = new Vector2(m_subsystemSky.ViewHazeStart, m_subsystemSky.ViewHazeDensity);
             skinnedShader.FogYMultiplier = m_subsystemSky.VisibilityRangeYMultiplier;
             skinnedShader.WorldUp = Vector3.TransformNormal(Vector3.UnitY, camera.ViewMatrix);
-            // 蒙皮模型需要设置 View 矩阵（非蒙皮模型通过 AbsoluteBoneTransformsForCamera 已包含视图变换）
-            skinnedShader.Transforms.View = camera.ViewMatrix;
+            // 蒙皮模型：World[0] 设置为 ViewMatrix，View 设置为 Identity
+            // 这样 u_worldMatrix[0] 能将世界空间坐标转换到视图空间（用于雾效计算）
+            // 同时 WorldViewProjection = ViewMatrix * Projection 是正确的
+            skinnedShader.Transforms.World[0] = camera.ViewMatrix;
+            skinnedShader.Transforms.View = Matrix.Identity;
             skinnedShader.Transforms.Projection = camera.ProjectionMatrix;
 
             if (alphaThreshold.HasValue) {
@@ -459,11 +462,6 @@ namespace Game {
                 }
             }
             skinnedShader.JointMatrices = m_jointMatricesBuffer;
-
-            // World matrix is Identity for skinned models
-            // The entity position is already included in AbsoluteBoneTransformsForCamera
-            // (set in ComponentSimpleModel.Animate())
-            skinnedShader.Transforms.World[0] = Matrix.Identity;
 
             // Draw model meshes directly (not using InstancedModelsManager which doesn't support skinned vertices)
             foreach (int meshIndex in componentModel.MeshDrawOrders) {

@@ -40,6 +40,31 @@ namespace Engine.Graphics {
         // 已加载的纹理缓存
         Dictionary<int, Texture2D> m_loadedTextures = new();
 
+        // 默认白色纹理（用于无纹理模型）
+        static Texture2D s_defaultWhiteTexture;
+
+        /// <summary>
+        /// 获取默认白色纹理（用于无纹理模型）
+        /// </summary>
+        public static Texture2D DefaultWhiteTexture {
+            get {
+                if (s_defaultWhiteTexture == null) {
+                    s_defaultWhiteTexture = CreateWhiteTexture();
+                }
+                return s_defaultWhiteTexture;
+            }
+        }
+
+        static Texture2D CreateWhiteTexture() {
+            // 创建 1x1 白色纹理
+            var texture = new Texture2D(1, 1, 1, ColorFormat.Rgba8888);
+            // RGBA 白色像素: 0xFFFFFFFF
+            var whitePixel = new uint[] { 0xFFFFFFFF };
+            texture.SetData(0, whitePixel);
+            texture.Tag = "DefaultWhite";
+            return texture;
+        }
+
         /// <summary>
         /// 获取指定索引的纹理（延迟加载）
         /// </summary>
@@ -77,6 +102,7 @@ namespace Engine.Graphics {
 
         /// <summary>
         /// 获取默认材质的 BaseColor 纹理
+        /// 如果模型没有纹理，返回默认白色纹理（让材质颜色生效）
         /// </summary>
         public Texture2D GetDefaultBaseColorTexture() {
             if (ModelData?.Materials.Count > 0) {
@@ -89,7 +115,9 @@ namespace Engine.Graphics {
             if (ModelData?.Textures.Count > 0) {
                 return GetTexture(0);
             }
-            return null;
+            // 无纹理模型：返回默认白色纹理
+            // 这样 MaterialColor（来自 BaseColorFactor）会直接显示
+            return DefaultWhiteTexture;
         }
 
         /// <summary>
@@ -104,8 +132,23 @@ namespace Engine.Graphics {
                     return texInfo.SamplerState;
                 }
             }
+            // glTF 无纹理模型使用 LinearWrap
+            if (ModelData?.Materials.Count > 0) {
+                return SamplerState.LinearWrap;
+            }
             // 回退到默认的 PointClamp（Collada 默认）
             return SamplerState.PointClamp;
+        }
+
+        /// <summary>
+        /// 获取默认材质的 BaseColor 颜色因子
+        /// 用于无纹理模型或当 ComponentModel.DiffuseColor 未设置时
+        /// </summary>
+        public Vector4? GetDefaultBaseColorFactor() {
+            if (ModelData?.Materials.Count > 0) {
+                return ModelData.Materials[0].BaseColorFactor;
+            }
+            return null;
         }
 
         /// <summary>

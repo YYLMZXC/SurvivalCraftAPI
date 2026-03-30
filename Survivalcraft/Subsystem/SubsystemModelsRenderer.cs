@@ -307,19 +307,26 @@ namespace Game {
                 );
                 if (!skipDrawing) {
                     ComponentModel componentModel = modelsDatum.ComponentModel;
-                    Vector3 v = componentModel.DiffuseColor ?? Vector3.One;
-                    float num = componentModel.Opacity ?? 1f;
+                    Model model = componentModel.Model;
+
+                    // 获取材质颜色：优先使用 ComponentModel 设置，否则使用模型的 BaseColorFactor
+                    Vector4 baseColor = componentModel.DiffuseColor.HasValue
+                        ? new Vector4(componentModel.DiffuseColor.Value, 1f)
+                        : model?.GetDefaultBaseColorFactor() ?? Vector4.One;
+                    float opacity = componentModel.Opacity ?? baseColor.W;
+                    Vector3 diffuseColor = new Vector3(baseColor.X, baseColor.Y, baseColor.Z);
+
                     modelShader.InstancesCount = componentModel.AbsoluteBoneTransformsForCamera.Length;
-                    modelShader.MaterialColor = new Vector4(v * num, num);
+                    modelShader.MaterialColor = new Vector4(diffuseColor * opacity, opacity);
                     modelShader.EmissionColor = componentModel.EmissionColor ?? Vector4.Zero;
                     modelShader.AmbientLightColor = new Vector3(LightingManager.LightAmbient * modelsDatum.Light);
                     modelShader.DiffuseLightColor1 = new Vector3(modelsDatum.Light);
                     modelShader.DiffuseLightColor2 = new Vector3(modelsDatum.Light);
-                    // 优先使用外部指定的纹理，否则使用模型的嵌入纹理
+                    // 优先使用外部指定的纹理，否则使用模型的嵌入纹理或默认白色纹理
                     modelShader.Texture = componentModel.TextureOverride
-                        ?? componentModel.Model?.GetDefaultBaseColorTexture();
+                        ?? model?.GetDefaultBaseColorTexture();
                     // 设置采样器状态（glTF 使用 LinearWrap，Collada 使用 PointClamp）
-                    modelShader.SamplerState = componentModel.Model?.GetDefaultSamplerState()
+                    modelShader.SamplerState = model?.GetDefaultSamplerState()
                         ?? SamplerState.PointClamp;
 
                     Array.Copy(
@@ -329,7 +336,7 @@ namespace Game {
                     );
 
                     InstancedModelData instancedModelData = InstancedModelsManager.GetInstancedModelData(
-                        componentModel.Model,
+                        model,
                         componentModel.MeshDrawOrders
                     );
                     Display.DrawIndexed(
@@ -387,9 +394,13 @@ namespace Game {
                 skinnedShader.AlphaThreshold = alphaThreshold.Value;
             }
 
-            // Material properties
-            Vector3 diffuseColor = componentModel.DiffuseColor ?? Vector3.One;
-            float opacity = componentModel.Opacity ?? 1f;
+            // Material properties - use BaseColorFactor if no DiffuseColor set
+            Vector4 baseColor = componentModel.DiffuseColor.HasValue
+                ? new Vector4(componentModel.DiffuseColor.Value, 1f)
+                : model.GetDefaultBaseColorFactor() ?? Vector4.One;
+            float opacity = componentModel.Opacity ?? baseColor.W;
+            Vector3 diffuseColor = new Vector3(baseColor.X, baseColor.Y, baseColor.Z);
+
             skinnedShader.InstancesCount = 1; // Skinned models use single instance
             skinnedShader.MaterialColor = new Vector4(diffuseColor * opacity, opacity);
             skinnedShader.EmissionColor = componentModel.EmissionColor ?? Vector4.Zero;

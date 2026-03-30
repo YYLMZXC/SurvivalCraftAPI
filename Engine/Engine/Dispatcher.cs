@@ -6,11 +6,11 @@ namespace Engine {
             public ManualResetEventSlim Event;
         }
 
-        static int? m_mainThreadId;
+        public static int? m_mainThreadId;
 
-        static List<ActionInfo> m_actionInfos = [];
+        public static List<ActionInfo> m_actionInfos = [];
 
-        static List<ActionInfo> m_currentActionInfos = [];
+        public static List<ActionInfo> m_currentActionInfos = [];
 
         public static int MainThreadId => m_mainThreadId ?? throw new InvalidOperationException("Dispatcher is not initialized.");
 
@@ -63,14 +63,14 @@ namespace Engine {
             }
         }
 
-        internal static void Initialize() {
+        public static void Initialize() {
             m_mainThreadId = Environment.CurrentManagedThreadId;
         }
 
-        internal static void BeforeFrame() {
+        public static void BeforeFrame() {
             ExecuteActionsOnCurrentThread();
         }
 
-        internal static void AfterFrame() { }
+        public static void AfterFrame() { }
     }
 }

@@ -1,5 +1,7 @@
 #nullable disable
 using Engine.Media;
+using SixLabors.ImageSharp.PixelFormats;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Engine.Graphics {
     public class Model : IDisposable {
@@ -55,14 +57,11 @@ namespace Engine.Graphics {
             }
         }
 
+        /// <summary>
+        /// 创建一个 1x1 的白色纹理
+        /// </summary>
         static Texture2D CreateWhiteTexture() {
-            // 创建 1x1 白色纹理
-            var texture = new Texture2D(1, 1, 1, ColorFormat.Rgba8888);
-            // RGBA 白色像素: 0xFFFFFFFF
-            var whitePixel = new uint[] { 0xFFFFFFFF };
-            texture.SetData(0, whitePixel);
-            texture.Tag = "DefaultWhite";
-            return texture;
+            return Texture2D.Load(Image.LoadPixelData([new Rgba32(0xFFFFFFFFu)], 1, 1));
         }
 
         /// <summary>

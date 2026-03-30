@@ -358,6 +358,7 @@ namespace Game {
                         }
 
                         // 设置采样器
+                        // TODO:可能不应该用 model 默认的，而是具体纹理指定的
                         modelShader.SamplerState = model?.GetDefaultSamplerState() ?? SamplerState.LinearWrap;
 
                         Display.DrawIndexed(

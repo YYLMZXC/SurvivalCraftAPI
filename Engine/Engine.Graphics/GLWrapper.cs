@@ -163,6 +163,92 @@ namespace Engine.Graphics {
             GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS = GL.GetInteger(GetPName.MaxCombinedTextureImageUnits);
         }
 
+#if ANGLE
+        /// <summary>
+        /// 初始化无头 OpenGL ES 上下文（用于测试和离屏渲染）
+        /// 使用 PBuffer Surface 代替 Window Surface，不需要窗口
+        /// </summary>
+        /// <param name="width">PBuffer 宽度（默认 256）</param>
+        /// <param name="height">PBuffer 高度（默认 256）</param>
+        public static void InitializeHeadless(int width = 256, int height = 256) {
+            m_eglDisplay = Egl.GetDisplay(IntPtr.Zero);
+            if (m_eglDisplay == IntPtr.Zero) {
+                throw new Exception("eglGetDisplay failed");
+            }
+            if (!Egl.Initialize(m_eglDisplay, out _, out _)) {
+                throw new Exception("eglInitialize failed");
+            }
+
+            // 使用 PBuffer Bit 而不是 Window Bit
+            int[] configAttribs = [
+                Egl.RedSize, 8,
+                Egl.GreenSize, 8,
+                Egl.BlueSize, 8,
+                Egl.AlphaSize, 8,
+                Egl.DepthSize, 24,
+                Egl.StencilSize, 8,
+                Egl.SurfaceType, Egl.PbufferBit,
+                Egl.RenderableType, Egl.OpenglEs3Bit,
+                Egl.None
+            ];
+
+            IntPtr[] configs = new IntPtr[1];
+            if (!Egl.ChooseConfig(m_eglDisplay, configAttribs, configs, 1, out int numConfigs)) {
+                throw new Exception("eglChooseConfig failed");
+            }
+            IntPtr config = configs[0];
+
+            // 创建 PBuffer Surface
+            int[] pbufferAttribs = [
+                Egl.Width, width,
+                Egl.Height, height,
+                Egl.None
+            ];
+            m_eglSurface = Egl.CreatePbufferSurface(m_eglDisplay, config, pbufferAttribs);
+            if (m_eglSurface == IntPtr.Zero) {
+                throw new Exception("eglCreatePbufferSurface failed");
+            }
+
+            // 创建 OpenGL ES 3.0 上下文
+            int[] contextAttribs = [Egl.ContextClientVersion, 3, Egl.None];
+            m_eglContext = Egl.CreateContext(m_eglDisplay, config, IntPtr.Zero, contextAttribs);
+            if (m_eglContext == IntPtr.Zero) {
+                throw new Exception("eglCreateContext failed");
+            }
+
+            if (!Egl.MakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext)) {
+                throw new Exception("eglMakeCurrent failed");
+            }
+
+            GL = GL.GetApi(Egl.GetProcAddress);
+            m_mainFramebuffer = 0;
+
+#if DEBUG
+            unsafe {
+                GL.DebugMessageCallback(DebugMessageDelegate, IntPtr.Zero.ToPointer());
+                GL.Enable(EnableCap.DebugOutput);
+            }
+#endif
+
+            int[] bits = new int[6];
+            for (int i = 0; i < 6; i++) {
+                bits[i] = GL.GetInteger((GetPName)(i + 3410));
+            }
+            GL.GetInteger(GetPName.MaxTextureSize, out GL_MAX_TEXTURE_SIZE);
+            Display.DeviceDescription =
+                $"OpenGL ES (Headless), Vendor={GL.GetStringS(StringName.Vendor) ?? string.Empty}, " +
+                $"Renderer={GL.GetStringS(StringName.Renderer) ?? string.Empty}, " +
+                $"Version={GL.GetStringS(StringName.Version) ?? string.Empty}";
+            Log.Information($"Initialized headless display device: {Display.DeviceDescription}");
+
+            string extensions = GL.GetStringS(StringName.Extensions);
+            GL_EXT_texture_filter_anisotropic = extensions?.Contains("GL_EXT_texture_filter_anisotropic") ?? false;
+            GL_OES_packed_depth_stencil = extensions?.Contains("GL_OES_packed_depth_stencil") ?? false;
+            GL_KHR_texture_compression_astc_ldr = extensions?.Contains("GL_KHR_texture_compression_astc_ldr") ?? false;
+            GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS = GL.GetInteger(GetPName.MaxCombinedTextureImageUnits);
+        }
+#endif
+
         public static void InitializeCache() {
             m_arrayBuffer = -1;
             m_elementArrayBuffer = -1;

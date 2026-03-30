@@ -205,6 +205,22 @@ namespace Engine.Graphics {
             Resize();
         }
 
+#if ANGLE
+        /// <summary>
+        /// 初始化无头显示设备（用于测试和离屏渲染）
+        /// 不需要窗口，使用 PBuffer 进行离屏渲染
+        /// </summary>
+        /// <param name="width">渲染缓冲区宽度</param>
+        /// <param name="height">渲染缓冲区高度</param>
+        public static void InitializeHeadless(int width = 256, int height = 256) {
+            GLWrapper.InitializeHeadless(width, height);
+            GLWrapper.InitializeCache();
+            BackbufferSize = new Point2(width, height);
+            Viewport = new Viewport(0, 0, width, height);
+            ScissorRectangle = new Rectangle(0, 0, width, height);
+        }
+#endif
+
         public static void Dispose() { }
 
         public static void BeforeFrame() { }

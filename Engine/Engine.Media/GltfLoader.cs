@@ -104,11 +104,38 @@ namespace Engine.Media {
                 nodeToTempIndex[allNodes[i]] = i;
             }
 
+            // 找出所有根节点（没有视觉父节点的节点）
+            List<int> rootIndices = new();
+            for (int i = 0; i < allNodes.Count; i++) {
+                if (allNodes[i].VisualParent == null) {
+                    rootIndices.Add(i);
+                }
+            }
+
+            // 检查是否需要创建虚拟根骨骼
+            bool needVirtualRoot = rootIndices.Count > 1;
+            int virtualRootIndex = -1;
+            int totalBoneCount = allNodes.Count + (needVirtualRoot ? 1 : 0);
+
             // 创建临时骨骼数据数组
-            ModelBoneData[] tempBones = new ModelBoneData[allNodes.Count];
+            ModelBoneData[] tempBones = new ModelBoneData[totalBoneCount];
+            int boneOffset = needVirtualRoot ? 1 : 0;
+
+            // 如果需要虚拟根骨骼，创建它
+            if (needVirtualRoot) {
+                tempBones[0] = new ModelBoneData {
+                    Name = "Root",
+                    Transform = Matrix.Identity,
+                    ParentBoneIndex = -1
+                };
+                virtualRootIndex = 0;
+            }
+
+            // 创建节点对应的骨骼数据
             for (int i = 0; i < allNodes.Count; i++) {
                 Node node = allNodes[i];
-                tempBones[i] = new ModelBoneData {
+                int boneIndex = i + boneOffset;
+                tempBones[boneIndex] = new ModelBoneData {
                     Name = node.Name ?? $"Node{node.LogicalIndex}",
                     Transform = ConvertMatrix(node.LocalMatrix),
                     ParentBoneIndex = -1 // 先设为 -1，后面再更新
@@ -118,23 +145,28 @@ namespace Engine.Media {
             // 设置父骨骼索引（使用临时索引）
             for (int i = 0; i < allNodes.Count; i++) {
                 Node node = allNodes[i];
+                int boneIndex = i + boneOffset;
                 Node parent = node.VisualParent;
+
                 if (parent != null && nodeToTempIndex.TryGetValue(parent, out int parentIndex)) {
-                    tempBones[i].ParentBoneIndex = parentIndex;
+                    tempBones[boneIndex].ParentBoneIndex = parentIndex + boneOffset;
+                } else if (needVirtualRoot) {
+                    // 没有父节点的节点，设置为虚拟根骨骼的子节点
+                    tempBones[boneIndex].ParentBoneIndex = virtualRootIndex;
                 }
             }
 
             // 拓扑排序：确保父骨骼在子骨骼之前
             // 计算每个骨骼的深度，按深度排序
-            int[] depths = new int[allNodes.Count];
-            for (int i = 0; i < allNodes.Count; i++) {
+            int[] depths = new int[totalBoneCount];
+            for (int i = 0; i < totalBoneCount; i++) {
                 depths[i] = CalculateDepth(i, tempBones);
             }
 
             // 创建排序映射：旧索引 -> 新索引
-            int[] oldToNew = new int[allNodes.Count];
+            int[] oldToNew = new int[totalBoneCount];
             List<int> sortedIndices = new();
-            for (int i = 0; i < allNodes.Count; i++) {
+            for (int i = 0; i < totalBoneCount; i++) {
                 sortedIndices.Add(i);
             }
             sortedIndices.Sort((a, b) => depths[a].CompareTo(depths[b]));
@@ -154,8 +186,9 @@ namespace Engine.Media {
 
             // 更新 nodeToIndex 映射（用于后续的蒙皮和网格处理）
             nodeToIndex.Clear();
-            foreach (int oldIndex in sortedIndices) {
-                Node node = allNodes[oldIndex];
+            for (int i = 0; i < allNodes.Count; i++) {
+                int oldIndex = i + boneOffset;
+                Node node = allNodes[i];
                 nodeToIndex[node] = oldToNew[oldIndex];
             }
 

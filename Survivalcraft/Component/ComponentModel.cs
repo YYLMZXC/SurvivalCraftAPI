@@ -36,7 +36,7 @@ namespace Game {
         /// 动画配置文件路径（可选）
         /// 如果指定，将使用 AnimationConfigLoader 加载配置并创建控制器
         /// </summary>
-        public string AnimationConfigPath { get; private set; }
+        public string AnimationConfigJson { get; private set; }
 
         /// <summary>
         ///     模型偏移
@@ -214,7 +214,10 @@ namespace Game {
             ModelScale = valuesDictionary.GetValue("ModelScale", 1f);
             m_boundingSphereRadius = valuesDictionary.GetValue<float>("BoundingSphereRadius");
             // 读取动画配置路径（可选）
-            AnimationConfigPath = valuesDictionary.GetValue("AnimationConfigPath", "");
+            string animationConfigPath = valuesDictionary.GetValue("AnimationConfigPath", "");
+            if (!string.IsNullOrEmpty(animationConfigPath)) {
+                AnimationConfigJson = ContentManager.Get<string>(animationConfigPath, ".animcfg");
+            }
         }
 
         public virtual void SetModel(Model model) {
@@ -237,10 +240,10 @@ namespace Game {
 
                 // 初始化动画控制器
                 // 优先级：AnimationConfigPath > AnimationTemplateName > 自动播放
-                if (!string.IsNullOrEmpty(AnimationConfigPath)) {
+                if (!string.IsNullOrEmpty(AnimationConfigJson)) {
                     // 使用配置文件创建控制器
                     var loader = new AnimationConfigLoader();
-                    AnimationConfig config = loader.LoadFromFile(AnimationConfigPath);
+                    AnimationConfig config = loader.LoadFromJson(AnimationConfigJson);
                     AnimationController = loader.CreateController(config, m_model);
                 }
                 else if (!string.IsNullOrEmpty(AnimationTemplateName)) {

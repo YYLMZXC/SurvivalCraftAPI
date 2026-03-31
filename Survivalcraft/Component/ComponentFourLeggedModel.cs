@@ -173,7 +173,15 @@ namespace Game {
             base.SyncAnimationParameters();
 
             var ctrl = AnimationController;
-            if (ctrl == null) return;
+            if (ctrl == null)
+            {
+                // 日志：没有 AnimationController，使用硬编码动画
+                Log.Warning("ComponentFourLeggedModel: No AnimationController, using hardcoded animation");
+                return;
+            }
+
+            // 日志：正在使用 AnimationController
+            // Log.Information("ComponentFourLeggedModel: Using AnimationController");
 
             // 四足动物特有参数
             ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
@@ -188,6 +196,9 @@ namespace Game {
         }
 
         public override void AnimateCreature() {
+            // 如果使用动画控制器，跳过硬编码动画
+            if (AnimationController != null) return;
+
             Vector3 position = m_componentCreature.ComponentBody.Position;
             Vector3 vector = m_componentCreature.ComponentBody.Rotation.ToYawPitchRoll();
             if (m_componentCreature.ComponentHealth.Health > 0f) {

@@ -4273,6 +4273,7 @@
           <Parameter Name="CanTrot" Description="[DescriptionAttribute:345]" Guid="f0aa73f5-4105-4082-9948-dd827aa3c2ac" Value="False" Type="bool" />
           <Parameter Name="MoveLegWhenFeeding" Description="[DescriptionAttribute:346]" Guid="f13387d5-0487-4052-9ab5-54def3956e8a" Value="False" Type="bool" />
           <Parameter Name="Class" Guid="f99bcc68-0362-4509-aba1-29e68b44372a" Value="Game.ComponentFourLeggedModel" Type="string" />
+          <Parameter Name="AnimationConfigPath" Guid="20565284-eef1-4fc9-95a6-62957716c4c0" Value="Animations/FourLegged" Type="string" />
         </ComponentTemplate>
         <ComponentTemplate Name="Model" Description="[DescriptionAttribute:347]" Guid="79f776b5-94f4-4bce-b119-971a9cf6255c" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="PrepareOrder" Description="[DescriptionAttribute:348]" Guid="0d918779-99d1-45de-aaf5-d1b706213853" Value="0" Type="int" />
@@ -4283,6 +4284,7 @@
           <Parameter Name="ModelName" Description="[DescriptionAttribute:350]" Guid="b218aefe-9a39-4dda-b3a7-20fd2488b70f" Value="" Type="string" />
           <Parameter Name="CastsShadow" Description="[DescriptionAttribute:351]" Guid="db4beb73-f071-49e3-9a46-8feb09c8f13d" Value="False" Type="bool" />
           <Parameter Name="TextureOverride" Description="[DescriptionAttribute:352]" Guid="e7a927a4-a52a-4cbf-8170-d5eed845cea8" Value="" Type="string" />
+          <Parameter Name="AnimationConfigPath" Guid="5c28f597-d678-47bc-b0a8-9fecf4736177" Value="" Type="string" />
         </ComponentTemplate>
         <ComponentTemplate Name="DiggingCracks" Description="[DescriptionAttribute:353]" Guid="7ea6062c-28be-4e76-8765-39b7a1f5be9b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="239a3460-544e-49d1-832b-364f1fe2799c" Value="Game.ComponentDiggingCracks" Type="string" />

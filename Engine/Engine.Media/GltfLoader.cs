@@ -12,59 +12,57 @@ using SharpGLTF.Memory;
 using GltfImage = SharpGLTF.Schema2.Image;
 using GltfTexture = SharpGLTF.Schema2.Texture;
 using GltfMaterial = SharpGLTF.Schema2.Material;
+using BYTES = System.ArraySegment<byte>;
 
 namespace Engine.Media {
     /// <summary>
     /// glTF 模型加载器
+    /// 通过回调机制加载外部资源（.bin 文件和纹理）
     /// </summary>
     public static class GltfLoader {
         /// <summary>
-        /// 外置纹理加载回调（预留接口，未来用于加载外部纹理文件）
-        /// TODO: 实现纹理加载功能
+        /// 外置纹理加载回调
+        /// 参数：纹理相对路径，返回：纹理数据流
         /// </summary>
-        public static Func<string, Stream> LoadExternalTextureCallback { get; set; }
+        public static Func<string, Stream> LoadExternalStreamCallback { get; set; }
 
         /// <summary>
         /// 检查是否为 glTF 文件
         /// </summary>
         public static bool IsGltfFile(string filePath) {
             string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            return ext == ".gltf" || ext == ".glb";
-        }
-
-        /// <summary>
-        /// 从文件加载 glTF 模型
-        /// </summary>
-        public static ModelData Load(string filePath) {
-            if (!File.Exists(filePath)) {
-                throw new FileNotFoundException($"glTF file not found: {filePath}");
-            }
-
-            var readSettings = new ReadSettings { Validation = ValidationMode.Skip };
-            ModelRoot modelRoot = ModelRoot.Load(filePath, readSettings);
-
-            return ConvertToModelData(modelRoot, Path.GetDirectoryName(filePath));
+            return ext is ".gltf" or ".glb";
         }
 
         /// <summary>
         /// 从流加载 glTF 模型
         /// </summary>
+        /// <param name="stream">模型数据流（GLB 或 glTF JSON）</param>
+        /// <param name="basePath">模型数据流的基路径（用于加载外部资源）</param>
+        /// <returns>ModelData 实例</returns>
         public static ModelData Load(Stream stream, string basePath = null) {
-            // SharpGLTF 需要文件路径来加载模型，使用临时文件
-            string tempFile = Path.Combine(Path.GetTempPath(), $"gltf_temp_{Guid.NewGuid()}.glb");
-            try {
-                using (var fs = File.Create(tempFile)) {
-                    stream.CopyTo(fs);
+            ArgumentNullException.ThrowIfNull(stream);
+            BYTES FileReaderCallback(string assetName) {
+                string path = basePath == null ? assetName : Storage.CombinePaths(basePath, assetName);
+                Stream resourceStream = LoadExternalStreamCallback(path);
+                byte[] bytes = new byte[resourceStream.Length];
+                int totalRead = 0;
+                while (totalRead < bytes.Length) {
+                    int read = resourceStream.Read(bytes, totalRead, bytes.Length - totalRead);
+                    if (read == 0) {
+                        throw new Exception($"Failed to read {path}");
+                    }
+                    totalRead += read;
                 }
-                return Load(tempFile);
-            } finally {
-                if (File.Exists(tempFile)) {
-                    File.Delete(tempFile);
-                }
+                return new BYTES(bytes);
             }
+            var context = ReadContext.Create(FileReaderCallback);
+            context.Validation = ValidationMode.Skip;
+            ModelRoot modelRoot = context.ReadSchema2(stream);
+            return ConvertToModelData(modelRoot);
         }
 
-        static ModelData ConvertToModelData(ModelRoot modelRoot, string basePath) {
+        static ModelData ConvertToModelData(ModelRoot modelRoot) {
             ModelData modelData = new();
 
             // 构建节点名称到索引的映射
@@ -230,7 +228,7 @@ namespace Engine.Media {
             // 2. 加载所有纹理（延迟加载模式）
             foreach (GltfTexture gltfTexture in modelRoot.LogicalTextures) {
                 GltfImage image = gltfTexture.PrimaryImage ?? gltfTexture.FallbackImage;
-                if (image?.Content == null || image.Content.IsEmpty) {
+                if (image?.Content == null) {
                     continue;
                 }
 
@@ -241,9 +239,21 @@ namespace Engine.Media {
 
                 ModelTextureInfo texInfo = new() {
                     Name = image.Name ?? $"Texture{image.LogicalIndex}",
-                    SourceImage = image.Content,
                     IsSrgb = isSrgb
                 };
+
+                // 检查是内嵌纹理还是外置纹理
+                // SharpGLTF 在加载模型时会自动加载外置资源，所以 Content 不会是空的
+                // 但我们可以通过 SourcePath 来判断来源：
+                // - 内嵌纹理（GLB）：SourcePath 为 null 或空
+                // - 外置纹理（glTF）：SourcePath 包含文件路径
+                string sourcePath = image.Content.SourcePath;
+                if (!string.IsNullOrEmpty(sourcePath)) {
+                    texInfo.SourceImage = image.Content;
+                } else {
+                    // 内嵌纹理：保存图像数据
+                    texInfo.SourceImage = image.Content;
+                }
 
                 // 设置采样器状态
                 texInfo.SetSampler(gltfTexture.Sampler);

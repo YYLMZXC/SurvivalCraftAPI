@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Engine;
 using Engine.Graphics;
 using Engine.Media;
+using Game.IContentReader;
 // ReSharper disable MethodOverloadWithOptionalParameter
 
 namespace Game {
@@ -58,6 +59,7 @@ namespace Game {
             Resources.Clear();
             Caches.Clear();
             Display.DeviceReset += Display_DeviceReset;
+            DaeModelReader.SetupTextureLoadingCallback();
         }
 
         public static T Get<T>(string name) where T : class => Get(typeof(T), name, null, true) as T;
@@ -125,6 +127,8 @@ namespace Game {
             cacheList.Add(obj);
             return obj;
         }
+
+        public static Stream GetStream(string path) => Resources.TryGetValue(path, out ContentInfo contentInfo) ? contentInfo.Duplicate() : null;
 
         public static void Add(ContentInfo contentInfo) {
             Resources.AddOrUpdate(contentInfo.AbsolutePath, contentInfo, (_, _) => contentInfo);

@@ -1,0 +1,53 @@
+{
+  "template": "FourLegged",
+  "animations": {
+    "Idle": {
+      "source": "animation://Idle",
+      "loop": true
+    },
+    "Walk": {
+      "source": "animation://Walk",
+      "loop": true,
+      "speed": 1.0
+    },
+    "Run": {
+      "source": "animation://Run",
+      "loop": true,
+      "speed": 1.2
+    },
+    "Jump": {
+      "source": "animation://Jump",
+      "loop": false,
+      "speed": 1.0
+    },
+    "Swim": {
+      "source": "animation://Swim",
+      "loop": true,
+      "speed": 0.8
+    },
+    "Death": {
+      "source": "animation://Death",
+      "loop": false,
+      "speed": 1.0
+    }
+  },
+  "stateRules": [
+    {
+      "trackName": "Movement",
+      "rules": [
+        { "condition": "IsDead", "targetState": "Death" },
+        { "condition": "IsInWater && Speed > 0.1", "targetState": "Swim" },
+        { "condition": "IsJumping", "targetState": "Jump" },
+        { "condition": "Speed > 2", "targetState": "Run" },
+        { "condition": "Speed > 0.1", "targetState": "Walk" },
+        { "condition": "true", "targetState": "Idle" }
+      ]
+    }
+  ],
+  "parameters": {
+    "Speed": 0,
+    "IsDead": false,
+    "IsInWater": false,
+    "IsJumping": false
+  }
+}

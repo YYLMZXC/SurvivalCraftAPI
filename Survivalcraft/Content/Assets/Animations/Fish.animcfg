@@ -1,0 +1,39 @@
+{
+  "template": "Simple",
+  "animations": {
+    "Idle": {
+      "source": "animation://Idle",
+      "loop": true
+    },
+    "Swim": {
+      "source": "animation://Swim",
+      "loop": true,
+      "speed": 1.0
+    },
+    "FastSwim": {
+      "source": "animation://FastSwim",
+      "loop": true,
+      "speed": 1.5
+    },
+    "Death": {
+      "source": "animation://Death",
+      "loop": false,
+      "speed": 1.0
+    }
+  },
+  "stateRules": [
+    {
+      "trackName": "Movement",
+      "rules": [
+        { "condition": "IsDead", "targetState": "Death" },
+        { "condition": "Speed > 2", "targetState": "FastSwim" },
+        { "condition": "Speed > 0.5", "targetState": "Swim" },
+        { "condition": "true", "targetState": "Idle" }
+      ]
+    }
+  ],
+  "parameters": {
+    "Speed": 0,
+    "IsDead": false
+  }
+}

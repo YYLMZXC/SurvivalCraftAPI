@@ -33,6 +33,12 @@ namespace Game {
         public string AnimationTemplateName { get; private set; }
 
         /// <summary>
+        /// 动画配置文件路径（可选）
+        /// 如果指定，将使用 AnimationConfigLoader 加载配置并创建控制器
+        /// </summary>
+        public string AnimationConfigPath { get; private set; }
+
+        /// <summary>
         ///     模型偏移
         /// </summary>
         public Vector3 ModelOffset { get; set; }
@@ -207,6 +213,8 @@ namespace Game {
             Transparent = valuesDictionary.GetValue("Transparent", 1f);
             ModelScale = valuesDictionary.GetValue("ModelScale", 1f);
             m_boundingSphereRadius = valuesDictionary.GetValue<float>("BoundingSphereRadius");
+            // 读取动画配置路径（可选）
+            AnimationConfigPath = valuesDictionary.GetValue("AnimationConfigPath", "");
         }
 
         public virtual void SetModel(Model model) {
@@ -227,8 +235,16 @@ namespace Game {
                 AbsoluteBoneTransformsForCamera = new Matrix[m_model.Bones.Count];
                 MeshDrawOrders = Enumerable.Range(0, m_model.Meshes.Count).ToArray();
 
-                // 初始化动画控制器（如果指定了模板）
-                if (!string.IsNullOrEmpty(AnimationTemplateName)) {
+                // 初始化动画控制器
+                // 优先级：AnimationConfigPath > AnimationTemplateName > 自动播放
+                if (!string.IsNullOrEmpty(AnimationConfigPath)) {
+                    // 使用配置文件创建控制器
+                    var loader = new AnimationConfigLoader();
+                    AnimationConfig config = loader.LoadFromFile(AnimationConfigPath);
+                    AnimationController = loader.CreateController(config, m_model);
+                }
+                else if (!string.IsNullOrEmpty(AnimationTemplateName)) {
+                    // 使用模板名称创建控制器
                     AnimationController = new AnimationController(m_model, AnimationTemplateName);
                 }
                 // 后备：自动播放第一个动画

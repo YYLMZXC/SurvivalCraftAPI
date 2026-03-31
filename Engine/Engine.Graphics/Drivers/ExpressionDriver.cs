@@ -145,7 +145,7 @@ namespace Engine.Graphics.Drivers
 
             foreach (var config in _boneConfigs)
             {
-                var bone = model.FindBone(config.BoneName);
+                var bone = model.FindBone(config.BoneName, throwIfNotFound: false);
                 if (bone == null)
                     continue;
 

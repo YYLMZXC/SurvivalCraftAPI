@@ -30,7 +30,13 @@ namespace Engine.Graphics.Drivers
         public string FeedFactorParam { get; set; } = "FeedFactor";
         public string BobParam { get; set; } = "Bob";
 
-        // 动画参数
+        // 配置参数名称（从 Database.xml 传递）
+        public string WalkFrontLegsAngleParam { get; set; } = "WalkFrontLegsAngle";
+        public string WalkHindLegsAngleParam { get; set; } = "WalkHindLegsAngle";
+        public string CanterLegsAngleFactorParam { get; set; } = "CanterLegsAngleFactor";
+        public string WalkBobHeightParam { get; set; } = "WalkBobHeight";
+
+        // 动画参数（默认值，可被参数覆盖）
         public float WalkAnimationSpeed { get; set; } = 1f;
         public float WalkFrontLegsAngle { get; set; } = 0.5f;  // 弧度
         public float WalkHindLegsAngle { get; set; } = 0.5f;
@@ -65,6 +71,7 @@ namespace Engine.Graphics.Drivers
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
+            // 状态参数
             _speed = parameters.GetFloat(SpeedParam);
             _movementPhase = parameters.GetFloat(MovementPhaseParam);
             _gait = (int)parameters.GetFloat(GaitParam);
@@ -73,6 +80,17 @@ namespace Engine.Graphics.Drivers
             _lookAngleY = parameters.GetFloat(LookAngleYParam);
             _feedFactor = parameters.GetFloat(FeedFactorParam);
             _bob = parameters.GetFloat(BobParam);
+
+            // 从参数读取配置（如果参数中有值则使用，否则使用属性默认值）
+            float configValue;
+            if (parameters.TryGetFloat(WalkFrontLegsAngleParam, out configValue))
+                WalkFrontLegsAngle = configValue;
+            if (parameters.TryGetFloat(WalkHindLegsAngleParam, out configValue))
+                WalkHindLegsAngle = configValue;
+            if (parameters.TryGetFloat(CanterLegsAngleFactorParam, out configValue))
+                CanterLegsAngleFactor = configValue;
+            if (parameters.TryGetFloat(WalkBobHeightParam, out configValue))
+                WalkBobHeight = configValue;
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)

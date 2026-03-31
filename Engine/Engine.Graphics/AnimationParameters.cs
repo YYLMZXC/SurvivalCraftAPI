@@ -38,6 +38,16 @@ namespace Engine.Graphics
         public bool GetBool(string name) => _boolParams.TryGetValue(name, out var v) ? v : false;
         public Vector3 GetVector3(string name) => _vector3Params.TryGetValue(name, out var v) ? v : Vector3.Zero;
 
+        /// <summary>
+        /// 尝试获取 float 参数
+        /// </summary>
+        public bool TryGetFloat(string name, out float value) => _floatParams.TryGetValue(name, out value);
+
+        /// <summary>
+        /// 尝试获取 bool 参数
+        /// </summary>
+        public bool TryGetBool(string name, out bool value) => _boolParams.TryGetValue(name, out value);
+
         public bool HasParameter(string name) =>
             _floatParams.ContainsKey(name) ||
             _boolParams.ContainsKey(name) ||

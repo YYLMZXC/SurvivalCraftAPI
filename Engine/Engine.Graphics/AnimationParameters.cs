@@ -15,6 +15,25 @@ namespace Engine.Graphics
         public void SetBool(string name, bool value) => _boolParams[name] = value;
         public void SetVector3(string name, Vector3 value) => _vector3Params[name] = value;
 
+        /// <summary>
+        /// 设置参数值（通用方法，根据类型自动分发）
+        /// </summary>
+        public void SetParameter(string name, object value)
+        {
+            if (value is float f)
+                SetFloat(name, f);
+            else if (value is bool b)
+                SetBool(name, b);
+            else if (value is Vector3 v)
+                SetVector3(name, v);
+            else if (value is int i)
+                SetFloat(name, i);
+            else if (value is double d)
+                SetFloat(name, (float)d);
+            else if (value != null)
+                SetFloat(name, Convert.ToSingle(value));
+        }
+
         public float GetFloat(string name) => _floatParams.TryGetValue(name, out var v) ? v : 0f;
         public bool GetBool(string name) => _boolParams.TryGetValue(name, out var v) ? v : false;
         public Vector3 GetVector3(string name) => _vector3Params.TryGetValue(name, out var v) ? v : Vector3.Zero;

@@ -20,6 +20,11 @@ namespace Engine.Graphics
         public AnimationParameters Parameters => _parameters;
         public AnimationLayer[] Layers => _layers;
 
+        /// <summary>
+        /// 动画事件触发时调用
+        /// </summary>
+        public event AnimationEventHandler OnAnimationEvent;
+
         public AnimationController(Model model, string templateName)
         {
             _model = model;
@@ -40,6 +45,9 @@ namespace Engine.Graphics
                     _template.Layers[i].Index,
                     _template.Layers[i].BlendMode,
                     _template.Layers[i].BoneMask);
+
+                // 订阅层的动画事件
+                _layers[i].AnimationPlayer.OnAnimationEvent += ForwardAnimationEvent;
             }
 
             // 初始化状态轨道
@@ -180,6 +188,41 @@ namespace Engine.Graphics
         public void ComputeBoneTransforms(Matrix?[] boneTransforms)
         {
             _blender.BlendLayers(_layers, boneTransforms, _model);
+        }
+
+        /// <summary>
+        /// 转发动画事件
+        /// </summary>
+        private void ForwardAnimationEvent(AnimationEvent animationEvent)
+        {
+            OnAnimationEvent?.Invoke(animationEvent);
+        }
+
+        /// <summary>
+        /// 为指定层添加动画事件
+        /// </summary>
+        /// <param name="layerName">层名称</param>
+        /// <param name="eventName">事件名称</param>
+        /// <param name="time">触发时间</param>
+        /// <param name="parameter">可选参数</param>
+        public void AddAnimationEvent(string layerName, string eventName, float time, object parameter = null)
+        {
+            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            if (layer != null)
+            {
+                layer.AnimationPlayer.AddEvent(eventName, time, parameter);
+            }
+        }
+
+        /// <summary>
+        /// 为所有层清除动画事件
+        /// </summary>
+        public void ClearAnimationEvents()
+        {
+            foreach (var layer in _layers)
+            {
+                layer.AnimationPlayer.ClearEvents();
+            }
         }
     }
 }

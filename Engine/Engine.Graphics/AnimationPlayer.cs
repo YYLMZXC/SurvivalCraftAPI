@@ -2,15 +2,50 @@
 
 namespace Engine.Graphics {
     /// <summary>
+    /// 动画事件数据
+    /// </summary>
+    public class AnimationEvent {
+        /// <summary>
+        /// 事件名称
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// 事件触发时间（秒）
+        /// </summary>
+        public float Time { get; set; }
+
+        /// <summary>
+        /// 事件参数（可选）
+        /// </summary>
+        public object Parameter { get; set; }
+
+        public AnimationEvent(string name, float time, object parameter = null) {
+            Name = name;
+            Time = time;
+            Parameter = parameter;
+        }
+    }
+
+    /// <summary>
+    /// 动画事件处理器委托
+    /// </summary>
+    /// <param name="animationEvent">触发的事件</param>
+    public delegate void AnimationEventHandler(AnimationEvent animationEvent);
+
+    /// <summary>
     /// 动画播放器，负责采样和插值
     /// </summary>
     public class AnimationPlayer {
         Model _model;
         ModelAnimation _animation;
         float _time;
+        float _previousTime;
         bool _looping;
         bool _playing;
         Dictionary<string, int> _boneNameToIndex = new();
+        List<AnimationEvent> _events = new();
+        int _lastEventIndex = -1;
 
         /// <summary>
         /// 当前动画
@@ -38,13 +73,45 @@ namespace Engine.Graphics {
         public bool IsPlaying => _playing;
 
         /// <summary>
+        /// 动画事件触发时调用
+        /// </summary>
+        public event AnimationEventHandler OnAnimationEvent;
+
+        /// <summary>
+        /// 获取动画事件列表
+        /// </summary>
+        public IReadOnlyList<AnimationEvent> Events => _events;
+
+        /// <summary>
         /// 设置动画
         /// </summary>
         public void SetAnimation(Model model, ModelAnimation animation) {
             _model = model;
             _animation = animation;
             _time = 0f;
+            _previousTime = 0f;
+            _lastEventIndex = -1;
             BuildBoneIndexMap();
+        }
+
+        /// <summary>
+        /// 添加动画事件
+        /// </summary>
+        /// <param name="eventName">事件名称</param>
+        /// <param name="time">触发时间</param>
+        /// <param name="parameter">可选参数</param>
+        public void AddEvent(string eventName, float time, object parameter = null) {
+            _events.Add(new AnimationEvent(eventName, time, parameter));
+            // 按时间排序
+            _events.Sort((a, b) => a.Time.CompareTo(b.Time));
+        }
+
+        /// <summary>
+        /// 清除所有动画事件
+        /// </summary>
+        public void ClearEvents() {
+            _events.Clear();
+            _lastEventIndex = -1;
         }
 
         /// <summary>
@@ -68,18 +135,58 @@ namespace Engine.Graphics {
         public void Update(float deltaTime) {
             if (!_playing) return;
 
+            _previousTime = _time;
             _time += deltaTime;
 
             // 如果有动画，处理循环和结束逻辑
             if (_animation != null && _animation.Duration > 0) {
                 if (_looping) {
-                    while (_time >= _animation.Duration) {
-                        _time -= _animation.Duration;
+                    // 循环模式下处理事件触发
+                    if (_time >= _animation.Duration) {
+                        // 先检测循环前的事件
+                        CheckEvents(_previousTime, _animation.Duration);
+                        _lastEventIndex = -1; // 重置事件索引
+
+                        while (_time >= _animation.Duration) {
+                            _time -= _animation.Duration;
+                        }
+                        // 检测循环后的事件（从0开始）
+                        CheckEvents(0f, _time);
+                    }
+                    else {
+                        CheckEvents(_previousTime, _time);
                     }
                 }
                 else if (_time >= _animation.Duration) {
                     _time = _animation.Duration;
                     _playing = false;
+                    // 检测结束前的事件
+                    CheckEvents(_previousTime, _time);
+                }
+                else {
+                    CheckEvents(_previousTime, _time);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 检查并触发指定时间范围内的事件
+        /// </summary>
+        void CheckEvents(float fromTime, float toTime) {
+            if (_events.Count == 0 || OnAnimationEvent == null) return;
+
+            float duration = _animation?.Duration ?? 0f;
+            if (duration <= 0f) return;
+
+            for (int i = 0; i < _events.Count; i++) {
+                var evt = _events[i];
+                // 检查事件时间是否在当前帧的时间范围内
+                if (evt.Time > fromTime && evt.Time <= toTime) {
+                    // 确保每个事件只触发一次（通过索引跟踪）
+                    if (i > _lastEventIndex) {
+                        OnAnimationEvent?.Invoke(evt);
+                        _lastEventIndex = i;
+                    }
                 }
             }
         }

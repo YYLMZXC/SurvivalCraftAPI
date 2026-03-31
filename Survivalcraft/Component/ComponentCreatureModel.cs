@@ -1,4 +1,5 @@
 using Engine;
+using Engine.Graphics;
 using GameEntitySystem;
 using TemplatesDatabase;
 
@@ -19,6 +20,17 @@ namespace Game {
         public Vector3 m_randomLookPoint;
 
         public Random m_random = new();
+
+        /// <summary>
+        /// 脚步声计时器，用于防止频繁播放
+        /// </summary>
+        float m_footstepCooldown;
+
+        /// <summary>
+        /// 上次脚步声时间
+        /// </summary>
+        float m_lastFootstepTime;
+
         public float Bob { get; set; }
 
         public float MovementAnimationPhase { get; set; }
@@ -149,12 +161,129 @@ namespace Game {
             };
         }
 
+        public override void SetModel(Model model) {
+            // 取消旧控制器的订阅
+            if (AnimationController != null) {
+                AnimationController.OnAnimationEvent -= HandleAnimationEvent;
+            }
+
+            base.SetModel(model);
+
+            // 订阅新控制器的事件
+            if (AnimationController != null) {
+                AnimationController.OnAnimationEvent += HandleAnimationEvent;
+                SetupDefaultAnimationEvents();
+            }
+        }
+
+        /// <summary>
+        /// 设置默认动画事件
+        /// </summary>
+        protected virtual void SetupDefaultAnimationEvents() {
+            // 子类可以覆盖此方法来添加特定事件
+        }
+
+        /// <summary>
+        /// 处理动画事件
+        /// </summary>
+        protected virtual void HandleAnimationEvent(AnimationEvent animationEvent) {
+            if (animationEvent == null) return;
+
+            switch (animationEvent.Name) {
+                case "Footstep":
+                    OnFootstepEvent(animationEvent);
+                    break;
+                case "AttackHit":
+                    OnAttackHitEvent(animationEvent);
+                    break;
+                case "AttackStart":
+                    OnAttackStartEvent(animationEvent);
+                    break;
+                case "AttackEnd":
+                    OnAttackEndEvent(animationEvent);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 处理脚步声事件
+        /// </summary>
+        protected virtual void OnFootstepEvent(AnimationEvent animationEvent) {
+            // 检查冷却时间，防止频繁触发
+            if (m_footstepCooldown > 0f) return;
+
+            // 检查是否在地面或水中
+            var body = m_componentCreature.ComponentBody;
+            if (body.StandingOnValue.HasValue || body.ImmersionFactor > 0.5f) {
+                // 触发布局音效系统（需要 Mod 扩展）
+                ModsManager.HookAction(
+                    "OnCreatureFootstep",
+                    loader => {
+                        loader.OnCreatureFootstep(m_componentCreature, animationEvent.Parameter);
+                        return false;
+                    }
+                );
+                m_footstepCooldown = 0.2f; // 200ms 冷却
+                m_lastFootstepTime = (float)m_subsystemTime.GameTime;
+            }
+        }
+
+        /// <summary>
+        /// 处理攻击命中事件
+        /// </summary>
+        protected virtual void OnAttackHitEvent(AnimationEvent animationEvent) {
+            // 标记攻击命中帧
+            IsAttackHitMoment = true;
+
+            // 通知 Mod 系统
+            ModsManager.HookAction(
+                "OnCreatureAttackHit",
+                loader => {
+                    loader.OnCreatureAttackHit(m_componentCreature, animationEvent.Parameter);
+                    return false;
+                }
+            );
+        }
+
+        /// <summary>
+        /// 处理攻击开始事件
+        /// </summary>
+        protected virtual void OnAttackStartEvent(AnimationEvent animationEvent) {
+            ModsManager.HookAction(
+                "OnCreatureAttackStart",
+                loader => {
+                    loader.OnCreatureAttackStart(m_componentCreature, animationEvent.Parameter);
+                    return false;
+                }
+            );
+        }
+
+        /// <summary>
+        /// 处理攻击结束事件
+        /// </summary>
+        protected virtual void OnAttackEndEvent(AnimationEvent animationEvent) {
+            IsAttackHitMoment = false;
+
+            ModsManager.HookAction(
+                "OnCreatureAttackEnd",
+                loader => {
+                    loader.OnCreatureAttackEnd(m_componentCreature, animationEvent.Parameter);
+                    return false;
+                }
+            );
+        }
+
         public override void OnEntityAdded() {
             m_componentCreature.ComponentBody.PositionChanged += delegate { m_eyePosition = null; };
             m_componentCreature.ComponentBody.RotationChanged += delegate { m_eyeRotation = null; };
         }
 
         public virtual void Update(float dt) {
+            // 更新脚步声冷却时间
+            if (m_footstepCooldown > 0f) {
+                m_footstepCooldown -= dt;
+            }
+
             // 同步动画参数
             SyncAnimationParameters();
 

@@ -9,7 +9,22 @@ namespace Engine.Graphics.Drivers
     {
         public string Name => "LookAt";
         public BlendMode BlendMode => BlendMode.Override;
-        public string[] TargetBones => new[] { "Head" };
+
+        // 可配置的目标骨骼名称
+        private string _targetBoneName = "Head";
+        public string TargetBoneName
+        {
+            get => _targetBoneName;
+            set
+            {
+                _targetBoneName = value;
+                _cachedTargetBones = null;
+            }
+        }
+
+        // IAnimationDriver 接口实现
+        public string[] TargetBones => _cachedTargetBones ??= new[] { TargetBoneName };
+        private string[] _cachedTargetBones;
 
         // 配置参数
         public string LookAngleXParam { get; set; } = "LookAngleX";
@@ -32,14 +47,14 @@ namespace Engine.Graphics.Drivers
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
-            var headBone = model.FindBone("Head");
-            if (headBone == null) return;
+            var targetBone = model.FindBone(TargetBoneName);
+            if (targetBone == null) return;
 
             // 角度转弧度
             float radX = _lookAngleY * MathF.PI / 180f;  // 俯仰
             float radZ = -_lookAngleX * MathF.PI / 180f; // 偏航
 
-            boneTransforms[headBone.Index] =
+            boneTransforms[targetBone.Index] =
                 Matrix.CreateRotationX(radX) *
                 Matrix.CreateRotationZ(radZ);
         }

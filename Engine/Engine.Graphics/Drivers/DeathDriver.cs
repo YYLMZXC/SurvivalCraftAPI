@@ -9,7 +9,14 @@ namespace Engine.Graphics.Drivers
     {
         public string Name => "Death";
         public BlendMode BlendMode => BlendMode.Override;
-        public string[] TargetBones => new[] { "Body", "Head" };
+
+        // 可配置的目标骨骼名称
+        public string BodyBoneName { get; set; } = "Body";
+        public string HeadBoneName { get; set; } = "Head";
+
+        // IAnimationDriver 接口实现
+        public string[] TargetBones => _cachedTargetBones ??= new[] { BodyBoneName, HeadBoneName };
+        private string[] _cachedTargetBones;
 
         public string DeathPhaseParam { get; set; } = "DeathPhase";
 
@@ -30,7 +37,7 @@ namespace Engine.Graphics.Drivers
             float t = _deathPhase;
 
             // 身体：旋转 + 下落
-            var bodyBone = model.FindBone("Body");
+            var bodyBone = model.FindBone(BodyBoneName);
             if (bodyBone != null)
             {
                 float rotation = BodyRotationMax * t * MathF.PI / 180f;
@@ -43,7 +50,7 @@ namespace Engine.Graphics.Drivers
             }
 
             // 头部：俯仰
-            var headBone = model.FindBone("Head");
+            var headBone = model.FindBone(HeadBoneName);
             if (headBone != null)
             {
                 float rotation = HeadRotationMax * t * MathF.PI / 180f;

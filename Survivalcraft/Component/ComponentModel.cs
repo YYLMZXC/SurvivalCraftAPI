@@ -23,6 +23,16 @@ namespace Game {
         AnimationPlayer m_animationPlayer;
 
         /// <summary>
+        /// 动画控制器
+        /// </summary>
+        public AnimationController AnimationController { get; private set; }
+
+        /// <summary>
+        /// 动画模板名称
+        /// </summary>
+        public string AnimationTemplateName { get; private set; }
+
+        /// <summary>
         ///     模型偏移
         /// </summary>
         public Vector3 ModelOffset { get; set; }
@@ -145,8 +155,19 @@ namespace Game {
                 }
             );
 
-            // 更新动画并采样骨骼变换
-            if (m_animationPlayer != null && m_animationPlayer.IsPlaying) {
+            // 优先使用动画控制器
+            if (AnimationController != null) {
+                // 清除上一帧的骨骼变换
+                for (int i = 0; i < m_boneTransforms.Length; i++) {
+                    m_boneTransforms[i] = null;
+                }
+
+                AnimationController.Update(Time.FrameDuration);
+                AnimationController.ComputeBoneTransforms(m_boneTransforms);
+                Animated = true;
+            }
+            // 后备：简单动画播放
+            else if (m_animationPlayer != null && m_animationPlayer.IsPlaying) {
                 // 清除上一帧的骨骼变换
                 for (int i = 0; i < m_boneTransforms.Length; i++) {
                     m_boneTransforms[i] = null;
@@ -206,9 +227,12 @@ namespace Game {
                 AbsoluteBoneTransformsForCamera = new Matrix[m_model.Bones.Count];
                 MeshDrawOrders = Enumerable.Range(0, m_model.Meshes.Count).ToArray();
 
-                // 自动播放第一个动画
-                // TODO: 不要提交
-                if (m_model.Animations.Count > 0) {
+                // 初始化动画控制器（如果指定了模板）
+                if (!string.IsNullOrEmpty(AnimationTemplateName)) {
+                    AnimationController = new AnimationController(m_model, AnimationTemplateName);
+                }
+                // 后备：自动播放第一个动画
+                else if (m_model.Animations.Count > 0) {
                     m_animationPlayer = new AnimationPlayer();
                     m_animationPlayer.SetAnimation(m_model, m_model.Animations[0]);
                     m_animationPlayer.Play(loop: true);
@@ -219,6 +243,7 @@ namespace Game {
                 AbsoluteBoneTransformsForCamera = null;
                 MeshDrawOrders = null;
                 m_animationPlayer = null;
+                AnimationController = null;
             }
         }
 

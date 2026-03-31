@@ -35,6 +35,24 @@ namespace Engine.Media {
         }
 
         /// <summary>
+        /// 从文件路径加载 glTF 模型（便利方法，用于测试）
+        /// </summary>
+        /// <param name="filePath">模型文件路径（.gltf 或 .glb）</param>
+        /// <returns>ModelData 实例</returns>
+        public static ModelData LoadFromFile(string filePath) {
+            ArgumentNullException.ThrowIfNull(filePath);
+
+            string basePath = Path.GetDirectoryName(filePath);
+            LoadExternalStreamCallback = (relativePath) => {
+                string fullPath = Path.Combine(basePath, relativePath);
+                return File.Exists(fullPath) ? File.OpenRead(fullPath) : null;
+            };
+
+            using var stream = File.OpenRead(filePath);
+            return Load(stream, basePath);
+        }
+
+        /// <summary>
         /// 从流加载 glTF 模型
         /// </summary>
         /// <param name="stream">模型数据流（GLB 或 glTF JSON）</param>

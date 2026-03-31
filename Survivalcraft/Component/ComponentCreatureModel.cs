@@ -155,6 +155,9 @@ namespace Game {
         }
 
         public virtual void Update(float dt) {
+            // 同步动画参数
+            SyncAnimationParameters();
+
             if (LookRandomOrder) {
                 Matrix matrix = m_componentCreature.ComponentBody.Matrix;
                 Vector3 v = Vector3.Normalize(m_randomLookPoint - m_componentCreature.ComponentCreatureModel.EyePosition);
@@ -193,6 +196,57 @@ namespace Game {
             m_eyeRotation = null;
             LookRandomOrder = false;
             LookAtOrder = null;
+        }
+
+        /// <summary>
+        /// 同步动画参数到动画控制器
+        /// </summary>
+        protected virtual void SyncAnimationParameters() {
+            var ctrl = AnimationController;
+            if (ctrl == null) return;
+
+            // 运动参数
+            ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
+            ctrl.Parameters.SetFloat("DeathPhase", DeathPhase);
+
+            // ComponentBody 参数
+            var body = m_componentCreature.ComponentBody;
+            var velocity = body.Velocity;
+            var forward = body.Matrix.Forward;
+
+            ctrl.Parameters.SetFloat("Speed", Vector3.Dot(velocity, forward));
+            ctrl.Parameters.SetFloat("SpeedAbs", velocity.Length());
+            ctrl.Parameters.SetBool("IsInWater", body.ImmersionFactor > 0);
+            ctrl.Parameters.SetBool("IsOnGround", body.StandingOnValue.HasValue);
+            ctrl.Parameters.SetFloat("ImmersionFactor", body.ImmersionFactor);
+
+            // ComponentLocomotion 参数
+            var locomotion = m_componentCreature.ComponentLocomotion;
+            if (locomotion != null) {
+                ctrl.Parameters.SetBool("IsFlying", locomotion.m_flying);
+                ctrl.Parameters.SetBool("IsCreativeFly", locomotion.IsCreativeFlyEnabled);
+                ctrl.Parameters.SetFloat("WalkSpeed", locomotion.WalkSpeed);
+            }
+
+            // ComponentHealth 参数
+            var health = m_componentCreature.ComponentHealth;
+            if (health != null) {
+                ctrl.Parameters.SetFloat("Health", health.Health);
+                ctrl.Parameters.SetBool("IsDead", health.Health <= 0);
+            }
+
+            // 头部追踪
+            if (LookAtOrder.HasValue) {
+                Vector3 lookDir = LookAtOrder.Value - EyePosition;
+                float lookX = MathF.Atan2(lookDir.X, lookDir.Z) * 180f / MathF.PI;
+                float lookY = MathF.Asin(lookDir.Y / lookDir.Length()) * 180f / MathF.PI;
+                ctrl.Parameters.SetFloat("LookAngleX", lookX);
+                ctrl.Parameters.SetFloat("LookAngleY", lookY);
+            }
+
+            // 活动状态
+            ctrl.Parameters.SetBool("IsAttacking", AttackOrder);
+            ctrl.Parameters.SetBool("IsFeeding", FeedOrder);
         }
 
         public virtual Vector3 CalculateEyePosition() {

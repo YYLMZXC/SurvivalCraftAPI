@@ -224,5 +224,19 @@ namespace Engine.Graphics
                 layer.AnimationPlayer.ClearEvents();
             }
         }
+
+        /// <summary>
+        /// 为指定层设置驱动器
+        /// </summary>
+        /// <param name="layerName">层名称</param>
+        /// <param name="driver">驱动器实例</param>
+        public void SetDriver(string layerName, IAnimationDriver driver)
+        {
+            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            if (layer != null)
+            {
+                layer.SetDriver(driver);
+            }
+        }
     }
 }

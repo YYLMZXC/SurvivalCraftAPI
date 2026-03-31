@@ -165,6 +165,28 @@ namespace Game {
             base.Update(dt);
         }
 
+        /// <summary>
+        /// 同步动画参数到动画控制器
+        /// </summary>
+        protected override void SyncAnimationParameters()
+        {
+            base.SyncAnimationParameters();
+
+            var ctrl = AnimationController;
+            if (ctrl == null) return;
+
+            // 四足动物特有参数
+            ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
+            ctrl.Parameters.SetFloat("Gait", (int)m_gait);
+            ctrl.Parameters.SetFloat("FeedFactor", m_feedFactor);
+            ctrl.Parameters.SetFloat("Bob", Bob);
+
+            // 头部追踪角度（转换为度数）
+            var lookAngles = m_componentCreature.ComponentLocomotion.LookAngles;
+            ctrl.Parameters.SetFloat("LookAngleX", lookAngles.X * 180f / MathF.PI);
+            ctrl.Parameters.SetFloat("LookAngleY", lookAngles.Y * 180f / MathF.PI);
+        }
+
         public override void AnimateCreature() {
             Vector3 position = m_componentCreature.ComponentBody.Position;
             Vector3 vector = m_componentCreature.ComponentBody.Rotation.ToYawPitchRoll();

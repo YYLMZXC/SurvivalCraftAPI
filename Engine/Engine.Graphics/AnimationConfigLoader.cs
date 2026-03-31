@@ -348,7 +348,118 @@ namespace Engine.Graphics
                 }
             }
 
+            // 配置驱动器
+            if (config.Drivers != null)
+            {
+                foreach (var driverConfig in config.Drivers)
+                {
+                    ApplyDriverConfig(controller, driverConfig);
+                }
+            }
+
             return controller;
+        }
+
+        /// <summary>
+        /// 应用驱动器配置
+        /// </summary>
+        private void ApplyDriverConfig(AnimationController controller, DriverConfig driverConfig)
+        {
+            if (driverConfig == null || string.IsNullOrEmpty(driverConfig.Type))
+                return;
+
+            // 创建驱动器实例
+            IAnimationDriver driver = CreateDriver(driverConfig.Type);
+            if (driver == null)
+                return;
+
+            // 应用属性
+            if (driverConfig.Properties != null)
+            {
+                ApplyDriverProperties(driver, driverConfig.Properties);
+            }
+
+            // 绑定到对应层
+            string layerName = driverConfig.Layer ?? "Base";
+            controller.SetDriver(layerName, driver);
+        }
+
+        /// <summary>
+        /// 创建驱动器实例
+        /// </summary>
+        private IAnimationDriver CreateDriver(string type)
+        {
+            return type switch
+            {
+                "LookAtDriver" => new Drivers.LookAtDriver(),
+                "DeathDriver" => new Drivers.DeathDriver(),
+                "ExpressionDriver" => new Drivers.ExpressionDriver(),
+                "ProceduralFourLeggedDriver" => new Drivers.ProceduralFourLeggedDriver(),
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// 应用驱动器属性
+        /// </summary>
+        private void ApplyDriverProperties(IAnimationDriver driver, Dictionary<string, object> properties)
+        {
+            if (properties == null || driver == null)
+                return;
+
+            var driverType = driver.GetType();
+
+            foreach (var kvp in properties)
+            {
+                var property = driverType.GetProperty(kvp.Key);
+                if (property == null || !property.CanWrite)
+                    continue;
+
+                try
+                {
+                    object value = ConvertValue(kvp.Value, property.PropertyType);
+                    if (value != null)
+                    {
+                        property.SetValue(driver, value);
+                    }
+                }
+                catch
+                {
+                    // 忽略转换失败
+                }
+            }
+        }
+
+        /// <summary>
+        /// 转换值到目标类型
+        /// </summary>
+        private object ConvertValue(object value, Type targetType)
+        {
+            if (value == null)
+                return null;
+
+            if (targetType == typeof(float))
+            {
+                return Convert.ToSingle(value);
+            }
+            if (targetType == typeof(double))
+            {
+                return Convert.ToDouble(value);
+            }
+            if (targetType == typeof(int))
+            {
+                return Convert.ToInt32(value);
+            }
+            if (targetType == typeof(bool))
+            {
+                return Convert.ToBoolean(value);
+            }
+            if (targetType == typeof(string))
+            {
+                return value.ToString();
+            }
+
+            return Convert.ChangeType(value, targetType);
         }
 
         /// <summary>

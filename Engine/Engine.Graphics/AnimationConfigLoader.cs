@@ -227,52 +227,52 @@ namespace Engine.Graphics
                 }
             }
 
-            // 验证状态规则
-            if (config.StateRules != null)
+            // 验证层配置
+            if (config.Layers != null)
             {
-                int index = 0;
-                foreach (var trackRules in config.StateRules)
+                foreach (var kvp in config.Layers)
                 {
-                    if (string.IsNullOrEmpty(trackRules.TrackName))
+                    string layerName = kvp.Key;
+                    LayerConfig layerConfig = kvp.Value;
+
+                    if (string.IsNullOrEmpty(layerName))
                     {
-                        errors.Add($"StateRules at index {index}: TrackName is required");
+                        errors.Add("Layer name cannot be empty");
                     }
 
-                    if (trackRules.Rules != null)
+                    if (layerConfig?.Driver != null && string.IsNullOrEmpty(layerConfig.Driver.Type))
+                    {
+                        errors.Add($"Layer '{layerName}': Driver Type is required");
+                    }
+                }
+            }
+
+            // 验证状态配置
+            if (config.States != null)
+            {
+                foreach (var kvp in config.States)
+                {
+                    string trackName = kvp.Key;
+                    StateTrackConfig trackConfig = kvp.Value;
+
+                    if (string.IsNullOrEmpty(trackName))
+                    {
+                        errors.Add("State track name cannot be empty");
+                    }
+
+                    if (trackConfig?.Rules != null)
                     {
                         int ruleIndex = 0;
-                        foreach (var rule in trackRules.Rules)
+                        foreach (var rule in trackConfig.Rules)
                         {
                             if (string.IsNullOrEmpty(rule.Condition))
                             {
-                                errors.Add($"StateRules '{trackRules.TrackName}' rule {ruleIndex}: Condition is required");
-                            }
-
-                            if (string.IsNullOrEmpty(rule.TargetState))
-                            {
-                                errors.Add($"StateRules '{trackRules.TrackName}' rule {ruleIndex}: TargetState is required");
+                                errors.Add($"State '{trackName}' rule {ruleIndex}: Condition is required");
                             }
 
                             ruleIndex++;
                         }
                     }
-
-                    index++;
-                }
-            }
-
-            // 验证驱动器配置
-            if (config.Drivers != null)
-            {
-                int index = 0;
-                foreach (var driver in config.Drivers)
-                {
-                    if (string.IsNullOrEmpty(driver.Type))
-                    {
-                        errors.Add($"Driver at index {index}: Type is required");
-                    }
-
-                    index++;
                 }
             }
 
@@ -348,12 +348,26 @@ namespace Engine.Graphics
                 }
             }
 
-            // 配置驱动器
-            if (config.Drivers != null)
+            // 配置层驱动器
+            if (config.Layers != null)
             {
-                foreach (var driverConfig in config.Drivers)
+                foreach (var kvp in config.Layers)
                 {
-                    ApplyDriverConfig(controller, driverConfig);
+                    string layerName = kvp.Key;
+                    LayerConfig layerConfig = kvp.Value;
+
+                    if (layerConfig?.Driver != null)
+                    {
+                        IAnimationDriver driver = CreateDriver(layerConfig.Driver.Type);
+                        if (driver != null)
+                        {
+                            if (layerConfig.Driver.Properties != null)
+                            {
+                                ApplyDriverProperties(driver, layerConfig.Driver.Properties);
+                            }
+                            controller.SetDriver(layerName, driver);
+                        }
+                    }
                 }
             }
 
@@ -364,30 +378,6 @@ namespace Engine.Graphics
             }
 
             return controller;
-        }
-
-        /// <summary>
-        /// 应用驱动器配置
-        /// </summary>
-        private void ApplyDriverConfig(AnimationController controller, DriverConfig driverConfig)
-        {
-            if (driverConfig == null || string.IsNullOrEmpty(driverConfig.Type))
-                return;
-
-            // 创建驱动器实例
-            IAnimationDriver driver = CreateDriver(driverConfig.Type);
-            if (driver == null)
-                return;
-
-            // 应用属性
-            if (driverConfig.Properties != null)
-            {
-                ApplyDriverProperties(driver, driverConfig.Properties);
-            }
-
-            // 绑定到对应层
-            string layerName = driverConfig.Layer ?? "Base";
-            controller.SetDriver(layerName, driver);
         }
 
         /// <summary>

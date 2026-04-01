@@ -97,8 +97,6 @@ namespace Engine.Graphics
     public class DriverConfig
     {
         public string Type { get; set; }
-        public string Layer { get; set; }
-        public string[] TargetBones { get; set; }
         public Dictionary<string, object> Properties { get; set; }
     }
 
@@ -113,12 +111,12 @@ namespace Engine.Graphics
         public string Template { get; set; } = "Simple";
 
         /// <summary>
-        /// 层配置（新格式）
+        /// 层配置
         /// </summary>
         public Dictionary<string, LayerConfig> Layers { get; set; } = new();
 
         /// <summary>
-        /// 状态配置（新格式）
+        /// 状态配置
         /// </summary>
         public Dictionary<string, StateTrackConfig> States { get; set; } = new();
 
@@ -126,16 +124,6 @@ namespace Engine.Graphics
         /// 动画引用映射（别名 -> 引用）
         /// </summary>
         public Dictionary<string, AnimationReference> Animations { get; set; } = new();
-
-        /// <summary>
-        /// 状态规则列表（旧格式，保持兼容）
-        /// </summary>
-        public List<StateTrackRules> StateRules { get; set; } = new();
-
-        /// <summary>
-        /// 驱动器配置列表
-        /// </summary>
-        public List<DriverConfig> Drivers { get; set; } = new();
 
         /// <summary>
         /// 初始参数值

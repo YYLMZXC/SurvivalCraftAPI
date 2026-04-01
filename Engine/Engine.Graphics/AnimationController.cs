@@ -15,7 +15,7 @@ namespace Engine.Graphics
         private readonly AnimationBlender _blender = new();
         private readonly StateRuleEvaluator _ruleEvaluator = new();
 
-        // 状态规则配置（从 animcfg 加载）
+        // 状态规则配置（从动画配置文件加载）
         private Dictionary<string, StateTrackConfig> _stateConfigs;
 
         // 记录每个状态轨道当前匹配的规则索引（用于避免重复切换）

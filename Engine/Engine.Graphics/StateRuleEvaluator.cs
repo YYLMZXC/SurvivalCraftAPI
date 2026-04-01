@@ -1,45 +1,15 @@
 #nullable disable
 
-using NCalc;
-
 namespace Engine.Graphics
 {
-    /// <summary>
-    /// 状态轨道规则配置
-    /// </summary>
-    public class StateTrackRules
-    {
-        public string TrackName { get; set; }
-        public List<StateRule> Rules { get; set; } = new();
-        public string DefaultState { get; set; }
-    }
-
     /// <summary>
     /// 状态规则求值器，使用 NCalc 评估条件表达式
     /// </summary>
     public class StateRuleEvaluator
     {
-        private readonly Dictionary<string, Expression> _compiledConditions = new();
+        private readonly Dictionary<string, NCalc.Expression> _compiledConditions = new();
         // 缓存每个表达式需要的参数名
         private readonly Dictionary<string, string[]> _requiredParameters = new();
-
-        /// <summary>
-        /// 评估状态轨道的所有规则，返回匹配的状态
-        /// </summary>
-        public string Evaluate(StateTrackRules rules, AnimationParameters parameters)
-        {
-            if (rules?.Rules == null || rules.Rules.Count == 0)
-                return rules?.DefaultState ?? string.Empty;
-
-            foreach (var rule in rules.Rules)
-            {
-                if (EvaluateCondition(rule.Condition, parameters))
-                {
-                    return rule.TargetState;
-                }
-            }
-            return rules.DefaultState ?? string.Empty;
-        }
 
         /// <summary>
         /// 评估单个条件表达式

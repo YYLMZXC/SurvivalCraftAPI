@@ -214,7 +214,7 @@ namespace Game {
             // 读取动画配置路径（可选）
             string animationConfigPath = valuesDictionary.GetValue("AnimationConfigPath", "");
             if (!string.IsNullOrEmpty(animationConfigPath)) {
-                AnimationConfigJson = ContentManager.Get<string>(animationConfigPath, ".animcfg");
+                AnimationConfigJson = ContentManager.Get<string>(animationConfigPath, ".json");
             }
             Type type = TypeCache.FindType(modeltype, true, true);
             Model = (Model)ContentManager.Get(type, ModelRoute);

@@ -20,6 +20,8 @@ namespace Engine.Graphics
     public class StateRuleEvaluator
     {
         private readonly Dictionary<string, Expression> _compiledConditions = new();
+        // 缓存每个表达式需要的参数名
+        private readonly Dictionary<string, string[]> _requiredParameters = new();
 
         /// <summary>
         /// 评估状态轨道的所有规则，返回匹配的状态
@@ -55,13 +57,25 @@ namespace Engine.Graphics
                     expression = new Expression(condition);
                     expression.Options = ExpressionOptions.NoCache;
                     _compiledConditions[condition] = expression;
+
+                    // 使用 NCalc 内置方法提取参数名
+                    var paramNames = expression.GetParameterNames();
+                    _requiredParameters[condition] = paramNames?.ToArray() ?? Array.Empty<string>();
                 }
 
-                // 绑定参数
-                expression.Parameters = new Dictionary<string, object>();
-                foreach (var param in parameters.GetAllParameters())
+                // 只绑定表达式需要的参数
+                var requiredParams = _requiredParameters[condition];
+                if (requiredParams.Length > 0)
                 {
-                    expression.Parameters[param.Key] = param.Value;
+                    expression.Parameters = new Dictionary<string, object>(requiredParams.Length);
+                    foreach (var paramName in requiredParams)
+                    {
+                        expression.Parameters[paramName] = parameters.GetValue(paramName);
+                    }
+                }
+                else
+                {
+                    expression.Parameters = null;
                 }
 
                 // 注册自定义函数
@@ -73,7 +87,6 @@ namespace Engine.Graphics
             }
             catch (Exception ex)
             {
-                // 临时调试日志
                 System.Diagnostics.Debug.WriteLine($"[NCalc Error] Condition: {condition}, Error: {ex.Message}");
                 return false;
             }
@@ -85,6 +98,7 @@ namespace Engine.Graphics
         public void ClearCache()
         {
             _compiledConditions.Clear();
+            _requiredParameters.Clear();
         }
     }
 }

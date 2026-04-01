@@ -50,6 +50,17 @@ namespace Engine.Graphics
         public Vector3 GetVector3(string name) => _vector3Params.TryGetValue(name, out var v) ? v : Vector3.Zero;
 
         /// <summary>
+        /// 按名称获取参数值（通用方法）
+        /// </summary>
+        public object GetValue(string name)
+        {
+            if (_floatParams.TryGetValue(name, out var f)) return f;
+            if (_boolParams.TryGetValue(name, out var b)) return b;
+            if (_vector3Params.TryGetValue(name, out var v)) return v;
+            return 0;
+        }
+
+        /// <summary>
         /// 尝试获取 float 参数
         /// </summary>
         public bool TryGetFloat(string name, out float value) => _floatParams.TryGetValue(name, out value);

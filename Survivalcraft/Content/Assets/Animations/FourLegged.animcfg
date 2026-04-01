@@ -1,10 +1,72 @@
 {
   "template": "FourLegged",
 
+  "states": {
+    "gait": {
+      "layer": "Base",
+      "rules": [
+        {
+          "condition": "[Speed] > 0.7 * [WalkSpeed] && [CanCanter]",
+          "animation": {
+            "source": "driver:FourLeggedWalk",
+            "driverArgs": { "Gait": 2 }
+          }
+        },
+        {
+          "condition": "[Speed] > 0.5 * [WalkSpeed] && [CanTrot]",
+          "animation": {
+            "source": "driver:FourLeggedWalk",
+            "driverArgs": { "Gait": 1 }
+          }
+        },
+        {
+          "condition": "true",
+          "animation": {
+            "source": "driver:FourLeggedWalk",
+            "driverArgs": { "Gait": 0 }
+          }
+        }
+      ]
+    }
+  },
+
   "drivers": [
     {
       "type": "FourLeggedWalk",
-      "layer": "Base"
+      "layer": "Base",
+      "properties": {
+        "WalkPhases": [0.0, 0.5, 0.25, 0.75],
+        "TrotPhases": [0.0, 0.5, 0.5, 0.0],
+        "CanterPhases": [0.0, 0.25, 0.15, 0.4],
+
+        "WalkHeadAngle": 3.0,
+        "TrotHeadAngle": 3.0,
+        "CanterHeadAngle": 8.0,
+
+        "WalkHeadFrequency": 4.0,
+        "TrotHeadFrequency": 4.0,
+        "CanterHeadFrequency": 2.0,
+
+        "HeadMaxAngleX": 65.0,
+        "HeadMaxAngleY": 55.0,
+
+        "HeadRatio": 0.4,
+        "NeckRatio": 0.6,
+
+        "FeedBaseAngle": 25.0,
+        "FeedNoiseRange": 45.0,
+        "FeedNoiseFrequency": 3.0,
+        "FeedNoiseOctaves": 2,
+        "FeedNoiseFreqStep": 2.0,
+        "FeedNoiseAmpStep": 0.75,
+
+        "ButtAngle": 40.0,
+        "ButtSigmoidK": 4.0,
+
+        "DeathHeadAngle": 50.0,
+
+        "SmoothSpeed": 12.0
+      }
     }
   ],
 
@@ -15,6 +77,7 @@
     "CanCanter": true,
     "CanTrot": true,
     "MovementPhase": 0.0,
-    "CanterLegsAngleFactor": 1.5
+    "CanterLegsAngleFactor": 1.5,
+    "Gait": 0
   }
 }

@@ -357,6 +357,12 @@ namespace Engine.Graphics
                 }
             }
 
+            // 配置状态规则
+            if (config.States != null && config.States.Count > 0)
+            {
+                controller.SetStateConfigs(config.States);
+            }
+
             return controller;
         }
 
@@ -388,7 +394,7 @@ namespace Engine.Graphics
         /// 创建驱动器实例
         /// 引擎层驱动器在此创建，游戏层驱动器通过反射创建
         /// </summary>
-        private IAnimationDriver CreateDriver(string type)
+        public IAnimationDriver CreateDriver(string type)
         {
             // 引擎层驱动器
             return type switch
@@ -440,7 +446,7 @@ namespace Engine.Graphics
         /// <summary>
         /// 应用驱动器属性
         /// </summary>
-        private void ApplyDriverProperties(IAnimationDriver driver, Dictionary<string, object> properties)
+        public void ApplyDriverProperties(IAnimationDriver driver, Dictionary<string, object> properties)
         {
             if (properties == null || driver == null)
                 return;

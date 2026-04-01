@@ -30,6 +30,17 @@ namespace Engine.Graphics
                 SetFloat(name, i);
             else if (value is double d)
                 SetFloat(name, (float)d);
+            else if (value is System.Text.Json.JsonElement jsonElement)
+            {
+                // 处理 JsonElement 类型
+                if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.Number)
+                    SetFloat(name, jsonElement.GetSingle());
+                else if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.True ||
+                         jsonElement.ValueKind == System.Text.Json.JsonValueKind.False)
+                    SetBool(name, jsonElement.GetBoolean());
+                else if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                    SetFloat(name, float.Parse(jsonElement.GetString()));
+            }
             else if (value != null)
                 SetFloat(name, Convert.ToSingle(value));
         }

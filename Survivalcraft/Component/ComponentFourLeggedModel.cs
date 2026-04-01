@@ -42,73 +42,41 @@ namespace Game {
 
         public override void Update(float dt) {
             float footstepsPhase = m_footstepsPhase;
-            float num = m_componentCreature.ComponentLocomotion.SlipSpeed
+            float speed = m_componentCreature.ComponentLocomotion.SlipSpeed
                 ?? Vector3.Dot(m_componentCreature.ComponentBody.Velocity, m_componentCreature.ComponentBody.Matrix.Forward);
-            if (m_canCanter && num > 0.7f * m_componentCreature.ComponentLocomotion.WalkSpeed) {
-                m_gait = Gait.Canter;
-                MovementAnimationPhase += num * dt * 0.7f * m_walkAnimationSpeed;
-                m_footstepsPhase += 0.7f * m_walkAnimationSpeed * num * dt;
-            }
-            else if (m_canTrot && num > 0.5f * m_componentCreature.ComponentLocomotion.WalkSpeed) {
-                m_gait = Gait.Trot;
-                MovementAnimationPhase += num * dt * m_walkAnimationSpeed;
-                m_footstepsPhase += 1.25f * m_walkAnimationSpeed * num * dt;
-            }
-            else if (MathF.Abs(num) > 0.2f) {
-                m_gait = Gait.Walk;
-                MovementAnimationPhase += num * dt * m_walkAnimationSpeed;
-                m_footstepsPhase += 1.25f * m_walkAnimationSpeed * num * dt;
+
+            // 步态现在由配置中的状态规则控制
+            // MovementAnimationPhase 基于速度计算
+            if (MathF.Abs(speed) > 0.2f) {
+                MovementAnimationPhase += speed * dt * m_walkAnimationSpeed;
+                m_footstepsPhase += 1.25f * m_walkAnimationSpeed * MathF.Abs(speed) * dt;
             }
             else {
-                m_gait = Gait.Walk;
                 MovementAnimationPhase = 0f;
                 m_footstepsPhase = 0f;
             }
-            float num2 = 0f;
-            if (m_gait == Gait.Canter) {
-                num2 = (0f - m_walkBobHeight) * 1.5f * MathF.Sin((float)Math.PI * 2f * MovementAnimationPhase);
+
+            // Bob 计算 - 使用统一的计算方式，让驱动器根据 Gait 调整
+            float targetBob = 0f;
+            if (MathF.Abs(speed) > 0.2f) {
+                targetBob = -m_walkBobHeight * MathUtils.Sqr(MathF.Sin((float)Math.PI * 2f * MovementAnimationPhase));
             }
-            else if (m_gait == Gait.Trot) {
-                num2 = m_walkBobHeight * 1.5f * MathUtils.Sqr(MathF.Sin((float)Math.PI * 2f * MovementAnimationPhase));
+            float smoothFactor = MathUtils.Min(12f * m_subsystemTime.GameTimeDelta, 1f);
+            Bob += smoothFactor * (targetBob - Bob);
+
+            // 脚步声
+            float num5 = MathF.Floor(m_footstepsPhase);
+            if (m_footstepsPhase > num5 && footstepsPhase <= num5) {
+                m_componentCreature.ComponentCreatureSounds.PlayFootstepSound(1f);
             }
-            else if (m_gait == Gait.Walk) {
-                num2 = (0f - m_walkBobHeight) * MathUtils.Sqr(MathF.Sin((float)Math.PI * 2f * MovementAnimationPhase));
-            }
-            float num3 = MathUtils.Min(12f * m_subsystemTime.GameTimeDelta, 1f);
-            Bob += num3 * (num2 - Bob);
-            if (m_gait == Gait.Canter && m_useCanterSound) {
-                float num4 = MathF.Floor(m_footstepsPhase);
-                if (m_footstepsPhase > num4
-                    && footstepsPhase <= num4) {
-                    string footstepSoundMaterialName = m_subsystemSoundMaterials.GetFootstepSoundMaterialName(m_componentCreature);
-                    if (!string.IsNullOrEmpty(footstepSoundMaterialName)
-                        && footstepSoundMaterialName != "Water") {
-                        m_subsystemAudio.PlayRandomSound(
-                            "Audio/Footsteps/CanterDirt",
-                            0.75f,
-                            m_random.Float(-0.25f, 0f),
-                            m_componentCreature.ComponentBody.Position,
-                            3f,
-                            true
-                        );
-                    }
-                }
-            }
-            else {
-                float num5 = MathF.Floor(m_footstepsPhase);
-                if (m_footstepsPhase > num5
-                    && footstepsPhase <= num5) {
-                    m_componentCreature.ComponentCreatureSounds.PlayFootstepSound(1f);
-                }
-            }
+
             m_feedFactor = FeedOrder ? MathUtils.Min(m_feedFactor + 2f * dt, 1f) : MathUtils.Max(m_feedFactor - 2f * dt, 0f);
             IsAttackHitMoment = false;
             if (AttackOrder) {
                 m_buttFactor = MathUtils.Min(m_buttFactor + 4f * dt, 1f);
                 float buttPhase = m_buttPhase;
                 m_buttPhase = MathUtils.Remainder(m_buttPhase + dt * 2f, 1f);
-                if (buttPhase < 0.5f
-                    && m_buttPhase >= 0.5f) {
+                if (buttPhase < 0.5f && m_buttPhase >= 0.5f) {
                     IsAttackHitMoment = true;
                 }
             }
@@ -139,8 +107,8 @@ namespace Game {
             if (ctrl == null) return;
 
             // 四足动物特有参数
+            // 注意：Gait 参数由配置中的状态规则自动设置
             ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
-            ctrl.Parameters.SetFloat("Gait", (int)m_gait);
             ctrl.Parameters.SetFloat("FeedFactor", m_feedFactor);
             ctrl.Parameters.SetFloat("Bob", Bob);
 
@@ -189,6 +157,10 @@ namespace Game {
                 AnimationController.Parameters.SetFloat("WalkHindLegsAngle", m_walkHindLegsAngle);
                 AnimationController.Parameters.SetFloat("CanterLegsAngleFactor", m_canterLegsAngleFactor);
                 AnimationController.Parameters.SetFloat("WalkBobHeight", m_walkBobHeight);
+
+                // 状态规则条件参数
+                AnimationController.Parameters.SetBool("CanCanter", m_canCanter);
+                AnimationController.Parameters.SetBool("CanTrot", m_canTrot);
             }
         }
     }

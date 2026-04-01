@@ -36,13 +36,48 @@ namespace Engine.Graphics.Drivers
         public string ImmersionFactorParam { get; set; } = "ImmersionFactor";
         public string BodyRightParam { get; set; } = "BodyRight";
 
-        // 可配置的相位偏移模式（与原始 ComponentFourLeggedModel 一致）
-        public static readonly Dictionary<int, float[]> GaitPhasePatterns = new()
-        {
-            [0] = new[] { 0.0f, 0.5f, 0.25f, 0.75f },  // Walk: Leg1=0, Leg2=0.5, Leg3=0.25, Leg4=0.75
-            [1] = new[] { 0.0f, 0.5f, 0.5f, 0.0f },    // Trot: Leg1=0, Leg2=0.5, Leg3=0.5, Leg4=0
-            [2] = new[] { 0.0f, 0.25f, 0.15f, 0.4f },  // Canter: Leg1=0, Leg2=0.25, Leg3=0.15, Leg4=0.4
-        };
+        // ========== 可配置的动画参数 ==========
+
+        // 步态相位偏移 (Leg1, Leg2, Leg3, Leg4)
+        public float[] WalkPhases { get; set; } = { 0.0f, 0.5f, 0.25f, 0.75f };
+        public float[] TrotPhases { get; set; } = { 0.0f, 0.5f, 0.5f, 0.0f };
+        public float[] CanterPhases { get; set; } = { 0.0f, 0.25f, 0.15f, 0.4f };
+
+        // 头部摆动角度（度）
+        public float WalkHeadAngle { get; set; } = 3f;
+        public float TrotHeadAngle { get; set; } = 3f;
+        public float CanterHeadAngle { get; set; } = 8f;
+
+        // 头部摆动频率系数 (Walk/Trot 用 4π, Canter 用 2π)
+        public float WalkHeadFrequency { get; set; } = 4f;
+        public float TrotHeadFrequency { get; set; } = 4f;
+        public float CanterHeadFrequency { get; set; } = 2f;
+
+        // 头部/颈部角度限制（度）
+        public float HeadMaxAngleX { get; set; } = 65f;
+        public float HeadMaxAngleY { get; set; } = 55f;
+
+        // 有 Neck 时的角度分配比例
+        public float HeadRatio { get; set; } = 0.4f;
+        public float NeckRatio { get; set; } = 0.6f;
+
+        // 进食动画参数
+        public float FeedBaseAngle { get; set; } = 25f;      // 基础低头角度
+        public float FeedNoiseRange { get; set; } = 45f;     // 噪声变化范围
+        public float FeedNoiseFrequency { get; set; } = 3f;  // 噪声基础频率
+        public int FeedNoiseOctaves { get; set; } = 2;
+        public float FeedNoiseFreqStep { get; set; } = 2f;
+        public float FeedNoiseAmpStep { get; set; } = 0.75f;
+
+        // 顶撞动画参数
+        public float ButtAngle { get; set; } = 40f;          // 顶撞角度
+        public float ButtSigmoidK { get; set; } = 4f;        // Sigmoid 陡度
+
+        // 死亡动画参数
+        public float DeathHeadAngle { get; set; } = 50f;     // 死亡头部下垂角度
+
+        // 平滑过渡速度
+        public float SmoothSpeed { get; set; } = 12f;
 
         private float _phase;
         private float _frontAngle;
@@ -65,9 +100,15 @@ namespace Engine.Graphics.Drivers
         private float _immersionFactor;
         private Vector3 _bodyRight;
 
-        // 平滑过渡用的当前角度
-        private float _legAngle1, _legAngle2, _legAngle3, _legAngle4;
-        private float _headAngleY;
+        // 平滑过渡用的当前角度（已初始化）
+        private float _legAngle1 = 0f;
+        private float _legAngle2 = 0f;
+        private float _legAngle3 = 0f;
+        private float _legAngle4 = 0f;
+        private float _headAngleY = 0f;
+
+        // 首次更新标记
+        private bool _firstUpdate = true;
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
@@ -98,7 +139,13 @@ namespace Engine.Graphics.Drivers
 
             if (_phase != 0f && _deathPhase == 0f && (_isOnGround || _immersionFactor > 0f))
             {
-                var phaseOffsets = GaitPhasePatterns.TryGetValue(_gait, out var offsets) ? offsets : GaitPhasePatterns[0];
+                // 获取对应步态的相位偏移
+                float[] phaseOffsets = _gait switch
+                {
+                    2 => CanterPhases,
+                    1 => TrotPhases,
+                    _ => WalkPhases
+                };
 
                 if (_gait == 2) // Canter
                 {
@@ -107,7 +154,7 @@ namespace Engine.Graphics.Drivers
                     targetAngle2 = _frontAngle * factor * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[1]));
                     targetAngle3 = _hindAngle * factor * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[2]));
                     targetAngle4 = _hindAngle * factor * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[3]));
-                    targetHeadY = MathUtils.DegToRad(8f) * MathF.Sin(2f * MathF.PI * _phase);
+                    targetHeadY = MathUtils.DegToRad(CanterHeadAngle) * MathF.Sin(CanterHeadFrequency * MathF.PI * _phase);
                 }
                 else if (_gait == 1) // Trot
                 {
@@ -115,7 +162,7 @@ namespace Engine.Graphics.Drivers
                     targetAngle2 = _frontAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[1]));
                     targetAngle3 = _hindAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[2]));
                     targetAngle4 = _hindAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[3]));
-                    targetHeadY = MathUtils.DegToRad(3f) * MathF.Sin(4f * MathF.PI * _phase);
+                    targetHeadY = MathUtils.DegToRad(TrotHeadAngle) * MathF.Sin(TrotHeadFrequency * MathF.PI * _phase);
                 }
                 else // Walk
                 {
@@ -123,17 +170,31 @@ namespace Engine.Graphics.Drivers
                     targetAngle2 = _frontAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[1]));
                     targetAngle3 = _hindAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[2]));
                     targetAngle4 = _hindAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[3]));
-                    targetHeadY = MathUtils.DegToRad(3f) * MathF.Sin(4f * MathF.PI * _phase);
+                    targetHeadY = MathUtils.DegToRad(WalkHeadAngle) * MathF.Sin(WalkHeadFrequency * MathF.PI * _phase);
                 }
             }
 
             // 平滑过渡
-            float smoothFactor = MathUtils.Min(12f * deltaTime, 1f);
-            _legAngle1 += smoothFactor * (targetAngle1 - _legAngle1);
-            _legAngle2 += smoothFactor * (targetAngle2 - _legAngle2);
-            _legAngle3 += smoothFactor * (targetAngle3 - _legAngle3);
-            _legAngle4 += smoothFactor * (targetAngle4 - _legAngle4);
-            _headAngleY += smoothFactor * (targetHeadY - _headAngleY);
+            float smoothFactor = MathUtils.Min(SmoothSpeed * deltaTime, 1f);
+
+            // 首次更新时直接设置目标值，避免从 0 平滑过渡导致的闪烁
+            if (_firstUpdate)
+            {
+                _legAngle1 = targetAngle1;
+                _legAngle2 = targetAngle2;
+                _legAngle3 = targetAngle3;
+                _legAngle4 = targetAngle4;
+                _headAngleY = targetHeadY;
+                _firstUpdate = false;
+            }
+            else
+            {
+                _legAngle1 += smoothFactor * (targetAngle1 - _legAngle1);
+                _legAngle2 += smoothFactor * (targetAngle2 - _legAngle2);
+                _legAngle3 += smoothFactor * (targetAngle3 - _legAngle3);
+                _legAngle4 += smoothFactor * (targetAngle4 - _legAngle4);
+                _headAngleY += smoothFactor * (targetHeadY - _headAngleY);
+            }
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -159,7 +220,7 @@ namespace Engine.Graphics.Drivers
                 var headBone = model.FindBone("Head");
                 if (headBone != null)
                 {
-                    boneTransforms[headBone.Index] = Matrix.CreateRotationX(MathUtils.DegToRad(50f) * _deathPhase);
+                    boneTransforms[headBone.Index] = Matrix.CreateRotationX(MathUtils.DegToRad(DeathHeadAngle) * _deathPhase);
                 }
 
                 var neckBone = model.FindBone("Neck", false);
@@ -187,23 +248,23 @@ namespace Engine.Graphics.Drivers
                 var headBone = model.FindBone("Head");
                 if (headBone != null)
                 {
-                    float lookAngleX = Math.Clamp(_lookAngleX, -MathUtils.DegToRad(65f), MathUtils.DegToRad(65f));
-                    float lookAngleY = Math.Clamp(_lookAngleY + _headAngleY, -MathUtils.DegToRad(55f), MathUtils.DegToRad(55f));
+                    float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
+                    float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
+                    float lookAngleX = Math.Clamp(_lookAngleX, -maxAngleX, maxAngleX);
+                    float lookAngleY = Math.Clamp(_lookAngleY + _headAngleY, -maxAngleY, maxAngleY);
 
-                    // 如果有 Neck，Head 只应用 40%；否则应用全部
+                    // 如果有 Neck，Head 只应用配置的比例；否则应用全部
                     if (hasNeck)
                     {
-                        lookAngleX *= 0.4f;
-                        lookAngleY *= 0.4f;
+                        lookAngleX *= HeadRatio;
+                        lookAngleY *= HeadRatio;
                     }
 
                     // 进食动画
-                    // 原始代码：float y = 0f - MathUtils.DegToRad(25f + 45f * SimplexNoise.OctavedNoise((float)m_subsystemTime.GameTime, 3f, 2, 2f, 0.75f));
                     if (_feedFactor > 0f)
                     {
-                        // OctavedNoise 返回 0 到 1 的值
-                        float noise = OctavedNoise1D(_gameTime, 3f, 2, 2f, 0.75f);
-                        float feedY = -MathUtils.DegToRad(25f + 45f * noise);
+                        float noise = OctavedNoise1D(_gameTime, FeedNoiseFrequency, FeedNoiseOctaves, FeedNoiseFreqStep, FeedNoiseAmpStep);
+                        float feedY = -MathUtils.DegToRad(FeedBaseAngle + FeedNoiseRange * noise);
                         // 进食时：X 角度趋向 0，Y 角度趋向 feedY
                         lookAngleX = MathUtils.Lerp(lookAngleX, 0f, _feedFactor);
                         lookAngleY = MathUtils.Lerp(lookAngleY, feedY, _feedFactor);
@@ -212,7 +273,7 @@ namespace Engine.Graphics.Drivers
                     // 顶撞动画
                     if (_buttFactor > 0f)
                     {
-                        float buttY = -MathUtils.DegToRad(40f) * MathF.Sin(MathF.PI * 2f * MathUtils.Sigmoid(_buttPhase, 4f));
+                        float buttY = -MathUtils.DegToRad(ButtAngle) * MathF.Sin(MathF.PI * 2f * MathUtils.Sigmoid(_buttPhase, ButtSigmoidK));
                         lookAngleY = lookAngleY + (buttY - lookAngleY) * _buttFactor;
                     }
 
@@ -224,8 +285,10 @@ namespace Engine.Graphics.Drivers
                 // 颈部动画 - 只有存在 Neck 骨骼时才设置
                 if (hasNeck)
                 {
-                    float lookAngleX = Math.Clamp(_lookAngleX * 0.6f, -MathUtils.DegToRad(65f), MathUtils.DegToRad(65f));
-                    float lookAngleY = Math.Clamp((_lookAngleY + _headAngleY) * 0.6f, -MathUtils.DegToRad(55f), MathUtils.DegToRad(55f));
+                    float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
+                    float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
+                    float lookAngleX = Math.Clamp(_lookAngleX * NeckRatio, -maxAngleX, maxAngleX);
+                    float lookAngleY = Math.Clamp((_lookAngleY + _headAngleY) * NeckRatio, -maxAngleY, maxAngleY);
 
                     boneTransforms[neckBone.Index] =
                         Matrix.CreateRotationX(lookAngleY) *
@@ -307,39 +370,6 @@ namespace Engine.Graphics.Drivers
             }
 
             return total / maxAmplitude;
-        }
-
-        /// <summary>
-        /// 配置驱动器参数
-        /// </summary>
-        public void Configure(Dictionary<string, object> args)
-        {
-            if (args == null) return;
-
-            if (args.TryGetValue("FrontAngle", out var front))
-            {
-                _frontAngle = Convert.ToSingle(front);
-            }
-
-            if (args.TryGetValue("HindAngle", out var hind))
-            {
-                _hindAngle = Convert.ToSingle(hind);
-            }
-
-            if (args.TryGetValue("PhaseParam", out var phaseParam))
-            {
-                PhaseParam = phaseParam?.ToString();
-            }
-
-            if (args.TryGetValue("FrontAngleParam", out var frontParam))
-            {
-                FrontAngleParam = frontParam?.ToString();
-            }
-
-            if (args.TryGetValue("HindAngleParam", out var hindParam))
-            {
-                HindAngleParam = hindParam?.ToString();
-            }
         }
     }
 }

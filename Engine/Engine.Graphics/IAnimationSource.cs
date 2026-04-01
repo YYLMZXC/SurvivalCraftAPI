@@ -30,12 +30,19 @@ namespace Engine.Graphics
     {
         public string Source { get; set; }
         public float Speed { get; set; } = 1.0f;
+        public string SpeedParameter { get; set; }
         public bool Loop { get; set; } = true;
         public float InitialPhase { get; set; } = 0f;
         public float BlendDuration { get; set; } = 0.3f;
         public bool Mirror { get; set; } = false;
         public Dictionary<string, object> DriverArgs { get; set; }
         public List<AnimationEventConfig> Events { get; set; }
+
+        /// <summary>
+        /// 骨骼重映射配置 - 用于交换骨骼变换
+        /// 例如 {"HandL": "HandR", "HandR": "HandL"} 会交换左右手的变换
+        /// </summary>
+        public Dictionary<string, string> BoneRemapping { get; set; }
     }
 
     /// <summary>

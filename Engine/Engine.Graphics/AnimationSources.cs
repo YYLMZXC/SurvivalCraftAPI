@@ -11,6 +11,9 @@ namespace Engine.Graphics
         private readonly Model _model;
         private readonly AnimationSourceConfig _config;
         private List<AnimationEventConfig> _events;
+        private readonly string _speedParameter;
+        private readonly float _baseSpeed;
+        private readonly Dictionary<string, string> _boneRemapping;
 
         public string Name { get; }
 
@@ -31,6 +34,7 @@ namespace Engine.Graphics
         public Vector3 RootMotionDelta { get; private set; }
         private Vector3 _lastRootPosition;
         private bool _rootMotionInitialized;
+        private Matrix?[] _rootMotionTransforms;
 
         public ClipAnimationSource(Model model, ModelAnimation animation, AnimationSourceConfig config = null)
         {
@@ -38,9 +42,13 @@ namespace Engine.Graphics
             _config = config ?? new AnimationSourceConfig();
             Name = animation?.Name ?? "Unknown";
 
+            _baseSpeed = _config.Speed;
+            _speedParameter = _config.SpeedParameter;
+            _boneRemapping = _config.BoneRemapping;
+
             _player = new AnimationPlayer();
             _player.SetAnimation(model, animation);
-            _player.Speed = _config.Speed;
+            _player.Speed = _baseSpeed;
             _player.Play(_config.Loop);
 
             if (_config.InitialPhase > 0)
@@ -49,11 +57,24 @@ namespace Engine.Graphics
             }
 
             _events = _config.Events;
+
+            // 预分配根运动变换数组，避免每帧分配
+            if (model?.Bones != null)
+            {
+                _rootMotionTransforms = new Matrix?[model.Bones.Count];
+            }
         }
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             if (_player == null) return;
+
+            // 动态速度：如果设置了 SpeedParameter，从参数读取速度值
+            if (!string.IsNullOrEmpty(_speedParameter) && parameters != null)
+            {
+                float paramSpeed = parameters.TryGetFloat(_speedParameter, out var speed) ? speed : 1.0f;
+                _player.Speed = _baseSpeed * paramSpeed;
+            }
 
             float prevTime = _player.NormalizedTime;
             _player.Update(deltaTime);
@@ -100,14 +121,13 @@ namespace Engine.Graphics
         private void ExtractRootMotionDelta()
         {
             var rootBone = _model.FindBone(RootBoneName);
-            if (rootBone == null) return;
+            if (rootBone == null || _rootMotionTransforms == null) return;
 
-            var tempTransforms = new Matrix?[_model.Bones.Count];
-            _player.SampleBoneTransforms(tempTransforms);
+            _player.SampleBoneTransforms(_rootMotionTransforms);
 
-            if (tempTransforms[rootBone.Index].HasValue)
+            if (_rootMotionTransforms[rootBone.Index].HasValue)
             {
-                var currentPos = tempTransforms[rootBone.Index].Value.Translation;
+                var currentPos = _rootMotionTransforms[rootBone.Index].Value.Translation;
 
                 if (!_rootMotionInitialized)
                 {
@@ -135,6 +155,12 @@ namespace Engine.Graphics
                 ApplyMirror(boneTransforms, model);
             }
 
+            // 骨骼重映射处理
+            if (_boneRemapping != null && _boneRemapping.Count > 0)
+            {
+                ApplyBoneRemapping(boneTransforms, model);
+            }
+
             // 根运动模式下，根骨骼位移已被提取
             if (ExtractRootMotion)
             {
@@ -155,8 +181,7 @@ namespace Engine.Graphics
             {
                 if (!boneTransforms[i].HasValue) continue;
 
-                var m = boneTransforms[i].Value;
-                m.Decompose(out var scale, out var rotation, out var translation);
+                boneTransforms[i].Value.Decompose(out var scale, out var rotation, out var translation);
 
                 // 翻转 X 轴
                 translation.X = -translation.X;
@@ -166,6 +191,34 @@ namespace Engine.Graphics
                 boneTransforms[i] = Matrix.CreateScale(scale) *
                     Matrix.CreateFromQuaternion(rotation) *
                     Matrix.CreateTranslation(translation);
+            }
+        }
+
+        /// <summary>
+        /// 应用骨骼重映射 - 交换骨骼变换
+        /// </summary>
+        private void ApplyBoneRemapping(Matrix?[] boneTransforms, Model model)
+        {
+            // 收集需要交换的骨骼变换
+            var swapped = new Dictionary<int, Matrix?>();
+
+            foreach (var (boneA, boneB) in _boneRemapping)
+            {
+                var boneAInfo = model.FindBone(boneA);
+                var boneBInfo = model.FindBone(boneB);
+
+                if (boneAInfo != null && boneBInfo != null)
+                {
+                    // 交换两个骨骼的变换
+                    swapped[boneAInfo.Index] = boneTransforms[boneBInfo.Index];
+                    swapped[boneBInfo.Index] = boneTransforms[boneAInfo.Index];
+                }
+            }
+
+            // 应用交换后的变换
+            foreach (var (index, transform) in swapped)
+            {
+                boneTransforms[index] = transform;
             }
         }
 

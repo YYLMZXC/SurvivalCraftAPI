@@ -3,6 +3,37 @@
 namespace Engine.Graphics
 {
     /// <summary>
+    /// 动画完成时执行的动作
+    /// </summary>
+    public class OnCompleteAction
+    {
+        /// <summary>
+        /// 动作类型：setState 或 trigger
+        /// </summary>
+        public string Type { get; set; }
+
+        /// <summary>
+        /// 目标状态轨道名称（setState 使用）
+        /// </summary>
+        public string State { get; set; }
+
+        /// <summary>
+        /// 要设置的值（setState 使用）
+        /// </summary>
+        public object Value { get; set; }
+
+        /// <summary>
+        /// 事件名称（trigger 使用）
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// 事件数据（trigger 使用）
+        /// </summary>
+        public object Data { get; set; }
+    }
+
+    /// <summary>
     /// 动画引用配置
     /// </summary>
     public class AnimationReference
@@ -36,6 +67,11 @@ namespace Engine.Graphics
         /// 驱动器参数（当 Source 为 driver: 时使用）
         /// </summary>
         public Dictionary<string, object> DriverArgs { get; set; }
+
+        /// <summary>
+        /// 动画完成时执行的动作（非循环动画）
+        /// </summary>
+        public OnCompleteAction OnComplete { get; set; }
     }
 
     /// <summary>
@@ -135,12 +171,20 @@ namespace Engine.Graphics
         /// </summary>
         public static AnimationConfig LoadFromJson(string json)
         {
-            return System.Text.Json.JsonSerializer.Deserialize<AnimationConfig>(json,
-                new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    ReadCommentHandling = System.Text.Json.JsonCommentHandling.Skip
-                });
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<AnimationConfig>(json,
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        ReadCommentHandling = System.Text.Json.JsonCommentHandling.Skip
+                    }) ?? new AnimationConfig();
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // JSON 格式不正确时返回空配置作为回退
+                return new AnimationConfig();
+            }
         }
 
         /// <summary>

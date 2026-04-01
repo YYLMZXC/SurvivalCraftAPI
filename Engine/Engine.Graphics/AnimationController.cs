@@ -14,12 +14,28 @@ namespace Engine.Graphics
         private readonly AnimationParameters _parameters = new();
         private readonly AnimationBlender _blender = new();
         private readonly StateRuleEvaluator _ruleEvaluator = new();
+        private readonly AnimationConfigLoader _configLoader = new();
 
         // 状态规则配置（从动画配置文件加载）
         private Dictionary<string, StateTrackConfig> _stateConfigs;
 
         // 记录每个状态轨道当前匹配的规则索引（用于避免重复切换）
         private readonly Dictionary<string, int> _lastMatchedRuleIndex = new();
+
+        // 动画引用配置（用于获取 OnComplete 动作）
+        private Dictionary<string, AnimationReference> _animationReferences = new();
+
+        // 当前层播放的动画别名（用于查找 OnComplete 配置）
+        private readonly Dictionary<string, string> _layerAnimationAlias = new();
+
+        // 记录层的动画播放状态（用于检测完成）
+        private readonly Dictionary<string, bool> _layerWasPlaying = new();
+
+        // 记录层的循环设置（用于判断是否是非循环动画完成）
+        private readonly Dictionary<string, bool> _layerLooping = new();
+
+        // 记录当前应用在每个层上的动画引用（用于获取 OnComplete）
+        private readonly Dictionary<string, AnimationReference> _layerAnimationRef = new();
 
         public Model Model => _model;
         public AnimationTemplate Template => _template;
@@ -184,6 +200,75 @@ namespace Engine.Graphics
             {
                 layer.Update(deltaTime, _parameters);
             }
+
+            // 4. 检查动画完成事件
+            CheckAnimationCompletion();
+        }
+
+        /// <summary>
+        /// 检查动画完成事件
+        /// </summary>
+        private void CheckAnimationCompletion()
+        {
+            foreach (var layer in _layers)
+            {
+                string layerName = layer.Name;
+                var player = layer.AnimationPlayer;
+
+                // 获取当前播放状态
+                bool isPlaying = player?.IsPlaying ?? false;
+                bool wasPlaying = _layerWasPlaying.GetValueOrDefault(layerName, false);
+                bool isLooping = _layerLooping.GetValueOrDefault(layerName, true);
+
+                // 检测非循环动画完成：之前在播放，现在停止了，且不是循环动画
+                if (wasPlaying && !isPlaying && !isLooping)
+                {
+                    // 动画完成，执行 OnComplete 动作
+                    if (_layerAnimationRef.TryGetValue(layerName, out var animRef) && animRef?.OnComplete != null)
+                    {
+                        ExecuteOnCompleteAction(animRef.OnComplete);
+                    }
+                }
+
+                // 更新播放状态记录
+                _layerWasPlaying[layerName] = isPlaying;
+            }
+        }
+
+        /// <summary>
+        /// 执行动画完成动作
+        /// </summary>
+        private void ExecuteOnCompleteAction(OnCompleteAction action)
+        {
+            if (action == null) return;
+
+            switch (action.Type?.ToLowerInvariant())
+            {
+                case "setstate":
+                    // 设置状态轨道的值
+                    if (!string.IsNullOrEmpty(action.State))
+                    {
+                        SetState(action.State, action.Value);
+                    }
+                    break;
+
+                case "trigger":
+                    // 触发自定义事件
+                    if (!string.IsNullOrEmpty(action.Name))
+                    {
+                        var evt = new AnimationEvent(action.Name, 0f, action.Data);
+                        OnAnimationEvent?.Invoke(evt);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 设置动画引用配置（用于 OnComplete 回调查找）
+        /// </summary>
+        public void SetAnimationReferences(Dictionary<string, AnimationReference> references)
+        {
+            _animationReferences = references ?? new();
         }
 
         /// <summary>
@@ -284,6 +369,51 @@ namespace Engine.Graphics
                         layer.SetDriver(driver);
                     }
                 }
+
+                // 驱动器相关参数通过 Parameters 传递
+                if (animRef.Speed != 1f)
+                {
+                    _parameters.SetParameter("Speed", animRef.Speed);
+                }
+
+                // 驱动器没有完成概念，清除跟踪
+                _layerAnimationRef.Remove(layerName);
+                _layerLooping.Remove(layerName);
+            }
+            // 处理 file: 语法 - 加载外部动画文件
+            else if (source.StartsWith("file:"))
+            {
+                var animation = LoadExternalAnimation(source);
+                if (animation != null)
+                {
+                    // 根据是否有过渡时长选择播放方式
+                    if (animRef.BlendDuration > 0f)
+                    {
+                        layer.PlayAnimationWithTransition(
+                            _model,
+                            animation,
+                            animRef.Loop,
+                            animRef.BlendDuration);
+                    }
+                    else
+                    {
+                        layer.PlayAnimation(_model, animation, animRef.Loop);
+                    }
+
+                    // 设置播放速度
+                    layer.AnimationPlayer.Speed = animRef.Speed;
+
+                    // 设置初始相位
+                    if (animRef.InitialPhase > 0f)
+                    {
+                        layer.AnimationPlayer.SetNormalizedTime(animRef.InitialPhase);
+                    }
+
+                    // 记录动画引用和循环设置（用于 OnComplete）
+                    _layerAnimationRef[layerName] = animRef;
+                    _layerLooping[layerName] = animRef.Loop;
+                    _layerWasPlaying[layerName] = true;
+                }
             }
             // 处理动画名（模型内置动画）
             else
@@ -294,7 +424,35 @@ namespace Engine.Graphics
 
                 if (animation != null)
                 {
-                    layer.PlayAnimation(_model, animation);
+                    // 根据是否有过渡时长选择播放方式
+                    if (animRef.BlendDuration > 0f)
+                    {
+                        // 使用过渡播放
+                        layer.PlayAnimationWithTransition(
+                            _model,
+                            animation,
+                            animRef.Loop,
+                            animRef.BlendDuration);
+                    }
+                    else
+                    {
+                        // 立即播放
+                        layer.PlayAnimation(_model, animation, animRef.Loop);
+                    }
+
+                    // 设置播放速度
+                    layer.AnimationPlayer.Speed = animRef.Speed;
+
+                    // 设置初始相位
+                    if (animRef.InitialPhase > 0f)
+                    {
+                        layer.AnimationPlayer.SetNormalizedTime(animRef.InitialPhase);
+                    }
+
+                    // 记录动画引用和循环设置（用于 OnComplete）
+                    _layerAnimationRef[layerName] = animRef;
+                    _layerLooping[layerName] = animRef.Loop;
+                    _layerWasPlaying[layerName] = true;
                 }
             }
         }
@@ -304,15 +462,79 @@ namespace Engine.Graphics
         /// </summary>
         private IAnimationDriver CreateDriverFromConfig(string driverType, Dictionary<string, object> args)
         {
-            var loader = new AnimationConfigLoader();
-            var driver = loader.CreateDriver(driverType);
+            var driver = _configLoader.CreateDriver(driverType);
 
             if (driver != null && args != null)
             {
-                loader.ApplyDriverProperties(driver, args);
+                _configLoader.ApplyDriverProperties(driver, args);
             }
 
             return driver;
+        }
+
+        /// <summary>
+        /// 加载外部动画文件
+        /// 支持格式：file:path/to/animation.glb 或 file:path/animation.glb#AnimationName
+        /// </summary>
+        private ModelAnimation LoadExternalAnimation(string source)
+        {
+            // 移除 file: 前缀
+            string pathAndName = source.Substring(5);
+
+            // 解析路径和动画名称
+            string filePath = pathAndName;
+            string animationName = null;
+
+            int hashIndex = pathAndName.IndexOf('#');
+            if (hashIndex >= 0)
+            {
+                filePath = pathAndName.Substring(0, hashIndex);
+                animationName = pathAndName.Substring(hashIndex + 1);
+            }
+
+            // 使用缓存加载
+            var loadedData = AnimationCache.GetOrLoad(filePath, animationName, path =>
+            {
+                return LoadAnimationFile(path);
+            });
+
+            if (loadedData == null)
+            {
+                return null;
+            }
+
+            // 查找指定的动画
+            if (!string.IsNullOrEmpty(animationName))
+            {
+                return loadedData.GetAnimation(animationName);
+            }
+
+            // 返回第一个动画
+            return loadedData.Animations.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// 加载动画文件
+        /// </summary>
+        private LoadedAnimationData LoadAnimationFile(string path)
+        {
+            try
+            {
+                // 使用 GltfLoader 加载外部动画文件
+                var modelData = Engine.Media.GltfLoader.LoadFromFile(path);
+                if (modelData == null)
+                {
+                    return null;
+                }
+
+                // 创建 LoadedAnimationData，包含所有动画
+                return new LoadedAnimationData(path, modelData, modelData.Animations);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AnimationController] Failed to load animation file: {path}, Error: {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -374,6 +596,20 @@ namespace Engine.Graphics
             if (layer != null)
             {
                 layer.SetDriver(driver);
+            }
+        }
+
+        /// <summary>
+        /// 清理资源，取消事件订阅
+        /// </summary>
+        public void Dispose()
+        {
+            foreach (var layer in _layers)
+            {
+                if (layer?.AnimationPlayer != null)
+                {
+                    layer.AnimationPlayer.OnAnimationEvent -= ForwardAnimationEvent;
+                }
             }
         }
     }

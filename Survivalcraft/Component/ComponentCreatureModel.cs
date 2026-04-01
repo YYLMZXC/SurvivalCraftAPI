@@ -337,13 +337,23 @@ namespace Game {
             // 运动参数
             ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
             ctrl.Parameters.SetFloat("DeathPhase", DeathPhase);
+            ctrl.Parameters.SetFloat("GameTime", (float)m_subsystemTime.GameTime);  // 用于进食噪声
+
+            // 死亡动画参数
+            ctrl.Parameters.SetVector3("DeathCauseOffset", DeathCauseOffset);
+            ctrl.Parameters.SetFloat("BodyHeight", m_componentCreature.ComponentBody.BoxSize.Y);
 
             // ComponentBody 参数
             var body = m_componentCreature.ComponentBody;
             var velocity = body.Velocity;
-            var forward = body.Matrix.Forward;
+            var matrix = body.Matrix;
 
-            ctrl.Parameters.SetFloat("Speed", Vector3.Dot(velocity, forward));
+            // 世界坐标（驱动器需要用来定位身体骨骼）
+            ctrl.Parameters.SetVector3("Position", body.Position);
+            ctrl.Parameters.SetFloat("RotationY", body.Rotation.ToYawPitchRoll().X);
+            ctrl.Parameters.SetVector3("BodyRight", matrix.Right);  // 用于死亡方向计算
+
+            ctrl.Parameters.SetFloat("Speed", Vector3.Dot(velocity, matrix.Forward));
             ctrl.Parameters.SetFloat("SpeedAbs", velocity.Length());
             ctrl.Parameters.SetBool("IsInWater", body.ImmersionFactor > 0);
             ctrl.Parameters.SetBool("IsOnGround", body.StandingOnValue.HasValue);

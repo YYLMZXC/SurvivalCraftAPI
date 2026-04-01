@@ -144,10 +144,14 @@ namespace Game {
             ctrl.Parameters.SetFloat("FeedFactor", m_feedFactor);
             ctrl.Parameters.SetFloat("Bob", Bob);
 
-            // 头部追踪角度（转换为度数）
+            // 顶撞/攻击动画参数
+            ctrl.Parameters.SetFloat("ButtFactor", m_buttFactor);
+            ctrl.Parameters.SetFloat("ButtPhase", m_buttPhase);
+
+            // 头部追踪角度（弧度）
             var lookAngles = m_componentCreature.ComponentLocomotion.LookAngles;
-            ctrl.Parameters.SetFloat("LookAngleX", lookAngles.X * 180f / MathF.PI);
-            ctrl.Parameters.SetFloat("LookAngleY", lookAngles.Y * 180f / MathF.PI);
+            ctrl.Parameters.SetFloat("LookAngleX", lookAngles.X);
+            ctrl.Parameters.SetFloat("LookAngleY", lookAngles.Y);
         }
 
         /// <summary>
@@ -179,7 +183,7 @@ namespace Game {
 
             // 配置驱动器参数
             if (AnimationController != null) {
-                // 把 Database.xml 中的参数传递给驱动器
+                // 把 Database.xml 中的参数传递给驱动器（会覆盖动画配置文件中的设置）
                 AnimationController.Parameters.SetFloat("WalkAnimationSpeed", m_walkAnimationSpeed);
                 AnimationController.Parameters.SetFloat("WalkFrontLegsAngle", m_walkFrontLegsAngle);
                 AnimationController.Parameters.SetFloat("WalkHindLegsAngle", m_walkHindLegsAngle);

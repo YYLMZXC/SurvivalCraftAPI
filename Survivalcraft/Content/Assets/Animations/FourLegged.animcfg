@@ -4,17 +4,30 @@
   "stateRules": [],
   "drivers": [
     {
-      "type": "ProceduralFourLeggedDriver",
+      "type": "Game.Animation.Drivers.FourLeggedDriver",
       "layer": "Base",
       "properties": {
-        "walkAnimationSpeed": 1.0,
-        "walkFrontLegsAngle": 0.5,
-        "walkHindLegsAngle": 0.5,
-        "canterLegsAngleFactor": 1.0,
-        "walkBobHeight": 0.1,
-        "headLookMaxAngleX": 65,
-        "headLookMaxAngleY": 55,
-        "neckLookFactor": 0.6
+        "WalkFrontLegsAngle": 0.55,
+        "WalkHindLegsAngle": 0.4,
+        "CanterLegsAngleFactor": 1.5,
+        "HeadLookMaxAngleX": 65,
+        "HeadLookMaxAngleY": 55,
+        "NeckLookFactor": 0.6,
+        "WalkGait": {
+          "LegPhases": [0, 0.5, 0.25, 0.75],
+          "HeadBobAmplitude": 3,
+          "HeadBobFrequency": 4
+        },
+        "TrotGait": {
+          "LegPhases": [0, 0.5, 0.5, 0],
+          "HeadBobAmplitude": 3,
+          "HeadBobFrequency": 4
+        },
+        "CanterGait": {
+          "LegPhases": [0, 0.25, 0.15, 0.4],
+          "HeadBobAmplitude": 8,
+          "HeadBobFrequency": 2
+        }
       }
     }
   ],

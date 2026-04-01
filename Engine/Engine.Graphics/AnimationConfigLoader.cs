@@ -386,17 +386,53 @@ namespace Engine.Graphics
 
         /// <summary>
         /// 创建驱动器实例
+        /// 引擎层驱动器在此创建，游戏层驱动器通过反射创建
         /// </summary>
         private IAnimationDriver CreateDriver(string type)
         {
+            // 引擎层驱动器
             return type switch
             {
                 "LookAtDriver" => new Drivers.LookAtDriver(),
                 "DeathDriver" => new Drivers.DeathDriver(),
                 "ExpressionDriver" => new Drivers.ExpressionDriver(),
-                "ProceduralFourLeggedDriver" => new Drivers.ProceduralFourLeggedDriver(),
-                _ => null
+                // 兼容旧名称
+                "ProceduralFourLeggedDriver" => CreateGameDriver("Game.Animation.Drivers.FourLeggedDriver"),
+                // 新的游戏层驱动器（通过反射创建）
+                _ => CreateGameDriver(type)
             };
+        }
+
+        /// <summary>
+        /// 通过反射创建游戏层驱动器
+        /// </summary>
+        private IAnimationDriver CreateGameDriver(string typeName)
+        {
+            try
+            {
+                // 先尝试直接获取
+                var type = Type.GetType(typeName);
+                if (type != null)
+                {
+                    return Activator.CreateInstance(type) as IAnimationDriver;
+                }
+
+                // 遍历所有已加载的程序集查找类型
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    type = assembly.GetType(typeName);
+                    if (type != null)
+                    {
+                        return Activator.CreateInstance(type) as IAnimationDriver;
+                    }
+                }
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -418,6 +454,13 @@ namespace Engine.Graphics
                 try
                 {
                     object value = ConvertValue(kvp.Value, property.PropertyType);
+
+                    // 处理嵌套对象
+                    if (value is Dictionary<string, object> nestedDict)
+                    {
+                        value = CreateNestedObject(property.PropertyType, nestedDict);
+                    }
+
                     if (value != null)
                     {
                         property.SetValue(driver, value);
@@ -431,12 +474,54 @@ namespace Engine.Graphics
         }
 
         /// <summary>
+        /// 创建嵌套对象并设置属性
+        /// </summary>
+        private object CreateNestedObject(Type targetType, Dictionary<string, object> properties)
+        {
+            try
+            {
+                var obj = Activator.CreateInstance(targetType);
+                if (obj == null) return null;
+
+                foreach (var kvp in properties)
+                {
+                    var property = targetType.GetProperty(kvp.Key);
+                    if (property == null || !property.CanWrite)
+                        continue;
+
+                    object value = ConvertValue(kvp.Value, property.PropertyType);
+                    if (value is Dictionary<string, object> nestedDict)
+                    {
+                        value = CreateNestedObject(property.PropertyType, nestedDict);
+                    }
+
+                    if (value != null)
+                    {
+                        property.SetValue(obj, value);
+                    }
+                }
+
+                return obj;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// 转换值到目标类型
         /// </summary>
         private object ConvertValue(object value, Type targetType)
         {
             if (value == null)
                 return null;
+
+            // 处理 JsonElement（来自 System.Text.Json）
+            if (value is System.Text.Json.JsonElement jsonElement)
+            {
+                return ConvertJsonElement(jsonElement, targetType);
+            }
 
             if (targetType == typeof(float))
             {
@@ -463,11 +548,87 @@ namespace Engine.Graphics
         }
 
         /// <summary>
+        /// 从 JsonElement 转换值
+        /// </summary>
+        private object ConvertJsonElement(System.Text.Json.JsonElement element, Type targetType)
+        {
+            // 处理嵌套对象
+            if (element.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                var dict = new Dictionary<string, object>();
+                foreach (var prop in element.EnumerateObject())
+                {
+                    dict[prop.Name] = prop.Value;
+                }
+                return dict;
+            }
+
+            // 处理数组
+            if (element.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                if (targetType == typeof(float[]))
+                {
+                    var arr = new float[element.GetArrayLength()];
+                    int i = 0;
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        arr[i++] = item.GetSingle();
+                    }
+                    return arr;
+                }
+                // 其他数组类型可在此扩展
+            }
+
+            if (targetType == typeof(float))
+            {
+                return element.GetSingle();
+            }
+            if (targetType == typeof(double))
+            {
+                return element.GetDouble();
+            }
+            if (targetType == typeof(int))
+            {
+                return element.GetInt32();
+            }
+            if (targetType == typeof(bool))
+            {
+                return element.GetBoolean();
+            }
+            if (targetType == typeof(string))
+            {
+                return element.GetString();
+            }
+
+            // 默认返回字符串
+            return element.ToString();
+        }
+
+        /// <summary>
         /// 根据值类型设置参数
         /// </summary>
         private void SetParameterByType(AnimationParameters parameters, string name, object value)
         {
             if (value == null) return;
+
+            // 处理 JsonElement
+            if (value is System.Text.Json.JsonElement jsonElement)
+            {
+                switch (jsonElement.ValueKind)
+                {
+                    case System.Text.Json.JsonValueKind.Number:
+                        parameters.SetFloat(name, jsonElement.GetSingle());
+                        break;
+                    case System.Text.Json.JsonValueKind.True:
+                    case System.Text.Json.JsonValueKind.False:
+                        parameters.SetBool(name, jsonElement.GetBoolean());
+                        break;
+                    case System.Text.Json.JsonValueKind.String:
+                        // 字符串参数暂不处理
+                        break;
+                }
+                return;
+            }
 
             switch (value)
             {

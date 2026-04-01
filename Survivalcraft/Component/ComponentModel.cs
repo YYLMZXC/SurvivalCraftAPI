@@ -204,8 +204,6 @@ namespace Game {
             m_componentFrame = Entity.FindComponent<ComponentFrame>(true);
             ModelRoute = valuesDictionary.GetValue("ModelName", "");
             string modeltype = valuesDictionary.GetValue("ModelType", "Engine.Graphics.Model");
-            Type type = TypeCache.FindType(modeltype, true, true);
-            Model = (Model)ContentManager.Get(type, ModelRoute);
             CastsShadow = valuesDictionary.GetValue<bool>("CastsShadow");
             TextureRoute = valuesDictionary.GetValue("TextureOverride", "");
             TextureOverride = string.IsNullOrEmpty(TextureRoute) ? null : ContentManager.Get<Texture2D>(TextureRoute);
@@ -218,6 +216,8 @@ namespace Game {
             if (!string.IsNullOrEmpty(animationConfigPath)) {
                 AnimationConfigJson = ContentManager.Get<string>(animationConfigPath, ".animcfg");
             }
+            Type type = TypeCache.FindType(modeltype, true, true);
+            Model = (Model)ContentManager.Get(type, ModelRoute);
         }
 
         public virtual void SetModel(Model model) {

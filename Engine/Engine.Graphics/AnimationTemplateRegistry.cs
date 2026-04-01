@@ -59,14 +59,12 @@ namespace Engine.Graphics
                 }
             ));
 
-            // FourLegged 模板
+            // FourLegged 模板（简单版本：只用 Base 层，由 ProceduralFourLeggedDriver 处理所有骨骼）
             Register("FourLegged", new AnimationTemplate(
                 "FourLegged",
                 new LayerDefinition[]
                 {
-                    new("Base", 0, BlendMode.Override),
-                    new("UpperBody", 1, BlendMode.Additive, new[] { "Neck", "Head" }),
-                    new("Head", 2, BlendMode.Override, new[] { "Head" })
+                    new("Base", 0, BlendMode.Override)
                 },
                 new StateTrackDefinition[]
                 {
@@ -74,9 +72,8 @@ namespace Engine.Graphics
                     new("Activity", StateTrackType.Enum, "None") { EnumValues = new[] { "None", "Feed", "Attack" } },
                     new("Death", StateTrackType.Float, 0f) { MinValue = 0f, MaxValue = 1f }
                 },
-                new BuiltInDriverDefinition[]
+                new BuiltInDriverDefinition[]  // 无内置驱动器，由配置文件提供
                 {
-                    new("LookAt", "Head")
                 }
             ));
 

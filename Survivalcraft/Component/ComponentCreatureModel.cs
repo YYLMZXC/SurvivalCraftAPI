@@ -95,6 +95,9 @@ namespace Game {
         }
 
         public override void Animate() {
+            // 在动画更新前同步参数，确保状态规则评估时有正确的参数值
+            SyncAnimationParameters();
+
             base.Animate();
             if (!Animated) {
                 bool flag = false;
@@ -284,9 +287,6 @@ namespace Game {
                 m_footstepCooldown -= dt;
             }
 
-            // 同步动画参数
-            SyncAnimationParameters();
-
             if (LookRandomOrder) {
                 Matrix matrix = m_componentCreature.ComponentBody.Matrix;
                 Vector3 v = Vector3.Normalize(m_randomLookPoint - m_componentCreature.ComponentCreatureModel.EyePosition);
@@ -319,7 +319,9 @@ namespace Game {
                     - m_componentCreature.ComponentLocomotion.LookAngles;
             }
             if (m_componentCreature.ComponentHealth.Health == 0f) {
-                DeathPhase = MathUtils.Min(DeathPhase + 3f * dt, 1f);
+                // 死亡速度从配置读取，默认 3f
+                float deathSpeed = AnimationController?.Parameters.GetFloat("DeathSpeed") ?? 3f;
+                DeathPhase = MathUtils.Min(DeathPhase + deathSpeed * dt, 1f);
             }
             m_eyePosition = null;
             m_eyeRotation = null;

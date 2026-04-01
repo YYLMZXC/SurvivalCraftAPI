@@ -60,14 +60,16 @@ namespace Engine.Graphics
             ));
 
             // FourLegged 模板（四足动物）
-            // Base 层：腿部动画驱动器
-            // Head 层：头部追踪驱动器
+            // Base 层：行走动画（Body + Legs + Head 摆动）
+            // Head 层：进食/攻击动画（Head + Neck）
+            // Death 层：死亡动画（全身，最高优先级）
             Register("FourLegged", new AnimationTemplate(
                 "FourLegged",
                 new LayerDefinition[]
                 {
                     new("Base", 0, BlendMode.Override),
-                    new("Head", 1, BlendMode.Override, new[] { "Head", "Neck" })
+                    new("Head", 1, BlendMode.Override, new[] { "Head", "Neck" }),
+                    new("Death", 2, BlendMode.Override)  // 无 targetBones 限制，影响全身
                 },
                 new StateTrackDefinition[]
                 {

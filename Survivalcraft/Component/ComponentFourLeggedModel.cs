@@ -45,6 +45,16 @@ namespace Game {
             float speed = m_componentCreature.ComponentLocomotion.SlipSpeed
                 ?? Vector3.Dot(m_componentCreature.ComponentBody.Velocity, m_componentCreature.ComponentBody.Matrix.Forward);
 
+            // 从配置读取动画速度参数
+            float feedSpeed = 2f;
+            float attackSpeed = 4f;
+            float attackPhaseSpeed = 2f;
+            if (AnimationController != null) {
+                feedSpeed = AnimationController.Parameters.GetFloat("FeedSpeed");
+                attackSpeed = AnimationController.Parameters.GetFloat("AttackSpeed");
+                attackPhaseSpeed = AnimationController.Parameters.GetFloat("AttackPhaseSpeed");
+            }
+
             // 步态现在由配置中的状态规则控制
             // MovementAnimationPhase 基于速度计算
             if (MathF.Abs(speed) > 0.2f) {
@@ -70,24 +80,27 @@ namespace Game {
                 m_componentCreature.ComponentCreatureSounds.PlayFootstepSound(1f);
             }
 
-            m_feedFactor = FeedOrder ? MathUtils.Min(m_feedFactor + 2f * dt, 1f) : MathUtils.Max(m_feedFactor - 2f * dt, 0f);
+            // 进食动画（使用配置速度）
+            m_feedFactor = FeedOrder ? MathUtils.Min(m_feedFactor + feedSpeed * dt, 1f) : MathUtils.Max(m_feedFactor - feedSpeed * dt, 0f);
+
+            // 攻击动画（使用配置速度）
             IsAttackHitMoment = false;
             if (AttackOrder) {
-                m_buttFactor = MathUtils.Min(m_buttFactor + 4f * dt, 1f);
+                m_buttFactor = MathUtils.Min(m_buttFactor + attackSpeed * dt, 1f);
                 float buttPhase = m_buttPhase;
-                m_buttPhase = MathUtils.Remainder(m_buttPhase + dt * 2f, 1f);
+                m_buttPhase = MathUtils.Remainder(m_buttPhase + dt * attackPhaseSpeed, 1f);
                 if (buttPhase < 0.5f && m_buttPhase >= 0.5f) {
                     IsAttackHitMoment = true;
                 }
             }
             else {
-                m_buttFactor = MathUtils.Max(m_buttFactor - 4f * dt, 0f);
+                m_buttFactor = MathUtils.Max(m_buttFactor - attackSpeed * dt, 0f);
                 if (m_buttPhase != 0f) {
                     if (m_buttPhase > 0.5f) {
-                        m_buttPhase = MathUtils.Remainder(MathUtils.Min(m_buttPhase + dt * 2f, 1f), 1f);
+                        m_buttPhase = MathUtils.Remainder(MathUtils.Min(m_buttPhase + dt * attackPhaseSpeed, 1f), 1f);
                     }
                     else if (m_buttPhase > 0f) {
-                        m_buttPhase = MathUtils.Max(m_buttPhase - dt * 2f, 0f);
+                        m_buttPhase = MathUtils.Max(m_buttPhase - dt * attackPhaseSpeed, 0f);
                     }
                 }
             }
@@ -107,7 +120,6 @@ namespace Game {
             if (ctrl == null) return;
 
             // 四足动物特有参数
-            // 注意：Gait 参数由配置中的状态规则自动设置
             ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
             ctrl.Parameters.SetFloat("FeedFactor", m_feedFactor);
             ctrl.Parameters.SetFloat("Bob", Bob);
@@ -131,9 +143,6 @@ namespace Game {
         }
 
         public override void Load(ValuesDictionary valuesDictionary, IdToEntityMap idToEntityMap) {
-            base.Load(valuesDictionary, idToEntityMap);
-            m_subsystemAudio = Project.FindSubsystem<SubsystemAudio>(true);
-            m_subsystemSoundMaterials = Project.FindSubsystem<SubsystemSoundMaterials>(true);
             m_walkAnimationSpeed = valuesDictionary.GetValue<float>("WalkAnimationSpeed");
             m_walkFrontLegsAngle = valuesDictionary.GetValue<float>("WalkFrontLegsAngle");
             m_walkHindLegsAngle = valuesDictionary.GetValue<float>("WalkHindLegsAngle");
@@ -143,6 +152,9 @@ namespace Game {
             m_canCanter = valuesDictionary.GetValue<bool>("CanCanter");
             m_canTrot = valuesDictionary.GetValue<bool>("CanTrot");
             m_useCanterSound = valuesDictionary.GetValue<bool>("UseCanterSound");
+            base.Load(valuesDictionary, idToEntityMap);
+            m_subsystemAudio = Project.FindSubsystem<SubsystemAudio>(true);
+            m_subsystemSoundMaterials = Project.FindSubsystem<SubsystemSoundMaterials>(true);
         }
 
         public override void SetModel(Model model) {
@@ -161,6 +173,12 @@ namespace Game {
                 // 状态规则条件参数
                 AnimationController.Parameters.SetBool("CanCanter", m_canCanter);
                 AnimationController.Parameters.SetBool("CanTrot", m_canTrot);
+
+                // 运行时参数初始值（会在 SyncAnimationParameters 中每帧更新）
+                //AnimationController.Parameters.SetFloat("Speed", 0f);
+                AnimationController.Parameters.SetFloat("SpeedAbs", 0f);
+                AnimationController.Parameters.SetFloat("MovementPhase", 0f);
+                AnimationController.Parameters.SetBool("IsOnGround", true);
             }
         }
     }

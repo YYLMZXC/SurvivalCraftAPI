@@ -239,6 +239,12 @@ namespace Engine.Graphics
                 {
                     ApplyAnimationToLayer(trackConfig.Layer, matchedRule.Animation);
                 }
+                else
+                {
+                    // animation: null 表示清除层的驱动器，让下层输出可见
+                    var layer = _layers.FirstOrDefault(l => l.Name == trackConfig.Layer);
+                    layer?.SetDriver(null);
+                }
             }
         }
 

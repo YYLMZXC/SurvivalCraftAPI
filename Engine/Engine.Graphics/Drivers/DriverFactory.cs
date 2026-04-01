@@ -11,7 +11,6 @@ namespace Engine.Graphics.Drivers
         {
             ["LookAt"] = typeof(LookAtDriver),
             ["Death"] = typeof(DeathDriver),
-            ["FourLeggedWalk"] = typeof(FourLeggedWalkDriver),
             ["Expression"] = typeof(ExpressionDriver)
         };
 

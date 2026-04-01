@@ -71,8 +71,10 @@ namespace Engine.Graphics
                 var result = expression.Evaluate();
                 return Convert.ToBoolean(result);
             }
-            catch
+            catch (Exception ex)
             {
+                // 临时调试日志
+                System.Diagnostics.Debug.WriteLine($"[NCalc Error] Condition: {condition}, Error: {ex.Message}");
                 return false;
             }
         }

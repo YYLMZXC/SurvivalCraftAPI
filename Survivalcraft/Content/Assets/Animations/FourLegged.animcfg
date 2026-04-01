@@ -6,14 +6,14 @@
       "layer": "Base",
       "rules": [
         {
-          "condition": "[Speed] > 0.7 * [WalkSpeed] && [CanCanter]",
+          "condition": "[CanCanter] && [Speed] > 0.7 * [WalkSpeed]",
           "animation": {
             "source": "driver:FourLeggedWalk",
             "driverArgs": { "Gait": 2 }
           }
         },
         {
-          "condition": "[Speed] > 0.5 * [WalkSpeed] && [CanTrot]",
+          "condition": "[CanTrot] && [Speed] > 0.5 * [WalkSpeed]",
           "animation": {
             "source": "driver:FourLeggedWalk",
             "driverArgs": { "Gait": 1 }
@@ -27,6 +27,42 @@
           }
         }
       ]
+    },
+    "activity": {
+      "layer": "Head",
+      "rules": [
+        {
+          "condition": "[FeedFactor] > 0",
+          "animation": {
+            "source": "driver:FourLeggedFeed"
+          }
+        },
+        {
+          "condition": "[ButtFactor] > 0",
+          "animation": {
+            "source": "driver:FourLeggedAttack"
+          }
+        },
+        {
+          "condition": "true",
+          "animation": null
+        }
+      ]
+    },
+    "death": {
+      "layer": "Death",
+      "rules": [
+        {
+          "condition": "[DeathPhase] > 0",
+          "animation": {
+            "source": "driver:FourLeggedDeath"
+          }
+        },
+        {
+          "condition": "true",
+          "animation": null
+        }
+      ]
     }
   },
 
@@ -38,33 +74,6 @@
         "WalkPhases": [0.0, 0.5, 0.25, 0.75],
         "TrotPhases": [0.0, 0.5, 0.5, 0.0],
         "CanterPhases": [0.0, 0.25, 0.15, 0.4],
-
-        "WalkHeadAngle": 3.0,
-        "TrotHeadAngle": 3.0,
-        "CanterHeadAngle": 8.0,
-
-        "WalkHeadFrequency": 4.0,
-        "TrotHeadFrequency": 4.0,
-        "CanterHeadFrequency": 2.0,
-
-        "HeadMaxAngleX": 65.0,
-        "HeadMaxAngleY": 55.0,
-
-        "HeadRatio": 0.4,
-        "NeckRatio": 0.6,
-
-        "FeedBaseAngle": 25.0,
-        "FeedNoiseRange": 45.0,
-        "FeedNoiseFrequency": 3.0,
-        "FeedNoiseOctaves": 2,
-        "FeedNoiseFreqStep": 2.0,
-        "FeedNoiseAmpStep": 0.75,
-
-        "ButtAngle": 40.0,
-        "ButtSigmoidK": 4.0,
-
-        "DeathHeadAngle": 50.0,
-
         "SmoothSpeed": 12.0
       }
     }
@@ -78,6 +87,11 @@
     "CanTrot": true,
     "MovementPhase": 0.0,
     "CanterLegsAngleFactor": 1.5,
-    "Gait": 0
+    "Gait": 0,
+
+    "FeedSpeed": 2.0,
+    "AttackSpeed": 4.0,
+    "AttackPhaseSpeed": 2.0,
+    "DeathSpeed": 3.0
   }
 }

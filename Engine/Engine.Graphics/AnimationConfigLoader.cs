@@ -404,9 +404,7 @@ namespace Engine.Graphics
                 "DeathDriver" => new Drivers.DeathDriver(),
                 "Death" => new Drivers.DeathDriver(),  // 兼容简写
                 "ExpressionDriver" => new Drivers.ExpressionDriver(),
-                "FourLeggedWalk" => new Drivers.FourLeggedWalkDriver(),
-                "ProceduralFourLeggedDriver" => new Drivers.FourLeggedWalkDriver(),  // 兼容旧名称
-                // 新的游戏层驱动器（通过反射创建）
+                // 游戏层驱动器（通过反射创建）
                 _ => CreateGameDriver(type)
             };
         }
@@ -418,20 +416,57 @@ namespace Engine.Graphics
         {
             try
             {
-                // 先尝试直接获取
-                var type = Type.GetType(typeName);
-                if (type != null)
+                // 尝试的游戏层驱动器命名空间
+                string[] namespaces = new[]
                 {
-                    return Activator.CreateInstance(type) as IAnimationDriver;
+                    "Game.Animation.Drivers",
+                    "Game"
+                };
+
+                // 尝试的类型名（原始名和加 Driver 后缀）
+                string[] typeNames = new[]
+                {
+                    typeName,
+                    typeName + "Driver"
+                };
+
+                foreach (var ns in namespaces)
+                {
+                    foreach (var tname in typeNames)
+                    {
+                        // 尝试完整类型名
+                        string fullName = $"{ns}.{tname}";
+                        var type = Type.GetType(fullName);
+                        if (type != null)
+                        {
+                            return Activator.CreateInstance(type) as IAnimationDriver;
+                        }
+
+                        // 遍历所有已加载的程序集查找
+                        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                        {
+                            type = assembly.GetType(fullName);
+                            if (type != null)
+                            {
+                                return Activator.CreateInstance(type) as IAnimationDriver;
+                            }
+                        }
+                    }
                 }
 
-                // 遍历所有已加载的程序集查找类型
+                // 尝试直接使用传入的类型名（可能是完整类型名）
+                var directType = Type.GetType(typeName);
+                if (directType != null)
+                {
+                    return Activator.CreateInstance(directType) as IAnimationDriver;
+                }
+
                 foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    type = assembly.GetType(typeName);
-                    if (type != null)
+                    var foundType = assembly.GetType(typeName);
+                    if (foundType != null)
                     {
-                        return Activator.CreateInstance(type) as IAnimationDriver;
+                        return Activator.CreateInstance(foundType) as IAnimationDriver;
                     }
                 }
 

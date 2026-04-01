@@ -844,23 +844,34 @@ public static class ModsManager {
     public static void CombineDataBase(XElement databaseRoot, Stream toCombineStream, string modPackageName) {
         XElement toCombineRoot = XmlUtils.LoadXmlFromStream(toCombineStream, Encoding.UTF8, true);
         XElement databaseObjects = databaseRoot.Element("DatabaseObjects");
-        foreach (XElement element in toCombineRoot.Elements()) {
-            // 为实体添加模组来源信息
-            if (!string.IsNullOrEmpty(modPackageName)
-                && element.Name.LocalName == "EntityTemplate") {
-                string guid = element.Attribute("Guid")?.Value;
-                bool isNewEntity = true;
-                if (!string.IsNullOrEmpty(guid)) { // 检查是否为新增实体(在原数据库中不存在)
-                    isNewEntity = !FindElementByGuid(databaseObjects, guid, out _);
-                }
-                if (isNewEntity) { // 只为新增的实体添加ModSource
-                    XElement parameterElement = new("Parameter");
-                    parameterElement.SetAttributeValue("Name", "ModSource");
-                    parameterElement.SetAttributeValue("Value", modPackageName);
-                    parameterElement.SetAttributeValue("Type", "string");
-                    element.Add(parameterElement);
+
+        // 为新增的 EntityTemplate 添加 ModSource 参数：
+        // 先把原数据库所有 EntityTemplate 的 Guid 收集到 HashSet 中（一次性 O(N)），
+        // 然后只遍历待合并文档中的 EntityTemplate（O(M)），每次查验为 O(1)。
+        if (!string.IsNullOrEmpty(modPackageName) && databaseObjects != null) {
+            HashSet<string> existingGuids = new(
+                databaseObjects.Descendants("EntityTemplate").Attributes("Guid").Select(a => a.Value),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            foreach (XElement entity in toCombineRoot.Descendants("EntityTemplate")) {
+                XAttribute guidAttr = entity.Attribute("Guid");
+                bool isNewEntity = guidAttr == null || !existingGuids.Contains(guidAttr.Value);
+                if (isNewEntity) {
+                    // 如果已经有 ModSource 就不重复添加
+                    bool hasModSource = entity.Elements("Parameter").Any(p => p.Attribute("Name")?.Value == "ModSource");
+                    if (!hasModSource) {
+                        XElement parameterElement = new("Parameter");
+                        parameterElement.SetAttributeValue("Name", "ModSource");
+                        parameterElement.SetAttributeValue("Value", modPackageName);
+                        parameterElement.SetAttributeValue("Type", "string");
+                        entity.Add(parameterElement);
+                    }
                 }
             }
+        }
+
+        foreach (XElement element in toCombineRoot.Elements()) {
             if (element.Attribute("Remove") != null) {
                 XAttribute guidAttribute = element.Attribute("Guid");
                 if (guidAttribute == null) {
@@ -882,7 +893,7 @@ public static class ModsManager {
                     if (newAttributeName == "Value"
                         && oldElement.Attribute("Name")?.Value == "Class") {
                         if (ClassSubstitutes.TryGetValue(guid, out List<ClassSubstitute> classSubstitutes)) {
-                            classSubstitutes.Add(new ClassSubstitute (modPackageName, newAttribute.Value));
+                            classSubstitutes.Add(new ClassSubstitute(modPackageName, newAttribute.Value));
                         }
                         else {
                             ClassSubstitutes.Add(
@@ -901,7 +912,6 @@ public static class ModsManager {
             }
         }
     }
-
     public static void DealWithClassSubstitutes() {
         if (ClassSubstitutes.Count > 0) {
             Queue<(string, XElement)> needToSolves = [];

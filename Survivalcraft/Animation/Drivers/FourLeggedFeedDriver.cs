@@ -69,8 +69,8 @@ namespace Game.Animation.Drivers
                 lookAngleY *= HeadRatio;
             }
 
-            // 进食动画覆盖
-            float noise = OctavedNoise1D(_gameTime, FeedNoiseFrequency, FeedNoiseOctaves, FeedNoiseFreqStep, FeedNoiseAmpStep);
+            // 进食动画覆盖 - 使用 SimplexNoise
+            float noise = SimplexNoise.OctavedNoise(_gameTime, FeedNoiseFrequency, FeedNoiseOctaves, FeedNoiseFreqStep, FeedNoiseAmpStep);
             float feedY = -MathUtils.DegToRad(FeedBaseAngle + FeedNoiseRange * noise);
             lookAngleX = MathUtils.Lerp(lookAngleX, 0f, _feedFactor);
             lookAngleY = MathUtils.Lerp(lookAngleY, feedY, _feedFactor);
@@ -90,40 +90,6 @@ namespace Game.Animation.Drivers
                     Matrix.CreateRotationX(neckAngleY) *
                     Matrix.CreateRotationZ(-neckAngleX);
             }
-        }
-
-        private static float OctavedNoise1D(float x, float frequency, int octaves, float frequencyStep, float amplitudeStep)
-        {
-            float total = 0f;
-            float amplitude = 1f;
-            float maxAmplitude = 0f;
-
-            for (int i = 0; i < octaves; i++)
-            {
-                total += amplitude * Noise1D(x * frequency);
-                maxAmplitude += amplitude;
-                frequency *= frequencyStep;
-                amplitude *= amplitudeStep;
-            }
-
-            return total / maxAmplitude;
-        }
-
-        private static float Noise1D(float x)
-        {
-            int i = (int)MathF.Floor(x);
-            int j = (int)MathF.Ceiling(x);
-            float t = x - i;
-            float n0 = Hash(i);
-            float n1 = Hash(j);
-            float smooth = t * t * (3f - 2f * t);
-            return n0 + smooth * (n1 - n0);
-        }
-
-        private static float Hash(int x)
-        {
-            x = (x << 13) ^ x;
-            return ((x * (x * x * 15731 + 789221) + 1376312589) & 0x7FFFFFFF) / 2147483648f;
         }
     }
 }

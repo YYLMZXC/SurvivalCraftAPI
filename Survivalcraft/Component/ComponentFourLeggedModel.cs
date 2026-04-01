@@ -66,13 +66,8 @@ namespace Game {
                 m_footstepsPhase = 0f;
             }
 
-            // Bob 计算 - 使用统一的计算方式，让驱动器根据 Gait 调整
-            float targetBob = 0f;
-            if (MathF.Abs(speed) > 0.2f) {
-                targetBob = -m_walkBobHeight * MathUtils.Sqr(MathF.Sin((float)Math.PI * 2f * MovementAnimationPhase));
-            }
-            float smoothFactor = MathUtils.Min(12f * m_subsystemTime.GameTimeDelta, 1f);
-            Bob += smoothFactor * (targetBob - Bob);
+            // Bob 现在由 FourLeggedWalkDriver 驱动器计算
+            // 这里只保留脚步声逻辑
 
             // 脚步声
             float num5 = MathF.Floor(m_footstepsPhase);
@@ -122,7 +117,7 @@ namespace Game {
             // 四足动物特有参数
             ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
             ctrl.Parameters.SetFloat("FeedFactor", m_feedFactor);
-            ctrl.Parameters.SetFloat("Bob", Bob);
+            ctrl.Parameters.SetFloat("WalkBobHeight", m_walkBobHeight);
 
             // 顶撞/攻击动画参数
             ctrl.Parameters.SetFloat("ButtFactor", m_buttFactor);

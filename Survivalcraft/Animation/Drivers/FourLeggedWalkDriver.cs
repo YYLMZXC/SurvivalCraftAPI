@@ -22,7 +22,6 @@ namespace Game.Animation.Drivers
         public string FrontAngleParam { get; set; } = "WalkFrontLegsAngle";
         public string HindAngleParam { get; set; } = "WalkHindLegsAngle";
         public string GaitParam { get; set; } = "Gait";
-        public string BobParam { get; set; } = "Bob";
         public string RotationYParam { get; set; } = "RotationY";
         public string PositionParam { get; set; } = "Position";
         public string CanterLegsAngleFactorParam { get; set; } = "CanterLegsAngleFactor";
@@ -55,11 +54,13 @@ namespace Game.Animation.Drivers
         public float TrotHeadFrequency { get; set; } = 4f;
         public float CanterHeadFrequency { get; set; } = 2f;
 
+        // Bob 参数
+        public string BobHeightParam { get; set; } = "WalkBobHeight";
+
         private float _phase;
         private float _frontAngle;
         private float _hindAngle;
         private int _gait;
-        private float _bob;
         private float _rotationY;
         private Vector3 _position;
         private float _canterLegsAngleFactor;
@@ -67,6 +68,7 @@ namespace Game.Animation.Drivers
         private float _immersionFactor;
         private float _lookAngleX;
         private float _lookAngleY;
+        private float _bobHeight;
 
         // 平滑过渡用的当前角度
         private float _legAngle1 = 0f;
@@ -74,6 +76,7 @@ namespace Game.Animation.Drivers
         private float _legAngle3 = 0f;
         private float _legAngle4 = 0f;
         private float _headAngleY = 0f;
+        private float _currentBob = 0f;
 
         // 首次更新标记
         private bool _firstUpdate = true;
@@ -84,7 +87,6 @@ namespace Game.Animation.Drivers
             _frontAngle = parameters.GetFloat(FrontAngleParam);
             _hindAngle = parameters.GetFloat(HindAngleParam);
             _gait = (int)parameters.GetFloat(GaitParam);
-            _bob = parameters.GetFloat(BobParam);
             _rotationY = parameters.GetFloat(RotationYParam);
             _position = parameters.GetVector3(PositionParam);
             _canterLegsAngleFactor = parameters.GetFloat(CanterLegsAngleFactorParam);
@@ -92,6 +94,7 @@ namespace Game.Animation.Drivers
             _immersionFactor = parameters.GetFloat(ImmersionFactorParam);
             _lookAngleX = parameters.GetFloat(LookAngleXParam);
             _lookAngleY = parameters.GetFloat(LookAngleYParam);
+            _bobHeight = parameters.GetFloat(BobHeightParam);
 
             // 计算腿部角度
             float targetAngle1 = 0f, targetAngle2 = 0f, targetAngle3 = 0f, targetAngle4 = 0f;
@@ -135,6 +138,18 @@ namespace Game.Animation.Drivers
                 };
             }
 
+            // 计算 Bob（根据步态不同）
+            float targetBob = 0f;
+            if (_phase != 0f)
+            {
+                targetBob = _gait switch
+                {
+                    2 => -_bobHeight * 1.5f * MathF.Sin(2f * MathF.PI * _phase),  // Canter: 正弦，1.5倍
+                    1 => _bobHeight * 1.5f * MathUtils.Sqr(MathF.Sin(2f * MathF.PI * _phase)),  // Trot: 平方，正向
+                    _ => -_bobHeight * MathUtils.Sqr(MathF.Sin(2f * MathF.PI * _phase))  // Walk: 平方，负向
+                };
+            }
+
             // 平滑过渡
             float smoothFactor = MathUtils.Min(SmoothSpeed * deltaTime, 1f);
 
@@ -146,6 +161,7 @@ namespace Game.Animation.Drivers
                 _legAngle3 = targetAngle3;
                 _legAngle4 = targetAngle4;
                 _headAngleY = targetHeadY;
+                _currentBob = targetBob;
                 _firstUpdate = false;
             }
             else
@@ -155,6 +171,7 @@ namespace Game.Animation.Drivers
                 _legAngle3 += smoothFactor * (targetAngle3 - _legAngle3);
                 _legAngle4 += smoothFactor * (targetAngle4 - _legAngle4);
                 _headAngleY += smoothFactor * (targetHeadY - _headAngleY);
+                _currentBob += smoothFactor * (targetBob - _currentBob);
             }
         }
 
@@ -166,7 +183,7 @@ namespace Game.Animation.Drivers
             {
                 boneTransforms[bodyBone.Index] =
                     Matrix.CreateRotationY(_rotationY) *
-                    Matrix.CreateTranslation(_position.X, _position.Y + _bob, _position.Z);
+                    Matrix.CreateTranslation(_position.X, _position.Y + _currentBob, _position.Z);
             }
 
             // 腿部骨骼

@@ -73,6 +73,11 @@ namespace Engine.Graphics {
         public bool IsPlaying => _playing;
 
         /// <summary>
+        /// 播放速度倍率
+        /// </summary>
+        public float Speed { get; set; } = 1.0f;
+
+        /// <summary>
         /// 动画事件触发时调用
         /// </summary>
         public event AnimationEventHandler OnAnimationEvent;
@@ -130,13 +135,24 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
+        /// 设置归一化时间 (0-1)
+        /// </summary>
+        public void SetNormalizedTime(float normalizedTime) {
+            if (_animation != null && _animation.Duration > 0) {
+                _time = normalizedTime * _animation.Duration;
+                _previousTime = _time;
+                _lastEventIndex = -1;
+            }
+        }
+
+        /// <summary>
         /// 更新动画时间
         /// </summary>
         public void Update(float deltaTime) {
             if (!_playing) return;
 
             _previousTime = _time;
-            _time += deltaTime;
+            _time += deltaTime * Speed;
 
             // 如果有动画，处理循环和结束逻辑
             if (_animation != null && _animation.Duration > 0) {

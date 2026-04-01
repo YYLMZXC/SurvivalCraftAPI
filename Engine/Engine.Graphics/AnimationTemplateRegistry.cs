@@ -59,12 +59,15 @@ namespace Engine.Graphics
                 }
             ));
 
-            // FourLegged 模板（简单版本：只用 Base 层，由 ProceduralFourLeggedDriver 处理所有骨骼）
+            // FourLegged 模板（四足动物）
+            // Base 层：腿部动画驱动器
+            // Head 层：头部追踪驱动器
             Register("FourLegged", new AnimationTemplate(
                 "FourLegged",
                 new LayerDefinition[]
                 {
-                    new("Base", 0, BlendMode.Override)
+                    new("Base", 0, BlendMode.Override),
+                    new("Head", 1, BlendMode.Override, new[] { "Head", "Neck" })
                 },
                 new StateTrackDefinition[]
                 {

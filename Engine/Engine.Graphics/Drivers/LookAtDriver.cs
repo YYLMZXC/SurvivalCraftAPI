@@ -30,19 +30,18 @@ namespace Engine.Graphics.Drivers
         public string LookAngleXParam { get; set; } = "LookAngleX";
         public string LookAngleYParam { get; set; } = "LookAngleY";
 
-        // 角度限制（度数）
-        public float MinAngleX { get; set; } = -80f;
-        public float MaxAngleX { get; set; } = 80f;
-        public float MinAngleY { get; set; } = -45f;
-        public float MaxAngleY { get; set; } = 45f;
+        // 角度限制（弧度）
+        public float MaxAngleX { get; set; } = MathUtils.DegToRad(65f);  // 左右
+        public float MaxAngleY { get; set; } = MathUtils.DegToRad(55f);  // 上下
 
-        private float _lookAngleX;
-        private float _lookAngleY;
+        private float _lookAngleX;  // 弧度
+        private float _lookAngleY;  // 弧度
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
-            _lookAngleX = Math.Clamp(parameters.GetFloat(LookAngleXParam), MinAngleX, MaxAngleX);
-            _lookAngleY = Math.Clamp(parameters.GetFloat(LookAngleYParam), MinAngleY, MaxAngleY);
+            // 参数是弧度
+            _lookAngleX = Math.Clamp(parameters.GetFloat(LookAngleXParam), -MaxAngleX, MaxAngleX);
+            _lookAngleY = Math.Clamp(parameters.GetFloat(LookAngleYParam), -MaxAngleY, MaxAngleY);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -50,13 +49,12 @@ namespace Engine.Graphics.Drivers
             var targetBone = model.FindBone(TargetBoneName);
             if (targetBone == null) return;
 
-            // 角度转弧度
-            float radX = _lookAngleY * MathF.PI / 180f;  // 俯仰
-            float radZ = -_lookAngleX * MathF.PI / 180f; // 偏航
-
+            // 角度已经是弧度
+            // lookAngleY 是俯仰（上下），lookAngleX 是偏航（左右）
+            // 原始代码：SetBoneTransform(m_headBone.Index, Matrix.CreateRotationX(vector2.Y) * Matrix.CreateRotationZ(0f - vector2.X));
             boneTransforms[targetBone.Index] =
-                Matrix.CreateRotationX(radX) *
-                Matrix.CreateRotationZ(radZ);
+                Matrix.CreateRotationX(_lookAngleY) *
+                Matrix.CreateRotationZ(-_lookAngleX);
         }
     }
 }

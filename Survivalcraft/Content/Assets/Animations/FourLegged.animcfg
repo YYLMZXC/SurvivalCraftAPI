@@ -1,46 +1,20 @@
 {
   "template": "FourLegged",
-  "animations": {},
-  "stateRules": [],
+
   "drivers": [
     {
-      "type": "Game.Animation.Drivers.FourLeggedDriver",
-      "layer": "Base",
-      "properties": {
-        "WalkFrontLegsAngle": 0.55,
-        "WalkHindLegsAngle": 0.4,
-        "CanterLegsAngleFactor": 1.5,
-        "HeadLookMaxAngleX": 65,
-        "HeadLookMaxAngleY": 55,
-        "NeckLookFactor": 0.6,
-        "WalkGait": {
-          "LegPhases": [0, 0.5, 0.25, 0.75],
-          "HeadBobAmplitude": 3,
-          "HeadBobFrequency": 4
-        },
-        "TrotGait": {
-          "LegPhases": [0, 0.5, 0.5, 0],
-          "HeadBobAmplitude": 3,
-          "HeadBobFrequency": 4
-        },
-        "CanterGait": {
-          "LegPhases": [0, 0.25, 0.15, 0.4],
-          "HeadBobAmplitude": 8,
-          "HeadBobFrequency": 2
-        }
-      }
+      "type": "FourLeggedWalk",
+      "layer": "Base"
     }
   ],
+
   "parameters": {
-    "Speed": 0,
-    "MovementPhase": 0,
-    "Gait": 0,
-    "DeathPhase": 0,
-    "LookAngleX": 0,
-    "LookAngleY": 0,
-    "FeedFactor": 0,
-    "Bob": 0,
-    "IsDead": false,
-    "IsInWater": false
+    "WalkFrontLegsAngle": 0.55,
+    "WalkHindLegsAngle": 0.4,
+    "WalkSpeed": 1.0,
+    "CanCanter": true,
+    "CanTrot": true,
+    "MovementPhase": 0.0,
+    "CanterLegsAngleFactor": 1.5
   }
 }

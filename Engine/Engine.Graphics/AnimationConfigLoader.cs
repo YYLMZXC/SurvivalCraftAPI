@@ -394,10 +394,12 @@ namespace Engine.Graphics
             return type switch
             {
                 "LookAtDriver" => new Drivers.LookAtDriver(),
+                "LookAt" => new Drivers.LookAtDriver(),  // 兼容简写
                 "DeathDriver" => new Drivers.DeathDriver(),
+                "Death" => new Drivers.DeathDriver(),  // 兼容简写
                 "ExpressionDriver" => new Drivers.ExpressionDriver(),
-                // 兼容旧名称
-                "ProceduralFourLeggedDriver" => CreateGameDriver("Game.Animation.Drivers.FourLeggedDriver"),
+                "FourLeggedWalk" => new Drivers.FourLeggedWalkDriver(),
+                "ProceduralFourLeggedDriver" => new Drivers.FourLeggedWalkDriver(),  // 兼容旧名称
                 // 新的游戏层驱动器（通过反射创建）
                 _ => CreateGameDriver(type)
             };

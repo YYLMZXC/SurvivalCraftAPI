@@ -19,6 +19,16 @@ namespace Engine.Graphics
         public const string AnimationProtocolPrefix = "animation://";
 
         /// <summary>
+        /// 缓存的 JsonSerializerOptions（避免每次创建新实例）
+        /// </summary>
+        private static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true
+        };
+
+        /// <summary>
         /// 加载动画的回调函数
         /// 参数：动画名称或路径，返回：ModelAnimation 实例
         /// </summary>
@@ -38,14 +48,7 @@ namespace Engine.Graphics
                 throw new ArgumentNullException(nameof(json));
             }
 
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-                AllowTrailingCommas = true
-            };
-
-            AnimationConfig config = JsonSerializer.Deserialize<AnimationConfig>(json, options);
+            AnimationConfig config = JsonSerializer.Deserialize<AnimationConfig>(json, s_jsonOptions);
 
             if (config == null)
             {
@@ -382,25 +385,38 @@ namespace Engine.Graphics
 
         /// <summary>
         /// 创建驱动器实例
-        /// 引擎层驱动器在此创建，游戏层驱动器通过反射创建
+        /// 优先从 AnimationDriverManager 查找，找不到时回退到反射
         /// </summary>
         public IAnimationDriver CreateDriver(string type)
         {
-            // 引擎层驱动器
-            return type switch
+            if (string.IsNullOrEmpty(type))
+                return null;
+
+            // 优先从 AnimationDriverManager 查找
+            var driver = AnimationDriverManager.Create(type);
+            if (driver != null)
+                return driver;
+
+            // 回退到硬编码的引擎层驱动器
+            driver = type switch
             {
                 "LookAtDriver" => new Drivers.LookAtDriver(),
-                "LookAt" => new Drivers.LookAtDriver(),  // 兼容简写
+                "LookAt" => new Drivers.LookAtDriver(),
                 "DeathDriver" => new Drivers.DeathDriver(),
-                "Death" => new Drivers.DeathDriver(),  // 兼容简写
+                "Death" => new Drivers.DeathDriver(),
                 "ExpressionDriver" => new Drivers.ExpressionDriver(),
-                // 游戏层驱动器（通过反射创建）
-                _ => CreateGameDriver(type)
+                _ => null
             };
+
+            if (driver != null)
+                return driver;
+
+            // 最后尝试通过反射创建
+            return CreateGameDriver(type);
         }
 
         /// <summary>
-        /// 通过反射创建游戏层驱动器
+        /// 通过反射创建游戏层驱动器（回退方案）
         /// </summary>
         private IAnimationDriver CreateGameDriver(string typeName)
         {
@@ -449,23 +465,23 @@ namespace Engine.Graphics
         }
 
         /// <summary>
-        /// 应用驱动器属性
+        /// 应用驱动器属性（使用 PropertySetterCache 优化性能）
         /// </summary>
         public void ApplyDriverProperties(IAnimationDriver driver, Dictionary<string, object> properties)
         {
             if (properties == null || driver == null)
                 return;
 
-            var driverType = driver.GetType();
-
             foreach (var kvp in properties)
             {
-                var property = driverType.GetProperty(kvp.Key);
-                if (property == null || !property.CanWrite)
-                    continue;
-
                 try
                 {
+                    // 获取属性类型以进行值转换
+                    var driverType = driver.GetType();
+                    var property = driverType.GetProperty(kvp.Key);
+                    if (property == null || !property.CanWrite)
+                        continue;
+
                     object value = ConvertValue(kvp.Value, property.PropertyType);
 
                     // 处理嵌套对象
@@ -476,7 +492,8 @@ namespace Engine.Graphics
 
                     if (value != null)
                     {
-                        property.SetValue(driver, value);
+                        // 使用缓存的属性设置器
+                        PropertySetterCache.SetProperty(driver, kvp.Key, value);
                     }
                 }
                 catch
@@ -487,13 +504,14 @@ namespace Engine.Graphics
         }
 
         /// <summary>
-        /// 创建嵌套对象并设置属性
+        /// 创建嵌套对象并设置属性（使用 PropertySetterCache 优化性能）
         /// </summary>
         private object CreateNestedObject(Type targetType, Dictionary<string, object> properties)
         {
             try
             {
-                var obj = Activator.CreateInstance(targetType);
+                // 使用缓存的创建器
+                var obj = PropertySetterCache.CreateAndSetProperties(targetType, null);
                 if (obj == null) return null;
 
                 foreach (var kvp in properties)
@@ -510,7 +528,7 @@ namespace Engine.Graphics
 
                     if (value != null)
                     {
-                        property.SetValue(obj, value);
+                        PropertySetterCache.SetProperty(obj, kvp.Key, value);
                     }
                 }
 

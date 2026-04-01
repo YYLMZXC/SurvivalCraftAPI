@@ -10,6 +10,10 @@ namespace Engine.Graphics
         private readonly Dictionary<string, NCalc.Expression> _compiledConditions = new();
         // 缓存每个表达式需要的参数名
         private readonly Dictionary<string, string[]> _requiredParameters = new();
+        // 可复用的参数字典（避免每次求值分配新字典）
+        // 注意：NCalc.Expression.Parameters 在求值时会被读取，因此需要在单线程上下文中使用
+        // 如果 StateRuleEvaluator 实例被多线程共享，则需要每次创建新字典
+        private readonly Dictionary<string, object> _reusableParameters = new();
 
         /// <summary>
         /// 评估单个条件表达式
@@ -24,8 +28,8 @@ namespace Engine.Graphics
                 // 获取或编译表达式
                 if (!_compiledConditions.TryGetValue(condition, out var expression))
                 {
+                    // 使用 NCalc 默认缓存（移除 NoCache 选项以提升性能）
                     expression = new Expression(condition);
-                    expression.Options = ExpressionOptions.NoCache;
                     _compiledConditions[condition] = expression;
 
                     // 使用 NCalc 内置方法提取参数名
@@ -37,11 +41,13 @@ namespace Engine.Graphics
                 var requiredParams = _requiredParameters[condition];
                 if (requiredParams.Length > 0)
                 {
-                    expression.Parameters = new Dictionary<string, object>(requiredParams.Length);
+                    // 复用参数字典：清空后重新填充
+                    _reusableParameters.Clear();
                     foreach (var paramName in requiredParams)
                     {
-                        expression.Parameters[paramName] = parameters.GetValue(paramName);
+                        _reusableParameters[paramName] = parameters.GetValue(paramName);
                     }
+                    expression.Parameters = _reusableParameters;
                 }
                 else
                 {
@@ -69,6 +75,7 @@ namespace Engine.Graphics
         {
             _compiledConditions.Clear();
             _requiredParameters.Clear();
+            _reusableParameters.Clear();
         }
     }
 }

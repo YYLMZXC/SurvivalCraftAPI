@@ -4,6 +4,7 @@ namespace Engine.Graphics.Drivers
 {
     /// <summary>
     /// 驱动器工厂 - 创建和管理驱动器实例
+    /// 统一使用 AnimationDriverManager 进行驱动器注册
     /// </summary>
     public static class DriverFactory
     {
@@ -13,6 +14,15 @@ namespace Engine.Graphics.Drivers
             ["Death"] = typeof(DeathDriver),
             ["Expression"] = typeof(ExpressionDriver)
         };
+
+        // 静态构造函数：将引擎层驱动器注册到 AnimationDriverManager
+        static DriverFactory()
+        {
+            foreach (var kvp in _driverTypes)
+            {
+                AnimationDriverManager.Register(kvp.Key, kvp.Value);
+            }
+        }
 
         /// <summary>
         /// 注册自定义驱动器类型
@@ -24,6 +34,8 @@ namespace Engine.Graphics.Drivers
                 throw new ArgumentException($"Type {driverType} does not implement IAnimationDriver");
             }
             _driverTypes[name] = driverType;
+            // 同时注册到 AnimationDriverManager
+            AnimationDriverManager.Register(name, driverType);
         }
 
         /// <summary>
@@ -31,12 +43,18 @@ namespace Engine.Graphics.Drivers
         /// </summary>
         public static IAnimationDriver Create(string driverName, Dictionary<string, object> args = null)
         {
-            if (!_driverTypes.TryGetValue(driverName, out var type))
+            // 优先使用 AnimationDriverManager
+            var driver = AnimationDriverManager.Create(driverName);
+            if (driver == null && !_driverTypes.TryGetValue(driverName, out var type))
             {
                 throw new ArgumentException($"Unknown driver type: {driverName}");
             }
 
-            var driver = (IAnimationDriver)Activator.CreateInstance(type);
+            // 如果 AnimationDriverManager 没找到，回退到本地创建
+            if (driver == null)
+            {
+                driver = (IAnimationDriver)Activator.CreateInstance(_driverTypes[driverName]);
+            }
 
             // 如果驱动器支持配置，应用参数
             if (args != null && driver is IConfigurableDriver configurable)
@@ -52,7 +70,7 @@ namespace Engine.Graphics.Drivers
         /// </summary>
         public static bool HasDriver(string driverName)
         {
-            return _driverTypes.ContainsKey(driverName);
+            return AnimationDriverManager.IsRegistered(driverName) || _driverTypes.ContainsKey(driverName);
         }
 
         /// <summary>

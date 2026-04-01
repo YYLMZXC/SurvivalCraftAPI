@@ -416,13 +416,6 @@ namespace Engine.Graphics
         {
             try
             {
-                // 尝试的游戏层驱动器命名空间
-                string[] namespaces = new[]
-                {
-                    "Game.Animation.Drivers",
-                    "Game"
-                };
-
                 // 尝试的类型名（原始名和加 Driver 后缀）
                 string[] typeNames = new[]
                 {
@@ -430,44 +423,31 @@ namespace Engine.Graphics
                     typeName + "Driver"
                 };
 
-                foreach (var ns in namespaces)
+                // 尝试的命名空间
+                string[] namespaces = new[]
                 {
-                    foreach (var tname in typeNames)
+                    "Game.Animation.Drivers",
+                    "Game"
+                };
+
+                foreach (var tname in typeNames)
+                {
+                    foreach (var ns in namespaces)
                     {
-                        // 尝试完整类型名
                         string fullName = $"{ns}.{tname}";
-                        var type = Type.GetType(fullName);
+                        var type = Serialization.TypeCache.FindType(fullName, skipSystemAssemblies: true, throwIfNotFound: false);
                         if (type != null)
                         {
                             return Activator.CreateInstance(type) as IAnimationDriver;
                         }
-
-                        // 遍历所有已加载的程序集查找
-                        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                        {
-                            type = assembly.GetType(fullName);
-                            if (type != null)
-                            {
-                                return Activator.CreateInstance(type) as IAnimationDriver;
-                            }
-                        }
                     }
                 }
 
-                // 尝试直接使用传入的类型名（可能是完整类型名）
-                var directType = Type.GetType(typeName);
+                // 尝试完整类型名（用户可能提供了完整名称）
+                var directType = Serialization.TypeCache.FindType(typeName, skipSystemAssemblies: true, throwIfNotFound: false);
                 if (directType != null)
                 {
                     return Activator.CreateInstance(directType) as IAnimationDriver;
-                }
-
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    var foundType = assembly.GetType(typeName);
-                    if (foundType != null)
-                    {
-                        return Activator.CreateInstance(foundType) as IAnimationDriver;
-                    }
                 }
 
                 return null;

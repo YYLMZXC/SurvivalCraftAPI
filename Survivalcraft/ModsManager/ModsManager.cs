@@ -845,16 +845,15 @@ public static class ModsManager {
         XElement toCombineRoot = XmlUtils.LoadXmlFromStream(toCombineStream, Encoding.UTF8, true);
         XElement databaseObjects = databaseRoot.Element("DatabaseObjects");
 
-        // 为新增的 EntityTemplate 添加 ModSource 参数：
-        // 先把原数据库所有 EntityTemplate 的 Guid 收集到 HashSet 中（一次性 O(N)），
-        // 然后只遍历待合并文档中的 EntityTemplate（O(M)），每次查验为 O(1)。
+        // 为新增的 EntityTemplate 添加 ModSource 参数
         if (!string.IsNullOrEmpty(modPackageName) && databaseObjects != null) {
             HashSet<string> existingGuids = new(
                 databaseObjects.Descendants("EntityTemplate").Attributes("Guid").Select(a => a.Value),
                 StringComparer.OrdinalIgnoreCase
             );
 
-            foreach (XElement entity in toCombineRoot.Descendants("EntityTemplate")) {
+            // 只遍历根元素的直接子元素（与原代码 toCombineRoot.Elements() 行为一致）
+            foreach (XElement entity in toCombineRoot.Elements().Where(e => e.Name.LocalName == "EntityTemplate")) {
                 XAttribute guidAttr = entity.Attribute("Guid");
                 bool isNewEntity = guidAttr == null || !existingGuids.Contains(guidAttr.Value);
                 if (isNewEntity) {

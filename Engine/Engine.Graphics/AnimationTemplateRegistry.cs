@@ -37,28 +37,6 @@ namespace Engine.Graphics
         /// </summary>
         public static void InitializeBuiltInTemplates()
         {
-            // Humanoid 模板
-            Register("Humanoid", new AnimationTemplate(
-                "Humanoid",
-                new LayerDefinition[]
-                {
-                    new("Base", 0, BlendMode.Override),
-                    new("UpperBody", 1, BlendMode.Additive, new[] { "Body", "Arm1", "Arm2" }),
-                    new("Head", 2, BlendMode.Override, new[] { "Head" })
-                },
-                new StateTrackDefinition[]
-                {
-                    new("Gait", StateTrackType.Enum, "Idle") { EnumValues = new[] { "Idle", "Walk", "Run" } },
-                    new("Posture", StateTrackType.Enum, "Standing") { EnumValues = new[] { "Standing", "Crouching", "Lying" } },
-                    new("Activity", StateTrackType.Enum, "None") { EnumValues = new[] { "None", "Attack", "Row", "Eat" } },
-                    new("Death", StateTrackType.Float, 0f) { MinValue = 0f, MaxValue = 1f }
-                },
-                new BuiltInDriverDefinition[]
-                {
-                    new("LookAt", "Head")
-                }
-            ));
-
             // FourLegged 模板（四足动物）
             // Base 层：行走动画（Body + Legs + Head 摆动）
             // Head 层：进食/攻击动画（Head + Neck）
@@ -92,6 +70,76 @@ namespace Engine.Graphics
                 new StateTrackDefinition[]
                 {
                     new("Gait", StateTrackType.Enum, "Idle") { EnumValues = new[] { "Idle" } }
+                }
+            ));
+
+            // Human 模板（玩家）
+            Register("Human", new AnimationTemplate(
+                "Human",
+                new LayerDefinition[]
+                {
+                    new("Base", 0, BlendMode.Override),
+                    new("Activity", 1, BlendMode.Override, new[] { "Hand1", "Hand2" }),
+                    new("Ride", 2, BlendMode.Override),
+                    new("Death", 3, BlendMode.Override)
+                },
+                new StateTrackDefinition[]
+                {
+                    new("Locomotion", StateTrackType.Enum, "Idle") { EnumValues = new[] { "Idle", "Walk", "Fly" } },
+                    new("Activity", StateTrackType.Enum, "None") { EnumValues = new[] { "None", "Attack", "Aim" } },
+                    new("Ride", StateTrackType.Enum, "None") { EnumValues = new[] { "None", "Riding" } },
+                    new("Death", StateTrackType.Float, 0f) { MinValue = 0f, MaxValue = 1f }
+                }
+            ));
+
+            // Bird 模板（鸟类）
+            Register("Bird", new AnimationTemplate(
+                "Bird",
+                new LayerDefinition[]
+                {
+                    new("Base", 0, BlendMode.Override),
+                    new("Head", 1, BlendMode.Override, new[] { "Head", "Neck" }),
+                    new("Death", 2, BlendMode.Override)
+                },
+                new StateTrackDefinition[]
+                {
+                    new("Locomotion", StateTrackType.Enum, "Idle") { EnumValues = new[] { "Idle", "Walk", "Fly" } },
+                    new("Activity", StateTrackType.Enum, "None") { EnumValues = new[] { "None", "Peck", "Attack" } },
+                    new("Death", StateTrackType.Float, 0f) { MinValue = 0f, MaxValue = 1f }
+                }
+            ));
+
+            // Fish 模板（鱼类）
+            Register("Fish", new AnimationTemplate(
+                "Fish",
+                new LayerDefinition[]
+                {
+                    new("Base", 0, BlendMode.Override),
+                    new("Head", 1, BlendMode.Override, new[] { "Jaw" }),
+                    new("Death", 2, BlendMode.Override)
+                },
+                new StateTrackDefinition[]
+                {
+                    new("Swim", StateTrackType.Float, 0f),
+                    new("Activity", StateTrackType.Enum, "None") { EnumValues = new[] { "None", "Bite" } },
+                    new("Death", StateTrackType.Float, 0f) { MinValue = 0f, MaxValue = 1f }
+                }
+            ));
+
+            // FlightlessBird 模板（不能飞的鸟）
+            Register("FlightlessBird", new AnimationTemplate(
+                "FlightlessBird",
+                new LayerDefinition[]
+                {
+                    new("Base", 0, BlendMode.Override),
+                    new("Head", 1, BlendMode.Override, new[] { "Head", "Neck" }),
+                    new("Death", 2, BlendMode.Override)
+                },
+                new StateTrackDefinition[]
+                {
+                    new("Locomotion", StateTrackType.Enum, "Idle") { EnumValues = new[] { "Idle", "Walk" } },
+                    new("Activity", StateTrackType.Enum, "None") { EnumValues = new[] { "None", "Feed", "Attack" } },
+                    new("Death", StateTrackType.Float, 0f) { MinValue = 0f, MaxValue = 1f }
                 }
             ));
         }

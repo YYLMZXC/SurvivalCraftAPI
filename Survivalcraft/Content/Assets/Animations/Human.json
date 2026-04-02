@@ -14,7 +14,7 @@
       ]
     },
     "activity": {
-      "layer": "UpperBody",
+      "layer": "Activity",
       "rules": [
         {
           "condition": "[PunchPhase] > 0",

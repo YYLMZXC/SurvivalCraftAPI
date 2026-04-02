@@ -4,6 +4,7 @@ namespace Engine.Graphics
 {
     /// <summary>
     /// 参数容器类，用于存储动画系统需要的各种参数。
+    /// 支持脏检查，避免无变化时重复评估状态规则。
     /// </summary>
     public class AnimationParameters
     {
@@ -11,9 +12,46 @@ namespace Engine.Graphics
         private readonly Dictionary<string, bool> _boolParams = new();
         private readonly Dictionary<string, Vector3> _vector3Params = new();
 
-        public void SetFloat(string name, float value) => _floatParams[name] = value;
-        public void SetBool(string name, bool value) => _boolParams[name] = value;
-        public void SetVector3(string name, Vector3 value) => _vector3Params[name] = value;
+        // 脏标记：有参数变化时设为 true
+        private bool _isDirty = true;
+
+        /// <summary>
+        /// 是否有参数变化（脏标记）
+        /// </summary>
+        public bool IsDirty => _isDirty;
+
+        /// <summary>
+        /// 清除脏标记（在评估完状态规则后调用）
+        /// </summary>
+        public void ClearDirty() => _isDirty = false;
+
+        public void SetFloat(string name, float value)
+        {
+            // 检查值是否变化
+            if (_floatParams.TryGetValue(name, out var existing) && existing == value)
+                return; // 值未变化，不设置脏标记
+
+            _floatParams[name] = value;
+            _isDirty = true;
+        }
+
+        public void SetBool(string name, bool value)
+        {
+            if (_boolParams.TryGetValue(name, out var existing) && existing == value)
+                return;
+
+            _boolParams[name] = value;
+            _isDirty = true;
+        }
+
+        public void SetVector3(string name, Vector3 value)
+        {
+            if (_vector3Params.TryGetValue(name, out var existing) && existing == value)
+                return;
+
+            _vector3Params[name] = value;
+            _isDirty = true;
+        }
 
         /// <summary>
         /// 设置参数值（通用方法，根据类型自动分发）

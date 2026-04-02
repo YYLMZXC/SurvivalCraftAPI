@@ -192,8 +192,12 @@ namespace Engine.Graphics
             // 1. 同步引擎参数
             SyncEngineParameters();
 
-            // 2. 评估状态规则（自动切换动画）
-            EvaluateStateRules();
+            // 2. 评估状态规则（仅当参数有变化时）
+            if (_parameters.IsDirty)
+            {
+                EvaluateStateRules();
+                _parameters.ClearDirty();
+            }
 
             // 3. 更新所有层
             foreach (var layer in _layers)

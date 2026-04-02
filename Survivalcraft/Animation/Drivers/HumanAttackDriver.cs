@@ -1,0 +1,71 @@
+#nullable disable
+using Engine;
+using Engine.Graphics;
+using Engine.Graphics.Drivers;
+
+namespace Game.Animation.Drivers
+{
+    /// <summary>
+    /// 人类攻击驱动器 - 处理左右手交替出拳动画
+    /// </summary>
+    public class HumanAttackDriver : IAnimationDriver
+    {
+        public string Name => "HumanAttack";
+        public BlendMode BlendMode => BlendMode.Additive;
+
+        public string[] TargetBones => _targetBones;
+        private string[] _targetBones = new[] { "Hand1", "Hand2" };
+
+        // 参数名称
+        public string PunchPhaseParam { get; set; } = "PunchPhase";
+        public string PunchCounterParam { get; set; } = "PunchCounter";
+
+        // 可配置属性
+        public float PunchAngle { get; set; } = 90f; // 出拳角度（度）
+        public float SmoothSpeed { get; set; } = 12f;
+
+        private float _punchPhase;
+        private int _punchCounter;
+
+        private float _currentPunchAngle1 = 0f;
+        private float _currentPunchAngle2 = 0f;
+
+        public void Update(float deltaTime, AnimationParameters parameters)
+        {
+            _punchPhase = parameters.GetFloat(PunchPhaseParam);
+            _punchCounter = (int)parameters.GetFloat(PunchCounterParam);
+        }
+
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
+        {
+            if (_punchPhase <= 0f) return;
+
+            // 计算出拳角度
+            float punchAngle = -MathUtils.DegToRad(PunchAngle) * MathF.Sin((float)Math.PI * 2f * MathUtils.Sigmoid(_punchPhase, 4f));
+
+            // 左右手交替
+            bool isLeftPunch = (_punchCounter & 1) == 0;
+            float targetAngle1 = isLeftPunch ? punchAngle : 0f;
+            float targetAngle2 = isLeftPunch ? 0f : punchAngle;
+
+            // 平滑过渡
+            float smoothFactor = MathUtils.Min(SmoothSpeed * 0.016f, 1f);
+            _currentPunchAngle1 += smoothFactor * (targetAngle1 - _currentPunchAngle1);
+            _currentPunchAngle2 += smoothFactor * (targetAngle2 - _currentPunchAngle2);
+
+            // 设置 Hand1 骨骼
+            var hand1Bone = model.FindBone("Hand1");
+            if (hand1Bone != null)
+            {
+                boneTransforms[hand1Bone.Index] = Matrix.CreateRotationX(_currentPunchAngle1);
+            }
+
+            // 设置 Hand2 骨骼
+            var hand2Bone = model.FindBone("Hand2");
+            if (hand2Bone != null)
+            {
+                boneTransforms[hand2Bone.Index] = Matrix.CreateRotationX(_currentPunchAngle2);
+            }
+        }
+    }
+}

@@ -1,0 +1,72 @@
+{
+  "template": "Fish",
+
+  "states": {
+    "swim": {
+      "layer": "Base",
+      "rules": [
+        {
+          "condition": "true",
+          "animation": {
+            "source": "driver:FishSwim"
+          }
+        }
+      ]
+    },
+    "activity": {
+      "layer": "Head",
+      "rules": [
+        {
+          "condition": "[BitingPhase] > 0",
+          "animation": {
+            "source": "driver:FishAttack"
+          }
+        },
+        {
+          "condition": "true",
+          "animation": null
+        }
+      ]
+    },
+    "death": {
+      "layer": "Death",
+      "rules": [
+        {
+          "condition": "[DeathPhase] > 0",
+          "animation": {
+            "source": "driver:FishDeath"
+          }
+        },
+        {
+          "condition": "true",
+          "animation": null
+        }
+      ]
+    }
+  },
+
+  "drivers": [
+    {
+      "type": "FishSwim",
+      "layer": "Base",
+      "properties": {
+        "Tail1Angle": 25.0,
+        "Tail2Angle": 30.0,
+        "TailPhaseOffset": 0.25
+      }
+    }
+  ],
+
+  "parameters": {
+    "SwimAnimationSpeed": 1.0,
+    "HasVerticalTail": false,
+    "TailWagPhase": 0.0,
+    "TailTurnX": 0.0,
+    "TailTurnY": 0.0,
+    "DigInDepth": 0.0,
+    "IsEmbeddedInIce": false,
+    "BitingPhase": 0.0,
+    "AttackSpeed": 1.0,
+    "DeathSpeed": 3.0
+  }
+}

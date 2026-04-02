@@ -1,0 +1,94 @@
+{
+  "template": "FlightlessBird",
+
+  "states": {
+    "locomotion": {
+      "layer": "Base",
+      "rules": [
+        {
+          "condition": "true",
+          "animation": {
+            "source": "driver:FlightlessBirdWalk"
+          }
+        }
+      ]
+    },
+    "activity": {
+      "layer": "Head",
+      "rules": [
+        {
+          "condition": "[FeedFactor] > 0 && [KickFactor] == 0",
+          "animation": {
+            "source": "driver:FlightlessBirdFeed"
+          }
+        },
+        {
+          "condition": "[KickFactor] > 0",
+          "animation": {
+            "source": "driver:FlightlessBirdAttack"
+          }
+        },
+        {
+          "condition": "true",
+          "animation": null
+        }
+      ]
+    },
+    "death": {
+      "layer": "Death",
+      "rules": [
+        {
+          "condition": "[DeathPhase] > 0",
+          "animation": {
+            "source": "driver:FlightlessBirdDeath"
+          }
+        },
+        {
+          "condition": "true",
+          "animation": null
+        }
+      ]
+    }
+  },
+
+  "drivers": [
+    {
+      "type": "FlightlessBirdWalk",
+      "layer": "Base",
+      "properties": {
+        "LegAngle": 0.55,
+        "SmoothSpeed": 12.0,
+        "HeadBobAngle": 5.0
+      }
+    }
+  ],
+
+  "parameters": {
+    "WalkAnimationSpeed": 1.0,
+    "WalkLegsAngle": 0.55,
+    "WalkBobHeight": 0.1,
+    "WalkSpeed": 1.0,
+    "Speed": 0.0,
+
+    "MovementPhase": 0.0,
+    "Bob": 0.0,
+    "RotationY": 0.0,
+    "Position": [0, 0, 0],
+
+    "FeedFactor": 0.0,
+    "KickPhase": 0.0,
+    "KickFactor": 0.0,
+    "AttackFactor": 0.0,
+
+    "LookAngleX": 0.0,
+    "LookAngleY": 0.0,
+
+    "IsOnGround": true,
+    "ImmersionFactor": 0.0,
+
+    "DeathPhase": 0.0,
+    "DeathCauseOffset": [0, 0, 0],
+    "BodyHeight": 1.0,
+    "GameTime": 0.0
+  }
+}

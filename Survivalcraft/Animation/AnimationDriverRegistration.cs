@@ -45,6 +45,61 @@ namespace Game.Animation
                 AnimationDriverManager.Register("FourLeggedFeed", typeof(FourLeggedFeedDriver));
                 AnimationDriverManager.Register("FourLeggedFeedDriver", typeof(FourLeggedFeedDriver));
 
+                // 注册鱼类驱动器
+                AnimationDriverManager.Register("FishSwim", typeof(FishSwimDriver));
+                AnimationDriverManager.Register("FishSwimDriver", typeof(FishSwimDriver));
+
+                AnimationDriverManager.Register("FishAttack", typeof(FishAttackDriver));
+                AnimationDriverManager.Register("FishAttackDriver", typeof(FishAttackDriver));
+
+                AnimationDriverManager.Register("FishDeath", typeof(FishDeathDriver));
+                AnimationDriverManager.Register("FishDeathDriver", typeof(FishDeathDriver));
+
+                // 注册鸟类驱动器
+                AnimationDriverManager.Register("BirdWalk", typeof(BirdWalkDriver));
+                AnimationDriverManager.Register("BirdWalkDriver", typeof(BirdWalkDriver));
+
+                AnimationDriverManager.Register("BirdFly", typeof(BirdFlyDriver));
+                AnimationDriverManager.Register("BirdFlyDriver", typeof(BirdFlyDriver));
+
+                AnimationDriverManager.Register("BirdPeck", typeof(BirdPeckDriver));
+                AnimationDriverManager.Register("BirdPeckDriver", typeof(BirdPeckDriver));
+
+                AnimationDriverManager.Register("BirdAttack", typeof(BirdAttackDriver));
+                AnimationDriverManager.Register("BirdAttackDriver", typeof(BirdAttackDriver));
+
+                AnimationDriverManager.Register("BirdDeath", typeof(BirdDeathDriver));
+                AnimationDriverManager.Register("BirdDeathDriver", typeof(BirdDeathDriver));
+
+                // 注册不能飞的鸟类驱动器
+                AnimationDriverManager.Register("FlightlessBirdWalk", typeof(FlightlessBirdWalkDriver));
+                AnimationDriverManager.Register("FlightlessBirdWalkDriver", typeof(FlightlessBirdWalkDriver));
+
+                AnimationDriverManager.Register("FlightlessBirdFeed", typeof(FlightlessBirdFeedDriver));
+                AnimationDriverManager.Register("FlightlessBirdFeedDriver", typeof(FlightlessBirdFeedDriver));
+
+                AnimationDriverManager.Register("FlightlessBirdAttack", typeof(FlightlessBirdAttackDriver));
+                AnimationDriverManager.Register("FlightlessBirdAttackDriver", typeof(FlightlessBirdAttackDriver));
+
+                AnimationDriverManager.Register("FlightlessBirdDeath", typeof(FlightlessBirdDeathDriver));
+                AnimationDriverManager.Register("FlightlessBirdDeathDriver", typeof(FlightlessBirdDeathDriver));
+
+                // 注册人类驱动器
+                AnimationDriverManager.Register("HumanWalk", typeof(HumanWalkDriver));
+                AnimationDriverManager.Register("HumanWalkDriver", typeof(HumanWalkDriver));
+
+                AnimationDriverManager.Register("HumanAttack", typeof(HumanAttackDriver));
+                AnimationDriverManager.Register("HumanAttackDriver", typeof(HumanAttackDriver));
+
+                AnimationDriverManager.Register("HumanRide", typeof(HumanRideDriver));
+                AnimationDriverManager.Register("HumanRideDriver", typeof(HumanRideDriver));
+
+                AnimationDriverManager.Register("HumanDeath", typeof(HumanDeathDriver));
+                AnimationDriverManager.Register("HumanDeathDriver", typeof(HumanDeathDriver));
+
+                AnimationDriverManager.Register("HumanAim", typeof(HumanAimDriver));
+                AnimationDriverManager.Register("HumanAimDriver", typeof(HumanAimDriver));
+
                 s_registered = true;
             }
         }

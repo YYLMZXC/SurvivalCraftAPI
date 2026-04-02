@@ -47,7 +47,7 @@
 
     ```xml
     <ItemGroup>
-      <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.0.0"/>
+      <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.0.1"/>
     </ItemGroup>
     ```
 
@@ -62,6 +62,15 @@
   <Reference Include="Survivalcraft" HintPath="（Survivalcraft.dll的文件路径，不要括号）" />
 </ItemGroup>
 ```
+
+## AI Agent 开发示例
+
+```
+请阅读此文档，帮我做一个在游戏中显示当前天气+距离晴天/下雨还有多久的生存战争插件版模组
+https://gitee.com/SC-SPM/SurvivalcraftApi/raw/SCAPI1.9/docs/HowToDevelopAMod.md
+```
+
+> AI Agent： 例如 [OpenClaw](https://openclaw.ai/)、[Claude Code](https://claude.com/product/claude-code)、[OpenCode](https://opencode.ai/)、[CodeBuddy](https://www.codebuddy.cn/) 等
 
 ## 开发建议
 

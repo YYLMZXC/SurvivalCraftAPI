@@ -250,6 +250,9 @@ namespace Game {
                 );
                 if (!skipDrawing) {
                     ComponentModel componentModel = modelsDatum.ComponentModel;
+                    if (componentModel.TextureOverride == null) {
+                        continue;
+                    }
                     Vector3 v = componentModel.DiffuseColor ?? Vector3.One;
                     float num = componentModel.Opacity ?? 1f;
                     modelShader.InstancesCount = componentModel.AbsoluteBoneTransformsForCamera.Length;

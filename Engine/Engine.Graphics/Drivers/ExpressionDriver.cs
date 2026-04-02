@@ -75,6 +75,12 @@ namespace Engine.Graphics.Drivers
         // 编译后的表达式缓存
         private readonly Dictionary<string, Expression> _expressionCache = new();
 
+        // 缓存每个表达式需要的参数名，避免每次求值时重新提取
+        private readonly Dictionary<string, string[]> _requiredParameters = new();
+
+        // 可复用的参数字典（避免每次求值分配新字典）
+        private readonly Dictionary<string, object> _reusableParams = new();
+
         // 目标骨骼列表缓存
         private string[] _cachedTargetBones;
 
@@ -196,6 +202,13 @@ namespace Engine.Graphics.Drivers
                     var expr = new Expression(expression);
                     expr.Options = ExpressionOptions.NoCache;
                     _expressionCache[expression] = expr;
+
+                    // 提取并缓存参数名
+                    var paramNames = expr.GetParameterNames();
+                    _requiredParameters[expression] = paramNames?.ToArray() ?? Array.Empty<string>();
+
+                    // 预注册自定义函数（只注册一次）
+                    AnimationExpressionFunctions.RegisterFunctions(expr);
                 }
                 catch
                 {
@@ -221,17 +234,23 @@ namespace Engine.Graphics.Drivers
 
             try
             {
-                // 绑定参数
-                expr.Parameters = new Dictionary<string, object>();
-                foreach (var param in _currentParameters.GetAllParameters())
+                // 绑定参数 - 使用可复用字典
+                var requiredParams = _requiredParameters.TryGetValue(expression, out var params2) ? params2 : null;
+                if (requiredParams != null && requiredParams.Length > 0)
                 {
-                    expr.Parameters[param.Key] = param.Value;
+                    _reusableParams.Clear();
+                    foreach (var paramName in requiredParams)
+                    {
+                        _reusableParams[paramName] = _currentParameters.GetValue(paramName);
+                    }
+                    expr.Parameters = _reusableParams;
+                }
+                else
+                {
+                    expr.Parameters = null;
                 }
 
-                // 注册自定义函数
-                AnimationExpressionFunctions.RegisterFunctions(expr);
-
-                // 求值
+                // 求值（函数已在预编译时注册）
                 var result = expr.Evaluate();
                 return Convert.ToSingle(result);
             }
@@ -246,7 +265,15 @@ namespace Engine.Graphics.Drivers
         /// </summary>
         public void ClearCache()
         {
+            // 移除事件处理器以避免内存泄漏
+            foreach (var kvp in _expressionCache)
+            {
+                AnimationExpressionFunctions.UnregisterFunctions(kvp.Value);
+            }
+
             _expressionCache.Clear();
+            _requiredParameters.Clear();
+            _reusableParams.Clear();
         }
     }
 }

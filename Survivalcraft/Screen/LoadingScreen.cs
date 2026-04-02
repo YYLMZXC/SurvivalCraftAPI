@@ -4,6 +4,7 @@ using System.Reflection;
 using Engine;
 using Engine.Graphics;
 using Engine.Media;
+using NCalc;
 #if ANDROID
 using Android.App;
 #elif WINDOWS
@@ -157,6 +158,17 @@ namespace Game {
                 delegate { //将所有的有效的scmod读取为ModEntity，并自动添加SurvivalCraftModEntity
                     ContentManager.Initialize();
                     ModsManager.Initialize();
+                }
+            );
+            AddLoadAction(
+                delegate {
+                    //NCalc Warmup
+                    Expression expression = new NCalc.Expression("[B] && [N] * 1.0 > 0.5");
+                    _ = expression.GetParameterNames();
+                    expression.Parameters.Add("B", true);
+                    expression.Parameters.Add("N", 0.5f);
+                    object expressionResult = expression.Evaluate();
+                    _ = Convert.ToBoolean(expressionResult);
                 }
             );
             AddLoadAction(

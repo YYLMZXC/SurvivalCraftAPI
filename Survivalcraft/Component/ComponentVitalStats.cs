@@ -260,6 +260,8 @@ namespace Game {
 
             if (skipVanilla) return;
 
+            Food = modifiedFood;
+
             float num = m_componentPlayer.ComponentLocomotion.LastWalkOrder?.Length() ?? 0f;
             float lastJumpOrder = m_componentPlayer.ComponentLocomotion.LastJumpOrder;
             float num2 = m_componentPlayer.ComponentCreatureModel.EyePosition.Y - m_componentPlayer.ComponentBody.Position.Y;
@@ -334,6 +336,8 @@ namespace Game {
             );
 
             if (skipVanilla) return;
+
+            Stamina = modifiedStamina;
 
             float lastWalkOrder = m_componentPlayer.ComponentLocomotion.LastWalkOrder?.Length() ?? 0f;
             float lastJumpOrder = m_componentPlayer.ComponentLocomotion.LastJumpOrder;
@@ -429,6 +433,8 @@ namespace Game {
 
             if (skipVanilla) return;
 
+            Sleep = modifiedSleep;
+
             bool flag = m_componentPlayer.ComponentBody.ImmersionFactor > 0.05f;
             bool flag2 = m_subsystemTime.PeriodicGameTimeEvent(240.0, 9.0);
             if (m_subsystemGameInfo.WorldSettings.GameMode != 0
@@ -506,6 +512,8 @@ namespace Game {
             );
 
             if (skipVanilla) return;
+
+            Temperature = modifiedTemperature;
 
             bool flag = m_subsystemTime.PeriodicGameTimeEvent(300.0, 17.0);
             float num = m_componentPlayer.ComponentClothing.Insulation * MathUtils.Lerp(1f, 0.05f, MathUtils.Saturate(4f * Wetness));
@@ -629,6 +637,8 @@ namespace Game {
             );
 
             if (skipVanilla) return;
+
+            Wetness = modifiedWetness;
 
             Wetness += gameTimeDelta * m_componentPlayer.ComponentLevel.GetOtherFactorResult("Wetness");
             if (m_subsystemGameInfo.WorldSettings.GameMode != 0

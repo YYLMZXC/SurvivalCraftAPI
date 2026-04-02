@@ -2020,10 +2020,17 @@ namespace Game {
 
         /// <summary>
         /// 玩家生命状态（进食）钩子
+        ///
+        /// 说明：该 Hook 在人物尝试进食时调用。参数 <paramref name="value"/> 可被修改，
+        /// 且原版实现会使用最终的（被修改后的）值继续执行进食逻辑。
+        /// 如果将 <paramref name="skipVanilla"/> 设为 true，vanilla 将不再执行后续进食逻辑，
+        /// 此时调用者应当通过 <paramref name="eatSuccess"/> 指示进食是否成功，
+        /// 并在需要时自行修改组件状态（例如 `vitalStats.Food`、`vitalStats.m_satiation` 等）。
+        /// 多个模组按加载顺序依次调用，后面的修改会覆盖前面的修改。
         /// </summary>
         /// <param name="vitalStats">生命状态组件</param>
-        /// <param name="value">物品完整值</param>
-        /// <param name="skipVanilla">是否跳过原版逻辑</param>
+        /// <param name="value">物品完整值（ref，可被修改，vanilla 会使用最终值）</param>
+        /// <param name="skipVanilla">是否跳过原版逻辑（ref，true 表示已接管）</param>
         /// <param name="eatSuccess">输出：进食是否成功</param>
         public virtual void OnVitalStatsEat(
             ComponentVitalStats vitalStats,
@@ -2036,11 +2043,19 @@ namespace Game {
 
         /// <summary>
         /// 状态（更新饥饿值）钩子
+        ///
+        /// 说明：在 UpdateFood 调用前触发。模组可以修改 <paramref name="food"/> 和 <paramref name="gameTimeDelta"/>。
+        /// - 如果任一模组将 <paramref name="skipVanilla"/> 设为 true，原版的 UpdateFood 将被跳过，
+        ///   此时模组应负责把需要的值写入组件（例如 `vitalStats.Food = food`）。
+        /// - 如果所有模组都未设置 skip（即 skipVanilla 保持 false），引擎将在 Hook 返回后把
+        ///   最终的 <paramref name="food"/> 写回到 `vitalStats.Food`，然后继续执行原版更新逻辑。
+        /// 注意：多个模组按加载顺序依次调用，最后的修改生效；<paramref name="gameTimeDelta"/> 为 ref，
+        /// 可用于改变原版中基于时间的计算速度。
         /// </summary>
         /// <param name="vitalStats">生命状态组件</param>
-        /// <param name="food">饥饿值</param>
-        /// <param name="gameTimeDelta">时间增量</param>
-        /// <param name="skipVanilla">是否跳过原版逻辑</param>
+        /// <param name="food">饥饿值（ref，修改在未 skip 时会被写回）</param>
+        /// <param name="gameTimeDelta">时间增量（ref，可修改以影响后续 vanilla 计算）</param>
+        /// <param name="skipVanilla">是否跳过原版逻辑（ref，true 表示已接管）</param>
         public virtual void OnVitalStatsUpdateFood(
             ComponentVitalStats vitalStats,
             ref float food,
@@ -2049,11 +2064,19 @@ namespace Game {
 
         /// <summary>
         /// 状态（更新耐力值）钩子
+        ///
+        /// 说明：在 UpdateStamina 调用前触发。模组可以修改 <paramref name="stamina"/> 和 <paramref name="gameTimeDelta"/>。
+        /// - 如果任一模组将 <paramref name="skipVanilla"/> 设为 true，原版的 UpdateStamina 将被跳过，
+        ///   此时模组应负责把需要的值写入组件（例如 `vitalStats.Stamina = stamina`）。
+        /// - 如果所有模组都未设置 skip（即 skipVanilla 保持 false），引擎将在 Hook 返回后把
+        ///   最终的 <paramref name="stamina"/> 写回到 `vitalStats.Stamina`，然后继续执行原版更新逻辑。
+        /// 注意：多个模组按加载顺序依次调用，最后的修改生效；<paramref name="gameTimeDelta"/> 为 ref，
+        /// 可用于改变原版中基于时间的计算速度。
         /// </summary>
         /// <param name="vitalStats">生命状态组件</param>
-        /// <param name="stamina">耐力值</param>
-        /// <param name="gameTimeDelta">时间增量</param>
-        /// <param name="skipVanilla">是否跳过原版逻辑</param>
+        /// <param name="stamina">耐力值（ref，修改在未 skip 时会被写回）</param>
+        /// <param name="gameTimeDelta">时间增量（ref，可修改以影响后续 vanilla 计算）</param>
+        /// <param name="skipVanilla">是否跳过原版逻辑（ref，true 表示已接管）</param>
         public virtual void OnVitalStatsUpdateStamina(
             ComponentVitalStats vitalStats,
             ref float stamina,
@@ -2062,11 +2085,19 @@ namespace Game {
 
         /// <summary>
         /// 状态（更新睡眠值）钩子
+        ///
+        /// 说明：在 UpdateSleep 调用前触发。模组可以修改 <paramref name="sleep"/> 和 <paramref name="gameTimeDelta"/>。
+        /// - 如果任一模组将 <paramref name="skipVanilla"/> 设为 true，原版的 UpdateSleep 将被跳过，
+        ///   此时模组应负责把需要的值写入组件（例如 `vitalStats.Sleep = sleep`）。
+        /// - 如果所有模组都未设置 skip（即 skipVanilla 保持 false），引擎将在 Hook 返回后把
+        ///   最终的 <paramref name="sleep"/> 写回到 `vitalStats.Sleep`，然后继续执行原版更新逻辑。
+        /// 注意：多个模组按加载顺序依次调用，最后的修改生效；<paramref name="gameTimeDelta"/> 为 ref，
+        /// 可用于改变原版中基于时间的计算速度。
         /// </summary>
         /// <param name="vitalStats">生命状态组件</param>
-        /// <param name="sleep">睡眠值</param>
-        /// <param name="gameTimeDelta">时间增量</param>
-        /// <param name="skipVanilla">是否跳过原版逻辑</param>
+        /// <param name="sleep">睡眠值（ref，修改在未 skip 时会被写回）</param>
+        /// <param name="gameTimeDelta">时间增量（ref，可修改以影响后续 vanilla 计算）</param>
+        /// <param name="skipVanilla">是否跳过原版逻辑（ref，true 表示已接管）</param>
         public virtual void OnVitalStatsUpdateSleep(
             ComponentVitalStats vitalStats,
             ref float sleep,
@@ -2075,11 +2106,19 @@ namespace Game {
 
         /// <summary>
         /// 状态（更新体温）钩子
+        ///
+        /// 说明：在 UpdateTemperature 调用前触发。模组可以修改 <paramref name="temperature"/> 和 <paramref name="gameTimeDelta"/>。
+        /// - 如果任一模组将 <paramref name="skipVanilla"/> 设为 true，原版的 UpdateTemperature 将被跳过，
+        ///   此时模组应负责把需要的值写入组件（例如 `vitalStats.Temperature = temperature`）。
+        /// - 如果所有模组都未设置 skip（即 skipVanilla 保持 false），引擎将在 Hook 返回后把
+        ///   最终的 <paramref name="temperature"/> 写回到 `vitalStats.Temperature`，然后继续执行原版更新逻辑。
+        /// 注意：多个模组按加载顺序依次调用，最后的修改生效；<paramref name="gameTimeDelta"/> 为 ref，
+        /// 可用于改变原版中基于时间的计算速度。
         /// </summary>
         /// <param name="vitalStats">生命状态组件</param>
-        /// <param name="temperature">体温值</param>
-        /// <param name="gameTimeDelta">时间增量</param>
-        /// <param name="skipVanilla">是否跳过原版逻辑</param>
+        /// <param name="temperature">体温值（ref，修改在未 skip 时会被写回）</param>
+        /// <param name="gameTimeDelta">时间增量（ref，可修改以影响后续 vanilla 计算）</param>
+        /// <param name="skipVanilla">是否跳过原版逻辑（ref，true 表示已接管）</param>
         public virtual void OnVitalStatsUpdateTemperature(
             ComponentVitalStats vitalStats,
             ref float temperature,
@@ -2088,11 +2127,19 @@ namespace Game {
 
         /// <summary>
         /// 状态（更新湿度）钩子
+        ///
+        /// 说明：在 UpdateWetness 调用前触发。模组可以修改 <paramref name="wetness"/> 和 <paramref name="gameTimeDelta"/>。
+        /// - 如果任一模组将 <paramref name="skipVanilla"/> 设为 true，原版的 UpdateWetness 将被跳过，
+        ///   此时模组应负责把需要的值写入组件（例如 `vitalStats.Wetness = wetness`）。
+        /// - 如果所有模组都未设置 skip（即 skipVanilla 保持 false），引擎将在 Hook 返回后把
+        ///   最终的 <paramref name="wetness"/> 写回到 `vitalStats.Wetness`，然后继续执行原版更新逻辑。
+        /// 注意：多个模组按加载顺序依次调用，最后的修改生效；<paramref name="gameTimeDelta"/> 为 ref，
+        /// 可用于改变原版中基于时间的计算速度。
         /// </summary>
         /// <param name="vitalStats">生命状态组件</param>
-        /// <param name="wetness">湿度值</param>
-        /// <param name="gameTimeDelta">时间增量</param>
-        /// <param name="skipVanilla">是否跳过原版逻辑</param>
+        /// <param name="wetness">湿度值（ref，修改在未 skip 时会被写回）</param>
+        /// <param name="gameTimeDelta">时间增量（ref，可修改以影响后续 vanilla 计算）</param>
+        /// <param name="skipVanilla">是否跳过原版逻辑（ref，true 表示已接管）</param>
         public virtual void OnVitalStatsUpdateWetness(
             ComponentVitalStats vitalStats,
             ref float wetness,

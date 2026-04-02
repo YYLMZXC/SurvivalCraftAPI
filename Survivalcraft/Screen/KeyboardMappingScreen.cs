@@ -52,7 +52,7 @@ namespace Game {
             m_setKeyButton.IsEnabled = !string.IsNullOrEmpty(selectedKeyName);
             m_disableKeyButton.IsEnabled = !string.IsNullOrEmpty(selectedKeyName);
             if (Children.Find<ButtonWidget>("TopBar.Back").IsClicked) {
-                ScreensManager.SwitchScreen(ScreensManager.PreviousScreen);
+                ScreensManager.GoBack();
                 return;
             }
             foreach (string key in m_widgetsByString.Keys) {

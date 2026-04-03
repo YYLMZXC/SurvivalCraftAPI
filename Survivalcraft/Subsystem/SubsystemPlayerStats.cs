@@ -22,16 +22,16 @@ namespace Game {
             }
             // 根据已启用模组中最高的GameplayImpactLevel设置所有玩家的该字段
             if (!SettingsManager.SafeMode) {
-                GameplayImpactLevel maxImpactLevel = GameplayImpactLevel.Cosmetic;
+                GameplayImpactLevel highestImpactLevel = GameplayImpactLevel.Cosmetic;
                 foreach (ModEntity modEntity in ModsManager.ModList) {
                     if (modEntity.modInfo != null
-                        && modEntity.modInfo.GameplayImpactLevel > maxImpactLevel) {
-                        maxImpactLevel = modEntity.modInfo.GameplayImpactLevel;
+                        && modEntity.modInfo.GameplayImpactLevel > highestImpactLevel) {
+                        highestImpactLevel = modEntity.modInfo.GameplayImpactLevel;
                     }
                 }
                 foreach (PlayerStats stats in m_playerStats.Values) {
-                    if (maxImpactLevel > stats.HighestGameplayImpactLevel) {
-                        stats.HighestGameplayImpactLevel = maxImpactLevel;
+                    if ((int)highestImpactLevel > stats.HighestGameplayImpactLevel) {
+                        stats.HighestGameplayImpactLevel = (int)highestImpactLevel;
                     }
                 }
             }

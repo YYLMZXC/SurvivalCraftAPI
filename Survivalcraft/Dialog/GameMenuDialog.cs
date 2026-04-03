@@ -357,8 +357,7 @@ namespace Game {
                 );
                 GameMode easiestModeUsed = playerStats.EasiestModeUsed;
                 AddStat(stackPanelWidget, LanguageControl.Get(fName, 74), LanguageControl.Get("GameMode", easiestModeUsed.ToString()));
-                GameplayImpactLevel highestImpactLevel = playerStats.HighestGameplayImpactLevel;
-                AddStat(stackPanelWidget, LanguageControl.Get(fName, "105"), LanguageControl.Get("GameplayImpactLevel", (int)highestImpactLevel));
+                AddStat(stackPanelWidget, LanguageControl.Get(fName, "105"), LanguageControl.Get("GameplayImpactLevel", playerStats.HighestGameplayImpactLevel));
                 if (playerStats.DeathRecords.Count > 0) {
                     stackPanelWidget.Children.Add(
                         new LabelWidget {

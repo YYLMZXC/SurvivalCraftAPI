@@ -126,7 +126,7 @@ namespace Game {
 
         [Stat] public GameMode EasiestModeUsed = (GameMode)2147483647;
 
-        [Stat] public GameplayImpactLevel HighestGameplayImpactLevel = GameplayImpactLevel.Cosmetic;
+        [Stat] public int HighestGameplayImpactLevel = 0;
 
         [Stat] public float HighestLevel;
 

@@ -1,6 +1,35 @@
 {
   "template": "Bird",
 
+  "layers": {
+    "Base": {
+      "driver": {
+        "type": "BirdFly",
+        "properties": {
+          "WingAngle": 1.2,
+          "WingGroundAngle": 0.3,
+          "FlyLegAngle": 60.0
+        }
+      }
+    },
+    "Head": {
+      "driver": {
+        "type": "BirdPeck",
+        "properties": {
+          "PeckAngle": 1.25
+        }
+      }
+    },
+    "Death": {
+      "driver": {
+        "type": "BirdDeath",
+        "properties": {
+          "DeathRollAngle": 90.0
+        }
+      }
+    }
+  },
+
   "states": {
     "locomotion": {
       "layer": "Base",
@@ -69,6 +98,12 @@
     "FlySpeed": 0.0,
     "BodyHeight": 1.0,
 
+    "LookAngleX": 0.0,
+    "LookAngleY": 0.0,
+    "Rotation": [0, 0, 0],
+    "Position": [0, 0, 0],
+
+    "DeathPhase": 0.0,
     "DeathSpeed": 3.0
   }
 }

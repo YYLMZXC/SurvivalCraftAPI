@@ -1,6 +1,35 @@
 {
   "template": "FlightlessBird",
 
+  "layers": {
+    "Base": {
+      "driver": {
+        "type": "FlightlessBirdWalk",
+        "properties": {
+          "WalkLegAngle": 0.55,
+          "HeadBobAmount": 0.3,
+          "SmoothSpeed": 12.0
+        }
+      }
+    },
+    "Head": {
+      "driver": {
+        "type": "FlightlessBirdFeed",
+        "properties": {
+          "PeckAngle": 1.25
+        }
+      }
+    },
+    "Death": {
+      "driver": {
+        "type": "FlightlessBirdDeath",
+        "properties": {
+          "DeathRollAngle": 90.0
+        }
+      }
+    }
+  },
+
   "states": {
     "locomotion": {
       "layer": "Base",

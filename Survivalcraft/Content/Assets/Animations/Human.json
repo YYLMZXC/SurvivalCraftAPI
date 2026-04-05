@@ -1,6 +1,50 @@
 {
   "template": "Human",
 
+  "layers": {
+    "Base": {
+      "driver": {
+        "type": "HumanWalk",
+        "properties": {
+          "LegAngle": 0.5,
+          "HandSwingAngle": 0.5,
+          "SmoothSpeed": 12.0,
+          "HeadMaxAngleX": 80.0,
+          "HeadMaxAngleY": 45.0,
+          "CrouchBodyDrop": 0.7,
+          "CrouchLegScale": 0.5,
+          "HandNoiseScale": 0.1,
+          "FlyVelocityScale": 0.03,
+          "FlyVelocityMax": 0.5
+        }
+      }
+    },
+    "Activity": {
+      "driver": {
+        "type": "HumanAttack",
+        "properties": {
+          "PunchAngle": 1.0
+        }
+      }
+    },
+    "Ride": {
+      "driver": {
+        "type": "HumanRide",
+        "properties": {
+          "RowAngle": 0.5
+        }
+      }
+    },
+    "Death": {
+      "driver": {
+        "type": "HumanDeath",
+        "properties": {
+          "DeathRollAngle": 90.0
+        }
+      }
+    }
+  },
+
   "states": {
     "locomotion": {
       "layer": "Base",
@@ -107,10 +151,16 @@
     "LastTurnOrderX": 0.0,
 
     "EntityHash": 0,
+    "TotalElapsedGameTime": 0.0,
+    "GameTimeDelta": 0.016,
+
+    "RotationY": 0.0,
+    "Position": [0, 0, 0],
 
     "BodyHeight": 1.8,
     "BodyDepth": 0.6,
 
+    "DeathPhase": 0.0,
     "DeathSpeed": 3.0
   }
 }

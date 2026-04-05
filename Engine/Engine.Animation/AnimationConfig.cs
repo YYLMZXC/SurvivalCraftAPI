@@ -147,7 +147,7 @@ namespace Engine.Animation
         public string Template { get; set; } = "Simple";
 
         /// <summary>
-        /// 层配置
+        /// 层配置（在此配置驱动器及其属性）
         /// </summary>
         public Dictionary<string, LayerConfig> Layers { get; set; } = new();
 

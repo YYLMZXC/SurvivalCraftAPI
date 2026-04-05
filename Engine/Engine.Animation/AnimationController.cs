@@ -324,10 +324,12 @@ namespace Engine.Animation
             // 处理 driver: 语法
             if (source.StartsWith("driver:"))
             {
-                // 如果层已经有驱动器，复用它并更新参数
-                if (layer.Driver != null)
+                string driverType = source.Substring(7);
+
+                // 检查层是否有预配置的驱动器，且类型匹配
+                if (layer.Driver != null && IsDriverTypeMatch(layer.Driver, driverType))
                 {
-                    // 驱动器已存在，通过 driverArgs 更新参数
+                    // 驱动器已存在且类型匹配，只更新运行时参数（通过 driverArgs）
                     if (animRef.DriverArgs != null)
                     {
                         foreach (var kvp in animRef.DriverArgs)
@@ -338,8 +340,8 @@ namespace Engine.Animation
                 }
                 else
                 {
-                    // 创建新驱动器
-                    string driverType = source.Substring(7);
+                    // 没有预配置驱动器或类型不匹配，创建新驱动器
+                    // 注意：这会覆盖预配置的驱动器
                     var driver = CreateDriverFromConfig(driverType, animRef.DriverArgs);
                     if (driver != null)
                     {
@@ -447,6 +449,37 @@ namespace Engine.Animation
             }
 
             return driver;
+        }
+
+        /// <summary>
+        /// 检查驱动器类型是否匹配
+        /// 支持多种匹配方式：完整名称、简短名称、带/不带 Driver 后缀
+        /// </summary>
+        private static bool IsDriverTypeMatch(IAnimationDriver driver, string requestedType)
+        {
+            if (driver == null || string.IsNullOrEmpty(requestedType))
+                return false;
+
+            string driverName = driver.Name;
+
+            // 精确匹配
+            if (string.Equals(driverName, requestedType, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // 尝试添加/移除 Driver 后缀
+            string requestedWithDriver = requestedType.EndsWith("Driver", StringComparison.OrdinalIgnoreCase)
+                ? requestedType
+                : requestedType + "Driver";
+
+            string requestedWithoutDriver = requestedType.EndsWith("Driver", StringComparison.OrdinalIgnoreCase)
+                ? requestedType.Substring(0, requestedType.Length - 6)
+                : requestedType;
+
+            if (string.Equals(driverName, requestedWithDriver, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(driverName, requestedWithoutDriver, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return false;
         }
 
         /// <summary>

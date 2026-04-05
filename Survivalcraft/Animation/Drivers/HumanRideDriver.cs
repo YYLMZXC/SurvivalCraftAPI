@@ -26,6 +26,7 @@ namespace Game.Animation.Drivers
         public string GameTimeParam { get; set; } = "GameTime";
         public string MountBobParam { get; set; } = "MountBob";
         public string GameTimeDeltaParam { get; set; } = "GameTimeDelta";
+        public string CrouchFactorParam { get; set; } = "CrouchFactor";
 
         // 可配置属性
         public float SmoothSpeed { get; set; } = 12f;
@@ -40,6 +41,7 @@ namespace Game.Animation.Drivers
         private float _gameTime;
         private float _mountBob;
         private float _gameTimeDelta;
+        private float _crouchFactor;
 
         private Vector2 _currentHandAngles1 = Vector2.Zero;
         private Vector2 _currentHandAngles2 = Vector2.Zero;
@@ -58,6 +60,7 @@ namespace Game.Animation.Drivers
             _gameTime = parameters.GetFloat(GameTimeParam);
             _mountBob = parameters.GetFloat(MountBobParam);
             _gameTimeDelta = parameters.GetFloat(GameTimeDeltaParam);
+            _crouchFactor = parameters.GetFloat(CrouchFactorParam);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -154,12 +157,19 @@ namespace Game.Animation.Drivers
             }
 
             // 设置 Leg 骨骼
+            // 蹲下时的腿部变换（平移和缩放）
+            float crouchSigmoid = MathUtils.Sigmoid(_crouchFactor, 4f);
+            Vector3 legTranslate = new(0f, MathUtils.Lerp(0f, 7f, crouchSigmoid), MathUtils.Lerp(0f, 28f, crouchSigmoid));
+            Vector3 legScale = new(1f, 1f, MathUtils.Lerp(1f, 0.5f, crouchSigmoid));
+
             var leg1Bone = model.FindBone("Leg1");
             if (leg1Bone != null)
             {
                 boneTransforms[leg1Bone.Index] =
                     Matrix.CreateRotationY(_currentLegAngles1.Y) *
-                    Matrix.CreateRotationX(_currentLegAngles1.X);
+                    Matrix.CreateRotationX(_currentLegAngles1.X) *
+                    Matrix.CreateTranslation(legTranslate) *
+                    Matrix.CreateScale(legScale);
             }
 
             var leg2Bone = model.FindBone("Leg2");
@@ -167,7 +177,9 @@ namespace Game.Animation.Drivers
             {
                 boneTransforms[leg2Bone.Index] =
                     Matrix.CreateRotationY(_currentLegAngles2.Y) *
-                    Matrix.CreateRotationX(_currentLegAngles2.X);
+                    Matrix.CreateRotationX(_currentLegAngles2.X) *
+                    Matrix.CreateTranslation(legTranslate) *
+                    Matrix.CreateScale(legScale);
             }
 
             // 设置 Hand 骨骼

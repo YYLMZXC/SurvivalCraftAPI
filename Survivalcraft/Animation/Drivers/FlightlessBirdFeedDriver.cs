@@ -29,7 +29,8 @@ namespace Game.Animation.Drivers
         public float MaxPeckAngle { get; set; } = 55f; // 最大啄食角度增量（度）
         public float HeadBobAngle { get; set; } = 5f;  // 头部摆动角度（度）
         public float HeadMaxAngleX { get; set; } = 90f;
-        public float HeadMaxAngleY { get; set; } = 50f;
+        public float HeadMaxAngleY { get; set; } = 50f;   // 向上的最大角度（度）
+        public float HeadMinAngleY { get; set; } = -90f;  // 向下的最小角度（度），与原始代码一致
         public float HeadRatio { get; set; } = 0.6f;
         public float NeckRatio { get; set; } = 0.4f;
 
@@ -102,11 +103,14 @@ namespace Game.Animation.Drivers
             float feedAngleX = MathUtils.Lerp(_lookAngleX, 0f, _feedFactor);
             float feedAngleY = MathUtils.Lerp(totalLookAngleY, -peckAngle, _feedFactor);
 
-            // 限制角度（与原始代码一致）
+            // 限制角度（与原始代码一致：X 对称，Y 不对称）
+            // 原始: vector2.X = Math.Clamp(vector2.X, -DegToRad(90f), DegToRad(90f));
+            // 原始: vector2.Y = Math.Clamp(vector2.Y, -DegToRad(90f), DegToRad(50f));
             float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
-            float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
+            float minAngleY = MathUtils.DegToRad(HeadMinAngleY);  // -90 度
+            float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);  // +50 度
             feedAngleX = Math.Clamp(feedAngleX, -maxAngleX, maxAngleX);
-            feedAngleY = Math.Clamp(feedAngleY, -maxAngleY, maxAngleY);
+            feedAngleY = Math.Clamp(feedAngleY, minAngleY, maxAngleY);
 
             float headAngleX = feedAngleX;
             float headAngleY = feedAngleY;

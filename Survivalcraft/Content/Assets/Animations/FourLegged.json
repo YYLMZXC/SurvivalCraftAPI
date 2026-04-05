@@ -20,7 +20,7 @@
           }
         },
         {
-          "condition": "[Speed] > 0.2",
+          "condition": "Abs([Speed]) > 0.2",
           "animation": {
             "source": "driver:FourLeggedWalk",
             "driverArgs": { "Gait": 0 }

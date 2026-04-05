@@ -152,6 +152,7 @@ namespace Game {
 
             // 游戏时间（用于进食噪声）
             ctrl.Parameters.SetFloat("GameTime", (float)m_subsystemTime.GameTime);
+            ctrl.Parameters.SetFloat("GameTimeDelta", (float)m_subsystemTime.GameTimeDelta);
 
             // 腿部角度（用于死亡动画）
             ctrl.Parameters.SetFloat("LastLegAngle1", m_legAngle1);

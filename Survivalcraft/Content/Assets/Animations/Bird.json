@@ -6,12 +6,6 @@
       "layer": "Base",
       "rules": [
         {
-          "condition": "[FlyPhase] < 1 || [IsOnGround] || [ImmersionFactor] > 0 || [FlySpeed] == 0",
-          "animation": {
-            "source": "driver:BirdWalk"
-          }
-        },
-        {
           "condition": "true",
           "animation": {
             "source": "driver:BirdFly"

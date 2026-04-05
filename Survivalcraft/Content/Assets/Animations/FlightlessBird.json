@@ -60,7 +60,7 @@
   "parameters": {
     "WalkAnimationSpeed": 1.0,
     "WalkLegsAngle": 0.55,
-    "WalkBobHeight": 0.1,
+    "WalkBobHeight": 0.025,
     "WalkSpeed": 1.0,
     "Speed": 0.0,
 

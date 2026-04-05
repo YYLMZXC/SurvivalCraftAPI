@@ -67,7 +67,7 @@ namespace Game.Animation
                     new LayerDefinition[]
                     {
                         new("Base", 0, AnimationBlendMode.Override),
-                        new("Activity", 1, AnimationBlendMode.Override, new[] { "Hand1", "Hand2" }),
+                        new("Activity", 1, AnimationBlendMode.Additive, new[] { "Hand1", "Hand2" }),
                         new("Ride", 2, AnimationBlendMode.Override),
                         new("Death", 3, AnimationBlendMode.Override)
                     },

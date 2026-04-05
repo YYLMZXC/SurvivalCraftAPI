@@ -55,31 +55,21 @@ namespace Game {
                 attackPhaseSpeed = AnimationController.Parameters.GetFloat("AttackPhaseSpeed");
             }
 
-            // 步态判断逻辑 - 根据速度确定步态类型
-            // Canter: 速度 > 0.7 * WalkSpeed
-            // Trot: 速度 > 0.5 * WalkSpeed
-            // Walk: 速度 > 0.2
-            float walkSpeed = m_componentCreature.ComponentLocomotion.WalkSpeed;
-            if (m_canCanter && speed > 0.7f * walkSpeed) {
-                m_gait = Gait.Canter;
-                MovementAnimationPhase += speed * dt * 0.7f * m_walkAnimationSpeed;
-                m_footstepsPhase += 0.7f * m_walkAnimationSpeed * speed * dt;
-            }
-            else if (m_canTrot && speed > 0.5f * walkSpeed) {
-                m_gait = Gait.Trot;
-                MovementAnimationPhase += speed * dt * m_walkAnimationSpeed;
-                m_footstepsPhase += 1.25f * m_walkAnimationSpeed * speed * dt;
-            }
-            else if (MathF.Abs(speed) > 0.2f) {
-                m_gait = Gait.Walk;
-                MovementAnimationPhase += speed * dt * m_walkAnimationSpeed;
+            // 脚步声相位计算
+            // 使用统一的 1.25 系数，不区分步态
+            // 步态判断由配置文件的条件规则处理
+            if (MathF.Abs(speed) > 0.2f) {
                 m_footstepsPhase += 1.25f * m_walkAnimationSpeed * MathF.Abs(speed) * dt;
             }
             else {
-                m_gait = Gait.Walk;
-                MovementAnimationPhase = 0f;
                 m_footstepsPhase = 0f;
             }
+
+            // 从 Parameters 读取当前步态（由配置文件的 driverArgs 设置）
+            // 注意：这是上一帧的值，因为 AnimationController 还没评估当前帧的规则
+            // 但对于脚步声来说，这个延迟是可接受的
+            int gait = (int)(AnimationController?.Parameters.GetFloat("Gait") ?? 0);
+            m_gait = (Gait)gait;
 
             // 脚步声 - Canter 有特殊音效
             if (m_gait == Gait.Canter && m_useCanterSound) {
@@ -144,9 +134,11 @@ namespace Game {
             var ctrl = AnimationController;
             if (ctrl == null) return;
 
+            // 驱动器需要的时间增量参数（用于自己计算相位）
+            ctrl.Parameters.SetFloat("DeltaTime", m_subsystemTime.GameTimeDelta);
+            ctrl.Parameters.SetFloat("WalkAnimationSpeed", m_walkAnimationSpeed);
+
             // 四足动物特有参数
-            ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
-            ctrl.Parameters.SetFloat("Gait", (int)m_gait);  // 0=Walk, 1=Trot, 2=Canter
             ctrl.Parameters.SetFloat("FeedFactor", m_feedFactor);
             ctrl.Parameters.SetFloat("WalkBobHeight", m_walkBobHeight);
 
@@ -158,6 +150,9 @@ namespace Game {
             var lookAngles = m_componentCreature.ComponentLocomotion.LookAngles;
             ctrl.Parameters.SetFloat("LookAngleX", lookAngles.X);
             ctrl.Parameters.SetFloat("LookAngleY", lookAngles.Y);
+
+            // 注意：Gait 参数由配置文件的 driverArgs 设置，不再由组件设置
+            // MovementPhase 由驱动器自己管理，不再由组件设置
         }
 
         /// <summary>

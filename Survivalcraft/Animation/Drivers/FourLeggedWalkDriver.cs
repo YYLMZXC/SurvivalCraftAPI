@@ -7,6 +7,9 @@ namespace Game.Animation.Drivers
 {
     /// <summary>
     /// 四足行走驱动器 - 处理行走动画（Body + Legs + Head 摆动）
+    ///
+    /// 驱动器自己管理相位，根据 Speed 和 DeltaTime 计算 MovementPhase。
+    /// 这样可以避免组件和配置文件之间的循环依赖。
     /// </summary>
     public class FourLeggedWalkDriver : IAnimationDriver
     {
@@ -17,8 +20,10 @@ namespace Game.Animation.Drivers
         public string[] TargetBones => _targetBones;
         private string[] _targetBones = new[] { "Body", "Leg1", "Leg2", "Leg3", "Leg4", "Head", "Neck" };
 
-        // 配置参数名称
-        public string PhaseParam { get; set; } = "MovementPhase";
+        // 输入参数名称
+        public string SpeedParam { get; set; } = "Speed";
+        public string DeltaTimeParam { get; set; } = "DeltaTime";
+        public string WalkSpeedParam { get; set; } = "WalkSpeed";
         public string FrontAngleParam { get; set; } = "WalkFrontLegsAngle";
         public string HindAngleParam { get; set; } = "WalkHindLegsAngle";
         public string GaitParam { get; set; } = "Gait";
@@ -29,8 +34,10 @@ namespace Game.Animation.Drivers
         public string ImmersionFactorParam { get; set; } = "ImmersionFactor";
         public string LookAngleXParam { get; set; } = "LookAngleX";
         public string LookAngleYParam { get; set; } = "LookAngleY";
+        public string AnimationSpeedParam { get; set; } = "WalkAnimationSpeed";
 
-        // 输出参数名称 - 用于传递给 DeathDriver
+        // 输出参数名称 - 用于传递给 DeathDriver 和外部读取
+        public string PhaseOutputParam { get; set; } = "MovementPhase";
         public string LegAngle1OutputParam { get; set; } = "LegAngle1";
         public string LegAngle2OutputParam { get; set; } = "LegAngle2";
         public string LegAngle3OutputParam { get; set; } = "LegAngle3";
@@ -42,6 +49,12 @@ namespace Game.Animation.Drivers
         public float[] WalkPhases { get; set; } = { 0.0f, 0.5f, 0.25f, 0.75f };
         public float[] TrotPhases { get; set; } = { 0.0f, 0.5f, 0.5f, 0.0f };
         public float[] CanterPhases { get; set; } = { 0.0f, 0.25f, 0.15f, 0.4f };
+
+        // 步态速度系数（从原始组件代码提取）
+        // Canter: 0.7f, Trot/Walk: 1.0f
+        public float CanterSpeedFactor { get; set; } = 0.7f;
+        public float TrotSpeedFactor { get; set; } = 1.0f;
+        public float WalkSpeedFactor { get; set; } = 1.0f;
 
         // 平滑过渡速度
         public float SmoothSpeed { get; set; } = 12f;
@@ -63,7 +76,12 @@ namespace Game.Animation.Drivers
         // Bob 参数
         public string BobHeightParam { get; set; } = "WalkBobHeight";
 
-        private float _phase;
+        // 内部状态
+        private float _phase = 0f;
+        private float _speed;
+        private float _deltaTime;
+        private float _walkSpeed;
+        private float _animationSpeed = 1f;
         private float _frontAngle;
         private float _hindAngle;
         private int _gait;
@@ -89,7 +107,11 @@ namespace Game.Animation.Drivers
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
-            _phase = parameters.GetFloat(PhaseParam);
+            // 读取输入参数
+            _speed = parameters.GetFloat(SpeedParam);
+            _deltaTime = parameters.GetFloat(DeltaTimeParam);
+            _walkSpeed = parameters.GetFloat(WalkSpeedParam);
+            _animationSpeed = parameters.GetFloat(AnimationSpeedParam);
             _frontAngle = parameters.GetFloat(FrontAngleParam);
             _hindAngle = parameters.GetFloat(HindAngleParam);
             _gait = (int)parameters.GetFloat(GaitParam);
@@ -101,6 +123,31 @@ namespace Game.Animation.Drivers
             _lookAngleX = parameters.GetFloat(LookAngleXParam);
             _lookAngleY = parameters.GetFloat(LookAngleYParam);
             _bobHeight = parameters.GetFloat(BobHeightParam);
+
+            // 计算相位增量（根据步态使用不同的速度系数）
+            // 原始代码：
+            // - Canter: MovementAnimationPhase += speed * dt * 0.7f * m_walkAnimationSpeed
+            // - Trot/Walk: MovementAnimationPhase += speed * dt * m_walkAnimationSpeed
+            float speedFactor = _gait switch
+            {
+                2 => CanterSpeedFactor,  // Canter
+                1 => TrotSpeedFactor,    // Trot
+                _ => WalkSpeedFactor     // Walk
+            };
+
+            // 更新相位（只有移动时才更新）
+            if (MathF.Abs(_speed) > 0.2f)
+            {
+                _phase += _speed * _deltaTime * speedFactor * _animationSpeed;
+            }
+            else
+            {
+                // 速度太低时重置相位
+                _phase = 0f;
+            }
+
+            // 输出相位供外部读取（如脚步声计算）
+            parameters.SetFloat(PhaseOutputParam, _phase);
 
             // 计算腿部角度
             float targetAngle1 = 0f, targetAngle2 = 0f, targetAngle3 = 0f, targetAngle4 = 0f;

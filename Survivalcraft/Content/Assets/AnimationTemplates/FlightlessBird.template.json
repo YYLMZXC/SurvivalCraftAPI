@@ -1,0 +1,42 @@
+{
+    "name": "FlightlessBird",
+    "layers": [
+        {
+            "name": "Base",
+            "index": 0,
+            "blendMode": "Override"
+        },
+        {
+            "name": "Head",
+            "index": 1,
+            "blendMode": "Override",
+            "boneMask": [ "Head", "Neck" ]
+        },
+        {
+            "name": "Death",
+            "index": 2,
+            "blendMode": "Override"
+        }
+    ],
+    "stateTracks": [
+        {
+            "name": "Locomotion",
+            "type": "Enum",
+            "defaultValue": "Idle",
+            "enumValues": [ "Idle", "Walk" ]
+        },
+        {
+            "name": "Activity",
+            "type": "Enum",
+            "defaultValue": "None",
+            "enumValues": [ "None", "Feed", "Attack" ]
+        },
+        {
+            "name": "Death",
+            "type": "Float",
+            "defaultValue": 0,
+            "minValue": 0,
+            "maxValue": 1
+        }
+    ]
+}

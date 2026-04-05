@@ -21,10 +21,12 @@ namespace Game.Animation.Drivers
         public string LookAngleXParam { get; set; } = "LookAngleX";
         public string LookAngleYParam { get; set; } = "LookAngleY";
         public string GameTimeParam { get; set; } = "GameTime";
+        public string MovementPhaseParam { get; set; } = "MovementPhase";  // 用于计算头部摆动
 
         // 可配置属性
         public float MinPeckAngle { get; set; } = 35f; // 最小啄食角度（度）
         public float MaxPeckAngle { get; set; } = 55f; // 最大啄食角度增量（度）
+        public float HeadBobAngle { get; set; } = 5f;  // 头部摆动角度（度）
         public float HeadMaxAngleX { get; set; } = 90f;
         public float HeadMaxAngleY { get; set; } = 50f;
         public float HeadRatio { get; set; } = 0.6f;
@@ -34,6 +36,7 @@ namespace Game.Animation.Drivers
         private float _lookAngleX;
         private float _lookAngleY;
         private float _gameTime;
+        private float _movementPhase;
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
@@ -41,11 +44,20 @@ namespace Game.Animation.Drivers
             _lookAngleX = parameters.GetFloat(LookAngleXParam);
             _lookAngleY = parameters.GetFloat(LookAngleYParam);
             _gameTime = parameters.GetFloat(GameTimeParam);
+            _movementPhase = parameters.GetFloat(MovementPhaseParam);
         }
+
+        // 平滑过渡状态（用于头部摆动）
+        private float _currentHeadAngleY = 0f;
+        private bool _firstUpdate = true;
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
-            if (_feedFactor <= 0f) return;
+            if (_feedFactor <= 0f)
+            {
+                _firstUpdate = true;  // 重置状态
+                return;
+            }
 
             var neckBone = model.FindBone("Neck", false);
             bool hasNeck = neckBone != null;
@@ -53,20 +65,40 @@ namespace Game.Animation.Drivers
             var headBone = model.FindBone("Head");
             if (headBone == null) return;
 
+            // 计算头部摆动角度（与原始代码一致）
+            // 原始: num3 = DegToRad(5) * Sin(PI * 4 * MovementAnimationPhase)
+            float headBobAngle = MathUtils.DegToRad(HeadBobAngle) * MathF.Sin(MathF.PI * 4f * _movementPhase);
+
+            // 平滑过渡（与原始代码一致）
+            // 原始: m_headAngleY += num7 * (num3 - m_headAngleY); num7 = Min(12 * dt, 1)
+            if (_firstUpdate)
+            {
+                _currentHeadAngleY = headBobAngle;
+                _firstUpdate = false;
+            }
+            else
+            {
+                // 使用固定帧率的平滑系数（原始代码在 Update 中计算，SampleTransforms 中使用）
+                float smoothFactor = MathUtils.Min(12f * (1f / 60f), 1f);
+                _currentHeadAngleY += smoothFactor * (headBobAngle - _currentHeadAngleY);
+            }
+
+            // 原始代码逻辑:
+            // 1. vector2 = LookAngles
+            // 2. vector2.Y += m_headAngleY  // 先加上头部摆动
+            // 3. if (feedFactor > 0) vector2 = Lerp(vector2, new Vector2(0, -peckAngle), feedFactor)
+            float totalLookAngleY = _lookAngleY + _currentHeadAngleY;
+
             // 使用 SimplexNoise 生成自然的啄食动作
             // 原始逻辑: y = 0 - DegToRad(35 + 55 * SimplexNoise.OctavedNoise(gameTime, 3f, 2, 2f, 0.75f))
             float noise = SimplexNoise.OctavedNoise(_gameTime, 3f, 2, 2f, 0.75f);
             float peckAngle = MathUtils.DegToRad(MinPeckAngle + MaxPeckAngle * noise);
 
-            // 原始代码的 Lerp 公式:
-            // vector2 = Vector2.Lerp(v1: vector2, v2: new Vector2(0f, y), f: m_feedFactor)
-            // 即: result = v1 + (v2 - v1) * factor = v1 * (1 - factor) + v2 * factor
-            // 这里 vector2.X = lookAngleX (不变), vector2.Y = lookAngleY
-            // v2.X = 0f, v2.Y = -peckAngle
+            // Lerp 混合（原始代码: vector2 = Vector2.Lerp(v1: vector2, v2: new Vector2(0f, y), f: m_feedFactor)）
             float feedAngleX = MathUtils.Lerp(_lookAngleX, 0f, _feedFactor);
-            float feedAngleY = MathUtils.Lerp(_lookAngleY, -peckAngle, _feedFactor);
+            float feedAngleY = MathUtils.Lerp(totalLookAngleY, -peckAngle, _feedFactor);
 
-            // 限制角度
+            // 限制角度（与原始代码一致）
             float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
             float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
             feedAngleX = Math.Clamp(feedAngleX, -maxAngleX, maxAngleX);

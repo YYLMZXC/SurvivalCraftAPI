@@ -102,7 +102,11 @@ namespace Engine.Animation
         {
             if (mode == AnimationBlendMode.Override)
             {
-                // Override: 按权重插值
+                // Override: 当权重为 1 时直接替换，否则按权重插值
+                if (weight >= 1f)
+                {
+                    return incoming;
+                }
                 return BlendMatrix(existing, incoming, weight);
             }
             else

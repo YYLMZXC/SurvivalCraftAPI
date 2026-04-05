@@ -19,6 +19,7 @@ namespace Game.Animation.Drivers
         // 参数名称
         public string PunchPhaseParam { get; set; } = "PunchPhase";
         public string PunchCounterParam { get; set; } = "PunchCounter";
+        public string GameTimeDeltaParam { get; set; } = "GameTimeDelta";
 
         // 可配置属性
         public float PunchAngle { get; set; } = 90f; // 出拳角度（度）
@@ -26,6 +27,7 @@ namespace Game.Animation.Drivers
 
         private float _punchPhase;
         private int _punchCounter;
+        private float _gameTimeDelta;
 
         private float _currentPunchAngle1 = 0f;
         private float _currentPunchAngle2 = 0f;
@@ -34,6 +36,7 @@ namespace Game.Animation.Drivers
         {
             _punchPhase = parameters.GetFloat(PunchPhaseParam);
             _punchCounter = (int)parameters.GetFloat(PunchCounterParam);
+            _gameTimeDelta = parameters.GetFloat(GameTimeDeltaParam);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -48,8 +51,8 @@ namespace Game.Animation.Drivers
             float targetAngle1 = isLeftPunch ? punchAngle : 0f;
             float targetAngle2 = isLeftPunch ? 0f : punchAngle;
 
-            // 平滑过渡
-            float smoothFactor = MathUtils.Min(SmoothSpeed * 0.016f, 1f);
+            // 平滑过渡（使用实际的 GameTimeDelta）
+            float smoothFactor = MathUtils.Min(SmoothSpeed * _gameTimeDelta, 1f);
             _currentPunchAngle1 += smoothFactor * (targetAngle1 - _currentPunchAngle1);
             _currentPunchAngle2 += smoothFactor * (targetAngle2 - _currentPunchAngle2);
 

@@ -358,14 +358,17 @@ namespace Game {
             ctrl.Parameters.SetVector3("BodyForward", matrix.Forward);  // 用于死亡方向计算
             ctrl.Parameters.SetVector3("BodyRight", matrix.Right);
 
-            ctrl.Parameters.SetFloat("Speed", Vector3.Dot(velocity, matrix.Forward));
+            // 速度参数（优先使用 SlipSpeed，用于滑行时的动画同步）
+            // 原始代码: float num = SlipSpeed ?? Vector3.Dot(Velocity, Forward)
+            var locomotion = m_componentCreature.ComponentLocomotion;
+            float forwardSpeed = Vector3.Dot(velocity, matrix.Forward);
+            ctrl.Parameters.SetFloat("Speed", locomotion?.SlipSpeed ?? forwardSpeed);
             ctrl.Parameters.SetFloat("SpeedAbs", velocity.Length());
             ctrl.Parameters.SetBool("IsInWater", body.ImmersionFactor > 0);
             ctrl.Parameters.SetBool("IsOnGround", body.StandingOnValue.HasValue);
             ctrl.Parameters.SetFloat("ImmersionFactor", body.ImmersionFactor);
 
             // ComponentLocomotion 参数
-            var locomotion = m_componentCreature.ComponentLocomotion;
             if (locomotion != null) {
                 ctrl.Parameters.SetBool("IsFlying", locomotion.m_flying);
                 ctrl.Parameters.SetBool("IsCreativeFly", locomotion.IsCreativeFlyEnabled);

@@ -24,7 +24,12 @@ namespace Game.Animation.Drivers
         public string BodyHeightParam { get; set; } = "BodyHeight";
         public string BodyDepthParam { get; set; } = "BodyDepth";
         public string BodyForwardParam { get; set; } = "BodyForward";
-        public string GameTimeParam { get; set; } = "GameTime";
+
+        // 从 HumanWalkDriver 继承的角度参数
+        public string HandAngles1Param { get; set; } = "HumanHandAngles1";
+        public string HandAngles2Param { get; set; } = "HumanHandAngles2";
+        public string LegAngles1Param { get; set; } = "HumanLegAngles1";
+        public string LegAngles2Param { get; set; } = "HumanLegAngles2";
 
         // 可配置属性
         public float LieDownRollAngle { get; set; } = 90f; // 躺下时侧翻角度
@@ -37,12 +42,12 @@ namespace Game.Animation.Drivers
         private float _bodyHeight;
         private float _bodyDepth;
         private Vector3 _bodyForward;
-        private float _gameTime;
 
-        private Vector2 _currentHandAngles1 = Vector2.Zero;
-        private Vector2 _currentHandAngles2 = Vector2.Zero;
-        private Vector2 _currentLegAngles1 = Vector2.Zero;
-        private Vector2 _currentLegAngles2 = Vector2.Zero;
+        // 从 HumanWalkDriver 继承的角度
+        private Vector2 _handAngles1 = Vector2.Zero;
+        private Vector2 _handAngles2 = Vector2.Zero;
+        private Vector2 _legAngles1 = Vector2.Zero;
+        private Vector2 _legAngles2 = Vector2.Zero;
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
@@ -53,7 +58,12 @@ namespace Game.Animation.Drivers
             _bodyHeight = parameters.GetFloat(BodyHeightParam);
             _bodyDepth = parameters.GetFloat(BodyDepthParam);
             _bodyForward = parameters.GetVector3(BodyForwardParam);
-            _gameTime = parameters.GetFloat(GameTimeParam);
+
+            // 读取从 HumanWalkDriver 传入的角度
+            _handAngles1 = parameters.GetVector2(HandAngles1Param);
+            _handAngles2 = parameters.GetVector2(HandAngles2Param);
+            _legAngles1 = parameters.GetVector2(LegAngles1Param);
+            _legAngles2 = parameters.GetVector2(LegAngles2Param);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -73,7 +83,6 @@ namespace Game.Animation.Drivers
             var bodyBone = model.FindBone("Body");
             if (bodyBone != null)
             {
-                float rollAngle = MathUtils.DegToRad(LieDownRollAngle) * lieDownPhase;
                 boneTransforms[bodyBone.Index] =
                     Matrix.CreateFromYawPitchRoll(_rotationY, (float)Math.PI / 2f * lieDownPhase, 0f) *
                     Matrix.CreateTranslation(_position + bodyOffset);
@@ -86,21 +95,21 @@ namespace Game.Animation.Drivers
                 boneTransforms[headBone.Index] = Matrix.Identity;
             }
 
-            // 设置 Hand 骨骼 - 逐渐放松
+            // 设置 Hand 骨骼 - 逐渐放松（使用从 HumanWalkDriver 继承的角度）
             var hand1Bone = model.FindBone("Hand1");
             if (hand1Bone != null)
             {
                 boneTransforms[hand1Bone.Index] =
-                    Matrix.CreateRotationY(_currentHandAngles1.Y * inversePhase) *
-                    Matrix.CreateRotationX(_currentHandAngles1.X * inversePhase);
+                    Matrix.CreateRotationY(_handAngles1.Y * inversePhase) *
+                    Matrix.CreateRotationX(_handAngles1.X * inversePhase);
             }
 
             var hand2Bone = model.FindBone("Hand2");
             if (hand2Bone != null)
             {
                 boneTransforms[hand2Bone.Index] =
-                    Matrix.CreateRotationY(_currentHandAngles2.Y * inversePhase) *
-                    Matrix.CreateRotationX(_currentHandAngles2.X * inversePhase);
+                    Matrix.CreateRotationY(_handAngles2.Y * inversePhase) *
+                    Matrix.CreateRotationX(_handAngles2.X * inversePhase);
             }
 
             // 设置 Leg 骨骼 - 逐渐放松
@@ -108,16 +117,16 @@ namespace Game.Animation.Drivers
             if (leg1Bone != null)
             {
                 boneTransforms[leg1Bone.Index] =
-                    Matrix.CreateRotationY(_currentLegAngles1.Y * inversePhase) *
-                    Matrix.CreateRotationX(_currentLegAngles1.X * inversePhase);
+                    Matrix.CreateRotationY(_legAngles1.Y * inversePhase) *
+                    Matrix.CreateRotationX(_legAngles1.X * inversePhase);
             }
 
             var leg2Bone = model.FindBone("Leg2");
             if (leg2Bone != null)
             {
                 boneTransforms[leg2Bone.Index] =
-                    Matrix.CreateRotationY(_currentLegAngles2.Y * inversePhase) *
-                    Matrix.CreateRotationX(_currentLegAngles2.X * inversePhase);
+                    Matrix.CreateRotationY(_legAngles2.Y * inversePhase) *
+                    Matrix.CreateRotationX(_legAngles2.X * inversePhase);
             }
         }
     }

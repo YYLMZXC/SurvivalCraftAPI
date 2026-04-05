@@ -126,12 +126,8 @@ namespace Game {
             ctrl.Parameters.SetFloat("TailTurnY", m_tailTurn.Y);
             ctrl.Parameters.SetBool("HasVerticalTail", m_hasVerticalTail);
             ctrl.Parameters.SetFloat("DigInDepth", m_digInDepth);
+            ctrl.Parameters.SetFloat("DigInTailPhase", m_digInTailPhase);
             ctrl.Parameters.SetBool("IsEmbeddedInIce", m_componentCreature.ComponentBody.IsEmbeddedInIce);
-
-            // 嵌入冰中时，使用 DigInTailPhase 作为 TailWagPhase
-            if (m_componentCreature.ComponentBody.IsEmbeddedInIce) {
-                ctrl.Parameters.SetFloat("TailWagPhase", m_digInTailPhase);
-            }
 
             // 咬合动画参数
             ctrl.Parameters.SetFloat("BitingPhase", m_bitingPhase);
@@ -180,6 +176,7 @@ namespace Game {
                 AnimationController.Parameters.SetFloat("TailTurnX", 0f);
                 AnimationController.Parameters.SetFloat("TailTurnY", 0f);
                 AnimationController.Parameters.SetFloat("DigInDepth", 0f);
+                AnimationController.Parameters.SetFloat("DigInTailPhase", 0f);
                 AnimationController.Parameters.SetBool("IsEmbeddedInIce", false);
                 AnimationController.Parameters.SetFloat("BitingPhase", 0f);
             }

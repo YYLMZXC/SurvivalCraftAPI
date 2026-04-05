@@ -277,6 +277,11 @@ namespace Game {
             // 实体哈希（用于噪声种子）
             ctrl.Parameters.SetFloat("EntityHash", GetHashCode());
 
+            // 时间参数（用于噪声和插值）
+            // 原始代码使用 TotalElapsedGameTime 作为噪声时间基准
+            ctrl.Parameters.SetFloat("TotalElapsedGameTime", (float)m_subsystemGameInfo.TotalElapsedGameTime);
+            ctrl.Parameters.SetFloat("GameTimeDelta", m_subsystemTime.GameTimeDelta);
+
             // 手持物品偏移和旋转
             ctrl.Parameters.SetVector3("InHandItemOffset", m_inHandItemOffset);
             ctrl.Parameters.SetVector3("InHandItemRotation", m_inHandItemRotation);

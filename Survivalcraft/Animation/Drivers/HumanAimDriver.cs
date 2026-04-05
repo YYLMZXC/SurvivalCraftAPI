@@ -18,6 +18,7 @@ namespace Game.Animation.Drivers
 
         // 参数名称
         public string AimHandAngleParam { get; set; } = "AimHandAngle";
+        public string GameTimeDeltaParam { get; set; } = "GameTimeDelta";
 
         // 可配置属性
         public float AimAngleMultiplier { get; set; } = 1.5f;
@@ -25,19 +26,21 @@ namespace Game.Animation.Drivers
         public float SmoothSpeed { get; set; } = 12f;
 
         private float _aimHandAngle;
+        private float _gameTimeDelta;
         private float _currentAimAngle = 0f;
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             _aimHandAngle = parameters.GetFloat(AimHandAngleParam);
+            _gameTimeDelta = parameters.GetFloat(GameTimeDeltaParam);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
             if (_aimHandAngle == 0f) return;
 
-            // 平滑过渡
-            float smoothFactor = MathUtils.Min(SmoothSpeed * 0.016f, 1f);
+            // 平滑过渡（使用实际的 GameTimeDelta）
+            float smoothFactor = MathUtils.Min(SmoothSpeed * _gameTimeDelta, 1f);
             _currentAimAngle += smoothFactor * (_aimHandAngle - _currentAimAngle);
 
             // 原始代码：

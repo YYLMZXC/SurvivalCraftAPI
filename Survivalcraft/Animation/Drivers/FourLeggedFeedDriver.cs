@@ -79,12 +79,11 @@ namespace Game.Animation.Drivers
                 Matrix.CreateRotationX(lookAngleY) *
                 Matrix.CreateRotationZ(-lookAngleX);
 
-            // 颈部
+            // 颈部 - 原始实现中进食动画只影响头部，不影响颈部
             if (hasNeck)
             {
                 float neckAngleX = Math.Clamp(_lookAngleX * NeckRatio, -maxAngleX, maxAngleX);
                 float neckAngleY = Math.Clamp(_lookAngleY * NeckRatio, -maxAngleY, maxAngleY);
-                neckAngleY = MathUtils.Lerp(neckAngleY, feedY * NeckRatio / HeadRatio, _feedFactor);
 
                 boneTransforms[neckBone.Index] =
                     Matrix.CreateRotationX(neckAngleY) *

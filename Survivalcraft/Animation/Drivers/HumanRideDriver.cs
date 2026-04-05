@@ -25,6 +25,7 @@ namespace Game.Animation.Drivers
         public string PositionParam { get; set; } = "Position";
         public string GameTimeParam { get; set; } = "GameTime";
         public string MountBobParam { get; set; } = "MountBob";
+        public string GameTimeDeltaParam { get; set; } = "GameTimeDelta";
 
         // 可配置属性
         public float SmoothSpeed { get; set; } = 12f;
@@ -38,6 +39,7 @@ namespace Game.Animation.Drivers
         private Vector3 _position;
         private float _gameTime;
         private float _mountBob;
+        private float _gameTimeDelta;
 
         private Vector2 _currentHandAngles1 = Vector2.Zero;
         private Vector2 _currentHandAngles2 = Vector2.Zero;
@@ -55,13 +57,15 @@ namespace Game.Animation.Drivers
             _position = parameters.GetVector3(PositionParam);
             _gameTime = parameters.GetFloat(GameTimeParam);
             _mountBob = parameters.GetFloat(MountBobParam);
+            _gameTimeDelta = parameters.GetFloat(GameTimeDeltaParam);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
             if (!_isRiding) return;
 
-            float smoothFactor = MathUtils.Min(SmoothSpeed * 0.016f, 1f);
+            // 使用实际的 GameTimeDelta
+            float smoothFactor = MathUtils.Min(SmoothSpeed * _gameTimeDelta, 1f);
 
             // 计算腿部和手部角度
             float legAngleY1, legAngleY2;

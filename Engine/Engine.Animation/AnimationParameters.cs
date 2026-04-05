@@ -11,6 +11,7 @@ namespace Engine.Animation
         private readonly Dictionary<string, float> _floatParams = new();
         private readonly Dictionary<string, bool> _boolParams = new();
         private readonly Dictionary<string, Vector3> _vector3Params = new();
+        private readonly Dictionary<string, Vector2> _vector2Params = new();
 
         // 脏标记：有参数变化时设为 true
         private bool _isDirty = true;
@@ -53,6 +54,15 @@ namespace Engine.Animation
             _isDirty = true;
         }
 
+        public void SetVector2(string name, Vector2 value)
+        {
+            if (_vector2Params.TryGetValue(name, out var existing) && existing == value)
+                return;
+
+            _vector2Params[name] = value;
+            _isDirty = true;
+        }
+
         /// <summary>
         /// 设置参数值（通用方法，根据类型自动分发）
         /// </summary>
@@ -86,6 +96,7 @@ namespace Engine.Animation
         public float GetFloat(string name) => _floatParams.TryGetValue(name, out var v) ? v : 0f;
         public bool GetBool(string name) => _boolParams.TryGetValue(name, out var v) ? v : false;
         public Vector3 GetVector3(string name) => _vector3Params.TryGetValue(name, out var v) ? v : Vector3.Zero;
+        public Vector2 GetVector2(string name) => _vector2Params.TryGetValue(name, out var v) ? v : Vector2.Zero;
 
         /// <summary>
         /// 按名称获取参数值（通用方法）
@@ -95,6 +106,7 @@ namespace Engine.Animation
             if (_floatParams.TryGetValue(name, out var f)) return f;
             if (_boolParams.TryGetValue(name, out var b)) return b;
             if (_vector3Params.TryGetValue(name, out var v)) return v;
+            if (_vector2Params.TryGetValue(name, out var v2)) return v2;
             return 0;
         }
 
@@ -111,7 +123,8 @@ namespace Engine.Animation
         public bool HasParameter(string name) =>
             _floatParams.ContainsKey(name) ||
             _boolParams.ContainsKey(name) ||
-            _vector3Params.ContainsKey(name);
+            _vector3Params.ContainsKey(name) ||
+            _vector2Params.ContainsKey(name);
 
         /// <summary>
         /// 获取所有参数用于表达式绑定
@@ -122,6 +135,7 @@ namespace Engine.Animation
             foreach (var kvp in _floatParams) result[kvp.Key] = kvp.Value;
             foreach (var kvp in _boolParams) result[kvp.Key] = kvp.Value;
             foreach (var kvp in _vector3Params) result[kvp.Key] = kvp.Value;
+            foreach (var kvp in _vector2Params) result[kvp.Key] = kvp.Value;
             return result;
         }
     }

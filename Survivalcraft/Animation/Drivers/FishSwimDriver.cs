@@ -25,6 +25,7 @@ namespace Game.Animation.Drivers
         public string RotationYParam { get; set; } = "RotationY";
         public string PositionParam { get; set; } = "Position";
         public string DigInDepthParam { get; set; } = "DigInDepth";
+        public string DigInTailPhaseParam { get; set; } = "DigInTailPhase";
         public string IsEmbeddedInIceParam { get; set; } = "IsEmbeddedInIce";
 
         // 可配置属性
@@ -41,6 +42,7 @@ namespace Game.Animation.Drivers
         private float _rotationY;
         private Vector3 _position;
         private float _digInDepth;
+        private float _digInTailPhase;
         private bool _isEmbeddedInIce;
 
         // 平滑过渡用的当前值
@@ -60,6 +62,7 @@ namespace Game.Animation.Drivers
             _rotationY = parameters.GetFloat(RotationYParam);
             _position = parameters.GetVector3(PositionParam);
             _digInDepth = parameters.GetFloat(DigInDepthParam);
+            _digInTailPhase = parameters.GetFloat(DigInTailPhaseParam);
             _isEmbeddedInIce = parameters.GetBool(IsEmbeddedInIceParam);
         }
 
@@ -85,19 +88,20 @@ namespace Game.Animation.Drivers
             }
 
             // 计算尾巴摆动角度
+            // 原始代码：num2 = digInTailPhase + tailWagPhase
+            float extraPhase = _digInTailPhase + _tailWagPhase;
             float tail1Z, tail1X, tail2Z, tail2X;
 
             if (_hasVerticalTail)
             {
                 // 垂直尾巴：
-                // - Z轴（水平摆动）由攻击相位 + 游泳相位控制
-                // - X轴（垂直摆动）由游泳相位控制，tailTurn.Y 控制转向
-                // 原始代码：num2 = digInTailPhase + tailWagPhase 用于 Z轴
-                float combinedPhase = _phase + _tailWagPhase;
+                // - Z轴（水平摆动）由 extraPhase 控制（不包含游泳相位）
+                // - X轴（垂直摆动）由游泳相位控制
+                // 原始代码：num3 = sin(2π * num2) - tailTurn.X
 
-                // Z轴：使用组合相位（原始代码用 num2）
-                tail1Z = MathUtils.DegToRad(Tail1Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * combinedPhase) - _tailTurnX, -1f, 1f);
-                tail2Z = MathUtils.DegToRad(Tail2Angle) * Math.Clamp(0.5f * MathF.Sin(2f * (MathF.PI * MathUtils.Max(combinedPhase - TailPhaseOffset, 0f))) - _tailTurnX, -1f, 1f);
+                // Z轴：使用 extraPhase（原始代码用 num2 = digInTailPhase + tailWagPhase）
+                tail1Z = MathUtils.DegToRad(Tail1Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * extraPhase) - _tailTurnX, -1f, 1f);
+                tail2Z = MathUtils.DegToRad(Tail2Angle) * Math.Clamp(0.5f * MathF.Sin(2f * (MathF.PI * MathUtils.Max(extraPhase - TailPhaseOffset, 0f))) - _tailTurnX, -1f, 1f);
 
                 // X轴：使用游泳相位（原始代码用 MovementAnimationPhase）
                 tail1X = MathUtils.DegToRad(Tail1Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * _phase) - _tailTurnY, -1f, 1f);
@@ -106,9 +110,10 @@ namespace Game.Animation.Drivers
             else
             {
                 // 水平尾巴：
-                // - Z轴（水平摆动）由游泳相位 + 攻击相位控制
-                // - X轴（垂直摆动）由 tailTurn.Y 控制
-                float combinedPhase = _phase + _tailWagPhase;
+                // - Z轴（水平摆动）由游泳相位 + extraPhase 控制
+                // - X轴（垂直摆动）只由 tailTurn.Y 控制
+                // 原始代码：num3 = sin(2π * (MovementAnimationPhase + num2)) - tailTurn.X
+                float combinedPhase = _phase + extraPhase;
 
                 tail1Z = MathUtils.DegToRad(Tail1Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * combinedPhase) - _tailTurnX, -1f, 1f);
                 tail2Z = MathUtils.DegToRad(Tail2Angle) * Math.Clamp(0.5f * MathF.Sin(2f * (MathF.PI * MathUtils.Max(combinedPhase - TailPhaseOffset, 0f))) - _tailTurnX, -1f, 1f);

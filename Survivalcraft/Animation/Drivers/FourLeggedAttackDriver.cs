@@ -67,18 +67,19 @@ namespace Game.Animation.Drivers
 
             // 攻击动画覆盖
             float buttY = -MathUtils.DegToRad(ButtAngle) * MathF.Sin(MathF.PI * 2f * MathUtils.Sigmoid(_buttPhase, ButtSigmoidK));
+            // 原始实现：攻击时将 X 分量插值到 0（头部不左右转动）
+            lookAngleX = lookAngleX + (0f - lookAngleX) * _buttFactor;
             lookAngleY = lookAngleY + (buttY - lookAngleY) * _buttFactor;
 
             boneTransforms[headBone.Index] =
                 Matrix.CreateRotationX(lookAngleY) *
                 Matrix.CreateRotationZ(-lookAngleX);
 
-            // 颈部
+            // 颈部 - 原始实现中攻击动画只影响头部，不影响颈部
             if (hasNeck)
             {
                 float neckAngleX = Math.Clamp(_lookAngleX * NeckRatio, -maxAngleX, maxAngleX);
                 float neckAngleY = Math.Clamp(_lookAngleY * NeckRatio, -maxAngleY, maxAngleY);
-                neckAngleY = neckAngleY + (buttY * NeckRatio / HeadRatio - neckAngleY) * _buttFactor;
 
                 boneTransforms[neckBone.Index] =
                     Matrix.CreateRotationX(neckAngleY) *

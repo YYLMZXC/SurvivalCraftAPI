@@ -19,12 +19,14 @@ namespace Game.Animation.Drivers
         // 参数名称
         public string PokingPhaseParam { get; set; } = "PokingPhase";
         public string ActiveBlockValueParam { get; set; } = "ActiveBlockValue";
+        public string GameTimeDeltaParam { get; set; } = "GameTimeDelta";
 
         // 可配置属性
         public float SmoothSpeed { get; set; } = 12f;
 
         private float _pokingPhase;
         private int _activeBlockValue;
+        private float _gameTimeDelta;
 
         private float _currentMineAngle = 0f;
 
@@ -32,6 +34,7 @@ namespace Game.Animation.Drivers
         {
             _pokingPhase = parameters.GetFloat(PokingPhaseParam);
             _activeBlockValue = (int)parameters.GetFloat(ActiveBlockValueParam);
+            _gameTimeDelta = parameters.GetFloat(GameTimeDeltaParam);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -45,8 +48,8 @@ namespace Game.Animation.Drivers
                 ? 1f * sinValue
                 : 0.3f + 1f * sinValue;
 
-            // 平滑过渡
-            float smoothFactor = MathUtils.Min(SmoothSpeed * 0.016f, 1f);
+            // 平滑过渡（使用实际的 GameTimeDelta）
+            float smoothFactor = MathUtils.Min(SmoothSpeed * _gameTimeDelta, 1f);
             _currentMineAngle += smoothFactor * (mineAngle - _currentMineAngle);
 
             // 设置 Hand2 骨骼（右手挖掘）

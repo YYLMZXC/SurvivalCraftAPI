@@ -30,7 +30,6 @@ namespace Game.Animation.Drivers
 
         // 可配置属性
         public float LegAngle { get; set; } = 0.6f; // 腿部摆动角度（弧度）
-        public float SmoothSpeed { get; set; } = 12f;
         public float FlyLegAngle { get; set; } = 60f; // 飞行时腿部收起角度（度）
 
         private float _phase;
@@ -43,10 +42,6 @@ namespace Game.Animation.Drivers
         private float _lookAngleX;
         private float _lookAngleY;
         private float _walkBobHeight;
-
-        // 平滑过渡
-        private float _currentBob = 0f;
-        private bool _firstUpdate = true;
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
@@ -61,17 +56,7 @@ namespace Game.Animation.Drivers
             _lookAngleY = parameters.GetFloat(LookAngleYParam);
             _walkBobHeight = parameters.GetFloat(WalkBobHeightParam);
 
-            // 平滑过渡 Bob
-            float smoothFactor = MathUtils.Min(SmoothSpeed * deltaTime, 1f);
-            if (_firstUpdate)
-            {
-                _currentBob = _bob;
-                _firstUpdate = false;
-            }
-            else
-            {
-                _currentBob += smoothFactor * (_bob - _currentBob);
-            }
+            // 注意：Bob 已经在 ComponentBirdModel.Update() 中平滑过了，直接使用
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -100,7 +85,7 @@ namespace Game.Animation.Drivers
             {
                 boneTransforms[bodyBone.Index] =
                     Matrix.CreateFromYawPitchRoll(_rotation.X, 0f, 0f) *
-                    Matrix.CreateTranslation(_position.X, _position.Y + _currentBob, _position.Z);
+                    Matrix.CreateTranslation(_position.X, _position.Y + _bob, _position.Z);
             }
 
             // 腿部骨骼
@@ -123,30 +108,37 @@ namespace Game.Animation.Drivers
             // 原始代码计算:
             // yaw = LookAngleX / 2
             // yaw2 = LookAngleX / 2
-            // num4 = 0 (站立时头部无摆动，只有行走时有)
-            // num5 = 0
-            // num6 = Cos(2π * phase)
-            // num4 -= 1.25 * (1 - (cos >= 0 ? cos : -0.5 * cos))
-            // num4 += LookAngleY
-            // SetBoneTransform(neck, Matrix.CreateFromYawPitchRoll(yaw2, num4, 0f))
-            // SetBoneTransform(head, Matrix.CreateFromYawPitchRoll(yaw, num5 + Clamp(vector.Y, -π/4, π/4), vector.Z))
+            // num4 = 0.5 * Sin(π * MovementPhase)  (站立/水中时)
+            // num5 = -num4
+            // Neck: CreateFromYawPitchRoll(yaw2, num4 + LookAngleY, 0)
+            // Head: CreateFromYawPitchRoll(yaw, num5 + Clamp(vector.Y, -π/4, π/4), vector.Z)
+
+            float yaw = _lookAngleX / 2f;
+            float yaw2 = _lookAngleX / 2f;
+
+            // 站立时的颈部/头部 pitch 摆动
+            float num4 = 0f;
+            if (_isOnGround || _immersionFactor > 0f)
+            {
+                // 原始: num4 = 0.5f * Sin(π * 2f * MovementPhase / 2f) = Sin(π * MovementPhase)
+                num4 = 0.5f * MathF.Sin(MathF.PI * _phase);
+            }
+            float num5 = -num4;
 
             var headBone = model.FindBone("Head");
             if (headBone != null)
             {
-                float yaw = _lookAngleX / 2f;
-                // 头部 pitch: 只有 Clamp(vector.Y)
-                float headPitch = Math.Clamp(_rotation.Y, -(float)Math.PI / 4f, (float)Math.PI / 4f);
+                // 头部 pitch: num5 + Clamp(vector.Y, ...)
+                float headPitch = num5 + Math.Clamp(_rotation.Y, -(float)Math.PI / 4f, (float)Math.PI / 4f);
                 boneTransforms[headBone.Index] =
                     Matrix.CreateFromYawPitchRoll(yaw, headPitch, _rotation.Z);
             }
 
             if (hasNeck)
             {
-                float yaw2 = _lookAngleX / 2f;
-                // 颈部 pitch: 只有 LookAngleY
+                // 颈部 pitch: num4 + LookAngleY
                 boneTransforms[neckBone.Index] =
-                    Matrix.CreateFromYawPitchRoll(yaw2, _lookAngleY, 0f);
+                    Matrix.CreateFromYawPitchRoll(yaw2, num4 + _lookAngleY, 0f);
             }
         }
     }

@@ -2,8 +2,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Engine.Animation
 {
@@ -82,25 +82,27 @@ namespace Engine.Animation
         #region JSON 加载方法
 
         /// <summary>
-        /// 从 JSON 字符串加载并注册动画模板
+        /// 从 JsonNode 加载动画模板
+        /// 此方法接收已处理继承的 JsonNode，仅执行反序列化和模板创建
         /// </summary>
-        /// <param name="json">JSON 字符串</param>
+        /// <param name="jsonNode">已处理继承的 JSON 节点</param>
         /// <returns>加载的模板实例，如果失败则返回 null</returns>
-        public static AnimationTemplate LoadFromJson(string json)
+        public static AnimationTemplate LoadFromJsonNode(JsonNode jsonNode)
         {
-            if (string.IsNullOrEmpty(json))
+            if (jsonNode == null)
                 return null;
 
             try
             {
-                var config = JsonSerializer.Deserialize<AnimationTemplateConfig>(json, s_jsonOptions);
+                var config = JsonSerializer.Deserialize<AnimationTemplateConfig>(jsonNode, s_jsonOptions);
                 if (config == null || string.IsNullOrEmpty(config.Name))
                     return null;
 
                 var template = CreateTemplateFromConfig(config);
                 if (template != null)
                 {
-                    Register(config.Name, template);
+                    // 自动注册模板
+                    Register(template.Name, template);
                 }
                 return template;
             }
@@ -111,74 +113,22 @@ namespace Engine.Animation
         }
 
         /// <summary>
-        /// 从文件加载并注册动画模板
+        /// 从文件加载动画模板
         /// </summary>
-        /// <param name="path">JSON 文件路径</param>
+        /// <param name="path">文件路径</param>
         /// <returns>加载的模板实例，如果失败则返回 null</returns>
         public static AnimationTemplate LoadFromFile(string path)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (string.IsNullOrEmpty(path))
                 return null;
 
             try
             {
-                var json = File.ReadAllText(path);
-                return LoadFromJson(json);
+                string json = File.ReadAllText(path);
+                JsonNode jsonNode = JsonNode.Parse(json);
+                return LoadFromJsonNode(jsonNode);
             }
-            catch (IOException)
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// 从目录加载所有动画模板文件
-        /// </summary>
-        /// <param name="directory">目录路径</param>
-        /// <param name="searchPattern">文件搜索模式，默认为 "*.template.json"</param>
-        /// <returns>成功加载的模板数量</returns>
-        public static int LoadFromDirectory(string directory, string searchPattern = "*.template.json")
-        {
-            if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
-                return 0;
-
-            var count = 0;
-            try
-            {
-                var files = Directory.GetFiles(directory, searchPattern);
-                foreach (var file in files)
-                {
-                    if (LoadFromFile(file) != null)
-                    {
-                        count++;
-                    }
-                }
-            }
-            catch (IOException)
-            {
-                // 忽略目录访问错误
-            }
-
-            return count;
-        }
-
-        /// <summary>
-        /// 从流加载并注册动画模板
-        /// </summary>
-        /// <param name="stream">JSON 数据流</param>
-        /// <returns>加载的模板实例，如果失败则返回 null</returns>
-        public static AnimationTemplate LoadFromStream(Stream stream)
-        {
-            if (stream == null)
-                return null;
-
-            try
-            {
-                using var reader = new StreamReader(stream);
-                var json = reader.ReadToEnd();
-                return LoadFromJson(json);
-            }
-            catch (IOException)
+            catch
             {
                 return null;
             }

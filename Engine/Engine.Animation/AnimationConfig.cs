@@ -165,35 +165,5 @@ namespace Engine.Animation
         /// 初始参数值
         /// </summary>
         public Dictionary<string, object> Parameters { get; set; } = new();
-
-        /// <summary>
-        /// 从 JSON 文件加载配置
-        /// </summary>
-        public static AnimationConfig LoadFromJson(string json)
-        {
-            try
-            {
-                return System.Text.Json.JsonSerializer.Deserialize<AnimationConfig>(json,
-                    new System.Text.Json.JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                        ReadCommentHandling = System.Text.Json.JsonCommentHandling.Skip
-                    }) ?? new AnimationConfig();
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                // JSON 格式不正确时返回空配置作为回退
-                return new AnimationConfig();
-            }
-        }
-
-        /// <summary>
-        /// 从文件加载配置
-        /// </summary>
-        public static AnimationConfig LoadFromFile(string path)
-        {
-            var json = File.ReadAllText(path);
-            return LoadFromJson(json);
-        }
     }
 }

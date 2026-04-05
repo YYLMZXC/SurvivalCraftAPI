@@ -2,8 +2,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Engine.Graphics;
 
 namespace Engine.Animation
@@ -36,20 +36,21 @@ namespace Engine.Animation
         public Func<string, ModelAnimation> LoadAnimationCallback { get; set; }
 
         /// <summary>
-        /// 从 JSON 文本加载配置
+        /// 从 JsonNode 加载配置
+        /// 此方法接收已处理继承的 JsonNode，调用方负责在调用前解析继承关系
         /// </summary>
-        /// <param name="json">JSON 文本</param>
+        /// <param name="jsonNode">已处理继承的 JsonNode 对象</param>
         /// <returns>加载的 AnimationConfig 实例</returns>
-        /// <exception cref="ArgumentNullException">json 为 null</exception>
+        /// <exception cref="ArgumentNullException">jsonNode 为 null</exception>
         /// <exception cref="JsonException">JSON 解析失败</exception>
-        public AnimationConfig LoadFromJson(string json)
+        public AnimationConfig LoadFromJsonNode(JsonNode jsonNode)
         {
-            if (string.IsNullOrEmpty(json))
+            if (jsonNode == null)
             {
-                throw new ArgumentNullException(nameof(json));
+                throw new ArgumentNullException(nameof(jsonNode));
             }
 
-            AnimationConfig config = JsonSerializer.Deserialize<AnimationConfig>(json, s_jsonOptions);
+            AnimationConfig config = JsonSerializer.Deserialize<AnimationConfig>(jsonNode, s_jsonOptions);
 
             if (config == null)
             {
@@ -60,49 +61,6 @@ namespace Engine.Animation
             ValidateConfig(config);
 
             return config;
-        }
-
-        /// <summary>
-        /// 从文件路径加载配置
-        /// </summary>
-        /// <param name="path">JSON 配置文件路径</param>
-        /// <returns>加载的 AnimationConfig 实例</returns>
-        /// <exception cref="ArgumentNullException">path 为 null</exception>
-        /// <exception cref="FileNotFoundException">文件不存在</exception>
-        /// <exception cref="JsonException">JSON 解析失败</exception>
-        public AnimationConfig LoadFromFile(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-            {
-                throw new ArgumentNullException(nameof(path));
-            }
-
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException($"Animation config file not found: {path}", path);
-            }
-
-            string json = File.ReadAllText(path);
-            return LoadFromJson(json);
-        }
-
-        /// <summary>
-        /// 从流加载配置
-        /// </summary>
-        /// <param name="stream">包含 JSON 配置的流</param>
-        /// <returns>加载的 AnimationConfig 实例</returns>
-        /// <exception cref="ArgumentNullException">stream 为 null</exception>
-        /// <exception cref="JsonException">JSON 解析失败</exception>
-        public AnimationConfig LoadFromStream(Stream stream)
-        {
-            if (stream == null)
-            {
-                throw new ArgumentNullException(nameof(stream));
-            }
-
-            using var reader = new StreamReader(stream);
-            string json = reader.ReadToEnd();
-            return LoadFromJson(json);
         }
 
         /// <summary>

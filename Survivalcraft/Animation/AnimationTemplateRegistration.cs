@@ -1,5 +1,8 @@
 #nullable disable
 
+using System;
+using System.IO;
+using System.Text.Json.Nodes;
 using Engine.Animation;
 
 namespace Game.Animation
@@ -62,13 +65,164 @@ namespace Game.Animation
                 {
                     // 使用 ContentInfo 的流加载模板
                     using var stream = contentInfo.Duplicate();
-                    AnimationTemplateManager.LoadFromStream(stream);
+                    LoadTemplateWithInheritance(stream, contentInfo.ContentPath);
                 }
-                catch
+                catch (JsonInheritanceException ex)
                 {
-                    // 忽略单个文件加载失败
+                    // 记录继承相关的详细错误信息
+                    System.Diagnostics.Debug.WriteLine($"[AnimationTemplate] Failed to load template '{contentInfo.ContentPath}': {ex.Message}");
+                    if (ex.InheritanceChain != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  Inheritance chain: {ex.InheritanceChain}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 记录其他异常
+                    System.Diagnostics.Debug.WriteLine($"[AnimationTemplate] Failed to load template '{contentInfo.ContentPath}': {ex.Message}");
                 }
             }
+        }
+
+        /// <summary>
+        /// 加载模板并处理继承
+        /// </summary>
+        /// <param name="stream">模板文件流</param>
+        /// <param name="contentPath">当前模板的内容路径（不含后缀）</param>
+        private static void LoadTemplateWithInheritance(Stream stream, string contentPath)
+        {
+            // 读取 JSON 内容
+            using var reader = new StreamReader(stream);
+            string json = reader.ReadToEnd();
+            if (string.IsNullOrEmpty(json))
+                return;
+
+            // 解析为 JsonNode
+            JsonNode jsonNode = JsonNode.Parse(json);
+            if (jsonNode == null)
+                return;
+
+            // 创建父配置加载回调
+            string currentDirectory = GetDirectoryPath(contentPath);
+            Func<string, JsonNode> parentLoader = relativePath =>
+            {
+                return LoadParentTemplate(currentDirectory, relativePath);
+            };
+
+            // 解析继承
+            jsonNode = JsonInheritanceHelper.ResolveInheritance(jsonNode, parentLoader);
+
+            // 加载模板
+            var template = AnimationTemplateManager.LoadFromJsonNode(jsonNode);
+            if (template != null)
+            {
+                AnimationTemplateManager.Register(template.Name, template);
+            }
+        }
+
+        /// <summary>
+        /// 加载父模板配置
+        /// </summary>
+        /// <param name="currentDirectory">当前文件所在目录的内容路径</param>
+        /// <param name="relativePath">相对路径</param>
+        /// <returns>父配置的 JsonNode，如果不存在则返回 null</returns>
+        private static JsonNode LoadParentTemplate(string currentDirectory, string relativePath)
+        {
+            // 解析父配置的完整路径
+            string parentPath = CombinePath(currentDirectory, relativePath);
+
+            // 尝试通过 ContentManager 加载
+            var stream = ContentManager.GetStream(parentPath);
+            if (stream == null)
+            {
+                // 尝试添加 .template.json 后缀
+                stream = ContentManager.GetStream(parentPath + ".template.json");
+                if (stream == null)
+                {
+                    return null;
+                }
+            }
+
+            try
+            {
+                using var reader = new StreamReader(stream);
+                string json = reader.ReadToEnd();
+                if (string.IsNullOrEmpty(json))
+                    return null;
+
+                return JsonNode.Parse(json);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 获取内容路径的目录部分
+        /// </summary>
+        /// <param name="contentPath">内容路径（如 "AnimationTemplates/FourLegged.template"）</param>
+        /// <returns>目录路径（如 "AnimationTemplates"）</returns>
+        private static string GetDirectoryPath(string contentPath)
+        {
+            if (string.IsNullOrEmpty(contentPath))
+                return string.Empty;
+
+            int lastSlash = contentPath.LastIndexOf('/');
+            if (lastSlash > 0)
+            {
+                return contentPath.Substring(0, lastSlash);
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 合并当前目录路径和相对路径
+        /// </summary>
+        /// <param name="currentDirectory">当前目录路径（如 "AnimationTemplates"）</param>
+        /// <param name="relativePath">相对路径（如 "Base.template.json" 或 "../Shared/Base.template.json"）</param>
+        /// <returns>合并后的路径</returns>
+        private static string CombinePath(string currentDirectory, string relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+                return string.Empty;
+
+            // 处理绝对路径（以 / 开头）
+            if (relativePath.StartsWith("/"))
+            {
+                return relativePath.Substring(1);
+            }
+
+            // 处理相对路径
+            if (string.IsNullOrEmpty(currentDirectory))
+            {
+                return relativePath;
+            }
+
+            // 分割路径段
+            var parts = new System.Collections.Generic.List<string>(
+                currentDirectory.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries));
+
+            var relativeParts = relativePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var part in relativeParts)
+            {
+                if (part == "..")
+                {
+                    // 返回上一级目录
+                    if (parts.Count > 0)
+                    {
+                        parts.RemoveAt(parts.Count - 1);
+                    }
+                }
+                else if (part != ".")
+                {
+                    parts.Add(part);
+                }
+            }
+
+            return string.Join("/", parts);
         }
 
         /// <summary>

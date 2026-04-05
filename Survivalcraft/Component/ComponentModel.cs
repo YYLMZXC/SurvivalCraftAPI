@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Engine;
 using Engine.Animation;
 using Engine.Graphics;
@@ -244,7 +245,7 @@ namespace Game {
                 if (!string.IsNullOrEmpty(AnimationConfigJson)) {
                     // 使用配置文件创建控制器
                     var loader = new AnimationConfigLoader();
-                    AnimationConfig config = loader.LoadFromJson(AnimationConfigJson);
+                    AnimationConfig config = loader.LoadFromJsonNode(JsonNode.Parse(AnimationConfigJson));
                     AnimationController = loader.CreateController(config, m_model);
                 }
                 else if (!string.IsNullOrEmpty(AnimationTemplateName)) {

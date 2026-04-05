@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics
+using Engine.Graphics;
+
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画驱动器接口
@@ -16,7 +18,7 @@ namespace Engine.Graphics
         /// <summary>
         /// 混合模式
         /// </summary>
-        BlendMode BlendMode { get; }
+        AnimationBlendMode BlendMode { get; }
 
         /// <summary>
         /// 目标骨骼列表

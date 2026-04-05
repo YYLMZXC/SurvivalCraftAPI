@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics
+using Engine.Graphics;
+
+namespace Engine.Animation
 {
     /// <summary>
     /// 关键帧动画来源 - 包装 AnimationPlayer

@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics
+using Engine.Graphics;
+
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画控制器，管理状态机、参数和层
@@ -77,35 +79,6 @@ namespace Engine.Graphics
             {
                 _stateTracks[trackDef.Name] = new StateTrack(trackDef);
             }
-
-            // 初始化内置驱动器
-            InitializeBuiltInDrivers();
-        }
-
-        private void InitializeBuiltInDrivers()
-        {
-            foreach (var driverDef in _template.BuiltInDrivers)
-            {
-                var driver = CreateBuiltInDriver(driverDef);
-                if (driver == null) continue;
-
-                // 绑定到对应层
-                var layer = _layers.FirstOrDefault(l => l.Name == driverDef.LayerName);
-                if (layer != null)
-                {
-                    layer.SetDriver(driver);
-                }
-            }
-        }
-
-        private IAnimationDriver CreateBuiltInDriver(BuiltInDriverDefinition definition)
-        {
-            return definition.Type switch
-            {
-                "LookAt" => new Drivers.LookAtDriver(),
-                "Death" => new Drivers.DeathDriver(),
-                _ => null
-            };
         }
 
         /// <summary>

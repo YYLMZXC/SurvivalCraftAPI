@@ -1,6 +1,6 @@
 #nullable disable
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 参数容器类，用于存储动画系统需要的各种参数。

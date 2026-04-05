@@ -1,11 +1,11 @@
 #nullable disable
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画层混合模式
     /// </summary>
-    public enum BlendMode
+    public enum AnimationBlendMode
     {
         /// <summary>
         /// 完全替换下层结果

@@ -1,7 +1,7 @@
 #nullable disable
 using Engine;
+using Engine.Animation;
 using Engine.Graphics;
-using Engine.Graphics.Drivers;
 
 namespace Game.Animation.Drivers
 {
@@ -11,7 +11,7 @@ namespace Game.Animation.Drivers
     public class BirdDeathDriver : IAnimationDriver
     {
         public string Name => "BirdDeath";
-        public BlendMode BlendMode => BlendMode.Override;
+        public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         public string[] TargetBones => _targetBones;
         private string[] _targetBones = new[] { "Body", "Head", "Neck", "Wing1", "Wing2", "Leg1", "Leg2" };

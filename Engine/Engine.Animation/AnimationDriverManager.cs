@@ -4,7 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画驱动器注册表

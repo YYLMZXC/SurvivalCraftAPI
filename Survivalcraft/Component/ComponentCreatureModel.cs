@@ -1,4 +1,5 @@
 using Engine;
+using Engine.Animation;
 using Engine.Graphics;
 using GameEntitySystem;
 using TemplatesDatabase;

@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics
+using Engine.Graphics;
+
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画层，负责管理单个动画或驱动器
@@ -24,7 +26,7 @@ namespace Engine.Graphics
         /// <summary>
         /// 混合模式
         /// </summary>
-        public BlendMode BlendMode { get; }
+        public AnimationBlendMode BlendMode { get; }
 
         /// <summary>
         /// 骨骼遮罩（null 表示影响所有骨骼）
@@ -61,7 +63,7 @@ namespace Engine.Graphics
         /// <summary>
         /// 创建动画层
         /// </summary>
-        public AnimationLayer(string name, int index, BlendMode blendMode, string[] boneMask = null)
+        public AnimationLayer(string name, int index, AnimationBlendMode blendMode, string[] boneMask = null)
         {
             Name = name;
             Index = index;

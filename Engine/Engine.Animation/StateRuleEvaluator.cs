@@ -1,6 +1,6 @@
 #nullable disable
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 状态规则求值器，使用 NCalc 评估条件表达式。

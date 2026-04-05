@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics {
+using Engine.Graphics;
+
+namespace Engine.Animation {
     /// <summary>
     /// 动画事件数据
     /// </summary>

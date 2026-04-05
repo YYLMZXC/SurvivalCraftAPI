@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Engine.Animation;
 using Engine.Graphics;
 using SharpGLTF.Schema2;
 using SharpGLTF.Validation;
@@ -633,7 +634,7 @@ namespace Engine.Media {
         }
 
         static void ConvertAnimations(ModelRoot modelRoot, ModelData modelData) {
-            foreach (Animation anim in modelRoot.LogicalAnimations) {
+            foreach (SharpGLTF.Schema2.Animation anim in modelRoot.LogicalAnimations) {
                 ModelAnimation modelAnim = new() {
                     Name = anim.Name ?? $"Animation{anim.LogicalIndex}",
                     Duration = (float)anim.Duration

@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics
+using Engine.Graphics;
+
+namespace Engine.Animation
 {
     /// <summary>
     /// 过渡中断策略

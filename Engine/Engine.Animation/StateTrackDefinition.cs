@@ -1,6 +1,6 @@
 #nullable disable
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 状态轨道定义

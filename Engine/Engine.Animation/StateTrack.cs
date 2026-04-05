@@ -2,7 +2,7 @@
 
 using System;
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 状态轨道运行时实例

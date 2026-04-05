@@ -1,4 +1,4 @@
-namespace Engine.Graphics {
+namespace Engine.Animation {
     /// <summary>
     /// 动画数据
     /// </summary>

@@ -1,6 +1,6 @@
 #nullable disable
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画完成时执行的动作

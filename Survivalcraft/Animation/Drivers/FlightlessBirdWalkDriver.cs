@@ -1,7 +1,7 @@
 #nullable disable
 using Engine;
+using Engine.Animation;
 using Engine.Graphics;
-using Engine.Graphics.Drivers;
 
 namespace Game.Animation.Drivers
 {
@@ -11,7 +11,7 @@ namespace Game.Animation.Drivers
     public class FlightlessBirdWalkDriver : IAnimationDriver
     {
         public string Name => "FlightlessBirdWalk";
-        public BlendMode BlendMode => BlendMode.Override;
+        public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         public string[] TargetBones => _targetBones;
         private string[] _targetBones = new[] { "Body", "Leg1", "Leg2", "Head", "Neck" };

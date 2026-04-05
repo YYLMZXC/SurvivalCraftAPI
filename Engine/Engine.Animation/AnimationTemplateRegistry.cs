@@ -1,6 +1,6 @@
 #nullable disable
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画模板注册表
@@ -45,18 +45,15 @@ namespace Engine.Graphics
                 "FourLegged",
                 new LayerDefinition[]
                 {
-                    new("Base", 0, BlendMode.Override),
-                    new("Head", 1, BlendMode.Override, new[] { "Head", "Neck" }),
-                    new("Death", 2, BlendMode.Override)  // 无 targetBones 限制，影响全身
+                    new("Base", 0, AnimationBlendMode.Override),
+                    new("Head", 1, AnimationBlendMode.Override, new[] { "Head", "Neck" }),
+                    new("Death", 2, AnimationBlendMode.Override)  // 无 targetBones 限制，影响全身
                 },
                 new StateTrackDefinition[]
                 {
                     new("Gait", StateTrackType.Enum, "Idle") { EnumValues = new[] { "Idle", "Walk", "Trot", "Canter" } },
                     new("Activity", StateTrackType.Enum, "None") { EnumValues = new[] { "None", "Feed", "Attack" } },
                     new("Death", StateTrackType.Float, 0f) { MinValue = 0f, MaxValue = 1f }
-                },
-                new BuiltInDriverDefinition[]  // 无内置驱动器，由配置文件提供
-                {
                 }
             ));
 
@@ -65,7 +62,7 @@ namespace Engine.Graphics
                 "Simple",
                 new LayerDefinition[]
                 {
-                    new("Base", 0, BlendMode.Override)
+                    new("Base", 0, AnimationBlendMode.Override)
                 },
                 new StateTrackDefinition[]
                 {
@@ -78,10 +75,10 @@ namespace Engine.Graphics
                 "Human",
                 new LayerDefinition[]
                 {
-                    new("Base", 0, BlendMode.Override),
-                    new("Activity", 1, BlendMode.Override, new[] { "Hand1", "Hand2" }),
-                    new("Ride", 2, BlendMode.Override),
-                    new("Death", 3, BlendMode.Override)
+                    new("Base", 0, AnimationBlendMode.Override),
+                    new("Activity", 1, AnimationBlendMode.Override, new[] { "Hand1", "Hand2" }),
+                    new("Ride", 2, AnimationBlendMode.Override),
+                    new("Death", 3, AnimationBlendMode.Override)
                 },
                 new StateTrackDefinition[]
                 {
@@ -97,9 +94,9 @@ namespace Engine.Graphics
                 "Bird",
                 new LayerDefinition[]
                 {
-                    new("Base", 0, BlendMode.Override),
-                    new("Head", 1, BlendMode.Override, new[] { "Head", "Neck" }),
-                    new("Death", 2, BlendMode.Override)
+                    new("Base", 0, AnimationBlendMode.Override),
+                    new("Head", 1, AnimationBlendMode.Override, new[] { "Head", "Neck" }),
+                    new("Death", 2, AnimationBlendMode.Override)
                 },
                 new StateTrackDefinition[]
                 {
@@ -114,9 +111,9 @@ namespace Engine.Graphics
                 "Fish",
                 new LayerDefinition[]
                 {
-                    new("Base", 0, BlendMode.Override),
-                    new("Head", 1, BlendMode.Override, new[] { "Jaw" }),
-                    new("Death", 2, BlendMode.Override)
+                    new("Base", 0, AnimationBlendMode.Override),
+                    new("Head", 1, AnimationBlendMode.Override, new[] { "Jaw" }),
+                    new("Death", 2, AnimationBlendMode.Override)
                 },
                 new StateTrackDefinition[]
                 {
@@ -131,9 +128,9 @@ namespace Engine.Graphics
                 "FlightlessBird",
                 new LayerDefinition[]
                 {
-                    new("Base", 0, BlendMode.Override),
-                    new("Head", 1, BlendMode.Override, new[] { "Head", "Neck" }),
-                    new("Death", 2, BlendMode.Override)
+                    new("Base", 0, AnimationBlendMode.Override),
+                    new("Head", 1, AnimationBlendMode.Override, new[] { "Head", "Neck" }),
+                    new("Death", 2, AnimationBlendMode.Override)
                 },
                 new StateTrackDefinition[]
                 {

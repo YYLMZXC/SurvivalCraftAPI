@@ -1,8 +1,9 @@
 #nullable disable
 
+using Engine.Graphics;
 using NCalc;
 
-namespace Engine.Graphics.Drivers
+namespace Engine.Animation.Drivers
 {
     /// <summary>
     /// 单个骨骼的表达式配置
@@ -67,7 +68,7 @@ namespace Engine.Graphics.Drivers
     public class ExpressionDriver : IAnimationDriver
     {
         public string Name => "Expression";
-        public BlendMode BlendMode { get; set; } = BlendMode.Override;
+        public AnimationBlendMode BlendMode { get; set; } = AnimationBlendMode.Override;
 
         // 骨骼配置列表
         private readonly List<BoneExpressionConfig> _boneConfigs = new();

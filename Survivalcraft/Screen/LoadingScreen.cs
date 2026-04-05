@@ -161,17 +161,6 @@ namespace Game {
                 }
             );
             AddLoadAction(
-                delegate {
-                    //NCalc Warmup
-                    Expression expression = new NCalc.Expression("[B] && [N] * 1.0 > 0.5");
-                    _ = expression.GetParameterNames();
-                    expression.Parameters.Add("B", true);
-                    expression.Parameters.Add("N", 0.5f);
-                    object expressionResult = expression.Evaluate();
-                    _ = Convert.ToBoolean(expressionResult);
-                }
-            );
-            AddLoadAction(
                 delegate { //检查所有Mod依赖项
                     //根据加载顺序排序后的结果
                     ModsManager.ModList.Clear();
@@ -499,6 +488,17 @@ namespace Game {
             );
             InitScreens();
             AddLoadAction(FileAssociationManager.Initialize);
+            AddLoadAction(
+                delegate {
+                    //NCalc Warmup
+                    Expression expression = new NCalc.Expression("[B] && [N] * 1.0 > 0.5");
+                    _ = expression.GetParameterNames();
+                    expression.Parameters.Add("B", true);
+                    expression.Parameters.Add("N", 0.5f);
+                    object expressionResult = expression.Evaluate();
+                    _ = Convert.ToBoolean(expressionResult);
+                }
+            );
             AddLoadAction(
                 delegate {
                     ModsManager.ModListAllDo(modEntity => {

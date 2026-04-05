@@ -1,3 +1,4 @@
+using Engine.Animation;
 using Engine.Graphics;
 
 namespace Engine.Media {

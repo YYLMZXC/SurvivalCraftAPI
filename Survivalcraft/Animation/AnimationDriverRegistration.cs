@@ -1,5 +1,6 @@
 #nullable disable
 
+using Engine.Animation;
 using Engine.Graphics;
 using Game.Animation.Drivers;
 

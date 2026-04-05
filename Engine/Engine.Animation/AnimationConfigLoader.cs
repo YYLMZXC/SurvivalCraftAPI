@@ -4,8 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using Engine.Graphics;
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画配置加载器

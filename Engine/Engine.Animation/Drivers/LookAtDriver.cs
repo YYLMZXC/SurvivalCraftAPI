@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics.Drivers
+using Engine.Graphics;
+
+namespace Engine.Animation.Drivers
 {
     /// <summary>
     /// 头部追踪驱动器
@@ -8,7 +10,7 @@ namespace Engine.Graphics.Drivers
     public class LookAtDriver : IAnimationDriver
     {
         public string Name => "LookAt";
-        public BlendMode BlendMode => BlendMode.Override;
+        public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         // 可配置的目标骨骼名称
         private string _targetBoneName = "Head";

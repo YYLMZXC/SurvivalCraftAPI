@@ -1,7 +1,7 @@
 #nullable disable
 using Engine;
+using Engine.Animation;
 using Engine.Graphics;
-using Engine.Graphics.Drivers;
 
 namespace Game.Animation.Drivers
 {
@@ -11,7 +11,7 @@ namespace Game.Animation.Drivers
     public class FourLeggedWalkDriver : IAnimationDriver
     {
         public string Name => "FourLeggedWalk";
-        public BlendMode BlendMode => BlendMode.Override;
+        public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         // 目标骨骼 - 行走时需要控制的所有骨骼
         public string[] TargetBones => _targetBones;

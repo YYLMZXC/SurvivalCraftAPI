@@ -1,4 +1,5 @@
 #nullable disable
+using Engine.Animation;
 using Engine.Media;
 using SixLabors.ImageSharp.PixelFormats;
 using Image = SixLabors.ImageSharp.Image;

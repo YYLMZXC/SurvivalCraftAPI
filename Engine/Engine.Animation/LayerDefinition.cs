@@ -1,6 +1,6 @@
 #nullable disable
 
-namespace Engine.Graphics
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画层定义
@@ -9,10 +9,10 @@ namespace Engine.Graphics
     {
         public string Name { get; }
         public int Index { get; }
-        public BlendMode BlendMode { get; }
+        public AnimationBlendMode BlendMode { get; }
         public string[] BoneMask { get; }
 
-        public LayerDefinition(string name, int index, BlendMode blendMode, string[] boneMask = null)
+        public LayerDefinition(string name, int index, AnimationBlendMode blendMode, string[] boneMask = null)
         {
             Name = name;
             Index = index;

@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics.Drivers
+using Engine.Graphics;
+
+namespace Engine.Animation.Drivers
 {
     /// <summary>
     /// 死亡动画驱动器
@@ -8,7 +10,7 @@ namespace Engine.Graphics.Drivers
     public class DeathDriver : IAnimationDriver
     {
         public string Name => "Death";
-        public BlendMode BlendMode => BlendMode.Override;
+        public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         // 可配置的目标骨骼名称
         public string BodyBoneName { get; set; } = "Body";

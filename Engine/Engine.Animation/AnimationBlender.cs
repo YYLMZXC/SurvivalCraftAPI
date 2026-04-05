@@ -1,6 +1,8 @@
 #nullable disable
 
-namespace Engine.Graphics
+using Engine.Graphics;
+
+namespace Engine.Animation
 {
     /// <summary>
     /// 动画混合器，负责合并多层骨骼变换
@@ -95,10 +97,10 @@ namespace Engine.Graphics
         Matrix BlendTransforms(
             Matrix existing,
             Matrix incoming,
-            BlendMode mode,
+            AnimationBlendMode mode,
             float weight)
         {
-            if (mode == BlendMode.Override)
+            if (mode == AnimationBlendMode.Override)
             {
                 // Override: 按权重插值
                 return BlendMatrix(existing, incoming, weight);

@@ -1,11 +1,13 @@
 #nullable disable
 
-namespace Engine.Graphics
+using Engine.Graphics;
+
+namespace Engine.Animation
 {
     /// <summary>
     /// 混合空间采样点 - 一维
     /// </summary>
-    public class BlendSample
+    public class AnimationBlendSample
     {
         /// <summary>
         /// 参数值
@@ -26,7 +28,7 @@ namespace Engine.Graphics
     /// <summary>
     /// 混合空间采样点 - 二维
     /// </summary>
-    public class BlendSample2D
+    public class AnimationBlendSample2D
     {
         /// <summary>
         /// X 轴参数值
@@ -52,7 +54,7 @@ namespace Engine.Graphics
     /// <summary>
     /// 一维混合空间定义
     /// </summary>
-    public class BlendSpaceDefinition
+    public class AnimationBlendSpaceDefinition
     {
         /// <summary>
         /// 混合空间名称
@@ -67,7 +69,7 @@ namespace Engine.Graphics
         /// <summary>
         /// 采样点列表（按 Value 升序排列）
         /// </summary>
-        public BlendSample[] Samples { get; set; }
+        public AnimationBlendSample[] Samples { get; set; }
 
         /// <summary>
         /// 是否同步动画时间（保持所有动画在相同的归一化时间）
@@ -78,7 +80,7 @@ namespace Engine.Graphics
     /// <summary>
     /// 二维混合空间定义
     /// </summary>
-    public class BlendSpaceDefinition2D
+    public class AnimationBlendSpaceDefinition2D
     {
         /// <summary>
         /// 混合空间名称
@@ -98,7 +100,7 @@ namespace Engine.Graphics
         /// <summary>
         /// 采样点列表
         /// </summary>
-        public BlendSample2D[] Samples { get; set; }
+        public AnimationBlendSample2D[] Samples { get; set; }
 
         /// <summary>
         /// 是否同步动画时间
@@ -114,8 +116,8 @@ namespace Engine.Graphics
     {
         public string Name { get; }
 
-        private readonly BlendSpaceDefinition _definition1D;
-        private readonly BlendSpaceDefinition2D _definition2D;
+        private readonly AnimationBlendSpaceDefinition _definition1D;
+        private readonly AnimationBlendSpaceDefinition2D _definition2D;
         private readonly ClipAnimationSource[] _sources;
         private readonly Model _model;
         private readonly bool _is2D;
@@ -146,7 +148,7 @@ namespace Engine.Graphics
         /// <summary>
         /// 创建一维混合空间
         /// </summary>
-        public BlendSpaceSource(BlendSpaceDefinition definition, Model model)
+        public BlendSpaceSource(AnimationBlendSpaceDefinition definition, Model model)
         {
             _definition1D = definition ?? throw new ArgumentNullException(nameof(definition));
             _model = model ?? throw new ArgumentNullException(nameof(model));
@@ -198,7 +200,7 @@ namespace Engine.Graphics
         /// <summary>
         /// 创建二维混合空间
         /// </summary>
-        public BlendSpaceSource(BlendSpaceDefinition2D definition, Model model)
+        public BlendSpaceSource(AnimationBlendSpaceDefinition2D definition, Model model)
         {
             _definition2D = definition ?? throw new ArgumentNullException(nameof(definition));
             _model = model ?? throw new ArgumentNullException(nameof(model));

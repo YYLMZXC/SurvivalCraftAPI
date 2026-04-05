@@ -24,6 +24,12 @@ namespace Game.Animation.Drivers
         public string RotationYParam { get; set; } = "RotationY";
         public string PositionParam { get; set; } = "Position";
 
+        // 输入参数名称 - 从 WalkDriver 读取腿部角度
+        public string LegAngle1Param { get; set; } = "LegAngle1";
+        public string LegAngle2Param { get; set; } = "LegAngle2";
+        public string LegAngle3Param { get; set; } = "LegAngle3";
+        public string LegAngle4Param { get; set; } = "LegAngle4";
+
         // 可配置属性
         public float DeathHeadAngle { get; set; } = 50f;
         public float DeathRollAngle { get; set; } = 90f; // 侧翻角度
@@ -37,6 +43,12 @@ namespace Game.Animation.Drivers
         private float _rotationY;
         private Vector3 _position;
 
+        // 从 WalkDriver 读取的腿部角度
+        private float _legAngle1;
+        private float _legAngle2;
+        private float _legAngle3;
+        private float _legAngle4;
+
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             _deathPhase = parameters.GetFloat(DeathPhaseParam);
@@ -45,6 +57,12 @@ namespace Game.Animation.Drivers
             _bodyRight = parameters.GetVector3(BodyRightParam);
             _rotationY = parameters.GetFloat(RotationYParam);
             _position = parameters.GetVector3(PositionParam);
+
+            // 读取腿部角度（由 WalkDriver 输出）
+            _legAngle1 = parameters.GetFloat(LegAngle1Param);
+            _legAngle2 = parameters.GetFloat(LegAngle2Param);
+            _legAngle3 = parameters.GetFloat(LegAngle3Param);
+            _legAngle4 = parameters.GetFloat(LegAngle4Param);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -80,15 +98,17 @@ namespace Game.Animation.Drivers
                 boneTransforms[neckBone.Index] = Matrix.Identity;
             }
 
-            // Legs 骨骼 - 停止移动，逐渐放松
+            // Legs 骨骼 - 从当前角度平滑过渡到放松状态
+            // 原始实现: m_legAngle * (1 - DeathPhase)
+            float deathFactor = 1f - _deathPhase;
+            float[] legAngles = { _legAngle1, _legAngle2, _legAngle3, _legAngle4 };
             for (int i = 0; i < 4; i++)
             {
                 var bone = model.FindBone($"Leg{i + 1}", false);
                 if (bone != null)
                 {
-                    // 腿部逐渐放松，轻微下垂
-                    float relaxAngle = 0.2f * _deathPhase;
-                    boneTransforms[bone.Index] = Matrix.CreateRotationX(relaxAngle);
+                    // 腿部角度逐渐减小到 0（放松状态）
+                    boneTransforms[bone.Index] = Matrix.CreateRotationX(legAngles[i] * deathFactor);
                 }
             }
         }

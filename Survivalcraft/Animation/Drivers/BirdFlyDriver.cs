@@ -22,7 +22,6 @@ namespace Game.Animation.Drivers
         public string IsOnGroundParam { get; set; } = "IsOnGround";
         public string ImmersionFactorParam { get; set; } = "ImmersionFactor";
         public string FlySpeedParam { get; set; } = "FlySpeed";
-        public string RotationYParam { get; set; } = "RotationY";
         public string RotationParam { get; set; } = "Rotation";
         public string PositionParam { get; set; } = "Position";
         public string LookAngleXParam { get; set; } = "LookAngleX";
@@ -33,17 +32,12 @@ namespace Game.Animation.Drivers
         public float WingAngle { get; set; } = 1.2f; // 翅膀扇动角度（弧度）
         public float WingGroundAngle { get; set; } = 0.3f; // 站立时的翅膀小摆动
         public float FlyLegAngle { get; set; } = 60f; // 飞行时腿部收起角度（度）
-        public float HeadMaxAngleX { get; set; } = 65f;
-        public float HeadMaxAngleY { get; set; } = 55f;
-        public float HeadRatio { get; set; } = 0.5f;
-        public float NeckRatio { get; set; } = 0.5f;
 
         private float _flyPhase;
         private float _phase;
         private bool _isOnGround;
         private float _immersionFactor;
         private float _flySpeed;
-        private float _rotationY;
         private Vector3 _rotation;
         private Vector3 _position;
         private float _lookAngleX;
@@ -57,7 +51,6 @@ namespace Game.Animation.Drivers
             _isOnGround = parameters.GetBool(IsOnGroundParam);
             _immersionFactor = parameters.GetFloat(ImmersionFactorParam);
             _flySpeed = parameters.GetFloat(FlySpeedParam);
-            _rotationY = parameters.GetFloat(RotationYParam);
             _rotation = parameters.GetVector3(RotationParam);
             _position = parameters.GetVector3(PositionParam);
             _lookAngleX = parameters.GetFloat(LookAngleXParam);
@@ -132,40 +125,47 @@ namespace Game.Animation.Drivers
                 boneTransforms[leg2Bone.Index] = Matrix.CreateRotationX(legAngle2);
             }
 
-            // 头部和颈部
+            // 头部和颈部 - 严格按照原始逻辑
+            // 原始代码:
+            // yaw = LookAngleX / 2, yaw2 = LookAngleX / 2
+            // num4 = 0, num5 = 0
+            // if (Standing || Immersion > 0): num4 = 0.5 * Sin(π * 2 * Phase / 2), num5 = -num4
+            // Head: CreateFromYawPitchRoll(yaw, num5 + Clamp(vector.Y, -π/4, π/4), vector.Z)
+            // Neck: CreateFromYawPitchRoll(yaw2, num4 + LookAngleY, 0)
+
             var neckBone = model.FindBone("Neck", false);
             bool hasNeck = neckBone != null;
 
             var headBone = model.FindBone("Head");
             if (headBone != null)
             {
-                float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
-                float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
                 float yaw = _lookAngleX / 2f;
-                float pitch = 0f;
+                float num4 = 0f;
 
-                // 站立时头部的额外摆动
+                // 站立时颈部摆动，头部取反
                 if (_isOnGround || _immersionFactor > 0f)
                 {
-                    pitch = 0.5f * MathF.Sin(MathF.PI * _phase);
+                    // 原始: num4 = 0.5f * Sin(π * 2f * MovementPhase / 2f) = Sin(π * MovementPhase)
+                    num4 = 0.5f * MathF.Sin(MathF.PI * _phase);
                 }
+                float num5 = -num4;
 
                 boneTransforms[headBone.Index] =
-                    Matrix.CreateFromYawPitchRoll(yaw, pitch + Math.Clamp(_rotation.Y, -(float)Math.PI / 4f, (float)Math.PI / 4f), _rotation.Z);
+                    Matrix.CreateFromYawPitchRoll(yaw, num5 + Math.Clamp(_rotation.Y, -(float)Math.PI / 4f, (float)Math.PI / 4f), _rotation.Z);
             }
 
             if (hasNeck)
             {
                 float yaw2 = _lookAngleX / 2f;
-                float neckPitch = 0f;
+                float num4 = 0f;
 
-                // 站立时颈部的额外摆动
+                // 站立时颈部摆动
                 if (_isOnGround || _immersionFactor > 0f)
                 {
-                    neckPitch = -0.5f * MathF.Sin(MathF.PI * _phase);
+                    num4 = 0.5f * MathF.Sin(MathF.PI * _phase);
                 }
 
-                boneTransforms[neckBone.Index] = Matrix.CreateFromYawPitchRoll(yaw2, neckPitch + _lookAngleY, 0f);
+                boneTransforms[neckBone.Index] = Matrix.CreateFromYawPitchRoll(yaw2, num4 + _lookAngleY, 0f);
             }
         }
     }

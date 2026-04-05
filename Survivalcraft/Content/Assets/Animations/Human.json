@@ -23,6 +23,12 @@
           }
         },
         {
+          "condition": "[PokingPhase] > 0",
+          "animation": {
+            "source": "driver:HumanMine"
+          }
+        },
+        {
           "condition": "[AimHandAngle] != 0",
           "animation": {
             "source": "driver:HumanAim"
@@ -97,6 +103,9 @@
 
     "AimHandAngle": 0.0,
 
+    "PokingPhase": 0.0,
+    "ActiveBlockValue": 0,
+
     "IsRiding": false,
     "IsBoat": false,
     "RowLeft": false,
@@ -104,9 +113,16 @@
     "MountBob": 0.0,
 
     "IsCreativeFly": false,
+    "VelocityXZ": 0.0,
 
     "LookAngleX": 0.0,
     "LookAngleY": 0.0,
+    "LastTurnOrderX": 0.0,
+
+    "EntityHash": 0,
+
+    "BodyHeight": 1.8,
+    "BodyDepth": 0.6,
 
     "DeathSpeed": 3.0
   }

@@ -29,6 +29,9 @@ namespace Game.Animation.Drivers
         public string CrouchFactorParam { get; set; } = "CrouchFactor";
         public string IsCreativeFlyParam { get; set; } = "IsCreativeFly";
         public string GameTimeParam { get; set; } = "GameTime";
+        public string LastTurnOrderXParam { get; set; } = "LastTurnOrderX";
+        public string EntityHashParam { get; set; } = "EntityHash";
+        public string VelocityXZParam { get; set; } = "VelocityXZ";
 
         // 可配置属性
         public float LegAngle { get; set; } = 0.5f;
@@ -39,6 +42,8 @@ namespace Game.Animation.Drivers
         public float CrouchBodyDrop { get; set; } = 0.7f;
         public float CrouchLegScale { get; set; } = 0.5f;
         public float HandNoiseScale { get; set; } = 0.1f;
+        public float FlyVelocityScale { get; set; } = 0.03f;
+        public float FlyVelocityMax { get; set; } = 0.5f;
 
         private float _phase;
         private float _bob;
@@ -52,6 +57,9 @@ namespace Game.Animation.Drivers
         private float _crouchFactor;
         private bool _isCreativeFly;
         private float _gameTime;
+        private float _lastTurnOrderX;
+        private int _entityHash;
+        private float _velocityXZ;
 
         // 平滑过渡
         private float _currentBob = 0f;
@@ -76,6 +84,9 @@ namespace Game.Animation.Drivers
             _crouchFactor = parameters.GetFloat(CrouchFactorParam);
             _isCreativeFly = parameters.GetBool(IsCreativeFlyParam);
             _gameTime = parameters.GetFloat(GameTimeParam);
+            _lastTurnOrderX = parameters.GetFloat(LastTurnOrderXParam);
+            _entityHash = (int)parameters.GetFloat(EntityHashParam);
+            _velocityXZ = parameters.GetFloat(VelocityXZParam);
 
             // 平滑过渡
             float smoothFactor = MathUtils.Min(SmoothSpeed * deltaTime, 1f);
@@ -97,8 +108,8 @@ namespace Game.Animation.Drivers
             // 计算蹲下因子
             float crouchSigmoid = MathUtils.Sigmoid(_crouchFactor, 4f);
 
-            // 计算手部自然摆动噪声
-            float noiseTime = (float)MathUtils.Remainder(0.75 * _gameTime + 10000, 10000.0);
+            // 计算噪声时间 - 使用实体哈希确保每个实体有不同的噪声
+            float noiseTime = (float)MathUtils.Remainder(0.75 * _gameTime + (_entityHash & 0xFFFF), 10000.0);
             float handNoise1 = MathUtils.Lerp(-HandNoiseScale, HandNoiseScale, SimplexNoise.Noise(noiseTime));
             float handNoise2 = MathUtils.Lerp(-HandNoiseScale, HandNoiseScale, SimplexNoise.Noise(noiseTime + 100f));
 
@@ -106,16 +117,21 @@ namespace Game.Animation.Drivers
             float legAngle1 = _walkLegsAngle * num;
             float legAngle2 = -legAngle1;
 
+            // 创造模式飞行时的手部噪声缩放因子
+            float flyNoiseScale = _isCreativeFly ? 4f : 1f;
+
             float handAngleX1, handAngleX2;
             float handAngleY1, handAngleY2;
 
             if (_isCreativeFly)
             {
-                // 创造模式飞行
+                // 创造模式飞行 - 手部有额外的速度偏移和噪声摆动
                 float flyNoise1 = MathUtils.Lerp(0f, 0.25f, SimplexNoise.Noise(1.07f * noiseTime + 400f));
                 float flyNoise2 = MathUtils.Lerp(0f, 0.25f, SimplexNoise.Noise(0.93f * noiseTime + 500f));
-                handAngleX1 = -0.1f;
-                handAngleX2 = -0.1f;
+                // 原始代码：handAngleX = -0.1 - Min(0.03 * Velocity.XZ.LengthSquared(), 0.5)
+                float velocityOffset = MathUtils.Min(FlyVelocityScale * _velocityXZ * _velocityXZ, FlyVelocityMax);
+                handAngleX1 = -0.1f - velocityOffset;
+                handAngleX2 = -0.1f - velocityOffset;
                 handAngleY1 = flyNoise1;
                 handAngleY2 = -flyNoise2;
             }
@@ -129,24 +145,42 @@ namespace Game.Animation.Drivers
             }
             else
             {
-                // 站立时手部自然下垂
+                // 站立时手部自然下垂，使用缩放后的噪声
                 handAngleX1 = handNoise1;
                 handAngleX2 = handNoise2;
-                handAngleY1 = 0f;
-                handAngleY2 = 0f;
+                // 手部Y轴噪声 - 原始代码使用 lerp(0, num24 * 0.15, noise)
+                float yNoise1 = MathUtils.Lerp(0f, flyNoiseScale * 0.15f, SimplexNoise.Noise(1.1f * noiseTime + 100f));
+                float yNoise2 = -MathUtils.Lerp(0f, flyNoiseScale * 0.15f, SimplexNoise.Noise(1.05f * noiseTime + 300f));
+                handAngleY1 = yNoise1;
+                handAngleY2 = yNoise2;
             }
 
             // 平滑过渡所有角度
             float smoothFactor = MathUtils.Min(SmoothSpeed * 0.016f, 1f);
 
-            _currentHeadAngles += smoothFactor * (new Vector2(_lookAngleX, _lookAngleY) - _currentHeadAngles);
+            // 计算头部角度 - 包含噪声、LookAngles、LastTurnOrder 和 HeadingOffset
+            // 原始代码：x = Clamp(Noise + LookAngles.X + LastTurnOrder.X + HeadingOffset, -80°, 80°)
+            float headNoiseX = MathUtils.Lerp(-0.3f, 0.3f, SimplexNoise.Noise(1.02f * noiseTime - 100f));
+            float headNoiseY = MathUtils.Lerp(-0.3f, 0.3f, SimplexNoise.Noise(0.96f * noiseTime - 200f));
+            float targetHeadX = Math.Clamp(
+                headNoiseX + _lookAngleX + 1f * _lastTurnOrderX + _headingOffset,
+                -MathUtils.DegToRad(HeadMaxAngleX),
+                MathUtils.DegToRad(HeadMaxAngleX)
+            );
+            float targetHeadY = Math.Clamp(
+                headNoiseY + _lookAngleY,
+                -MathUtils.DegToRad(HeadMaxAngleY),
+                MathUtils.DegToRad(HeadMaxAngleY)
+            );
+
+            _currentHeadAngles += smoothFactor * (new Vector2(targetHeadX, targetHeadY) - _currentHeadAngles);
             _currentHandAngles1 += smoothFactor * (new Vector2(handAngleX1, handAngleY1) - _currentHandAngles1);
             _currentHandAngles2 += smoothFactor * (new Vector2(handAngleX2, handAngleY2) - _currentHandAngles2);
             _currentLegAngles1 += smoothFactor * (new Vector2(legAngle1, 0f) - _currentLegAngles1);
             _currentLegAngles2 += smoothFactor * (new Vector2(legAngle2, 0f) - _currentLegAngles2);
 
-            // 蹲下时腿部角度减半
-            if (_crouchFactor >= 1f)
+            // 蹲下时腿部角度减半（原始代码使用 == 1 判断）
+            if (_crouchFactor == 1f)
             {
                 _currentLegAngles1 *= 0.5f;
                 _currentLegAngles2 *= 0.5f;
@@ -177,14 +211,10 @@ namespace Game.Animation.Drivers
             var headBone = model.FindBone("Head");
             if (headBone != null)
             {
-                float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
-                float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
-                float clampedX = Math.Clamp(_currentHeadAngles.X, -maxAngleX, maxAngleX);
-                float clampedY = Math.Clamp(_currentHeadAngles.Y, -maxAngleY, maxAngleY);
-
+                // 头部角度已在上面计算并钳位
                 boneTransforms[headBone.Index] =
-                    Matrix.CreateRotationX(clampedY) *
-                    Matrix.CreateRotationZ(-clampedX);
+                    Matrix.CreateRotationX(_currentHeadAngles.Y) *
+                    Matrix.CreateRotationZ(-_currentHeadAngles.X);
             }
 
             // 设置 Hand1 骨骼

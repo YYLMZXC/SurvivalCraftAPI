@@ -40,16 +40,17 @@ namespace Game.Animation.Drivers
             float smoothFactor = MathUtils.Min(SmoothSpeed * 0.016f, 1f);
             _currentAimAngle += smoothFactor * (_aimHandAngle - _currentAimAngle);
 
-            // Hand1 (左手) 抬起
+            // 原始代码：
+            // Hand1 (左手)：X = 1.5, Y = -0.7
+            // Hand2 (右手)：X = AimHandAngle * 1, Y = 0
             var hand1Bone = model.FindBone("Hand1");
             if (hand1Bone != null)
             {
                 boneTransforms[hand1Bone.Index] =
-                    Matrix.CreateRotationX(AimAngleMultiplier * _currentAimAngle) *
+                    Matrix.CreateRotationX(AimAngleMultiplier) *
                     Matrix.CreateRotationY(AimAngleY);
             }
 
-            // Hand2 (右手) 不需要瞄准动画，由瞄准角度参数控制
             var hand2Bone = model.FindBone("Hand2");
             if (hand2Bone != null)
             {

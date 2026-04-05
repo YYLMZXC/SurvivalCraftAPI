@@ -30,6 +30,12 @@ namespace Game.Animation.Drivers
         public string LookAngleXParam { get; set; } = "LookAngleX";
         public string LookAngleYParam { get; set; } = "LookAngleY";
 
+        // 输出参数名称 - 用于传递给 DeathDriver
+        public string LegAngle1OutputParam { get; set; } = "LegAngle1";
+        public string LegAngle2OutputParam { get; set; } = "LegAngle2";
+        public string LegAngle3OutputParam { get; set; } = "LegAngle3";
+        public string LegAngle4OutputParam { get; set; } = "LegAngle4";
+
         // ========== 可配置的动画参数 ==========
 
         // 步态相位偏移 (Leg1, Leg2, Leg3, Leg4)
@@ -173,6 +179,12 @@ namespace Game.Animation.Drivers
                 _headAngleY += smoothFactor * (targetHeadY - _headAngleY);
                 _currentBob += smoothFactor * (targetBob - _currentBob);
             }
+
+            // 输出腿部角度供 DeathDriver 使用
+            parameters.SetFloat(LegAngle1OutputParam, _legAngle1);
+            parameters.SetFloat(LegAngle2OutputParam, _legAngle2);
+            parameters.SetFloat(LegAngle3OutputParam, _legAngle3);
+            parameters.SetFloat(LegAngle4OutputParam, _legAngle4);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)

@@ -22,6 +22,7 @@ namespace Game.Animation.Drivers
         public string RotationYParam { get; set; } = "RotationY";
         public string PositionParam { get; set; } = "Position";
         public string BodyHeightParam { get; set; } = "BodyHeight";
+        public string BodyDepthParam { get; set; } = "BodyDepth";
         public string BodyForwardParam { get; set; } = "BodyForward";
         public string GameTimeParam { get; set; } = "GameTime";
 
@@ -34,6 +35,7 @@ namespace Game.Animation.Drivers
         private float _rotationY;
         private Vector3 _position;
         private float _bodyHeight;
+        private float _bodyDepth;
         private Vector3 _bodyForward;
         private float _gameTime;
 
@@ -49,6 +51,7 @@ namespace Game.Animation.Drivers
             _rotationY = parameters.GetFloat(RotationYParam);
             _position = parameters.GetVector3(PositionParam);
             _bodyHeight = parameters.GetFloat(BodyHeightParam);
+            _bodyDepth = parameters.GetFloat(BodyDepthParam);
             _bodyForward = parameters.GetVector3(BodyForwardParam);
             _gameTime = parameters.GetFloat(GameTimeParam);
         }
@@ -61,9 +64,10 @@ namespace Game.Animation.Drivers
             float inversePhase = 1f - lieDownPhase;
 
             // 计算侧翻时身体位置偏移
+            // 原始代码使用 BoxSize.Y 作为高度，BoxSize.Z 作为深度
             Vector3 forwardFlat = Vector3.Normalize(_bodyForward * new Vector3(1f, 0f, 1f));
             Vector3 bodyOffset = lieDownPhase * 0.5f * _bodyHeight * forwardFlat
-                + lieDownPhase * Vector3.UnitY * _bodyHeight * 0.1f;
+                + lieDownPhase * Vector3.UnitY * _bodyDepth * 0.1f;
 
             // 设置 Body 骨骼 - 侧翻躺下
             var bodyBone = model.FindBone("Body");

@@ -101,6 +101,9 @@ namespace Game.Animation
                 AnimationDriverManager.Register("HumanAim", typeof(HumanAimDriver));
                 AnimationDriverManager.Register("HumanAimDriver", typeof(HumanAimDriver));
 
+                AnimationDriverManager.Register("HumanMine", typeof(HumanMineDriver));
+                AnimationDriverManager.Register("HumanMineDriver", typeof(HumanMineDriver));
+
                 s_registered = true;
             }
         }

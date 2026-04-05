@@ -24,6 +24,10 @@ namespace Game.Animation.Drivers
         public string BodyHeightParam { get; set; } = "BodyHeight";
         public string BodyRightParam { get; set; } = "BodyRight";
 
+        // 死亡时的腿部角度（需要保留最后的角度）
+        public string LastLegAngle1Param { get; set; } = "LastLegAngle1";
+        public string LastLegAngle2Param { get; set; } = "LastLegAngle2";
+
         // 可配置属性
         public float DeathRollAngle { get; set; } = 90f; // 死亡侧翻角度（度）
         public float SmoothSpeed { get; set; } = 12f;
@@ -35,6 +39,10 @@ namespace Game.Animation.Drivers
         private float _bodyHeight;
         private Vector3 _bodyRight;
 
+        // 死亡时的腿部角度
+        private float _lastLegAngle1;
+        private float _lastLegAngle2;
+
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             _deathPhase = parameters.GetFloat(DeathPhaseParam);
@@ -43,6 +51,10 @@ namespace Game.Animation.Drivers
             _deathCauseOffset = parameters.GetVector3(DeathCauseOffsetParam);
             _bodyHeight = parameters.GetFloat(BodyHeightParam);
             _bodyRight = parameters.GetVector3(BodyRightParam);
+
+            // 获取最后的腿部角度
+            _lastLegAngle1 = parameters.GetFloat(LastLegAngle1Param);
+            _lastLegAngle2 = parameters.GetFloat(LastLegAngle2Param);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -92,18 +104,20 @@ namespace Game.Animation.Drivers
                 boneTransforms[neckBone.Index] = Matrix.Identity;
             }
 
-            // 腿部逐渐放松（保持当前角度但逐渐减弱）
+            // 腿部逐渐放松（保持最后的角度但逐渐减弱）
+            // 原始代码: SetBoneTransform(m_leg1Bone.Index, Matrix.CreateRotationX(m_legAngle1 * num8));
+            // num8 = 1f - DeathPhase
             var leg1Bone = model.FindBone("Leg1");
             if (leg1Bone != null)
             {
                 // 死亡时腿部保持最后的角度但逐渐放松
-                boneTransforms[leg1Bone.Index] = Matrix.CreateRotationX(0f);
+                boneTransforms[leg1Bone.Index] = Matrix.CreateRotationX(_lastLegAngle1 * deathInverse);
             }
 
             var leg2Bone = model.FindBone("Leg2");
             if (leg2Bone != null)
             {
-                boneTransforms[leg2Bone.Index] = Matrix.CreateRotationX(0f);
+                boneTransforms[leg2Bone.Index] = Matrix.CreateRotationX(_lastLegAngle2 * deathInverse);
             }
         }
     }

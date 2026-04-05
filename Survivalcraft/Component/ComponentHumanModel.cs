@@ -240,6 +240,12 @@ namespace Game {
             // 瞄准参数
             ctrl.Parameters.SetFloat("AimHandAngle", m_aimHandAngle);
 
+            // 挖掘参数
+            float pokingPhase = m_componentMiner?.PokingPhase ?? 0f;
+            int activeBlockValue = m_componentMiner?.ActiveBlockValue ?? 0;
+            ctrl.Parameters.SetFloat("PokingPhase", pokingPhase);
+            ctrl.Parameters.SetFloat("ActiveBlockValue", activeBlockValue);
+
             // 骑乘参数
             ComponentMount mount = m_componentRider?.Mount;
             bool isRiding = mount != null;
@@ -252,14 +258,24 @@ namespace Game {
             // 身体前向向量（用于躺下动画）
             var bodyMatrix = m_componentCreature.ComponentBody.Matrix;
             ctrl.Parameters.SetVector3("BodyForward", bodyMatrix.Forward);
+            ctrl.Parameters.SetFloat("BodyHeight", m_componentCreature.ComponentBody.BoxSize.Y);
+            ctrl.Parameters.SetFloat("BodyDepth", m_componentCreature.ComponentBody.BoxSize.Z);
 
             // 头部追踪角度（转换为弧度）
             var lookAngles = m_componentCreature.ComponentLocomotion.LookAngles;
             ctrl.Parameters.SetFloat("LookAngleX", lookAngles.X);
             ctrl.Parameters.SetFloat("LookAngleY", lookAngles.Y);
 
+            // 转向指令（用于头部动画）
+            var lastTurnOrder = m_componentCreature.ComponentLocomotion.LastTurnOrder;
+            ctrl.Parameters.SetFloat("LastTurnOrderX", lastTurnOrder.X);
+
             // 创造模式飞行
             ctrl.Parameters.SetBool("IsCreativeFly", m_componentCreature.ComponentLocomotion.IsCreativeFlyEnabled);
+            ctrl.Parameters.SetFloat("VelocityXZ", m_componentCreature.ComponentBody.Velocity.XZ.Length());
+
+            // 实体哈希（用于噪声种子）
+            ctrl.Parameters.SetFloat("EntityHash", GetHashCode());
 
             // 手持物品偏移和旋转
             ctrl.Parameters.SetVector3("InHandItemOffset", m_inHandItemOffset);
@@ -554,11 +570,17 @@ namespace Game {
                 AnimationController.Parameters.SetFloat("PunchCounter", 0);
                 AnimationController.Parameters.SetFloat("PunchFactor", 0f);
                 AnimationController.Parameters.SetFloat("AimHandAngle", 0f);
+                AnimationController.Parameters.SetFloat("PokingPhase", 0f);
+                AnimationController.Parameters.SetFloat("ActiveBlockValue", 0);
                 AnimationController.Parameters.SetBool("IsRiding", false);
                 AnimationController.Parameters.SetBool("IsBoat", false);
                 AnimationController.Parameters.SetBool("RowLeft", false);
                 AnimationController.Parameters.SetBool("RowRight", false);
                 AnimationController.Parameters.SetFloat("MountBob", 0f);
+                AnimationController.Parameters.SetFloat("LastTurnOrderX", 0f);
+                AnimationController.Parameters.SetFloat("EntityHash", GetHashCode());
+                AnimationController.Parameters.SetBool("IsCreativeFly", false);
+                AnimationController.Parameters.SetFloat("VelocityXZ", 0f);
             }
         }
 

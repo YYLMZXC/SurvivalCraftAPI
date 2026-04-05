@@ -55,24 +55,54 @@ namespace Game {
                 attackPhaseSpeed = AnimationController.Parameters.GetFloat("AttackPhaseSpeed");
             }
 
-            // 步态现在由配置中的状态规则控制
-            // MovementAnimationPhase 基于速度计算
-            if (MathF.Abs(speed) > 0.2f) {
+            // 步态判断逻辑 - 根据速度确定步态类型
+            // Canter: 速度 > 0.7 * WalkSpeed
+            // Trot: 速度 > 0.5 * WalkSpeed
+            // Walk: 速度 > 0.2
+            float walkSpeed = m_componentCreature.ComponentLocomotion.WalkSpeed;
+            if (m_canCanter && speed > 0.7f * walkSpeed) {
+                m_gait = Gait.Canter;
+                MovementAnimationPhase += speed * dt * 0.7f * m_walkAnimationSpeed;
+                m_footstepsPhase += 0.7f * m_walkAnimationSpeed * speed * dt;
+            }
+            else if (m_canTrot && speed > 0.5f * walkSpeed) {
+                m_gait = Gait.Trot;
+                MovementAnimationPhase += speed * dt * m_walkAnimationSpeed;
+                m_footstepsPhase += 1.25f * m_walkAnimationSpeed * speed * dt;
+            }
+            else if (MathF.Abs(speed) > 0.2f) {
+                m_gait = Gait.Walk;
                 MovementAnimationPhase += speed * dt * m_walkAnimationSpeed;
                 m_footstepsPhase += 1.25f * m_walkAnimationSpeed * MathF.Abs(speed) * dt;
             }
             else {
+                m_gait = Gait.Walk;
                 MovementAnimationPhase = 0f;
                 m_footstepsPhase = 0f;
             }
 
-            // Bob 现在由 FourLeggedWalkDriver 驱动器计算
-            // 这里只保留脚步声逻辑
-
-            // 脚步声
-            float num5 = MathF.Floor(m_footstepsPhase);
-            if (m_footstepsPhase > num5 && footstepsPhase <= num5) {
-                m_componentCreature.ComponentCreatureSounds.PlayFootstepSound(1f);
+            // 脚步声 - Canter 有特殊音效
+            if (m_gait == Gait.Canter && m_useCanterSound) {
+                float num4 = MathF.Floor(m_footstepsPhase);
+                if (m_footstepsPhase > num4 && footstepsPhase <= num4) {
+                    string footstepSoundMaterialName = m_subsystemSoundMaterials.GetFootstepSoundMaterialName(m_componentCreature);
+                    if (!string.IsNullOrEmpty(footstepSoundMaterialName) && footstepSoundMaterialName != "Water") {
+                        m_subsystemAudio.PlayRandomSound(
+                            "Audio/Footsteps/CanterDirt",
+                            0.75f,
+                            m_random.Float(-0.25f, 0f),
+                            m_componentCreature.ComponentBody.Position,
+                            3f,
+                            true
+                        );
+                    }
+                }
+            }
+            else {
+                float num5 = MathF.Floor(m_footstepsPhase);
+                if (m_footstepsPhase > num5 && footstepsPhase <= num5) {
+                    m_componentCreature.ComponentCreatureSounds.PlayFootstepSound(1f);
+                }
             }
 
             // 进食动画（使用配置速度）
@@ -116,6 +146,7 @@ namespace Game {
 
             // 四足动物特有参数
             ctrl.Parameters.SetFloat("MovementPhase", MovementAnimationPhase);
+            ctrl.Parameters.SetFloat("Gait", (int)m_gait);  // 0=Walk, 1=Trot, 2=Canter
             ctrl.Parameters.SetFloat("FeedFactor", m_feedFactor);
             ctrl.Parameters.SetFloat("WalkBobHeight", m_walkBobHeight);
 

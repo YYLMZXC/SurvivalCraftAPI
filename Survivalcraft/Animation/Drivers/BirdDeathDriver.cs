@@ -18,7 +18,6 @@ namespace Game.Animation.Drivers
 
         // 参数名称
         public string DeathPhaseParam { get; set; } = "DeathPhase";
-        public string RotationYParam { get; set; } = "RotationY";
         public string RotationParam { get; set; } = "Rotation";
         public string PositionParam { get; set; } = "Position";
         public string BodyForwardParam { get; set; } = "BodyForward";
@@ -34,7 +33,6 @@ namespace Game.Animation.Drivers
         public float WingAngle { get; set; } = 1.2f; // 翅膀基础角度
 
         private float _deathPhase;
-        private float _rotationY;
         private Vector3 _rotation;
         private Vector3 _position;
         private Vector3 _bodyForward;
@@ -48,7 +46,6 @@ namespace Game.Animation.Drivers
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             _deathPhase = parameters.GetFloat(DeathPhaseParam);
-            _rotationY = parameters.GetFloat(RotationYParam);
             _rotation = parameters.GetVector3(RotationParam);
             _position = parameters.GetVector3(PositionParam);
             _bodyForward = parameters.GetVector3(BodyForwardParam);
@@ -105,7 +102,7 @@ namespace Game.Animation.Drivers
                 // 原始: Vector3.Normalize(m_componentCreature.ComponentBody.Matrix.Forward * new Vector3(1f, 0f, 1f))
                 Vector3 horizontalForward = _bodyForward.LengthSquared() > 0.001f
                     ? Vector3.Normalize(_bodyForward * new Vector3(1f, 0f, 1f))
-                    : new Vector3(MathF.Sin(_rotationY), 0f, MathF.Cos(_rotationY));
+                    : new Vector3(MathF.Sin(_rotation.X), 0f, MathF.Cos(_rotation.X));
 
                 Vector3 deathPosition = _position + 0.5f * _bodyHeight * horizontalForward;
 

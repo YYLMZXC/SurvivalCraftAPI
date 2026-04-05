@@ -58,32 +58,43 @@ namespace Game.Animation.Drivers
             float noise = SimplexNoise.OctavedNoise(_gameTime, 3f, 2, 2f, 0.75f);
             float peckAngle = MathUtils.DegToRad(MinPeckAngle + MaxPeckAngle * noise);
 
-            // 向下啄食
-            float headPitch = -peckAngle + _lookAngleY * (1f - _feedFactor);
+            // 原始代码的 Lerp 公式:
+            // vector2 = Vector2.Lerp(v1: vector2, v2: new Vector2(0f, y), f: m_feedFactor)
+            // 即: result = v1 + (v2 - v1) * factor = v1 * (1 - factor) + v2 * factor
+            // 这里 vector2.X = lookAngleX (不变), vector2.Y = lookAngleY
+            // v2.X = 0f, v2.Y = -peckAngle
+            float feedAngleX = MathUtils.Lerp(_lookAngleX, 0f, _feedFactor);
+            float feedAngleY = MathUtils.Lerp(_lookAngleY, -peckAngle, _feedFactor);
 
             // 限制角度
             float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
             float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
-            float lookAngleX = Math.Clamp(_lookAngleX, -maxAngleX, maxAngleX);
-            float lookAngleY = Math.Clamp(headPitch, -maxAngleY, maxAngleY);
+            feedAngleX = Math.Clamp(feedAngleX, -maxAngleX, maxAngleX);
+            feedAngleY = Math.Clamp(feedAngleY, -maxAngleY, maxAngleY);
+
+            float headAngleX = feedAngleX;
+            float headAngleY = feedAngleY;
+            float neckAngleX = feedAngleX;
+            float neckAngleY = feedAngleY;
 
             if (hasNeck)
             {
-                lookAngleX *= HeadRatio;
+                // 原始代码: vector3 = 0.4f * vector2; vector2 = 0.6f * vector2;
+                headAngleX = feedAngleX * HeadRatio;
+                headAngleY = feedAngleY * HeadRatio;
+                neckAngleX = feedAngleX * NeckRatio;
+                neckAngleY = feedAngleY * NeckRatio;
             }
 
             boneTransforms[headBone.Index] =
-                Matrix.CreateRotationX(lookAngleY) *
-                Matrix.CreateRotationZ(-lookAngleX);
+                Matrix.CreateRotationX(headAngleY) *
+                Matrix.CreateRotationZ(-headAngleX);
 
             if (hasNeck)
             {
-                float neckPitch = peckAngle * 0.3f * _feedFactor + _lookAngleY * NeckRatio;
-                neckPitch = Math.Clamp(neckPitch, -maxAngleY, maxAngleY);
-
                 boneTransforms[neckBone.Index] =
-                    Matrix.CreateRotationX(neckPitch) *
-                    Matrix.CreateRotationZ(-_lookAngleX * NeckRatio);
+                    Matrix.CreateRotationX(neckAngleY) *
+                    Matrix.CreateRotationZ(-neckAngleX);
             }
         }
     }

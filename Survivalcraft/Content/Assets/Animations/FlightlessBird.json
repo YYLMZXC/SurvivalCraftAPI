@@ -89,6 +89,7 @@
     "DeathPhase": 0.0,
     "DeathCauseOffset": [0, 0, 0],
     "BodyHeight": 1.0,
+    "DeathSpeed": 3.0,
     "GameTime": 0.0
   }
 }

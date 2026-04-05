@@ -353,8 +353,10 @@ namespace Game {
 
             // 世界坐标（驱动器需要用来定位身体骨骼）
             ctrl.Parameters.SetVector3("Position", body.Position);
+            ctrl.Parameters.SetVector3("Rotation", body.Rotation.ToYawPitchRoll());  // 完整旋转
             ctrl.Parameters.SetFloat("RotationY", body.Rotation.ToYawPitchRoll().X);
-            ctrl.Parameters.SetVector3("BodyRight", matrix.Right);  // 用于死亡方向计算
+            ctrl.Parameters.SetVector3("BodyForward", matrix.Forward);  // 用于死亡方向计算
+            ctrl.Parameters.SetVector3("BodyRight", matrix.Right);
 
             ctrl.Parameters.SetFloat("Speed", Vector3.Dot(velocity, matrix.Forward));
             ctrl.Parameters.SetFloat("SpeedAbs", velocity.Length());

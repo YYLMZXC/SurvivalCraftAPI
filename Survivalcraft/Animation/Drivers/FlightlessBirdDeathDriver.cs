@@ -22,6 +22,7 @@ namespace Game.Animation.Drivers
         public string PositionParam { get; set; } = "Position";
         public string DeathCauseOffsetParam { get; set; } = "DeathCauseOffset";
         public string BodyHeightParam { get; set; } = "BodyHeight";
+        public string BodyRightParam { get; set; } = "BodyRight";
 
         // 可配置属性
         public float DeathRollAngle { get; set; } = 90f; // 死亡侧翻角度（度）
@@ -32,6 +33,7 @@ namespace Game.Animation.Drivers
         private Vector3 _position;
         private Vector3 _deathCauseOffset;
         private float _bodyHeight;
+        private Vector3 _bodyRight;
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
@@ -40,6 +42,7 @@ namespace Game.Animation.Drivers
             _position = parameters.GetVector3(PositionParam);
             _deathCauseOffset = parameters.GetVector3(DeathCauseOffsetParam);
             _bodyHeight = parameters.GetFloat(BodyHeightParam);
+            _bodyRight = parameters.GetVector3(BodyRightParam);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -50,7 +53,10 @@ namespace Game.Animation.Drivers
             float deathInverse = 1f - _deathPhase;
 
             // 计算侧翻方向（根据死亡原因偏移）
-            float rollDirection = Vector3.Dot(Vector3.UnitX, _deathCauseOffset) > 0f ? 1f : -1f;
+            // 原始代码: Vector3.Dot(m_componentFrame.Matrix.Right, DeathCauseOffset)
+            float rollDirection = _bodyRight.LengthSquared() > 0.001f
+                ? (Vector3.Dot(_bodyRight, _deathCauseOffset) > 0f ? 1f : -1f)
+                : (Vector3.Dot(Vector3.UnitX, _deathCauseOffset) > 0f ? 1f : -1f);
             float rollAngle = MathUtils.DegToRad(DeathRollAngle) * _deathPhase * rollDirection;
 
             // 计算高度（用于下沉动画）

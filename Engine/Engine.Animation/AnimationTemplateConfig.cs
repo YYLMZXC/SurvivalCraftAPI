@@ -15,14 +15,14 @@ namespace Engine.Animation
         public string Name { get; set; }
 
         /// <summary>
-        /// 动画层配置列表
+        /// 动画层配置字典（key 为层名）
         /// </summary>
-        public List<TemplateLayerConfig> Layers { get; set; }
+        public Dictionary<string, TemplateLayerConfig> Layers { get; set; }
 
         /// <summary>
-        /// 状态轨道配置列表
+        /// 状态轨道配置字典（key 为轨道名）
         /// </summary>
-        public List<TemplateStateTrackConfig> StateTracks { get; set; }
+        public Dictionary<string, TemplateStateTrackConfig> StateTracks { get; set; }
 
         /// <summary>
         /// 必需骨骼名称列表
@@ -35,11 +35,6 @@ namespace Engine.Animation
     /// </summary>
     public class TemplateLayerConfig
     {
-        /// <summary>
-        /// 层名称
-        /// </summary>
-        public string Name { get; set; }
-
         /// <summary>
         /// 层索引（决定优先级）
         /// </summary>
@@ -61,11 +56,6 @@ namespace Engine.Animation
     /// </summary>
     public class TemplateStateTrackConfig
     {
-        /// <summary>
-        /// 轨道名称
-        /// </summary>
-        public string Name { get; set; }
-
         /// <summary>
         /// 轨道类型：Enum、Bool 或 Float
         /// </summary>

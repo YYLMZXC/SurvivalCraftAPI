@@ -1,18 +1,16 @@
 {
     "name": "Simple",
-    "layers": [
-        {
-            "name": "Base",
+    "layers": {
+        "Base": {
             "index": 0,
             "blendMode": "Override"
         }
-    ],
-    "stateTracks": [
-        {
-            "name": "Gait",
+    },
+    "stateTracks": {
+        "Gait": {
             "type": "Enum",
             "defaultValue": "Idle",
             "enumValues": [ "Idle" ]
         }
-    ]
+    }
 }

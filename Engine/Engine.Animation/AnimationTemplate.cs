@@ -1,5 +1,7 @@
 #nullable disable
 
+using System.Collections.Generic;
+
 namespace Engine.Animation
 {
     /// <summary>
@@ -8,19 +10,19 @@ namespace Engine.Animation
     public class AnimationTemplate
     {
         public string Name { get; }
-        public LayerDefinition[] Layers { get; }
-        public StateTrackDefinition[] StateTracks { get; }
+        public Dictionary<string, LayerDefinition> Layers { get; }
+        public Dictionary<string, StateTrackDefinition> StateTracks { get; }
         public string[] RequiredBones { get; }
 
         public AnimationTemplate(
             string name,
-            LayerDefinition[] layers,
-            StateTrackDefinition[] stateTracks,
+            Dictionary<string, LayerDefinition> layers,
+            Dictionary<string, StateTrackDefinition> stateTracks,
             string[] requiredBones = null)
         {
             Name = name;
-            Layers = layers ?? new LayerDefinition[0];
-            StateTracks = stateTracks ?? new StateTrackDefinition[0];
+            Layers = layers ?? new Dictionary<string, LayerDefinition>();
+            StateTracks = stateTracks ?? new Dictionary<string, StateTrackDefinition>();
             RequiredBones = requiredBones ?? new string[0];
         }
     }

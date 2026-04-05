@@ -79,8 +79,14 @@ namespace Game.Animation
             // 保留最基础的 Simple 模板作为后备
             AnimationTemplateManager.Register("Simple", new AnimationTemplate(
                 "Simple",
-                new LayerDefinition[] { new("Base", 0, AnimationBlendMode.Override) },
-                new StateTrackDefinition[] { new("Gait", StateTrackType.Enum, "Idle") { EnumValues = new[] { "Idle" } } }
+                new Dictionary<string, LayerDefinition>
+                {
+                    ["Base"] = new(0, AnimationBlendMode.Override)
+                },
+                new Dictionary<string, StateTrackDefinition>
+                {
+                    ["Gait"] = new(StateTrackType.Enum, "Idle") { EnumValues = new[] { "Idle" } }
+                }
             ));
         }
 

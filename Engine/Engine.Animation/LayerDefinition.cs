@@ -7,14 +7,12 @@ namespace Engine.Animation
     /// </summary>
     public class LayerDefinition
     {
-        public string Name { get; }
         public int Index { get; }
         public AnimationBlendMode BlendMode { get; }
         public string[] BoneMask { get; }
 
-        public LayerDefinition(string name, int index, AnimationBlendMode blendMode, string[] boneMask = null)
+        public LayerDefinition(int index, AnimationBlendMode blendMode, string[] boneMask = null)
         {
-            Name = name;
             Index = index;
             BlendMode = blendMode;
             BoneMask = boneMask;

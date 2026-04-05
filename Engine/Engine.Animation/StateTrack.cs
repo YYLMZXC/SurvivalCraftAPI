@@ -23,9 +23,9 @@ namespace Engine.Animation
 
         public event Action<StateTrack, object, object> OnStateChanged;
 
-        public StateTrack(StateTrackDefinition definition)
+        public StateTrack(string name, StateTrackDefinition definition)
         {
-            Name = definition.Name;
+            Name = name;
             Type = definition.Type;
             DefaultValue = definition.DefaultValue;
             EnumValues = definition.EnumValues;

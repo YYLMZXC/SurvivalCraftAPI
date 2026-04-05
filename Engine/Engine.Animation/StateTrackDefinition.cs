@@ -7,7 +7,6 @@ namespace Engine.Animation
     /// </summary>
     public class StateTrackDefinition
     {
-        public string Name { get; set; }
         public StateTrackType Type { get; set; }
 
         // Enum 类型特有
@@ -21,9 +20,8 @@ namespace Engine.Animation
 
         public StateTrackDefinition() { }
 
-        public StateTrackDefinition(string name, StateTrackType type, object defaultValue = null)
+        public StateTrackDefinition(StateTrackType type, object defaultValue = null)
         {
-            Name = name;
             Type = type;
             DefaultValue = defaultValue;
         }

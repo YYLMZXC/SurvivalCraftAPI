@@ -194,26 +194,28 @@ namespace Engine.Animation
                 return null;
 
             // 转换层定义
-            var layers = new List<LayerDefinition>();
+            var layers = new Dictionary<string, LayerDefinition>();
             if (config.Layers != null)
             {
-                foreach (var layerConfig in config.Layers)
+                foreach (var (name, layerConfig) in config.Layers)
                 {
+                    if (layerConfig == null) continue;
                     var layer = CreateLayerFromConfig(layerConfig);
                     if (layer != null)
-                        layers.Add(layer);
+                        layers[name] = layer;
                 }
             }
 
             // 转换状态轨道定义
-            var stateTracks = new List<StateTrackDefinition>();
+            var stateTracks = new Dictionary<string, StateTrackDefinition>();
             if (config.StateTracks != null)
             {
-                foreach (var trackConfig in config.StateTracks)
+                foreach (var (name, trackConfig) in config.StateTracks)
                 {
+                    if (trackConfig == null) continue;
                     var track = CreateStateTrackFromConfig(trackConfig);
                     if (track != null)
-                        stateTracks.Add(track);
+                        stateTracks[name] = track;
                 }
             }
 
@@ -226,15 +228,15 @@ namespace Engine.Animation
 
             return new AnimationTemplate(
                 config.Name,
-                layers.ToArray(),
-                stateTracks.ToArray(),
+                layers,
+                stateTracks,
                 requiredBones
             );
         }
 
         private static LayerDefinition CreateLayerFromConfig(TemplateLayerConfig config)
         {
-            if (config == null || string.IsNullOrEmpty(config.Name))
+            if (config == null)
                 return null;
 
             var blendMode = ParseBlendMode(config.BlendMode);
@@ -245,16 +247,16 @@ namespace Engine.Animation
                 boneMask = config.BoneMask.ToArray();
             }
 
-            return new LayerDefinition(config.Name, config.Index, blendMode, boneMask);
+            return new LayerDefinition(config.Index, blendMode, boneMask);
         }
 
         private static StateTrackDefinition CreateStateTrackFromConfig(TemplateStateTrackConfig config)
         {
-            if (config == null || string.IsNullOrEmpty(config.Name))
+            if (config == null)
                 return null;
 
             var type = ParseStateTrackType(config.Type);
-            var definition = new StateTrackDefinition(config.Name, type, config.DefaultValue);
+            var definition = new StateTrackDefinition(type, config.DefaultValue);
 
             // 设置 Enum 类型特有属性
             if (type == StateTrackType.Enum && config.EnumValues != null)

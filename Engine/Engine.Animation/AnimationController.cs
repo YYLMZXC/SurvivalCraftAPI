@@ -61,23 +61,25 @@ namespace Engine.Animation
             }
 
             // 初始化层
-            _layers = new AnimationLayer[_template.Layers.Length];
-            for (int i = 0; i < _template.Layers.Length; i++)
+            _layers = new AnimationLayer[_template.Layers.Count];
+            int layerIndex = 0;
+            foreach (var (name, layerDef) in _template.Layers)
             {
-                _layers[i] = new AnimationLayer(
-                    _template.Layers[i].Name,
-                    _template.Layers[i].Index,
-                    _template.Layers[i].BlendMode,
-                    _template.Layers[i].BoneMask);
+                _layers[layerIndex] = new AnimationLayer(
+                    name,
+                    layerDef.Index,
+                    layerDef.BlendMode,
+                    layerDef.BoneMask);
 
                 // 订阅层的动画事件
-                _layers[i].AnimationPlayer.OnAnimationEvent += ForwardAnimationEvent;
+                _layers[layerIndex].AnimationPlayer.OnAnimationEvent += ForwardAnimationEvent;
+                layerIndex++;
             }
 
             // 初始化状态轨道
-            foreach (var trackDef in _template.StateTracks)
+            foreach (var (name, trackDef) in _template.StateTracks)
             {
-                _stateTracks[trackDef.Name] = new StateTrack(trackDef);
+                _stateTracks[name] = new StateTrack(name, trackDef);
             }
         }
 

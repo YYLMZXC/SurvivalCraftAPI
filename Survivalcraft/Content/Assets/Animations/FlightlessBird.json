@@ -17,15 +17,9 @@
       "layer": "Head",
       "rules": [
         {
-          "condition": "[FeedFactor] > 0 && [KickFactor] == 0",
+          "condition": "[FeedFactor] > 0",
           "animation": {
             "source": "driver:FlightlessBirdFeed"
-          }
-        },
-        {
-          "condition": "[KickFactor] > 0",
-          "animation": {
-            "source": "driver:FlightlessBirdAttack"
           }
         },
         {

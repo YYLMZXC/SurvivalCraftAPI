@@ -27,7 +27,7 @@ namespace Game.Animation.Drivers
 
         private float _aimHandAngle;
         private float _gameTimeDelta;
-        private float _currentAimAngle = 0f;
+        private float _currentAimActive = 0f;  // 瞄准激活程度（用于平滑过渡）
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
@@ -37,28 +37,31 @@ namespace Game.Animation.Drivers
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
-            if (_aimHandAngle == 0f) return;
-
-            // 平滑过渡（使用实际的 GameTimeDelta）
+            // 平滑过渡瞄准激活程度
+            float targetActive = _aimHandAngle != 0f ? 1f : 0f;
             float smoothFactor = MathUtils.Min(SmoothSpeed * _gameTimeDelta, 1f);
-            _currentAimAngle += smoothFactor * (_aimHandAngle - _currentAimAngle);
+            _currentAimActive += smoothFactor * (targetActive - _currentAimActive);
+
+            // 如果瞄准激活程度太小，跳过处理
+            if (_currentAimActive < 0.01f) return;
 
             // 原始代码：
-            // Hand1 (左手)：X = 1.5, Y = -0.7
+            // Hand1 (左手)：X = 1.5, Y = -0.7（需要平滑过渡）
             // Hand2 (右手)：X = AimHandAngle * 1, Y = 0
             var hand1Bone = model.FindBone("Hand1");
             if (hand1Bone != null)
             {
+                // Hand1 角度也需要平滑过渡
                 boneTransforms[hand1Bone.Index] =
-                    Matrix.CreateRotationX(AimAngleMultiplier) *
-                    Matrix.CreateRotationY(AimAngleY);
+                    Matrix.CreateRotationX(AimAngleMultiplier * _currentAimActive) *
+                    Matrix.CreateRotationY(AimAngleY * _currentAimActive);
             }
 
             var hand2Bone = model.FindBone("Hand2");
             if (hand2Bone != null)
             {
                 boneTransforms[hand2Bone.Index] =
-                    Matrix.CreateRotationX(_currentAimAngle * 1f);
+                    Matrix.CreateRotationX(_aimHandAngle * _currentAimActive);
             }
         }
     }

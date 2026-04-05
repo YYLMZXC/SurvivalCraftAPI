@@ -344,7 +344,8 @@ namespace Game {
 
             // 死亡动画参数
             ctrl.Parameters.SetVector3("DeathCauseOffset", DeathCauseOffset);
-            ctrl.Parameters.SetFloat("BodyHeight", m_componentCreature.ComponentBody.BoxSize.Y);
+            var boundingBox = m_componentCreature.ComponentBody.BoundingBox;
+            ctrl.Parameters.SetFloat("BodyHeight", boundingBox.Max.Y - boundingBox.Min.Y);
 
             // ComponentBody 参数
             var body = m_componentCreature.ComponentBody;
@@ -385,8 +386,8 @@ namespace Game {
             // 头部追踪
             if (LookAtOrder.HasValue) {
                 Vector3 lookDir = LookAtOrder.Value - EyePosition;
-                float lookX = MathF.Atan2(lookDir.X, lookDir.Z) * 180f / MathF.PI;
-                float lookY = MathF.Asin(lookDir.Y / lookDir.Length()) * 180f / MathF.PI;
+                float lookX = MathF.Atan2(lookDir.X, lookDir.Z);
+                float lookY = MathF.Asin(lookDir.Y / lookDir.Length());
                 ctrl.Parameters.SetFloat("LookAngleX", lookX);
                 ctrl.Parameters.SetFloat("LookAngleY", lookY);
             }

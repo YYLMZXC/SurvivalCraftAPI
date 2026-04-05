@@ -39,7 +39,8 @@ namespace Game.Animation.Drivers
         public float SmoothSpeed { get; set; } = 12f;
         public float HeadBobAngle { get; set; } = 5f; // 头部摆动角度（度）
         public float HeadMaxAngleX { get; set; } = 90f;
-        public float HeadMaxAngleY { get; set; } = 50f;
+        public float HeadMinAngleY { get; set; } = -90f; // 向下最大角度（负值）
+        public float HeadMaxAngleY { get; set; } = 50f;  // 向上最大角度
         public float HeadRatio { get; set; } = 0.6f;
         public float NeckRatio { get; set; } = 0.4f;
 
@@ -168,6 +169,7 @@ namespace Game.Animation.Drivers
             if (headBone != null)
             {
                 float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
+                float minAngleY = MathUtils.DegToRad(HeadMinAngleY);  // 不对称限制
                 float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
 
                 // 原始代码: vector2.Y += m_headAngleY; 然后再分配比例
@@ -175,9 +177,9 @@ namespace Game.Animation.Drivers
                 float totalLookAngleY = _lookAngleY + _currentHeadAngleY;
                 float totalLookAngleX = _lookAngleX;
 
-                // 限制角度
+                // 限制角度（Y轴使用不对称限制）
                 totalLookAngleX = Math.Clamp(totalLookAngleX, -maxAngleX, maxAngleX);
-                totalLookAngleY = Math.Clamp(totalLookAngleY, -maxAngleY, maxAngleY);
+                totalLookAngleY = Math.Clamp(totalLookAngleY, minAngleY, maxAngleY);
 
                 float headAngleX = totalLookAngleX;
                 float headAngleY = totalLookAngleY;
@@ -197,6 +199,7 @@ namespace Game.Animation.Drivers
             if (hasNeck)
             {
                 float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
+                float minAngleY = MathUtils.DegToRad(HeadMinAngleY);  // 不对称限制
                 float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
 
                 // 原始代码: vector3 = 0.4f * vector2 (颈部 40%)
@@ -204,7 +207,7 @@ namespace Game.Animation.Drivers
                 float totalLookAngleX = _lookAngleX;
 
                 totalLookAngleX = Math.Clamp(totalLookAngleX, -maxAngleX, maxAngleX);
-                totalLookAngleY = Math.Clamp(totalLookAngleY, -maxAngleY, maxAngleY);
+                totalLookAngleY = Math.Clamp(totalLookAngleY, minAngleY, maxAngleY);
 
                 float neckAngleX = totalLookAngleX * NeckRatio;
                 float neckAngleY = totalLookAngleY * NeckRatio;

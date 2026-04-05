@@ -257,8 +257,9 @@ namespace Game {
 
             // 身体前向向量（用于躺下动画）
             var bodyMatrix = m_componentCreature.ComponentBody.Matrix;
+            var boundingBox = m_componentCreature.ComponentBody.BoundingBox;
             ctrl.Parameters.SetVector3("BodyForward", bodyMatrix.Forward);
-            ctrl.Parameters.SetFloat("BodyHeight", m_componentCreature.ComponentBody.BoxSize.Y);
+            ctrl.Parameters.SetFloat("BodyHeight", boundingBox.Max.Y - boundingBox.Min.Y);
             ctrl.Parameters.SetFloat("BodyDepth", m_componentCreature.ComponentBody.BoxSize.Z);
 
             // 头部追踪角度（转换为弧度）
@@ -281,6 +282,7 @@ namespace Game {
             // 原始代码使用 TotalElapsedGameTime 作为噪声时间基准
             ctrl.Parameters.SetFloat("TotalElapsedGameTime", (float)m_subsystemGameInfo.TotalElapsedGameTime);
             ctrl.Parameters.SetFloat("GameTimeDelta", m_subsystemTime.GameTimeDelta);
+            ctrl.Parameters.SetFloat("GameTime", (float)m_subsystemTime.GameTime);  // 用于划船动画
 
             // 手持物品偏移和旋转
             ctrl.Parameters.SetVector3("InHandItemOffset", m_inHandItemOffset);

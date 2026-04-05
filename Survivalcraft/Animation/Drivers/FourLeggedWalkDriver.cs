@@ -245,8 +245,11 @@ namespace Game.Animation.Drivers
             {
                 float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
                 float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
-                float lookAngleX = Math.Clamp(_lookAngleX * NeckRatio, -maxAngleX, maxAngleX);
-                float lookAngleY = Math.Clamp((_lookAngleY + _headAngleY) * NeckRatio, -maxAngleY, maxAngleY);
+                // 原始代码: 先 Clamp 总角度，再乘以比例分配
+                float totalLookAngleX = Math.Clamp(_lookAngleX, -maxAngleX, maxAngleX);
+                float totalLookAngleY = Math.Clamp(_lookAngleY + _headAngleY, -maxAngleY, maxAngleY);
+                float lookAngleX = totalLookAngleX * NeckRatio;
+                float lookAngleY = totalLookAngleY * NeckRatio;
 
                 boneTransforms[neckBone.Index] =
                     Matrix.CreateRotationX(lookAngleY) *

@@ -75,15 +75,15 @@ namespace Game.Animation.Drivers
 
             if (_isBoat)
             {
-                // 船上姿势
-                legAngleY1 = 0.2f;
-                legAngleY2 = -0.2f;
-                legAngleX1 = 0.4f;
-                legAngleX2 = 0.4f;
-                handAngleX1 = 1.1f;
-                handAngleX2 = 1.1f;
-                handAngleY1 = 0.2f;
-                handAngleY2 = -0.2f;
+                // 船上姿势 - 原始代码: num3=1.1f(Leg X), x2=1.1f(Leg X), num4=0.4f(Hand X), num6=0.4f(Hand X)
+                legAngleX1 = 1.1f;   // num3 = Leg1 X
+                legAngleX2 = 1.1f;   // x2 = Leg2 X
+                legAngleY1 = 0.2f;   // y2 = Leg1 Y
+                legAngleY2 = -0.2f;  // y3 = Leg2 Y
+                handAngleX1 = 0.4f;  // num4 = Hand1 X
+                handAngleX2 = 0.4f;  // num6 = Hand2 X
+                handAngleY1 = 0.2f;  // num5 = Hand1 Y
+                handAngleY2 = -0.2f; // num7 = Hand2 Y
             }
             else
             {

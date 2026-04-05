@@ -137,9 +137,9 @@ namespace Game.Animation.Drivers
             // 噪声缩放因子
             float noiseScale = _isCreativeFly ? 4f : 1f;
 
-            // 手部噪声叠加
+            // 手部噪声叠加（原始代码：Hand1 X = num2, Hand2 X = 0.9 * num2 + 200）
             handAngleX1 += MathUtils.Lerp(-HandNoiseScale, HandNoiseScale, SimplexNoise.Noise(noiseTime));
-            handAngleX2 += MathUtils.Lerp(-HandNoiseScale, HandNoiseScale, SimplexNoise.Noise(noiseTime + 200f));
+            handAngleX2 += MathUtils.Lerp(-HandNoiseScale, HandNoiseScale, SimplexNoise.Noise(0.9f * noiseTime + 200f));
             handAngleY1 += MathUtils.Lerp(0f, noiseScale * 0.15f, SimplexNoise.Noise(1.1f * noiseTime + 100f));
             handAngleY2 += 0f - MathUtils.Lerp(0f, noiseScale * 0.15f, SimplexNoise.Noise(1.05f * noiseTime + 300f));
 

@@ -22,6 +22,7 @@ namespace Game.Animation.Drivers
         public string LookAngleYParam { get; set; } = "LookAngleY";
         public string GameTimeParam { get; set; } = "GameTime";
         public string MovementPhaseParam { get; set; } = "MovementPhase";  // 用于计算头部摆动
+        public string GameTimeDeltaParam { get; set; } = "GameTimeDelta";  // 用于平滑过渡
 
         // 可配置属性
         public float MinPeckAngle { get; set; } = 35f; // 最小啄食角度（度）
@@ -37,6 +38,7 @@ namespace Game.Animation.Drivers
         private float _lookAngleY;
         private float _gameTime;
         private float _movementPhase;
+        private float _gameTimeDelta = 1f / 60f;  // 默认值
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
@@ -45,6 +47,8 @@ namespace Game.Animation.Drivers
             _lookAngleY = parameters.GetFloat(LookAngleYParam);
             _gameTime = parameters.GetFloat(GameTimeParam);
             _movementPhase = parameters.GetFloat(MovementPhaseParam);
+            _gameTimeDelta = parameters.GetFloat(GameTimeDeltaParam);
+            if (_gameTimeDelta <= 0f) _gameTimeDelta = 1f / 60f;  // 防止零或负值
         }
 
         // 平滑过渡状态（用于头部摆动）
@@ -78,8 +82,8 @@ namespace Game.Animation.Drivers
             }
             else
             {
-                // 使用固定帧率的平滑系数（原始代码在 Update 中计算，SampleTransforms 中使用）
-                float smoothFactor = MathUtils.Min(12f * (1f / 60f), 1f);
+                // 使用实际的 GameTimeDelta（原始代码: num7 = Min(12 * GameTimeDelta, 1)）
+                float smoothFactor = MathUtils.Min(12f * _gameTimeDelta, 1f);
                 _currentHeadAngleY += smoothFactor * (headBobAngle - _currentHeadAngleY);
             }
 

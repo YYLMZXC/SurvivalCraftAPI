@@ -208,7 +208,7 @@ namespace Game {
 #if ANDROID
                 path = Storage.GetSystemPath($"{RunPath.AndroidFilePath}/files");
 #else
-                path = DiskExternalContentProvider.LocalPath;
+                path = Storage.ProcessPath(DiskExternalContentProvider.LocalPath, false, false);
 #endif
             }
             path = path.Replace('\\', '/');

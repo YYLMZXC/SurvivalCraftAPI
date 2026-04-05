@@ -185,7 +185,7 @@ namespace Engine.Animation
             {
                 errors.Add("Template name is required");
             }
-            else if (!AnimationTemplateRegistry.Exists(config.Template))
+            else if (!AnimationTemplateManager.Exists(config.Template))
             {
                 errors.Add($"Unknown template: {config.Template}");
             }

@@ -52,12 +52,12 @@ namespace Engine.Animation
         public AnimationController(Model model, string templateName)
         {
             _model = model;
-            _template = AnimationTemplateRegistry.Get(templateName);
+            _template = AnimationTemplateManager.Get(templateName);
 
             if (_template == null)
             {
                 // 使用简单模板作为后备
-                _template = AnimationTemplateRegistry.Get("Simple");
+                _template = AnimationTemplateManager.Get("Simple");
             }
 
             // 初始化层

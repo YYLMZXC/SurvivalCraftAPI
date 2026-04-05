@@ -501,6 +501,7 @@ namespace Game {
             );
             AddLoadAction(() => {
                     AnimationDriverRegistration.Register();
+                    AnimationTemplateRegistration.Register();
                 }
             );
             AddLoadAction(

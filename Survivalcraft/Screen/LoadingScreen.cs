@@ -4,6 +4,7 @@ using System.Reflection;
 using Engine;
 using Engine.Graphics;
 using Engine.Media;
+using Game.Animation;
 using NCalc;
 #if ANDROID
 using Android.App;
@@ -488,8 +489,7 @@ namespace Game {
             );
             InitScreens();
             AddLoadAction(FileAssociationManager.Initialize);
-            AddLoadAction(
-                delegate {
+            AddLoadAction(() => {
                     //NCalc Warmup
                     Expression expression = new NCalc.Expression("[B] && [N] * 1.0 > 0.5");
                     _ = expression.GetParameterNames();
@@ -497,6 +497,10 @@ namespace Game {
                     expression.Parameters.Add("N", 0.5f);
                     object expressionResult = expression.Evaluate();
                     _ = Convert.ToBoolean(expressionResult);
+                }
+            );
+            AddLoadAction(() => {
+                    AnimationDriverRegistration.Register();
                 }
             );
             AddLoadAction(

@@ -413,7 +413,8 @@ namespace Engine.Animation
                 return driver;
 
             // 最后尝试通过反射创建
-            return CreateGameDriver(type);
+            //return CreateGameDriver(type);
+            throw new Exception($"Driver \"{type}\" not found");
         }
 
         /// <summary>

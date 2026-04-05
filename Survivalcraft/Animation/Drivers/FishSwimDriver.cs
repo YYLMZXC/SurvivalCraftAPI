@@ -76,26 +76,11 @@ namespace Game.Animation.Drivers
                     Matrix.CreateTranslation(_position.X, _position.Y + yOffset, _position.Z);
             }
 
-            // 如果嵌入冰中，使用 DigIn 动画而不是游泳动画
+            // 如果嵌入冰中，只设置 Body 骨骼，不处理尾巴动画
+            // 原始代码：IsEmbeddedInIce 为 true 时直接返回，不处理尾巴
             if (_isEmbeddedInIce)
             {
-                // 嵌入冰中时，尾巴使用 DigInTailPhase
-                float digInPhase = _tailWagPhase; // 这里复用 TailWagPhase 作为 DigInTailPhase
-
-                float tail1Angle = MathUtils.DegToRad(Tail1Angle) * 0.5f * MathF.Sin(MathF.PI * 2f * digInPhase);
-                float tail2Angle = MathUtils.DegToRad(Tail2Angle) * 0.5f * MathF.Sin(2f * (MathF.PI * MathUtils.Max(digInPhase - TailPhaseOffset, 0f)));
-
-                var tail1Bone = model.FindBone("Tail1");
-                var tail2Bone = model.FindBone("Tail2");
-
-                if (tail1Bone != null)
-                {
-                    boneTransforms[tail1Bone.Index] = Matrix.CreateRotationZ(tail1Angle);
-                }
-                if (tail2Bone != null)
-                {
-                    boneTransforms[tail2Bone.Index] = Matrix.CreateRotationZ(tail2Angle);
-                }
+                // 尾巴保持默认姿态，不做任何变换
                 return;
             }
 
@@ -104,16 +89,25 @@ namespace Game.Animation.Drivers
 
             if (_hasVerticalTail)
             {
-                // 垂直尾巴：垂直方向由 tailTurn.Y 控制，水平方向由游泳相位控制
-                tail1Z = MathUtils.DegToRad(Tail1Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * _tailWagPhase) - _tailTurnX, -1f, 1f);
-                tail2Z = MathUtils.DegToRad(Tail2Angle) * Math.Clamp(0.5f * MathF.Sin(2f * (MathF.PI * MathUtils.Max(_tailWagPhase - TailPhaseOffset, 0f))) - _tailTurnX, -1f, 1f);
+                // 垂直尾巴：
+                // - Z轴（水平摆动）由攻击相位 + 游泳相位控制
+                // - X轴（垂直摆动）由游泳相位控制，tailTurn.Y 控制转向
+                // 原始代码：num2 = digInTailPhase + tailWagPhase 用于 Z轴
+                float combinedPhase = _phase + _tailWagPhase;
 
+                // Z轴：使用组合相位（原始代码用 num2）
+                tail1Z = MathUtils.DegToRad(Tail1Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * combinedPhase) - _tailTurnX, -1f, 1f);
+                tail2Z = MathUtils.DegToRad(Tail2Angle) * Math.Clamp(0.5f * MathF.Sin(2f * (MathF.PI * MathUtils.Max(combinedPhase - TailPhaseOffset, 0f))) - _tailTurnX, -1f, 1f);
+
+                // X轴：使用游泳相位（原始代码用 MovementAnimationPhase）
                 tail1X = MathUtils.DegToRad(Tail1Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * _phase) - _tailTurnY, -1f, 1f);
                 tail2X = MathUtils.DegToRad(Tail2Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * MathUtils.Max(_phase - TailPhaseOffset, 0f)) - _tailTurnY, -1f, 1f);
             }
             else
             {
-                // 水平尾巴：游泳相位控制水平摆动，tailTurn.Y 控制垂直
+                // 水平尾巴：
+                // - Z轴（水平摆动）由游泳相位 + 攻击相位控制
+                // - X轴（垂直摆动）由 tailTurn.Y 控制
                 float combinedPhase = _phase + _tailWagPhase;
 
                 tail1Z = MathUtils.DegToRad(Tail1Angle) * Math.Clamp(0.5f * MathF.Sin(MathF.PI * 2f * combinedPhase) - _tailTurnX, -1f, 1f);

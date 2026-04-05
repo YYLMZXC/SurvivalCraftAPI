@@ -45,18 +45,6 @@
     }
   },
 
-  "drivers": [
-    {
-      "type": "FishSwim",
-      "layer": "Base",
-      "properties": {
-        "Tail1Angle": 25.0,
-        "Tail2Angle": 30.0,
-        "TailPhaseOffset": 0.25
-      }
-    }
-  ],
-
   "parameters": {
     "SwimAnimationSpeed": 1.0,
     "HasVerticalTail": false,

@@ -45,18 +45,6 @@
     }
   },
 
-  "drivers": [
-    {
-      "type": "FlightlessBirdWalk",
-      "layer": "Base",
-      "properties": {
-        "LegAngle": 0.55,
-        "SmoothSpeed": 12.0,
-        "HeadBobAngle": 5.0
-      }
-    }
-  ],
-
   "parameters": {
     "WalkAnimationSpeed": 1.0,
     "WalkLegsAngle": 0.55,

@@ -34,6 +34,10 @@ namespace Game.Animation.Drivers
         public string KickPhaseParam { get; set; } = "KickPhase";
         public string KickFactorParam { get; set; } = "KickFactor";
 
+        // 输出参数（用于死亡动画）
+        public string LastLegAngle1Param { get; set; } = "LastLegAngle1";
+        public string LastLegAngle2Param { get; set; } = "LastLegAngle2";
+
         // 可配置属性
         public float LegAngle { get; set; } = 0.55f; // 默认腿部摆动角度（弧度）
         public float SmoothSpeed { get; set; } = 12f;
@@ -68,8 +72,12 @@ namespace Game.Animation.Drivers
         private float _deltaTime = 1f / 60f; // 默认帧时间
         private bool _firstUpdate = true;
 
+        // 保存参数引用（用于输出腿部角度）
+        private AnimationParameters _parameters;
+
         public void Update(float deltaTime, AnimationParameters parameters)
         {
+            _parameters = parameters; // 保存参数引用（用于在 SampleTransforms 中输出）
             _deltaTime = MathUtils.Max(deltaTime, 0.001f); // 保存帧时间，最小值 0.001
             _phase = parameters.GetFloat(PhaseParam);
             _bob = parameters.GetFloat(BobParam);
@@ -216,6 +224,10 @@ namespace Game.Animation.Drivers
                     Matrix.CreateRotationX(neckAngleY) *
                     Matrix.CreateRotationZ(-neckAngleX);
             }
+
+            // 输出腿部角度到参数（用于死亡动画）
+            _parameters?.SetFloat(LastLegAngle1Param, _currentLegAngle1);
+            _parameters?.SetFloat(LastLegAngle2Param, _currentLegAngle2);
         }
     }
 }

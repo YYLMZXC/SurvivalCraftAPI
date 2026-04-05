@@ -29,11 +29,6 @@ namespace Game {
 
         public float m_kickPhase;
 
-        // 腿部角度（用于死亡动画）
-        public float m_legAngle1;
-
-        public float m_legAngle2;
-
         public override float AttackPhase {
             get => m_kickPhase;
             set => m_kickPhase = value;
@@ -89,36 +84,6 @@ namespace Game {
             FeedOrder = false;
             AttackOrder = false;
 
-            // 计算腿部角度（用于死亡动画）
-            // 这部分逻辑需要与 FlightlessBirdWalkDriver 保持一致
-            float targetLegAngle1 = 0f;
-            float targetLegAngle2 = 0f;
-
-            if (MovementAnimationPhase != 0f &&
-                (m_componentCreature.ComponentBody.StandingOnValue.HasValue || m_componentCreature.ComponentBody.ImmersionFactor > 0f))
-            {
-                float speed = m_componentCreature.ComponentLocomotion.SlipSpeed
-                    ?? Vector3.Dot(m_componentCreature.ComponentBody.Velocity, m_componentCreature.ComponentBody.Matrix.Forward);
-                float legAngle = speed > 0.75f * m_componentCreature.ComponentLocomotion.WalkSpeed
-                    ? 1.5f * m_walkLegsAngle
-                    : m_walkLegsAngle;
-
-                targetLegAngle1 = legAngle * MathF.Sin(MathF.PI * 2f * MovementAnimationPhase) + m_kickPhase;
-                targetLegAngle2 = legAngle * MathF.Sin(MathF.PI * 2f * (MovementAnimationPhase + 0.5f));
-            }
-
-            // 踢腿混合
-            if (m_kickFactor > 0f)
-            {
-                float kickAngle = MathUtils.DegToRad(60f) * MathF.Sin(MathF.PI * MathUtils.Sigmoid(m_kickPhase, 5f));
-                targetLegAngle1 = MathUtils.Lerp(targetLegAngle1, kickAngle, m_kickFactor);
-            }
-
-            // 平滑过渡
-            float smoothFactor = MathUtils.Min(12f * m_subsystemTime.GameTimeDelta, 1f);
-            m_legAngle1 += smoothFactor * (targetLegAngle1 - m_legAngle1);
-            m_legAngle2 += smoothFactor * (targetLegAngle2 - m_legAngle2);
-
             base.Update(dt);
         }
 
@@ -153,10 +118,6 @@ namespace Game {
             // 游戏时间（用于进食噪声）
             ctrl.Parameters.SetFloat("GameTime", (float)m_subsystemTime.GameTime);
             ctrl.Parameters.SetFloat("GameTimeDelta", (float)m_subsystemTime.GameTimeDelta);
-
-            // 腿部角度（用于死亡动画）
-            ctrl.Parameters.SetFloat("LastLegAngle1", m_legAngle1);
-            ctrl.Parameters.SetFloat("LastLegAngle2", m_legAngle2);
         }
 
         /// <summary>

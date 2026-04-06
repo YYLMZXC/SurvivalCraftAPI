@@ -38,6 +38,12 @@ namespace Engine.Animation
 
             try
             {
+                // 特殊处理：如果条件是纯布尔参数名，直接返回其值
+                if (parameters.HasParameter(condition) && parameters.TryGetBool(condition, out bool boolValue))
+                {
+                    return boolValue;
+                }
+
                 // 获取或编译表达式
                 var expression = GetOrCreateExpression(condition);
 
@@ -50,7 +56,7 @@ namespace Engine.Animation
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[NCalc Error] Condition: {condition}, Error: {ex.Message}");
+                Log.Error($"[NCalc Error] Condition: {condition}, Error: {ex.Message}");
                 return false;
             }
         }

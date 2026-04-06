@@ -21,16 +21,31 @@ namespace Game {
                 Quaternion entityRotation = m_componentFrame.Rotation;
                 Matrix entityTransform = Matrix.CreateFromQuaternion(entityRotation) * Matrix.CreateTranslation(entityPosition);
 
-                // 重要：根骨骼变换（如 Z_UP 坐标转换）必须保留
+                // 获取根骨骼变换（可能是动画采样的或原始的）
+                Matrix rootTransform;
                 if (m_boneTransforms[Model.RootBone.Index].HasValue) {
-                    // 根骨骼有动画变换，直接叠加实体变换
-                    Matrix animTransform = m_boneTransforms[Model.RootBone.Index].Value;
-                    m_boneTransforms[Model.RootBone.Index] = animTransform * entityTransform;
+                    rootTransform = m_boneTransforms[Model.RootBone.Index].Value;
                 } else {
-                    // 根骨骼没有动画变换，需要保留原始变换（如 Z_UP）并叠加实体变换
-                    Matrix rootBoneTransform = Model.RootBone.Transform;
-                    m_boneTransforms[Model.RootBone.Index] = rootBoneTransform * entityTransform;
+                    rootTransform = Model.RootBone.Transform;
                 }
+
+                // 应用根骨骼旋转修正（某些 glTF 模型的前方方向与游戏不一致）
+                if (AnimationController != null && AnimationController.RootBoneRotation != 0f) {
+                    Matrix correctionRotation = Matrix.CreateRotationY(AnimationController.RootBoneRotation);
+                    rootTransform = correctionRotation * rootTransform;
+                }
+
+                // 应用模型缩放（从动画配置中读取）
+                float scale = ModelScale;
+                if (AnimationController != null && AnimationController.ModelScale != 1f) {
+                    scale = AnimationController.ModelScale;
+                }
+                if (scale != 1f) {
+                    rootTransform = Matrix.CreateScale(scale) * rootTransform;
+                }
+
+                // 叠加实体变换
+                m_boneTransforms[Model.RootBone.Index] = rootTransform * entityTransform;
                 return;
             }
 

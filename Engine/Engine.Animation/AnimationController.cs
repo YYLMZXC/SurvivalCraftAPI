@@ -45,6 +45,17 @@ namespace Engine.Animation
         public AnimationLayer[] Layers => _layers;
 
         /// <summary>
+        /// 根骨骼旋转角度（弧度），用于修正模型朝向
+        /// 某些 glTF 模型的前方方向可能与游戏不一致，需要旋转修正
+        /// </summary>
+        public float RootBoneRotation { get; set; } = 0f;
+
+        /// <summary>
+        /// 模型缩放比例
+        /// </summary>
+        public float ModelScale { get; set; } = 1f;
+
+        /// <summary>
         /// 动画事件触发时调用
         /// </summary>
         public event AnimationEventHandler OnAnimationEvent;
@@ -278,7 +289,9 @@ namespace Engine.Animation
                 for (int i = 0; i < trackConfig.Rules.Count; i++)
                 {
                     var rule = trackConfig.Rules[i];
-                    if (_ruleEvaluator.EvaluateCondition(rule.Condition, _parameters))
+                    bool result = _ruleEvaluator.EvaluateCondition(rule.Condition, _parameters);
+
+                    if (result)
                     {
                         matchedIndex = i;
                         matchedRule = rule;
@@ -544,7 +557,6 @@ namespace Engine.Animation
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AnimationController] Failed to load animation file: {path}, Error: {ex.Message}");
                 return null;
             }
         }

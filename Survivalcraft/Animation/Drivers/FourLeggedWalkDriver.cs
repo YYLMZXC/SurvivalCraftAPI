@@ -107,11 +107,16 @@ namespace Game.Animation.Drivers
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
-            // 读取输入参数
+            // 读取输入参数（缺失时使用默认值）
             _speed = parameters.GetFloat(SpeedParam);
             _deltaTime = parameters.GetFloat(DeltaTimeParam);
             _walkSpeed = parameters.GetFloat(WalkSpeedParam);
-            _animationSpeed = parameters.GetFloat(AnimationSpeedParam);
+
+            // AnimationSpeed 缺失时使用默认值 1.0f
+            _animationSpeed = parameters.HasParameter(AnimationSpeedParam)
+                ? parameters.GetFloat(AnimationSpeedParam)
+                : 1.0f;
+
             _frontAngle = parameters.GetFloat(FrontAngleParam);
             _hindAngle = parameters.GetFloat(HindAngleParam);
             _gait = (int)parameters.GetFloat(GaitParam);

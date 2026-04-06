@@ -301,6 +301,12 @@ namespace Engine.Animation
             // 创建控制器
             AnimationController controller = new(model, templateName);
 
+            // 设置根骨骼旋转（用于修正模型朝向）
+            controller.RootBoneRotation = config.RootBoneRotation * MathF.PI / 180f; // 度转弧度
+
+            // 设置模型缩放
+            controller.ModelScale = config.ModelScale;
+
             // 设置初始参数
             if (config.Parameters != null)
             {

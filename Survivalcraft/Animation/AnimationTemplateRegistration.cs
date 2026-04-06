@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Text.Json.Nodes;
+using Engine;
 using Engine.Animation;
 
 namespace Game.Animation
@@ -70,16 +71,12 @@ namespace Game.Animation
                 catch (JsonInheritanceException ex)
                 {
                     // 记录继承相关的详细错误信息
-                    System.Diagnostics.Debug.WriteLine($"[AnimationTemplate] Failed to load template '{contentInfo.ContentPath}': {ex.Message}");
-                    if (ex.InheritanceChain != null)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"  Inheritance chain: {ex.InheritanceChain}");
-                    }
+                    Log.Error($"[AnimationTemplate] Failed to load template '{contentInfo.ContentPath}': {ex.Message}");
                 }
                 catch (Exception ex)
                 {
                     // 记录其他异常
-                    System.Diagnostics.Debug.WriteLine($"[AnimationTemplate] Failed to load template '{contentInfo.ContentPath}': {ex.Message}");
+                    Log.Error($"[AnimationTemplate] Failed to load template '{contentInfo.ContentPath}': {ex.Message}");
                 }
             }
         }

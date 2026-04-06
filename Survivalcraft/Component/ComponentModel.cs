@@ -247,6 +247,11 @@ namespace Game {
                     var loader = new AnimationConfigLoader();
                     AnimationConfig config = loader.LoadFromJsonNode(JsonNode.Parse(AnimationConfigJson));
                     AnimationController = loader.CreateController(config, m_model);
+
+                    // 应用动画配置中的模型缩放（覆盖 ValuesDictionary 中的值）
+                    if (AnimationController.ModelScale != 1f) {
+                        ModelScale = AnimationController.ModelScale;
+                    }
                 }
                 else if (!string.IsNullOrEmpty(AnimationTemplateName)) {
                     // 使用模板名称创建控制器

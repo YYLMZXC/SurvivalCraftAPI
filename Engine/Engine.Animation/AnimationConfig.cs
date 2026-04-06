@@ -147,6 +147,22 @@ namespace Engine.Animation
         public string Template { get; set; } = "Simple";
 
         /// <summary>
+        /// 根骨骼旋转角度（度），用于修正模型朝向
+        /// 某些 glTF 模型的前方方向可能与游戏不一致，需要旋转修正
+        /// 例如：Fox 模型的前方是 +X，需要旋转 90 度使其面向 +Z
+        /// </summary>
+        public float RootBoneRotation { get; set; } = 0f;
+
+        /// <summary>
+        /// 模型缩放比例
+        /// 用于调整模型大小，例如：
+        /// - 0.01：厘米单位模型（Fox 等从小型建模软件导出的模型）
+        /// - 1.0：米单位模型（默认，大多数 glTF 模型）
+        /// - 10.0：放大 10 倍（大型建筑模型可能需要）
+        /// </summary>
+        public float ModelScale { get; set; } = 1f;
+
+        /// <summary>
         /// 层配置（在此配置驱动器及其属性）
         /// </summary>
         public Dictionary<string, LayerConfig> Layers { get; set; } = new();

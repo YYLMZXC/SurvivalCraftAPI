@@ -92,7 +92,7 @@ namespace Engine.Graphics {
                 texture.Tag = texInfo.Name;
             }
             catch (System.Exception ex) {
-                System.Diagnostics.Debug.WriteLine($"[Model] Failed to load texture '{texInfo.Name}': {ex.Message}");
+                Log.Error($"[Model] Failed to load texture '{texInfo.Name}': {ex.Message}");
                 return null;
             }
 

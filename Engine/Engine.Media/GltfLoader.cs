@@ -721,7 +721,7 @@ namespace Engine.Media {
             } catch (Exception ex) {
                 // 动画转换失败时记录错误，但继续处理其他动画
                 // 注意：这里不抛出异常，允许部分动画数据加载成功
-                System.Diagnostics.Debug.WriteLine($"[GltfLoader] Animation conversion warning: {ex.Message}");
+                Log.Warning($"[GltfLoader] Animation conversion warning: {ex.Message}");
             }
 
             return result;

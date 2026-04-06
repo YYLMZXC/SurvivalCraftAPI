@@ -62,7 +62,7 @@ namespace Engine.Media {
         public static ModelData Load(Stream stream, string basePath = null) {
             ArgumentNullException.ThrowIfNull(stream);
             BYTES FileReaderCallback(string assetName) {
-                string path = basePath == null ? assetName : Storage.CombinePaths(basePath, assetName);
+                string path = basePath == null ? assetName : Storage.CombinePaths(basePath.Replace('\\', '/'), assetName);
                 Stream resourceStream = LoadExternalStreamCallback(path);
                 byte[] bytes = new byte[resourceStream.Length];
                 int totalRead = 0;

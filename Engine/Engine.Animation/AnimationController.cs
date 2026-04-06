@@ -336,6 +336,24 @@ namespace Engine.Animation
             string source = animRef?.Source;
             if (string.IsNullOrEmpty(source)) return;
 
+            // 检查 source 是否是动画别名（在 animations 部分定义）
+            if (_animationReferences.TryGetValue(source, out var aliasRef))
+            {
+                // 使用别名解析后的配置（别名配置优先，因为状态规则通常只指定 source）
+                // 只在原 animRef 有显式设置时才覆盖
+                animRef = new AnimationReference
+                {
+                    Source = aliasRef.Source,
+                    Speed = aliasRef.Speed,
+                    Loop = aliasRef.Loop,
+                    InitialPhase = aliasRef.InitialPhase,
+                    BlendDuration = aliasRef.BlendDuration,
+                    DriverArgs = aliasRef.DriverArgs,
+                    OnComplete = aliasRef.OnComplete
+                };
+                source = animRef.Source;
+            }
+
             // 处理 driver: 语法
             if (source.StartsWith("driver:"))
             {

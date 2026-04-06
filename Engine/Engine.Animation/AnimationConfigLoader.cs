@@ -345,6 +345,12 @@ namespace Engine.Animation
                 controller.SetStateConfigs(config.States);
             }
 
+            // 设置动画别名引用（用于状态规则中的别名解析）
+            if (config.Animations != null && config.Animations.Count > 0)
+            {
+                controller.SetAnimationReferences(config.Animations);
+            }
+
             return controller;
         }
 

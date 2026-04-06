@@ -253,21 +253,26 @@ namespace Engine.Animation {
             }
 
             // 为每个骨骼构建完整的变换矩阵
+            // 关键：当动画没有提供某个分量时，使用骨骼原始变换的对应分量
             foreach (var kvp in boneTransformsData) {
                 int boneIndex = kvp.Key;
-                var (translation, rotation, scale) = kvp.Value;
+                var (animTranslation, animRotation, animScale) = kvp.Value;
+
+                // 获取骨骼原始变换并分解
+                ModelBone bone = _model.m_bones[boneIndex];
+                Vector3 origScale, origTranslation;
+                Quaternion origRotation;
+                bone.Transform.Decompose(out origScale, out origRotation, out origTranslation);
+
+                // 使用动画值或原始值
+                Vector3 finalScale = animScale ?? origScale;
+                Quaternion finalRotation = animRotation ?? origRotation;
+                Vector3 finalTranslation = animTranslation ?? origTranslation;
 
                 // 构建变换矩阵: Scale * Rotation * Translation
-                Matrix transform = Matrix.Identity;
-                if (scale.HasValue) {
-                    transform *= Matrix.CreateScale(scale.Value);
-                }
-                if (rotation.HasValue) {
-                    transform *= Matrix.CreateFromQuaternion(rotation.Value);
-                }
-                if (translation.HasValue) {
-                    transform *= Matrix.CreateTranslation(translation.Value);
-                }
+                Matrix transform = Matrix.CreateScale(finalScale) *
+                                   Matrix.CreateFromQuaternion(finalRotation) *
+                                   Matrix.CreateTranslation(finalTranslation);
 
                 boneTransforms[boneIndex] = transform;
             }

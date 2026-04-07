@@ -42,6 +42,9 @@ namespace Engine.Animation
         // 记录当前应用在每个层上的动画引用（用于获取 OnComplete）
         private readonly Dictionary<string, AnimationReference> _layerAnimationRef = new();
 
+        // 记录哪些层被手动控制（跳过状态规则评估）
+        private readonly HashSet<string> _manualOverrideLayers = new();
+
         public Model Model => _model;
         public AnimationTemplate Template => _template;
         public AnimationParameters Parameters => _parameters;
@@ -328,10 +331,19 @@ namespace Engine.Animation
                 return;
             }
 
+            // 如果所有层都被手动控制，跳过评估
+            if (_manualOverrideLayers.Count > 0 && _manualOverrideLayers.Count >= _layers.Length)
+            {
+                return;
+            }
+
             foreach (var (trackName, trackConfig) in _stateConfigs)
             {
                 if (string.IsNullOrEmpty(trackConfig.Layer)) continue;
                 if (!_layers.Any(l => l.Name == trackConfig.Layer)) continue;
+
+                // 跳过被手动控制的层
+                if (_manualOverrideLayers.Contains(trackConfig.Layer)) continue;
                 if (trackConfig.Rules == null || trackConfig.Rules.Count == 0) continue;
 
                 // 找到匹配的规则
@@ -381,13 +393,14 @@ namespace Engine.Animation
         /// <summary>
         /// 应用动画配置到指定层
         /// </summary>
-        private void ApplyAnimationToLayer(string layerName, AnimationReference animRef)
+        /// <returns>是否成功应用动画</returns>
+        private bool ApplyAnimationToLayer(string layerName, AnimationReference animRef)
         {
             var layer = _layers.FirstOrDefault(l => l.Name == layerName);
-            if (layer == null) return;
+            if (layer == null) return false;
 
             string source = animRef?.Source;
-            if (string.IsNullOrEmpty(source)) return;
+            if (string.IsNullOrEmpty(source)) return false;
 
             // 检查 source 是否是动画别名（在 animations 部分定义）
             if (_animationReferences.TryGetValue(source, out var aliasRef))
@@ -442,6 +455,11 @@ namespace Engine.Animation
                     {
                         layer.SetDriver(driver);
                     }
+                    else
+                    {
+                        // 驱动器创建失败
+                        return false;
+                    }
                 }
 
                 // 驱动器相关参数通过 Parameters 传递
@@ -453,6 +471,8 @@ namespace Engine.Animation
                 // 驱动器没有完成概念，清除跟踪
                 _layerAnimationRef.Remove(layerName);
                 _layerLooping.Remove(layerName);
+
+                return true;
             }
             // 处理 file: 语法 - 加载外部动画文件
             else if (source.StartsWith("file:"))
@@ -497,7 +517,12 @@ namespace Engine.Animation
                     _layerAnimationRef[layerName] = animRef;
                     _layerLooping[layerName] = loop;
                     _layerWasPlaying[layerName] = true;
+
+                    return true;
                 }
+
+                // 外部文件加载失败
+                return false;
             }
             // 处理动画名（模型内置动画）
             else
@@ -537,7 +562,12 @@ namespace Engine.Animation
                     _layerAnimationRef[layerName] = animRef;
                     _layerLooping[layerName] = loop;
                     _layerWasPlaying[layerName] = true;
+
+                    return true;
                 }
+
+                // 找不到动画
+                return false;
             }
         }
 
@@ -712,6 +742,184 @@ namespace Engine.Animation
                 layer.SetDriver(driver);
             }
         }
+
+        #region 手动动画控制 API
+
+        /// <summary>
+        /// 强制播放指定动画（支持配置文件中定义的别名）
+        /// <para>
+        /// 调用后，该层将跳过配置文件中的状态规则条件评估，
+        /// 直到调用 <see cref="ReleaseManualControl"/> 释放控制权。
+        /// </para>
+        /// <para>
+        /// <b>调用时机：</b>应在 <see cref="Update"/> 之前调用，
+        /// 通常在 <see cref="SyncEngineParameters"/> 重写方法中或动画事件回调中调用。
+        /// </para>
+        /// </summary>
+        /// <param name="layerName">层名称（如 "Base"、"Head"）</param>
+        /// <param name="animationNameOrAlias">动画名或配置文件中定义的别名（如 "idle1"、"walk"）</param>
+        /// <param name="loop">是否循环播放</param>
+        /// <param name="blendDuration">过渡时长（秒），0 表示立即切换</param>
+        /// <returns>是否成功开始播放</returns>
+        public bool PlayAnimation(string layerName, string animationNameOrAlias,
+            bool loop = true, float blendDuration = 0.3f)
+        {
+            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            if (layer == null) return false;
+
+            // 1. 检查是否是别名
+            AnimationReference animRef = null;
+            if (_animationReferences.TryGetValue(animationNameOrAlias, out var aliasRef))
+            {
+                // 使用别名配置，但覆盖循环和过渡时长（如果显式指定）
+                animRef = new AnimationReference
+                {
+                    Source = aliasRef.Source,
+                    SpeedValue = aliasRef.SpeedValue,
+                    LoopValue = loop,  // 使用参数值
+                    InitialPhaseValue = aliasRef.InitialPhaseValue,
+                    BlendDurationValue = blendDuration,  // 使用参数值
+                    DriverArgs = aliasRef.DriverArgs,
+                    OnComplete = aliasRef.OnComplete
+                };
+            }
+            else
+            {
+                // 2. 创建临时引用（直接使用动画名）
+                animRef = new AnimationReference
+                {
+                    Source = animationNameOrAlias,
+                    LoopValue = loop,
+                    BlendDurationValue = blendDuration
+                };
+            }
+
+            // 3. 标记该层为手动控制
+            _manualOverrideLayers.Add(layerName);
+
+            // 4. 应用到层并返回结果
+            return ApplyAnimationToLayer(layerName, animRef);
+        }
+
+        /// <summary>
+        /// 播放外部动画文件中的动画
+        /// <para>
+        /// 调用后，该层将跳过配置文件中的状态规则条件评估，
+        /// 直到调用 <see cref="ReleaseManualControl"/> 释放控制权。
+        /// </para>
+        /// <para>
+        /// <b>调用时机：</b>应在 <see cref="Update"/> 之前调用。
+        /// </para>
+        /// </summary>
+        /// <param name="layerName">层名称</param>
+        /// <param name="filePath">动画文件路径（相对于 Content 目录）</param>
+        /// <param name="animationName">文件中的动画名称（可选，默认使用第一个动画）</param>
+        /// <param name="loop">是否循环播放</param>
+        /// <param name="blendDuration">过渡时长（秒）</param>
+        /// <returns>是否成功开始播放</returns>
+        public bool PlayExternalAnimation(string layerName, string filePath,
+            string animationName = null, bool loop = true, float blendDuration = 0.3f)
+        {
+            string source = string.IsNullOrEmpty(animationName)
+                ? $"file:{filePath}"
+                : $"file:{filePath}#{animationName}";
+
+            var animRef = new AnimationReference
+            {
+                Source = source,
+                LoopValue = loop,
+                BlendDurationValue = blendDuration
+            };
+
+            // 标记该层为手动控制
+            _manualOverrideLayers.Add(layerName);
+
+            // 应用并返回结果
+            return ApplyAnimationToLayer(layerName, animRef);
+        }
+
+        /// <summary>
+        /// 停止指定层的动画播放
+        /// <para>
+        /// 此方法不会释放手动控制权，层仍会跳过状态规则评估。
+        /// 如需恢复自动控制，请调用 <see cref="ReleaseManualControl"/>。
+        /// </para>
+        /// </summary>
+        /// <param name="layerName">层名称</param>
+        public void StopAnimation(string layerName)
+        {
+            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            layer?.StopAnimation();
+        }
+
+        /// <summary>
+        /// 释放层的手动控制权，恢复配置文件中的状态规则自动评估
+        /// <para>
+        /// 释放后会强制重新评估该层的状态规则，确保动画状态正确恢复。
+        /// </para>
+        /// <para>
+        /// <b>调用时机：</b>当手动动画播放完成，需要恢复自动状态切换时调用。
+        /// 通常在动画完成回调或特定条件满足时调用。
+        /// </para>
+        /// </summary>
+        /// <param name="layerName">层名称，为 null 时释放所有层</param>
+        public void ReleaseManualControl(string layerName = null)
+        {
+            if (string.IsNullOrEmpty(layerName))
+            {
+                _manualOverrideLayers.Clear();
+                // 清除所有规则匹配缓存，强制重新评估
+                _lastMatchedRuleIndex.Clear();
+            }
+            else
+            {
+                _manualOverrideLayers.Remove(layerName);
+
+                // 清除该层相关状态轨道的规则匹配缓存
+                // 通过遍历状态配置找到该层对应的轨道
+                if (_stateConfigs != null)
+                {
+                    foreach (var (trackName, trackConfig) in _stateConfigs)
+                    {
+                        if (trackConfig.Layer == layerName)
+                        {
+                            _lastMatchedRuleIndex.Remove(trackName);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 检查指定层是否处于手动控制模式
+        /// </summary>
+        /// <param name="layerName">层名称</param>
+        /// <returns>是否被手动控制</returns>
+        public bool IsManualControl(string layerName)
+        {
+            return _manualOverrideLayers.Contains(layerName);
+        }
+
+        /// <summary>
+        /// 获取配置文件中定义的动画别名列表
+        /// </summary>
+        /// <returns>别名列表</returns>
+        public IEnumerable<string> GetAnimationAliases()
+        {
+            return _animationReferences.Keys;
+        }
+
+        /// <summary>
+        /// 检查动画别名是否存在
+        /// </summary>
+        /// <param name="alias">别名</param>
+        /// <returns>是否存在</returns>
+        public bool HasAnimationAlias(string alias)
+        {
+            return _animationReferences.ContainsKey(alias);
+        }
+
+        #endregion
 
         /// <summary>
         /// 清理资源，取消事件订阅

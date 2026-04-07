@@ -12,6 +12,7 @@ namespace Engine.Animation
         private AnimationPlayer _animationPlayer;
         private IAnimationDriver _driver;
         private AnimationTransition _transition;
+        private bool _active = true;  // 层是否激活（参与采样）
 
         /// <summary>
         /// 层名称
@@ -39,11 +40,12 @@ namespace Engine.Animation
         public float Weight { get; set; } = 1f;
 
         /// <summary>
-        /// 是否有活动内容（动画或驱动器）
+        /// 是否有活动内容（动画或驱动器）且已激活
         /// </summary>
-        public bool IsActive => _animationPlayer?.IsPlaying == true
+        public bool IsActive => _active && (
+            _animationPlayer?.IsPlaying == true
             || _driver != null
-            || _transition?.IsActive == true;
+            || _transition?.IsActive == true);
 
         /// <summary>
         /// 动画播放器
@@ -81,6 +83,25 @@ namespace Engine.Animation
             _driver = driver;
             _animationPlayer?.Stop();
             _transition?.CancelTransition();
+            _active = true;  // 设置驱动器时激活层
+        }
+
+        /// <summary>
+        /// 停用层（不参与采样，但保留驱动器）
+        /// </summary>
+        public void Deactivate()
+        {
+            _active = false;
+            _animationPlayer?.Stop();
+            _transition?.CancelTransition();
+        }
+
+        /// <summary>
+        /// 激活层
+        /// </summary>
+        public void Activate()
+        {
+            _active = true;
         }
 
         /// <summary>

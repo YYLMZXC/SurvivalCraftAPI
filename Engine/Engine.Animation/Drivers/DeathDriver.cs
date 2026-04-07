@@ -6,6 +6,9 @@ namespace Engine.Animation.Drivers
 {
     /// <summary>
     /// 死亡动画驱动器 - 默认作用于根骨骼产生全身倒下效果
+    ///
+    /// 变换顺序：抬高 -> 旋转 -> 下沉
+    /// 这样可以避免身体边缘在侧翻时陷入地面
     /// </summary>
     public class DeathDriver : IAnimationDriver
     {
@@ -19,14 +22,40 @@ namespace Engine.Animation.Drivers
         // 可选：指定特定骨骼名称（如果为空则使用根骨骼）
         public string RootBoneName { get; set; } = null;
 
+        // 参数名称
         public string DeathPhaseParam { get; set; } = "DeathPhase";
+        public string BodyHeightParam { get; set; } = "BodyHeight";
+        public string BodyRightParam { get; set; } = "BodyRight";
+        public string DeathCauseOffsetParam { get; set; } = "DeathCauseOffset";
 
         // 死亡动画配置
-        public float RollAngle { get; set; } = 90f;       // 侧翻角度（度）
-        public float DropHeight { get; set; } = 0.3f;    // 下沉高度
-        public float PitchAngle { get; set; } = 0f;      // 前后倾斜角度
+        /// <summary>
+        /// 侧翻角度（度），默认 90 度
+        /// </summary>
+        public float RollAngle { get; set; } = 90f;
+
+        /// <summary>
+        /// 前后倾斜角度（度），默认 0
+        /// </summary>
+        public float PitchAngle { get; set; } = 0f;
+
+        /// <summary>
+        /// 身体下沉高度（相对于 BodyHeight 的比例），默认 0
+        /// 实际下沉 = BodyHeight * BodyDrop * DeathPhase
+        /// </summary>
+        public float BodyDrop { get; set; } = 0f;
+
+        /// <summary>
+        /// 是否根据 DeathCauseOffset 自动决定侧翻方向
+        /// true: 向伤害来源方向侧翻
+        /// false: 固定向右（正角度）侧翻
+        /// </summary>
+        public bool AutoRollDirection { get; set; } = true;
 
         private float _deathPhase;
+        private float _bodyHeight;
+        private Vector3 _bodyRight;
+        private Vector3 _deathCauseOffset;
         private int _rootBoneIndex = -1;
 
         /// <summary>
@@ -44,6 +73,9 @@ namespace Engine.Animation.Drivers
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             _deathPhase = Math.Clamp(parameters.GetFloat(DeathPhaseParam), 0f, 1f);
+            _bodyHeight = parameters.GetFloat(BodyHeightParam);
+            _bodyRight = parameters.GetVector3(BodyRightParam);
+            _deathCauseOffset = parameters.GetVector3(DeathCauseOffsetParam);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -68,16 +100,25 @@ namespace Engine.Animation.Drivers
             if (_rootBoneIndex < 0) return;
 
             float t = _deathPhase;
-            float rollRad = RollAngle * t * MathF.PI / 180f;
-            float pitchRad = PitchAngle * t * MathF.PI / 180f;
-            float dropY = -DropHeight * t;
 
-            // 构建死亡变换：下沉 -> 俯仰 -> 侧翻
+            // 计算侧翻方向
+            float rollDirection = 1f;
+            if (AutoRollDirection && _bodyRight.LengthSquared() > 0.001f && _deathCauseOffset.LengthSquared() > 0.001f)
+            {
+                rollDirection = Vector3.Dot(_bodyRight, _deathCauseOffset) > 0f ? 1 : -1;
+            }
+
+            // 计算角度（弧度）
+            float rollRad = RollAngle * t * MathF.PI / 180f * rollDirection;
+            float pitchRad = PitchAngle * t * MathF.PI / 180f;
+
+            // 计算位移
+            float dropY = -BodyDrop * _bodyHeight * t;
+
             Matrix deathTransform =
-                Matrix.CreateTranslation(0, dropY * 0.5f, 0) *
                 Matrix.CreateRotationX(pitchRad) *
-                Matrix.CreateRotationZ(rollRad) *
-                Matrix.CreateTranslation(0, dropY * 0.5f, 0);
+                Matrix.CreateRotationZ(rollRad) *                 // 先旋转
+                Matrix.CreateTranslation(0, dropY, 0);            // 再平移（世界坐标系 Y）
 
             // 应用到根骨骼
             boneTransforms[_rootBoneIndex] = deathTransform;

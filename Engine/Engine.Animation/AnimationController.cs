@@ -318,9 +318,10 @@ namespace Engine.Animation
                 }
                 else
                 {
-                    // animation: null 表示清除层的驱动器，让下层输出可见
+                    // animation: null 表示该层不激活，让下层输出可见
+                    // 但不清除预配置的驱动器（保留 layers 中配置的驱动器）
                     var layer = _layers.FirstOrDefault(l => l.Name == trackConfig.Layer);
-                    layer?.SetDriver(null);
+                    layer?.Deactivate();
                 }
             }
         }
@@ -358,6 +359,9 @@ namespace Engine.Animation
             if (source.StartsWith("driver:"))
             {
                 string driverType = source.Substring(7);
+
+                // 激活层
+                layer.Activate();
 
                 // 检查层是否有预配置的驱动器，且类型匹配
                 if (layer.Driver != null && IsDriverTypeMatch(layer.Driver, driverType))

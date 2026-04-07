@@ -29,6 +29,12 @@ namespace Engine.Animation
             AllowTrailingCommas = true
         };
 
+        // 静态构造函数注册自定义转换器
+        static AnimationConfigLoader()
+        {
+            s_jsonOptions.Converters.Add(new AnimationReferenceConverter());
+        }
+
         /// <summary>
         /// 加载动画的回调函数
         /// 参数：动画名称或路径，返回：ModelAnimation 实例
@@ -169,19 +175,52 @@ namespace Engine.Animation
                             errors.Add($"Animation '{alias}': Source is required");
                         }
 
-                        if (reference.Speed <= 0)
+                        // Validate SpeedValue
+                        if (reference.SpeedValue != null)
                         {
-                            errors.Add($"Animation '{alias}': Speed must be positive (got {reference.Speed})");
+                            // If it's a number, validate the range
+                            if (reference.SpeedValue is float speedFloat && speedFloat <= 0)
+                            {
+                                errors.Add($"Animation '{alias}': Speed must be positive (got {speedFloat})");
+                            }
+                            else if (reference.SpeedValue is int speedInt && speedInt <= 0)
+                            {
+                                errors.Add($"Animation '{alias}': Speed must be positive (got {speedInt})");
+                            }
+                            else if (reference.SpeedValue is string speedStr && !ExpressionEvaluator.IsExpression(speedStr))
+                            {
+                                // Static string value that's not an expression - try to parse
+                                if (float.TryParse(speedStr, out var parsedSpeed) && parsedSpeed <= 0)
+                                {
+                                    errors.Add($"Animation '{alias}': Speed must be positive (got {speedStr})");
+                                }
+                            }
                         }
 
-                        if (reference.InitialPhase < 0 || reference.InitialPhase > 1)
+                        // Validate InitialPhaseValue
+                        if (reference.InitialPhaseValue != null)
                         {
-                            errors.Add($"Animation '{alias}': InitialPhase must be between 0 and 1 (got {reference.InitialPhase})");
+                            if (reference.InitialPhaseValue is float phaseFloat && (phaseFloat < 0 || phaseFloat > 1))
+                            {
+                                errors.Add($"Animation '{alias}': InitialPhase must be between 0 and 1 (got {phaseFloat})");
+                            }
+                            else if (reference.InitialPhaseValue is int phaseInt && (phaseInt < 0 || phaseInt > 1))
+                            {
+                                errors.Add($"Animation '{alias}': InitialPhase must be between 0 and 1 (got {phaseInt})");
+                            }
                         }
 
-                        if (reference.BlendDuration < 0)
+                        // Validate BlendDurationValue
+                        if (reference.BlendDurationValue != null)
                         {
-                            errors.Add($"Animation '{alias}': BlendDuration cannot be negative (got {reference.BlendDuration})");
+                            if (reference.BlendDurationValue is float blendFloat && blendFloat < 0)
+                            {
+                                errors.Add($"Animation '{alias}': BlendDuration cannot be negative (got {blendFloat})");
+                            }
+                            else if (reference.BlendDurationValue is int blendInt && blendInt < 0)
+                            {
+                                errors.Add($"Animation '{alias}': BlendDuration cannot be negative (got {blendInt})");
+                            }
                         }
                     }
 
@@ -580,6 +619,21 @@ namespace Engine.Animation
                     return arr;
                 }
                 // 其他数组类型可在此扩展
+            }
+
+            // 处理字符串 - 可能是表达式
+            if (element.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                string stringValue = element.GetString();
+
+                // 检查是否是表达式
+                if (ExpressionEvaluator.IsExpression(stringValue))
+                {
+                    // 返回原始字符串，让 DynamicProperty 处理
+                    return stringValue;
+                }
+
+                return stringValue;
             }
 
             if (targetType == typeof(float))

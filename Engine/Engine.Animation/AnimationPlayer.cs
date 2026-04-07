@@ -75,6 +75,15 @@ namespace Engine.Animation {
         public bool IsPlaying => _playing;
 
         /// <summary>
+        /// 是否循环播放
+        /// </summary>
+        public bool Loop
+        {
+            get => _looping;
+            set => _looping = value;
+        }
+
+        /// <summary>
         /// 播放速度倍率
         /// </summary>
         public float Speed { get; set; } = 1.0f;

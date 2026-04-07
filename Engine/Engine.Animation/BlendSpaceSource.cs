@@ -175,8 +175,8 @@ namespace Engine.Animation
                 var anim = model.Animations?.FirstOrDefault(a => a.Name == sample.AnimationName);
                 if (anim != null)
                 {
-                    var config = sample.AnimationConfig ?? new AnimationSourceConfig { Loop = true };
-                    config.Loop = true; // 混合空间中的动画必须循环
+                    var config = sample.AnimationConfig ?? new AnimationSourceConfig { LoopValue = true };
+                    config.LoopValue = true; // 混合空间中的动画必须循环
                     _sources[i] = new ClipAnimationSource(model, anim, config);
                     validIndices.Add(i);
                 }
@@ -224,8 +224,8 @@ namespace Engine.Animation
                 var anim = model.Animations?.FirstOrDefault(a => a.Name == sample.AnimationName);
                 if (anim != null)
                 {
-                    var config = sample.AnimationConfig ?? new AnimationSourceConfig { Loop = true };
-                    config.Loop = true;
+                    var config = sample.AnimationConfig ?? new AnimationSourceConfig { LoopValue = true };
+                    config.LoopValue = true;
                     _sources[i] = new ClipAnimationSource(model, anim, config);
                     validIndices.Add(i);
                 }

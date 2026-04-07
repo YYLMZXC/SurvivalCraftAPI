@@ -48,9 +48,9 @@ namespace Engine.Animation
             || _transition?.IsActive == true);
 
         /// <summary>
-        /// 动画播放器
+        /// 动画播放器（过渡期间返回目标播放器）
         /// </summary>
-        public AnimationPlayer AnimationPlayer => _animationPlayer;
+        public AnimationPlayer AnimationPlayer => _transition?.IsActive == true ? _transition.TargetPlayer : _animationPlayer;
 
         /// <summary>
         /// 驱动器
@@ -151,8 +151,9 @@ namespace Engine.Animation
 
             if (started)
             {
-                // 过渡开始后，更新内部播放器引用
-                // 这样在过渡完成后可以无缝切换
+                // 同时更新主播放器，这样外部查询和速度设置都能正常工作
+                _animationPlayer.SetAnimation(model, animation);
+                _animationPlayer.Play(loop);
             }
 
             return started;

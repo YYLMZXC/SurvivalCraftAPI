@@ -18,6 +18,9 @@ namespace Engine.Animation
         private readonly StateRuleEvaluator _ruleEvaluator = new();
         private readonly AnimationConfigLoader _configLoader = new();
 
+        // 共享的表达式求值器
+        private readonly ExpressionEvaluator _expressionEvaluator;
+
         // 状态规则配置（从动画配置文件加载）
         private Dictionary<string, StateTrackConfig> _stateConfigs;
 
@@ -45,6 +48,11 @@ namespace Engine.Animation
         public AnimationLayer[] Layers => _layers;
 
         /// <summary>
+        /// 共享的表达式求值器（供动画来源使用）
+        /// </summary>
+        public ExpressionEvaluator ExpressionEvaluator => _expressionEvaluator;
+
+        /// <summary>
         /// 根骨骼旋转角度（弧度），用于修正模型朝向
         /// 某些 glTF 模型的前方方向可能与游戏不一致，需要旋转修正
         /// </summary>
@@ -70,6 +78,9 @@ namespace Engine.Animation
                 // 使用简单模板作为后备
                 _template = AnimationTemplateManager.Get("Simple");
             }
+
+            // 初始化共享的表达式求值器
+            _expressionEvaluator = _ruleEvaluator.Evaluator;
 
             // 初始化层
             _layers = new AnimationLayer[_template.Layers.Count];
@@ -185,14 +196,52 @@ namespace Engine.Animation
                 _parameters.ClearDirty();
             }
 
-            // 3. 更新所有层
+            // 3. 更新动态属性（速度、循环状态等）
+            UpdateDynamicProperties();
+
+            // 4. 更新所有层
             foreach (var layer in _layers)
             {
                 layer.Update(deltaTime, _parameters);
             }
 
-            // 4. 检查动画完成事件
+            // 5. 检查动画完成事件
             CheckAnimationCompletion();
+        }
+
+        /// <summary>
+        /// 更新动态属性（每帧评估表达式）
+        /// </summary>
+        private void UpdateDynamicProperties()
+        {
+            foreach (var layer in _layers)
+            {
+                string layerName = layer.Name;
+
+                // 检查是否有该层的动画引用
+                if (!_layerAnimationRef.TryGetValue(layerName, out var animRef) || animRef == null)
+                    continue;
+
+                var player = layer.AnimationPlayer;
+                if (player == null) continue;
+
+                // 动态速度
+                var speedProp = animRef.GetSpeedProperty();
+                if (speedProp.IsExpression)
+                {
+                    float speed = speedProp.GetValue(_parameters, _expressionEvaluator);
+                    player.Speed = speed;
+                }
+
+                // 动态循环状态
+                var loopProp = animRef.GetLoopProperty();
+                if (loopProp.IsExpression)
+                {
+                    bool loop = loopProp.GetValue(_parameters, _expressionEvaluator);
+                    player.Loop = loop;
+                    _layerLooping[layerName] = loop;
+                }
+            }
         }
 
         /// <summary>
@@ -274,7 +323,10 @@ namespace Engine.Animation
         /// </summary>
         private void EvaluateStateRules()
         {
-            if (_stateConfigs == null) return;
+            if (_stateConfigs == null)
+            {
+                return;
+            }
 
             foreach (var (trackName, trackConfig) in _stateConfigs)
             {
@@ -341,19 +393,25 @@ namespace Engine.Animation
             if (_animationReferences.TryGetValue(source, out var aliasRef))
             {
                 // 使用别名解析后的配置（别名配置优先，因为状态规则通常只指定 source）
-                // 只在原 animRef 有显式设置时才覆盖
+                // 保留动态属性值
                 animRef = new AnimationReference
                 {
                     Source = aliasRef.Source,
-                    Speed = aliasRef.Speed,
-                    Loop = aliasRef.Loop,
-                    InitialPhase = aliasRef.InitialPhase,
-                    BlendDuration = aliasRef.BlendDuration,
+                    SpeedValue = aliasRef.SpeedValue,
+                    LoopValue = aliasRef.LoopValue,
+                    InitialPhaseValue = aliasRef.InitialPhaseValue,
+                    BlendDurationValue = aliasRef.BlendDurationValue,
                     DriverArgs = aliasRef.DriverArgs,
                     OnComplete = aliasRef.OnComplete
                 };
                 source = animRef.Source;
             }
+
+            // 获取动态属性值（初始静态值）
+            float speed = animRef.GetSpeedProperty().IsExpression ? 1.0f : animRef.GetSpeedProperty().StaticValue;
+            bool loop = animRef.GetLoopProperty().IsExpression ? true : animRef.GetLoopProperty().StaticValue;
+            float initialPhase = animRef.GetInitialPhaseProperty().IsExpression ? 0f : animRef.GetInitialPhaseProperty().StaticValue;
+            float blendDuration = animRef.GetBlendDurationProperty().IsExpression ? 0.3f : animRef.GetBlendDurationProperty().StaticValue;
 
             // 处理 driver: 语法
             if (source.StartsWith("driver:"))
@@ -387,9 +445,9 @@ namespace Engine.Animation
                 }
 
                 // 驱动器相关参数通过 Parameters 传递
-                if (animRef.Speed != 1f)
+                if (speed != 1f)
                 {
-                    _parameters.SetParameter("Speed", animRef.Speed);
+                    _parameters.SetParameter("Speed", speed);
                 }
 
                 // 驱动器没有完成概念，清除跟踪
@@ -402,32 +460,42 @@ namespace Engine.Animation
                 var animation = LoadExternalAnimation(source);
                 if (animation != null)
                 {
+                    // 创建动画配置
+                    var sourceConfig = new AnimationSourceConfig
+                    {
+                        Source = source,
+                        SpeedValue = animRef.SpeedValue,
+                        LoopValue = animRef.LoopValue,
+                        InitialPhaseValue = animRef.InitialPhaseValue,
+                        BlendDurationValue = animRef.BlendDurationValue
+                    };
+
                     // 根据是否有过渡时长选择播放方式
-                    if (animRef.BlendDuration > 0f)
+                    if (blendDuration > 0f)
                     {
                         layer.PlayAnimationWithTransition(
                             _model,
                             animation,
-                            animRef.Loop,
-                            animRef.BlendDuration);
+                            loop,
+                            blendDuration);
                     }
                     else
                     {
-                        layer.PlayAnimation(_model, animation, animRef.Loop);
+                        layer.PlayAnimation(_model, animation, loop);
                     }
 
                     // 设置播放速度
-                    layer.AnimationPlayer.Speed = animRef.Speed;
+                    layer.AnimationPlayer.Speed = speed;
 
                     // 设置初始相位
-                    if (animRef.InitialPhase > 0f)
+                    if (initialPhase > 0f)
                     {
-                        layer.AnimationPlayer.SetNormalizedTime(animRef.InitialPhase);
+                        layer.AnimationPlayer.SetNormalizedTime(initialPhase);
                     }
 
                     // 记录动画引用和循环设置（用于 OnComplete）
                     _layerAnimationRef[layerName] = animRef;
-                    _layerLooping[layerName] = animRef.Loop;
+                    _layerLooping[layerName] = loop;
                     _layerWasPlaying[layerName] = true;
                 }
             }
@@ -441,33 +509,33 @@ namespace Engine.Animation
                 if (animation != null)
                 {
                     // 根据是否有过渡时长选择播放方式
-                    if (animRef.BlendDuration > 0f)
+                    if (blendDuration > 0f)
                     {
                         // 使用过渡播放
                         layer.PlayAnimationWithTransition(
                             _model,
                             animation,
-                            animRef.Loop,
-                            animRef.BlendDuration);
+                            loop,
+                            blendDuration);
                     }
                     else
                     {
                         // 立即播放
-                        layer.PlayAnimation(_model, animation, animRef.Loop);
+                        layer.PlayAnimation(_model, animation, loop);
                     }
 
                     // 设置播放速度
-                    layer.AnimationPlayer.Speed = animRef.Speed;
+                    layer.AnimationPlayer.Speed = speed;
 
                     // 设置初始相位
-                    if (animRef.InitialPhase > 0f)
+                    if (initialPhase > 0f)
                     {
-                        layer.AnimationPlayer.SetNormalizedTime(animRef.InitialPhase);
+                        layer.AnimationPlayer.SetNormalizedTime(initialPhase);
                     }
 
                     // 记录动画引用和循环设置（用于 OnComplete）
                     _layerAnimationRef[layerName] = animRef;
-                    _layerLooping[layerName] = animRef.Loop;
+                    _layerLooping[layerName] = loop;
                     _layerWasPlaying[layerName] = true;
                 }
             }
@@ -577,7 +645,7 @@ namespace Engine.Animation
                 // 创建 LoadedAnimationData，包含所有动画
                 return new LoadedAnimationData(path, modelData, modelData.Animations);
             }
-            catch (Exception ex)
+            catch
             {
                 return null;
             }

@@ -13,15 +13,24 @@ namespace Engine.Animation
         private readonly Model _model;
         private readonly AnimationSourceConfig _config;
         private List<AnimationEventConfig> _events;
-        private readonly string _speedParameter;
-        private readonly float _baseSpeed;
         private readonly Dictionary<string, string> _boneRemapping;
+
+        // Dynamic properties
+        private readonly DynamicProperty<float> _speedProperty;
+        private readonly DynamicProperty<bool> _loopProperty;
+        private readonly DynamicProperty<float> _initialPhaseProperty;
+
+        // Cached evaluator reference
+        private ExpressionEvaluator _evaluator;
+
+        // Cached last loop state to avoid unnecessary updates
+        private bool _lastLoopState = true;
 
         public string Name { get; }
 
         public AnimationPlayer Player => _player;
         public bool IsPlaying => _player?.IsPlaying ?? false;
-        public bool IsComplete => !_config.Loop && _player != null && _player.NormalizedTime >= 1.0f;
+        public bool IsComplete => !_lastLoopState && _player != null && _player.NormalizedTime >= 1.0f;
 
         /// <summary>
         /// 动画事件
@@ -38,24 +47,41 @@ namespace Engine.Animation
         private bool _rootMotionInitialized;
         private Matrix?[] _rootMotionTransforms;
 
-        public ClipAnimationSource(Model model, ModelAnimation animation, AnimationSourceConfig config = null)
+        /// <summary>
+        /// 创建关键帧动画来源
+        /// </summary>
+        /// <param name="model">模型</param>
+        /// <param name="animation">动画</param>
+        /// <param name="config">动画配置</param>
+        /// <param name="evaluator">表达式求值器（可选，用于动态属性）</param>
+        public ClipAnimationSource(Model model, ModelAnimation animation, AnimationSourceConfig config = null, ExpressionEvaluator evaluator = null)
         {
             _model = model;
             _config = config ?? new AnimationSourceConfig();
+            _evaluator = evaluator;
             Name = animation?.Name ?? "Unknown";
 
-            _baseSpeed = _config.Speed;
-            _speedParameter = _config.SpeedParameter;
+            // Create dynamic properties from config
+            _speedProperty = _config.GetSpeedProperty();
+            _loopProperty = _config.GetLoopProperty();
+            _initialPhaseProperty = _config.GetInitialPhaseProperty();
             _boneRemapping = _config.BoneRemapping;
 
             _player = new AnimationPlayer();
             _player.SetAnimation(model, animation);
-            _player.Speed = _baseSpeed;
-            _player.Play(_config.Loop);
 
-            if (_config.InitialPhase > 0)
+            // Get initial static values
+            float speed = _speedProperty.IsExpression ? 1.0f : _speedProperty.StaticValue;
+            bool loop = _loopProperty.IsExpression ? true : _loopProperty.StaticValue;
+            float initialPhase = _initialPhaseProperty.IsExpression ? 0f : _initialPhaseProperty.StaticValue;
+
+            _player.Speed = speed;
+            _player.Play(loop);
+            _lastLoopState = loop;
+
+            if (initialPhase > 0)
             {
-                _player.SetNormalizedTime(_config.InitialPhase);
+                _player.SetNormalizedTime(initialPhase);
             }
 
             _events = _config.Events;
@@ -67,16 +93,21 @@ namespace Engine.Animation
             }
         }
 
+        /// <summary>
+        /// 设置表达式求值器（用于动态属性）
+        /// </summary>
+        /// <param name="evaluator">表达式求值器</param>
+        public void SetEvaluator(ExpressionEvaluator evaluator)
+        {
+            _evaluator = evaluator;
+        }
+
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             if (_player == null) return;
 
-            // 动态速度：如果设置了 SpeedParameter，从参数读取速度值
-            if (!string.IsNullOrEmpty(_speedParameter) && parameters != null)
-            {
-                float paramSpeed = parameters.TryGetFloat(_speedParameter, out var speed) ? speed : 1.0f;
-                _player.Speed = _baseSpeed * paramSpeed;
-            }
+            // Update dynamic properties
+            UpdateDynamicProperties(parameters);
 
             float prevTime = _player.NormalizedTime;
             _player.Update(deltaTime);
@@ -101,9 +132,38 @@ namespace Engine.Animation
             }
         }
 
+        /// <summary>
+        /// 更新动态属性（速度、循环状态等）
+        /// </summary>
+        private void UpdateDynamicProperties(AnimationParameters parameters)
+        {
+            // 如果没有求值器或参数，使用静态值
+            if (_evaluator == null || parameters == null)
+                return;
+
+            // 动态速度
+            if (_speedProperty.IsExpression)
+            {
+                float speed = _speedProperty.GetValue(parameters, _evaluator);
+                _player.Speed = speed;
+            }
+
+            // 动态循环状态
+            if (_loopProperty.IsExpression)
+            {
+                bool loop = _loopProperty.GetValue(parameters, _evaluator);
+                if (_lastLoopState != loop)
+                {
+                    _player.Loop = loop;
+                    _lastLoopState = loop;
+                }
+            }
+        }
+
         private bool CrossedEventPoint(float prev, float current, float eventTime)
         {
-            if (!_config.Loop)
+            bool isLooping = _config.LoopValue is bool b ? b : true;
+            if (!isLooping)
             {
                 return prev < eventTime && current >= eventTime;
             }

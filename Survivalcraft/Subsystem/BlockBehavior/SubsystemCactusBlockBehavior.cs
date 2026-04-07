@@ -56,7 +56,7 @@ namespace Game {
                     cellFace,
                     velocity,
                     componentBody,
-                    "Spiked by cactus"
+                    LanguageControl.Get("OtherCauseOfDeath", "Cactus")
                 );
             }
         }

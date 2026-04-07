@@ -1328,6 +1328,11 @@
     "Male": "Male",
     "Female": "Female"
   },
+  "OtherCauseOfDeath": {
+    "Cactus": "Spiked by cactus",
+    "SeaCreature": "Spiked by a sea creature",
+    "Trap": "Spiked by a trap"
+  },
   "Blocks": {
     "AirBlock:0": {
       "DisplayName": "Air",

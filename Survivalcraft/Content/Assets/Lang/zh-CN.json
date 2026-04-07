@@ -1330,6 +1330,11 @@
     "Male": "男性",
     "Female": "女性"
   },
+  "OtherCauseOfDeath": {
+    "Cactus": "被仙人掌刺死",
+    "SeaCreature": "被海洋生物刺死",
+    "Trap": "被陷阱刺死"
+  },
   "Blocks": {
     "AirBlock:0": {
       "DisplayName": "空气",

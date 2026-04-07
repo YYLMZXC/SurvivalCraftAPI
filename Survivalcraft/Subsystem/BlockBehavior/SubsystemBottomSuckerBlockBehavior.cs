@@ -41,7 +41,7 @@ namespace Game {
                         cellFace,
                         velocity,
                         componentBody,
-                        "Spiked by a sea creature"
+                        LanguageControl.Get("OtherCauseOfDeath", "SeaCreature")
                     );
                 }
             }

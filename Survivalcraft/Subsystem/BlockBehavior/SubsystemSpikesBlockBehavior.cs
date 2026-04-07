@@ -63,7 +63,7 @@ namespace Game {
                         cellFace,
                         velocity,
                         componentBody,
-                        "Spiked by a trap"
+                        LanguageControl.Get("OtherCauseOfDeath", "Trap")
                     );
                 }
             }

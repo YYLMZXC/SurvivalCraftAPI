@@ -4097,6 +4097,8 @@
           <Parameter Name="WaterDrag" Description="[DescriptionAttribute:234]" Guid="6f110dcd-64e4-47a5-9416-f8f243875d41" Value="5,4" Type="Vector2" />
           <Parameter Name="Class" Guid="7347a83f-2d46-4fdf-bce2-52677de0b568" Value="Game.ComponentBody" Type="string" />
           <Parameter Name="WaterSwayAngle" Description="[DescriptionAttribute:235]" Guid="739cec60-7d40-429a-a36f-2e8d7f7ace47" Value="0.025" Type="float" />
+          <Parameter Name="WaterTurnAxis" Description="" Guid="b2c3d4e5-f6a7-8901-2345-678901234567" Value="0,1,0" Type="Vector3" />
+          <Parameter Name="WaterSwayAxis" Description="" Guid="87d0a834-c4aa-4169-a039-9a05102c6644" Value="1,0,0" Type="Vector3" />
           <Parameter Name="CanEmbedInIce" Description="[DescriptionAttribute:236]" Guid="7a09bf66-5f99-4732-a861-c8a43ec34307" Value="False" Type="bool" />
           <Parameter Name="BoxSize" Description="[DescriptionAttribute:237]" Guid="8cd981be-a456-44a2-a3d5-4f9657713159" Value="1,1,1" Type="Vector3" />
           <Parameter Name="ParentBodyRotationOffset" Description="[DescriptionAttribute:238]" Guid="8eaf3a25-96a7-45fc-a98b-ae304134d8e6" Value="0,0,0,1" Type="Quaternion" />

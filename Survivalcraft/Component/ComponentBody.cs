@@ -112,6 +112,16 @@ namespace Game {
 
         public virtual float WaterTurnSpeed { get; set; }
 
+        /// <summary>
+        /// 水中摇摆轴
+        /// </summary>
+        public virtual Vector3 WaterSwayAxis { get; set; }
+
+        /// <summary>
+        /// 水中转向轴
+        /// </summary>
+        public virtual Vector3 WaterTurnAxis { get; set; }
+
         public bool CanEmbedInIce { get; set; }
 
         public virtual float ImmersionDepth { get; set; }
@@ -340,6 +350,8 @@ namespace Game {
             WaterDrag = valuesDictionary.GetValue<Vector2>("WaterDrag");
             WaterSwayAngle = valuesDictionary.GetValue<float>("WaterSwayAngle");
             WaterTurnSpeed = valuesDictionary.GetValue<float>("WaterTurnSpeed");
+            WaterSwayAxis = valuesDictionary.GetValue<Vector3>("WaterSwayAxis");
+            WaterTurnAxis = valuesDictionary.GetValue<Vector3>("WaterTurnAxis");
             CanEmbedInIce = valuesDictionary.GetValue<bool>("CanEmbedInIce");
             Velocity = valuesDictionary.GetValue<Vector3>("Velocity").FixNaN();
             m_embeddedInIceCounter = valuesDictionary.GetValue("EmbeddedInIceCounter", 0);
@@ -499,11 +511,11 @@ namespace Game {
                     if (WaterTurnSpeed > 0f) {
                         float num5 = MathUtils.Saturate(MathUtils.Lerp(1f, 0f, m_velocity.Length()));
                         Vector2 vector3 = Vector2.Normalize(vector.Value) * num5;
-                        Rotation *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, WaterTurnSpeed * (-1f * vector3.X + 0.71f * vector3.Y) * dt);
+                        Rotation *= Quaternion.CreateFromAxisAngle(WaterTurnAxis, WaterTurnSpeed * (-1f * vector3.X + 0.71f * vector3.Y) * dt);
                     }
                     if (WaterSwayAngle > 0f) {
                         Rotation *= Quaternion.CreateFromAxisAngle(
-                            Vector3.UnitX,
+                            WaterSwayAxis,
                             WaterSwayAngle * (float)Math.Sin(200f / Mass * m_subsystemTime.GameTime)
                         );
                     }

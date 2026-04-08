@@ -13,6 +13,9 @@ namespace Engine.Animation
         public string Name => "CCD";
         public bool SupportsAim => false;
 
+        // 世界位置缓存
+        private Vector3[] _worldPosCache;
+
         public void Solve(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
             IKAlgorithmConfig config = null)
@@ -29,6 +32,14 @@ namespace Engine.Animation
 
             Vector3 targetPos = target.Position.Value;
 
+            // 初始化世界位置缓存
+            int boneCount = model.m_bones.Count;
+            if (_worldPosCache == null || _worldPosCache.Length != boneCount)
+                _worldPosCache = new Vector3[boneCount];
+
+            // 复制初始世界位置
+            Array.Copy(worldPositions, _worldPosCache, boneCount);
+
             // 迭代求解
             for (int iter = 0; iter < maxIterations; iter++)
             {
@@ -36,10 +47,12 @@ namespace Engine.Animation
                 for (int i = indices.Length - 2; i >= 0; i--)
                 {
                     int boneIdx = indices[i];
-                    int endBoneIdx = indices[indices.Length - 1];
 
-                    Vector3 bonePos = GetBoneWorldPosition(boneTransforms, boneIdx, worldPositions, model);
-                    Vector3 endPos = GetBoneWorldPosition(boneTransforms, endBoneIdx, worldPositions, model);
+                    // 更新世界位置缓存（基于当前骨骼变换）
+                    UpdateWorldPositions(boneTransforms, model);
+
+                    Vector3 bonePos = _worldPosCache[boneIdx];
+                    Vector3 endPos = _worldPosCache[endIdx];
 
                     // 当前末端到目标的误差
                     Vector3 toEnd = endPos - bonePos;
@@ -78,9 +91,11 @@ namespace Engine.Animation
                     ApplyJointLimit(chain, boneTransforms, boneIdx, model);
                 }
 
+                // 更新最终世界位置
+                UpdateWorldPositions(boneTransforms, model);
+
                 // 检查收敛
-                Vector3 currentEndPos = GetBoneWorldPosition(boneTransforms, endIdx, worldPositions, model);
-                float error = Vector3.Distance(currentEndPos, targetPos);
+                float error = Vector3.Distance(_worldPosCache[endIdx], targetPos);
 
                 if (error < tolerance)
                     break;
@@ -88,19 +103,26 @@ namespace Engine.Animation
         }
 
         /// <summary>
-        /// 获取骨骼的世界位置
+        /// 更新所有骨骼的世界位置（基于当前局部变换）
         /// </summary>
-        private Vector3 GetBoneWorldPosition(Matrix?[] boneTransforms, int boneIndex,
-            Vector3[] worldPositions, Model model)
+        private void UpdateWorldPositions(Matrix?[] boneTransforms, Model model)
         {
-            if (boneTransforms[boneIndex].HasValue)
+            if (model.m_rootBone == null)
+                return;
+
+            void ComputeRecursive(ModelBone bone, Matrix parentWorld)
             {
-                // 如果有局部变换，需要重新计算世界位置
-                // 这里简化处理，使用原始世界位置加上变换的位移
-                var localTransform = boneTransforms[boneIndex].Value;
-                return worldPositions[boneIndex] + localTransform.Translation;
+                var local = boneTransforms[bone.Index] ?? bone.Transform;
+                var world = local * parentWorld;
+                _worldPosCache[bone.Index] = world.Translation;
+
+                foreach (var child in bone.m_childBones)
+                {
+                    ComputeRecursive(child, world);
+                }
             }
-            return worldPositions[boneIndex];
+
+            ComputeRecursive(model.m_rootBone, Matrix.Identity);
         }
 
         /// <summary>

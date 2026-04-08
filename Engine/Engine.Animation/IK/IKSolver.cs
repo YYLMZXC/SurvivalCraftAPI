@@ -59,7 +59,7 @@ namespace Engine.Animation
         /// <param name="algorithm">算法实例（可选）</param>
         /// <param name="maxChainLength">最大链长度（从末端向上遍历）</param>
         public void RegisterChain(string name, string endBoneName,
-            IIKAlgorithm algorithm = null, int maxChainLength = 3)
+            IIKAlgorithm algorithm, int maxChainLength = 3)
         {
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(endBoneName))
                 return;
@@ -75,6 +75,25 @@ namespace Engine.Animation
             };
 
             _pendingChains[name] = pendingChain;
+        }
+
+        /// <summary>
+        /// 注册 IK 链（使用算法名称）
+        /// </summary>
+        /// <param name="name">链名称</param>
+        /// <param name="endBoneName">末端骨骼名称</param>
+        /// <param name="algorithmName">算法名称（TwoBoneIK/CCD/FABRIK），null 则自动选择</param>
+        /// <param name="maxChainLength">最大链长度</param>
+        public void RegisterChainByName(string name, string endBoneName,
+            string algorithmName = null, int maxChainLength = 3)
+        {
+            IIKAlgorithm algorithm = null;
+            if (!string.IsNullOrEmpty(algorithmName))
+            {
+                _algorithms.TryGetValue(algorithmName, out algorithm);
+            }
+
+            RegisterChain(name, endBoneName, algorithm, maxChainLength);
         }
 
         // 待构建的链信息
@@ -212,6 +231,14 @@ namespace Engine.Animation
         public IKTarget GetTarget(string chainName)
         {
             return _targets.TryGetValue(chainName, out var target) ? target : null;
+        }
+
+        /// <summary>
+        /// 获取 IK 算法
+        /// </summary>
+        public IIKAlgorithm GetAlgorithm(string algorithmName)
+        {
+            return _algorithms.TryGetValue(algorithmName, out var algorithm) ? algorithm : null;
         }
 
         /// <summary>

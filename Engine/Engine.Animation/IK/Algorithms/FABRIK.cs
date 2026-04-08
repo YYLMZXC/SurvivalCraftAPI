@@ -72,16 +72,34 @@ namespace Engine.Animation
                     positions[n - 1] = targetPos;
                     for (int i = n - 2; i >= 0; i--)
                     {
-                        Vector3 dir = Vector3.Normalize(positions[i] - positions[i + 1]);
-                        positions[i] = positions[i + 1] + dir * boneLengths[i];
+                        Vector3 diff = positions[i] - positions[i + 1];
+                        float dist = diff.Length();
+                        if (dist < 0.0001f)
+                        {
+                            positions[i] = positions[i + 1];
+                        }
+                        else
+                        {
+                            Vector3 dir = diff / dist;
+                            positions[i] = positions[i + 1] + dir * boneLengths[i];
+                        }
                     }
 
                     // 后向阶段：从根向末端
                     positions[0] = rootPos;
                     for (int i = 1; i < n; i++)
                     {
-                        Vector3 dir = Vector3.Normalize(positions[i] - positions[i - 1]);
-                        positions[i] = positions[i - 1] + dir * boneLengths[i - 1];
+                        Vector3 diff = positions[i] - positions[i - 1];
+                        float dist = diff.Length();
+                        if (dist < 0.0001f)
+                        {
+                            positions[i] = positions[i - 1];
+                        }
+                        else
+                        {
+                            Vector3 dir = diff / dist;
+                            positions[i] = positions[i - 1] + dir * boneLengths[i - 1];
+                        }
                     }
 
                     // 检查收敛
@@ -112,10 +130,16 @@ namespace Engine.Animation
                 int boneIdx = indices[i];
 
                 // 原始方向
-                Vector3 oldDir = Vector3.Normalize(worldPositions[indices[i + 1]] - worldPositions[boneIdx]);
+                Vector3 oldDiff = worldPositions[indices[i + 1]] - worldPositions[boneIdx];
+                float oldDist = oldDiff.Length();
+                if (oldDist < 0.0001f) continue;
+                Vector3 oldDir = oldDiff / oldDist;
 
                 // 新方向
-                Vector3 newDir = Vector3.Normalize(positions[i + 1] - positions[i]);
+                Vector3 newDiff = positions[i + 1] - positions[i];
+                float newDist = newDiff.Length();
+                if (newDist < 0.0001f) continue;
+                Vector3 newDir = newDiff / newDist;
 
                 // 计算旋转
                 Quaternion rotation = RotationBetweenVectors(oldDir, newDir);

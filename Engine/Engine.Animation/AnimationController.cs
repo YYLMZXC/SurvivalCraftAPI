@@ -955,17 +955,7 @@ namespace Engine.Animation
         public void RegisterIKChain(string name, string endBoneName,
             string algorithmName = null, int maxChainLength = 3)
         {
-            IKSolver.RegisterChain(name, endBoneName, null, maxChainLength);
-
-            // 设置算法（如果指定）
-            if (!string.IsNullOrEmpty(algorithmName))
-            {
-                var chain = IKSolver.GetChain(name);
-                if (chain != null)
-                {
-                    // 算法在 Solve 时根据名称查找
-                }
-            }
+            IKSolver.RegisterChainByName(name, endBoneName, algorithmName, maxChainLength);
         }
 
         /// <summary>

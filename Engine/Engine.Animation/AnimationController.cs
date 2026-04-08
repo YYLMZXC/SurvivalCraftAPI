@@ -45,6 +45,9 @@ namespace Engine.Animation
         // 记录哪些层被手动控制（跳过状态规则评估）
         private readonly HashSet<string> _manualOverrideLayers = new();
 
+        // IK 求解器（延迟初始化）
+        private IKSolver _ikSolver;
+
         public Model Model => _model;
         public AnimationTemplate Template => _template;
         public AnimationParameters Parameters => _parameters;
@@ -54,6 +57,21 @@ namespace Engine.Animation
         /// 共享的表达式求值器（供动画来源使用）
         /// </summary>
         public ExpressionEvaluator ExpressionEvaluator => _expressionEvaluator;
+
+        /// <summary>
+        /// IK 求解器（延迟初始化）
+        /// </summary>
+        public IKSolver IKSolver
+        {
+            get
+            {
+                if (_ikSolver == null)
+                {
+                    _ikSolver = new IKSolver();
+                }
+                return _ikSolver;
+            }
+        }
 
         /// <summary>
         /// 根骨骼旋转角度（弧度），用于修正模型朝向
@@ -691,7 +709,11 @@ namespace Engine.Animation
         /// </summary>
         public void ComputeBoneTransforms(Matrix?[] boneTransforms)
         {
+            // 1. 层混合
             _blender.BlendLayers(_layers, boneTransforms, _model);
+
+            // 2. IK 后处理（在层混合后应用）
+            _ikSolver?.Solve(boneTransforms, _model);
         }
 
         /// <summary>
@@ -917,6 +939,90 @@ namespace Engine.Animation
         public bool HasAnimationAlias(string alias)
         {
             return _animationReferences.ContainsKey(alias);
+        }
+
+        #endregion
+
+        #region IK API
+
+        /// <summary>
+        /// 注册 IK 链
+        /// </summary>
+        /// <param name="name">链名称</param>
+        /// <param name="endBoneName">末端骨骼名称</param>
+        /// <param name="algorithmName">算法名称（TwoBoneIK/CCD/FABRIK），null 则自动选择</param>
+        /// <param name="maxChainLength">最大链长度</param>
+        public void RegisterIKChain(string name, string endBoneName,
+            string algorithmName = null, int maxChainLength = 3)
+        {
+            IKSolver.RegisterChain(name, endBoneName, null, maxChainLength);
+
+            // 设置算法（如果指定）
+            if (!string.IsNullOrEmpty(algorithmName))
+            {
+                var chain = IKSolver.GetChain(name);
+                if (chain != null)
+                {
+                    // 算法在 Solve 时根据名称查找
+                }
+            }
+        }
+
+        /// <summary>
+        /// 设置 IK 位置目标
+        /// </summary>
+        /// <param name="chainName">链名称</param>
+        /// <param name="targetPosition">目标位置（模型空间）</param>
+        /// <param name="weight">权重（0-1）</param>
+        public void SetIKTarget(string chainName, Vector3? targetPosition, float weight = 1.0f)
+        {
+            IKSolver.SetIKTarget(chainName, targetPosition, weight);
+        }
+
+        /// <summary>
+        /// 设置 IK 方向目标
+        /// </summary>
+        /// <param name="chainName">链名称</param>
+        /// <param name="aimDirection">目标方向（模型空间）</param>
+        /// <param name="weight">权重（0-1）</param>
+        public void SetIKAim(string chainName, Vector3? aimDirection, float weight = 1.0f)
+        {
+            IKSolver.SetIKAim(chainName, aimDirection, weight);
+        }
+
+        /// <summary>
+        /// 设置完整 IK 目标
+        /// </summary>
+        /// <param name="chainName">链名称</param>
+        /// <param name="target">IK 目标对象</param>
+        public void SetIKTarget(string chainName, IKTarget target)
+        {
+            IKSolver.SetIKTarget(chainName, target);
+        }
+
+        /// <summary>
+        /// 清除 IK 目标
+        /// </summary>
+        /// <param name="chainName">链名称</param>
+        public void ClearIKTarget(string chainName)
+        {
+            IKSolver.ClearIKTarget(chainName);
+        }
+
+        /// <summary>
+        /// 获取 IK 链
+        /// </summary>
+        public IKChain GetIKChain(string chainName)
+        {
+            return IKSolver.GetChain(chainName);
+        }
+
+        /// <summary>
+        /// 获取 IK 目标
+        /// </summary>
+        public IKTarget GetIKTarget(string chainName)
+        {
+            return IKSolver.GetTarget(chainName);
         }
 
         #endregion

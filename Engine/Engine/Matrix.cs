@@ -279,6 +279,9 @@ namespace Engine {
         public static Matrix CreateFromYawPitchRoll(float yaw, float pitch, float roll) =>
             Quaternion.CreateFromYawPitchRoll(yaw, pitch, roll).ToMatrix();
 
+        public static Matrix CreateFromYawPitchRoll(Vector3 vector3) =>
+            Quaternion.CreateFromYawPitchRoll(vector3.X, vector3.Y, vector3.Z).ToMatrix();
+
         public static Matrix CreateLookAt(Vector3 position, Vector3 target, Vector3 up) {
             Vector3 vector = Vector3.Normalize(position - target);
             Vector3 vector2 = Vector3.Normalize(Vector3.Cross(up, vector));

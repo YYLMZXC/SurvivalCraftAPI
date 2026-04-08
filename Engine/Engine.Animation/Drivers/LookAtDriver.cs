@@ -32,9 +32,26 @@ namespace Engine.Animation.Drivers
         public string LookAngleXParam { get; set; } = "LookAngleX";
         public string LookAngleYParam { get; set; } = "LookAngleY";
 
-        // 角度限制（弧度）
-        public float MaxAngleX { get; set; } = MathUtils.DegToRad(65f);  // 左右
-        public float MaxAngleY { get; set; } = MathUtils.DegToRad(55f);  // 上下
+        // 角度限制（度数，内部转换为弧度）
+
+        public float MaxAngleX {
+            get;
+            set => field = MathUtils.DegToRad(value);
+        } = 65f;
+
+        public float MaxAngleY {
+            get;
+            set => field = MathUtils.DegToRad(value);
+        } = 55f;
+
+        // 旋转轴配置（用于适配不同坐标系）
+        // "X", "Y", "Z"
+        public string PitchAxis { get; set; } = "X";  // 俯仰轴（上下）
+        public string YawAxis { get; set; } = "Z";    // 偏航轴（左右）
+
+        // 是否反转方向
+        public bool InvertPitch { get; set; } = false;
+        public bool InvertYaw { get; set; } = false;
 
         private float _lookAngleX;  // 弧度
         private float _lookAngleY;  // 弧度
@@ -51,12 +68,27 @@ namespace Engine.Animation.Drivers
             var targetBone = model.FindBone(TargetBoneName);
             if (targetBone == null) return;
 
-            // 角度已经是弧度
-            // lookAngleY 是俯仰（上下），lookAngleX 是偏航（左右）
-            // 原始代码：SetBoneTransform(m_headBone.Index, Matrix.CreateRotationX(vector2.Y) * Matrix.CreateRotationZ(0f - vector2.X));
-            boneTransforms[targetBone.Index] =
-                Matrix.CreateRotationX(_lookAngleY) *
-                Matrix.CreateRotationZ(-_lookAngleX);
+            // 应用方向反转
+            float pitch = InvertPitch ? -_lookAngleY : _lookAngleY;
+            float yaw = InvertYaw ? _lookAngleX : -_lookAngleX;
+
+            // 根据配置的轴创建旋转
+            Matrix pitchRotation = CreateRotationForAxis(PitchAxis, pitch);
+            Matrix yawRotation = CreateRotationForAxis(YawAxis, yaw);
+
+            // 先应用 yaw 再应用 pitch（和原始代码顺序一致）
+            boneTransforms[targetBone.Index] = pitchRotation * yawRotation;
+        }
+
+        private Matrix CreateRotationForAxis(string axis, float angle)
+        {
+            return axis?.ToUpperInvariant() switch
+            {
+                "X" => Matrix.CreateRotationX(angle),
+                "Y" => Matrix.CreateRotationY(angle),
+                "Z" => Matrix.CreateRotationZ(angle),
+                _ => Matrix.CreateRotationX(angle)  // 默认 X 轴
+            };
         }
     }
 }

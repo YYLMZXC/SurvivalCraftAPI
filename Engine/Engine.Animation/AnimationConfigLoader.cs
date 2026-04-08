@@ -363,6 +363,16 @@ namespace Engine.Animation
                     string layerName = kvp.Key;
                     LayerConfig layerConfig = kvp.Value;
 
+                    // 查找层
+                    var layer = controller.Layers.FirstOrDefault(l => l.Name == layerName);
+                    if (layer == null) continue;
+
+                    // 应用骨骼遮罩配置（覆盖模板中的默认值）
+                    if (layerConfig?.Bones != null)
+                    {
+                        layer.BoneMask = layerConfig.Bones.Length > 0 ? layerConfig.Bones : null;
+                    }
+
                     if (layerConfig?.Driver != null)
                     {
                         IAnimationDriver driver = CreateDriver(layerConfig.Driver.Type);

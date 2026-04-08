@@ -32,7 +32,7 @@ namespace Engine.Animation
         /// <summary>
         /// 骨骼遮罩（null 表示影响所有骨骼）
         /// </summary>
-        public string[] BoneMask { get; }
+        public string[] BoneMask { get; set; }
 
         /// <summary>
         /// 混合权重 (0-1)

@@ -1,5 +1,6 @@
 #nullable disable
 
+using Engine.Animation.RootMotion;
 using Engine.Graphics;
 
 namespace Engine.Animation
@@ -23,6 +24,12 @@ namespace Engine.Animation
         /// 采样骨骼变换
         /// </summary>
         void SampleTransforms(Matrix?[] boneTransforms, Model model);
+
+        /// <summary>
+        /// 获取根运动数据（可选实现）
+        /// </summary>
+        /// <returns>速度、冲量、缩放三元组</returns>
+        (Vector3 velocity, Vector3? impulse, Vector3? scale) GetRootMotionDelta() => (Vector3.Zero, null, null);
     }
 
     /// <summary>
@@ -61,6 +68,11 @@ namespace Engine.Animation
         /// 例如 {"HandL": "HandR", "HandR": "HandL"} 会交换左右手的变换
         /// </summary>
         public Dictionary<string, string> BoneRemapping { get; set; }
+
+        /// <summary>
+        /// 根运动配置
+        /// </summary>
+        public RootMotionConfig RootMotion { get; set; }
 
         // Cached dynamic properties (avoid repeated allocations)
         private DynamicProperty<float> _cachedSpeedProperty;

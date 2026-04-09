@@ -1,5 +1,6 @@
 #nullable disable
 
+using Engine.Animation.RootMotion;
 using Engine.Graphics;
 
 namespace Engine.Animation
@@ -20,6 +21,19 @@ namespace Engine.Animation
 
         // 共享的表达式求值器
         private readonly ExpressionEvaluator _expressionEvaluator;
+
+        // 根运动应用器
+        private readonly TranslationApplier _translationApplier = new();
+        private readonly CollisionBoxApplier _collisionBoxApplier = new();
+
+        // 根运动缓存（按动画名称缓存）
+        private readonly Dictionary<string, RootMotionCache> _rootMotionCaches = new();
+        private readonly Dictionary<string, RootScaleCache> _rootScaleCaches = new();
+
+        // 当前 Base 层的动画名称和根运动配置
+        private string _currentAnimationName;
+        private RootMotionConfig _currentRootMotionConfig;
+        private float _prevRootMotionTime;
 
         // 状态规则配置（从动画配置文件加载）
         private Dictionary<string, StateTrackConfig> _stateConfigs;
@@ -83,6 +97,36 @@ namespace Engine.Animation
         /// 模型缩放比例
         /// </summary>
         public float ModelScale { get; set; } = 1f;
+
+        /// <summary>
+        /// 根骨骼名称（可通过配置指定，或自动检测）
+        /// </summary>
+        public string RootBoneName { get; set; } = "Root";
+
+        /// <summary>
+        /// 关联的速度向量（用于根运动应用）
+        /// 设置后根运动会修改此向量的值
+        /// </summary>
+        public Vector3? Velocity { get; set; }
+
+        /// <summary>
+        /// 关联的旋转（用于根运动坐标转换）
+        /// </summary>
+        public Quaternion? EntityRotation { get; set; }
+
+        /// <summary>
+        /// 默认碰撞体尺寸
+        /// </summary>
+        public Vector3 DefaultCollisionSize
+        {
+            get => _collisionBoxApplier.DefaultSize;
+            set => _collisionBoxApplier.DefaultSize = value;
+        }
+
+        /// <summary>
+        /// 碰撞体尺寸设置回调（由外部提供）
+        /// </summary>
+        public Action<Vector3> SetCollisionBox { get; set; }
 
         /// <summary>
         /// 动画事件触发时调用
@@ -226,8 +270,174 @@ namespace Engine.Animation
                 layer.Update(deltaTime, _parameters);
             }
 
-            // 5. 检查动画完成事件
+            // 5. 应用根运动（仅 Base 层）
+            ApplyRootMotion(deltaTime);
+
+            // 6. 检查动画完成事件
             CheckAnimationCompletion();
+        }
+
+        /// <summary>
+        /// 应用根运动到物理体
+        /// </summary>
+        private void ApplyRootMotion(float deltaTime)
+        {
+            // 检查是否有根运动配置
+            if (_currentRootMotionConfig == null)
+                return;
+
+            // 只处理 Base 层（index 0）
+            var baseLayer = _layers.FirstOrDefault(l => l.Index == 0);
+            if (baseLayer == null) return;
+
+            var player = baseLayer.AnimationPlayer;
+            if (player == null || !player.IsPlaying) return;
+
+            var animation = player.Animation;
+            if (animation == null) return;
+
+            // 检查是否需要更新缓存
+            string animName = animation.Name;
+            if (animName != _currentAnimationName)
+            {
+                _currentAnimationName = animName;
+                _prevRootMotionTime = player.Time;
+
+                // 构建缓存
+                if (!_rootMotionCaches.TryGetValue(animName, out var motionCache))
+                {
+                    motionCache = new RootMotionCache();
+                    motionCache.BuildFromAnimation(animation, RootBoneName);
+                    _rootMotionCaches[animName] = motionCache;
+                }
+
+                if (!_rootScaleCaches.TryGetValue(animName, out var scaleCache))
+                {
+                    scaleCache = new RootScaleCache();
+                    scaleCache.BuildFromAnimation(animation, RootBoneName);
+                    _rootScaleCaches[animName] = scaleCache;
+                }
+            }
+
+            // 获取缓存
+            if (!_rootMotionCaches.TryGetValue(animName, out var rootMotionCache))
+                return;
+            if (!_rootScaleCaches.TryGetValue(animName, out var rootScaleCache))
+                rootScaleCache = null;
+
+            float currentTime = player.Time;
+            float duration = animation.Duration;
+
+            // 非循环动画已完成：返回零速度
+            if (!player.Loop && !player.IsPlaying && player.NormalizedTime >= 1.0f)
+            {
+                return;
+            }
+
+            var rootMotionConfig = _currentRootMotionConfig;
+            Vector3 velocity = Vector3.Zero;
+            Vector3? impulse = null;
+
+            var translationConfig = rootMotionConfig.Translation;
+            if (translationConfig.Mode != TranslationMode.None && rootMotionCache.HasTranslationData)
+            {
+                if (translationConfig.Mode == TranslationMode.AddImpulse)
+                {
+                    bool loopPoint = DetectRootMotionLoopPoint(_prevRootMotionTime, currentTime, duration, player.Loop);
+                    if (loopPoint)
+                    {
+                        impulse = CalculateRootMotionImpulse(translationConfig, rootMotionCache);
+                    }
+                }
+                else
+                {
+                    velocity = rootMotionCache.GetVelocity(_prevRootMotionTime, currentTime);
+                }
+            }
+
+            Vector3? scale = null;
+            if (rootMotionConfig.Scale.Mode != ScaleMode.None &&
+                rootMotionConfig.Scale.Source == ScaleSource.Animation &&
+                rootScaleCache?.HasScaleData == true)
+            {
+                float normalizedTime = duration > 0 ? currentTime / duration : 0;
+                scale = rootScaleCache.SampleScale(normalizedTime);
+            }
+
+            _prevRootMotionTime = currentTime;
+
+            // 应用位移
+            if (translationConfig.Mode != TranslationMode.None && Velocity.HasValue)
+            {
+                var vel = Velocity.Value;
+                var rotation = EntityRotation ?? Quaternion.Identity;
+                _translationApplier.ApplyTranslation(
+                    translationConfig,
+                    velocity,
+                    impulse,
+                    rotation,
+                    ref vel,
+                    deltaTime);
+                Velocity = vel;
+            }
+
+            // 应用缩放
+            if (rootMotionConfig.Scale.Mode != ScaleMode.None && SetCollisionBox != null)
+            {
+                _collisionBoxApplier.ApplyScale(
+                    rootMotionConfig.Scale,
+                    scale,
+                    SetCollisionBox,
+                    deltaTime);
+            }
+        }
+
+        /// <summary>
+        /// 检测根运动循环点
+        /// </summary>
+        private bool DetectRootMotionLoopPoint(float prevTime, float currentTime, float duration, bool isLooping)
+        {
+            // 循环回绕
+            if (isLooping && currentTime < prevTime && prevTime > duration * 0.5f)
+            {
+                return true;
+            }
+
+            // 非循环动画完成
+            if (!isLooping && currentTime >= duration && prevTime < duration)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 计算根运动冲量
+        /// </summary>
+        private Vector3 CalculateRootMotionImpulse(TranslationConfig config, RootMotionCache cache)
+        {
+            // 优先使用配置覆盖值
+            if (config.ImpulseOverride.HasValue)
+            {
+                return config.ImpulseOverride.Value;
+            }
+
+            return config.ImpulseMethod switch
+            {
+                ImpulseMethod.Peak => cache.GetPeakVelocity(),
+                ImpulseMethod.Weighted => (cache.GetAverageVelocity() + cache.GetPeakVelocity()) * 0.5f,
+                _ => cache.GetAverageVelocity()
+            };
+        }
+
+        /// <summary>
+        /// 设置当前根运动配置
+        /// </summary>
+        public void SetRootMotionConfig(RootMotionConfig config)
+        {
+            _currentRootMotionConfig = config;
+            _currentAnimationName = null;  // 重置动画名称，触发缓存更新
         }
 
         /// <summary>

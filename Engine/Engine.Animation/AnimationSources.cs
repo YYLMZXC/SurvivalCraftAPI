@@ -1,5 +1,6 @@
 #nullable disable
 
+using Engine.Animation.RootMotion;
 using Engine.Graphics;
 
 namespace Engine.Animation
@@ -11,6 +12,7 @@ namespace Engine.Animation
     {
         private readonly AnimationPlayer _player;
         private readonly Model _model;
+        private readonly ModelAnimation _animation;
         private readonly AnimationSourceConfig _config;
         private List<AnimationEventConfig> _events;
         private readonly Dictionary<string, string> _boneRemapping;
@@ -48,6 +50,11 @@ namespace Engine.Animation
         private Matrix?[] _rootMotionTransforms;
 
         /// <summary>
+        /// 根运动配置
+        /// </summary>
+        public RootMotionConfig RootMotionConfig => _config?.RootMotion;
+
+        /// <summary>
         /// 创建关键帧动画来源
         /// </summary>
         /// <param name="model">模型</param>
@@ -57,6 +64,7 @@ namespace Engine.Animation
         public ClipAnimationSource(Model model, ModelAnimation animation, AnimationSourceConfig config = null, ExpressionEvaluator evaluator = null)
         {
             _model = model;
+            _animation = animation;
             _config = config ?? new AnimationSourceConfig();
             _evaluator = evaluator;
             Name = animation?.Name ?? "Unknown";
@@ -91,6 +99,29 @@ namespace Engine.Animation
             {
                 _rootMotionTransforms = new Matrix?[model.Bones.Count];
             }
+
+            // 初始化根运动缓存
+            InitializeRootMotionCache();
+        }
+
+        /// <summary>
+        /// 初始化根运动设置（根骨骼检测和标志设置）
+        /// 注意：缓存由 AnimationController 统一管理，避免重复存储
+        /// </summary>
+        private void InitializeRootMotionCache()
+        {
+            var rootMotionConfig = _config?.RootMotion;
+            if (rootMotionConfig == null || _animation == null || _model == null)
+                return;
+
+            // 自动检测根骨骼名称
+            var detectedName = RootMotionCache.DetectRootBoneName(_model, RootBoneName);
+            if (!string.IsNullOrEmpty(detectedName))
+                RootBoneName = detectedName;
+
+            // 启用根运动提取
+            // 注意：缓存由 AnimationController 维护，此处仅设置标志
+            ExtractRootMotion = true;
         }
 
         /// <summary>

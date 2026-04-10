@@ -20,13 +20,17 @@ namespace Engine.Animation
         // Dynamic properties
         private readonly DynamicProperty<float> _speedProperty;
         private readonly DynamicProperty<bool> _loopProperty;
-        private readonly DynamicProperty<float> _initialPhaseProperty;
+        private readonly DynamicProperty<float> _startPhaseProperty;
+        private readonly DynamicProperty<float> _endPhaseProperty;
 
         // Cached evaluator reference
         private ExpressionEvaluator _evaluator;
 
         // Cached last loop state to avoid unnecessary updates
         private bool _lastLoopState = true;
+
+        // Flag to track if phase range has been applied (for delayed expression evaluation)
+        private bool _phaseRangeApplied = false;
 
         public string Name { get; }
 
@@ -72,7 +76,8 @@ namespace Engine.Animation
             // Create dynamic properties from config
             _speedProperty = _config.GetSpeedProperty();
             _loopProperty = _config.GetLoopProperty();
-            _initialPhaseProperty = _config.GetInitialPhaseProperty();
+            _startPhaseProperty = _config.GetStartPhaseProperty();
+            _endPhaseProperty = _config.GetEndPhaseProperty();
             _boneRemapping = _config.BoneRemapping;
 
             _player = new AnimationPlayer();
@@ -81,15 +86,36 @@ namespace Engine.Animation
             // Get initial static values
             float speed = _speedProperty.IsExpression ? 1.0f : _speedProperty.StaticValue;
             bool loop = _loopProperty.IsExpression ? true : _loopProperty.StaticValue;
-            float initialPhase = _initialPhaseProperty.IsExpression ? 0f : _initialPhaseProperty.StaticValue;
 
             _player.Speed = speed;
             _player.Play(loop);
             _lastLoopState = loop;
 
-            if (initialPhase > 0)
+            // Apply phase range: static values immediately, expressions will be evaluated in Update()
+            bool startPhaseIsStatic = !_startPhaseProperty.IsExpression;
+            bool endPhaseIsStatic = !_endPhaseProperty.IsExpression;
+
+            if (startPhaseIsStatic && endPhaseIsStatic)
             {
-                _player.SetNormalizedTime(initialPhase);
+                // Both are static - apply immediately
+                float startPhase = _startPhaseProperty.StaticValue;
+                float endPhase = _endPhaseProperty.StaticValue;
+                _player.SetPhaseRange(startPhase, endPhase);
+
+                // Initialize time to start position
+                if (_animation != null && _animation.Duration > 0)
+                {
+                    _player.Time = startPhase * _animation.Duration;
+                }
+
+                _phaseRangeApplied = true;
+            }
+            else
+            {
+                // At least one is an expression - delay evaluation until Update()
+                // Apply default phase range for now
+                _player.SetPhaseRange(0f, 1f);
+                _phaseRangeApplied = false;
             }
 
             _events = _config.Events;
@@ -136,6 +162,31 @@ namespace Engine.Animation
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             if (_player == null) return;
+
+            // Apply phase range expressions once at playback start
+            if (!_phaseRangeApplied && _evaluator != null && parameters != null)
+            {
+                float startPhase = _startPhaseProperty.IsExpression
+                    ? _startPhaseProperty.GetValue(parameters, _evaluator)
+                    : _startPhaseProperty.StaticValue;
+                float endPhase = _endPhaseProperty.IsExpression
+                    ? _endPhaseProperty.GetValue(parameters, _evaluator)
+                    : _endPhaseProperty.StaticValue;
+
+                // Clamp to valid range
+                startPhase = Math.Clamp(startPhase, 0f, 1f);
+                endPhase = Math.Clamp(endPhase, 0f, 1f);
+
+                _player.SetPhaseRange(startPhase, endPhase);
+
+                // Initialize time to start position
+                if (_animation != null && _animation.Duration > 0)
+                {
+                    _player.Time = startPhase * _animation.Duration;
+                }
+
+                _phaseRangeApplied = true;
+            }
 
             // Update dynamic properties
             UpdateDynamicProperties(parameters);
@@ -193,7 +244,7 @@ namespace Engine.Animation
 
         private bool CrossedEventPoint(float prev, float current, float eventTime)
         {
-            bool isLooping = _config.LoopValue is bool b ? b : true;
+            bool isLooping = _lastLoopState;
             if (!isLooping)
             {
                 return prev < eventTime && current >= eventTime;
@@ -320,6 +371,13 @@ namespace Engine.Animation
             _player?.Stop();
             _rootMotionInitialized = false;
             RootMotionDelta = Vector3.Zero;
+            _phaseRangeApplied = false;
+
+            // Reset time to start position if we have static phase values
+            if (_startPhaseProperty != null && !_startPhaseProperty.IsExpression && _animation != null && _animation.Duration > 0)
+            {
+                _player.Time = _startPhaseProperty.StaticValue * _animation.Duration;
+            }
         }
     }
 

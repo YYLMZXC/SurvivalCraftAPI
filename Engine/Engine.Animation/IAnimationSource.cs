@@ -50,9 +50,19 @@ namespace Engine.Animation
         public object LoopValue { get; set; } = true;
 
         /// <summary>
-        /// 初始相位（静态值或表达式）
+        /// 起始相位（静态值或表达式）
         /// </summary>
-        public object InitialPhaseValue { get; set; } = 0f;
+        public object StartPhaseValue { get; set; } = 0f;
+
+        /// <summary>
+        /// 结束相位（静态值或表达式）
+        /// </summary>
+        public object EndPhaseValue { get; set; } = 1f;
+
+        /// <summary>
+        /// 是否保留上一动画的姿势（用于平滑过渡）
+        /// </summary>
+        public bool PreservePose { get; set; } = false;
 
         /// <summary>
         /// 过渡时长（静态值或表达式）
@@ -77,7 +87,8 @@ namespace Engine.Animation
         // Cached dynamic properties (avoid repeated allocations)
         private DynamicProperty<float> _cachedSpeedProperty;
         private DynamicProperty<bool> _cachedLoopProperty;
-        private DynamicProperty<float> _cachedInitialPhaseProperty;
+        private DynamicProperty<float> _cachedStartPhaseProperty;
+        private DynamicProperty<float> _cachedEndPhaseProperty;
         private DynamicProperty<float> _cachedBlendDurationProperty;
 
         /// <summary>
@@ -85,7 +96,8 @@ namespace Engine.Animation
         /// </summary>
         public DynamicProperty<float> GetSpeedProperty() => _cachedSpeedProperty ??= new DynamicProperty<float>(SpeedValue);
         public DynamicProperty<bool> GetLoopProperty() => _cachedLoopProperty ??= new DynamicProperty<bool>(LoopValue);
-        public DynamicProperty<float> GetInitialPhaseProperty() => _cachedInitialPhaseProperty ??= new DynamicProperty<float>(InitialPhaseValue);
+        public DynamicProperty<float> GetStartPhaseProperty() => _cachedStartPhaseProperty ??= new DynamicProperty<float>(StartPhaseValue);
+        public DynamicProperty<float> GetEndPhaseProperty() => _cachedEndPhaseProperty ??= new DynamicProperty<float>(EndPhaseValue);
         public DynamicProperty<float> GetBlendDurationProperty() => _cachedBlendDurationProperty ??= new DynamicProperty<float>(BlendDurationValue);
     }
 

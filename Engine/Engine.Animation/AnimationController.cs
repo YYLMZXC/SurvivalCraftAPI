@@ -640,7 +640,8 @@ namespace Engine.Animation
                     Source = aliasRef.Source,
                     SpeedValue = aliasRef.SpeedValue,
                     LoopValue = aliasRef.LoopValue,
-                    InitialPhaseValue = aliasRef.InitialPhaseValue,
+                    StartPhaseValue = aliasRef.StartPhaseValue,
+                    EndPhaseValue = aliasRef.EndPhaseValue,
                     BlendDurationValue = aliasRef.BlendDurationValue,
                     DriverArgs = aliasRef.DriverArgs,
                     OnComplete = aliasRef.OnComplete
@@ -651,7 +652,6 @@ namespace Engine.Animation
             // 获取动态属性值（初始静态值）
             float speed = animRef.GetSpeedProperty().IsExpression ? 1.0f : animRef.GetSpeedProperty().StaticValue;
             bool loop = animRef.GetLoopProperty().IsExpression ? true : animRef.GetLoopProperty().StaticValue;
-            float initialPhase = animRef.GetInitialPhaseProperty().IsExpression ? 0f : animRef.GetInitialPhaseProperty().StaticValue;
             float blendDuration = animRef.GetBlendDurationProperty().IsExpression ? 0.3f : animRef.GetBlendDurationProperty().StaticValue;
 
             // 处理 driver: 语法
@@ -714,7 +714,8 @@ namespace Engine.Animation
                         Source = source,
                         SpeedValue = animRef.SpeedValue,
                         LoopValue = animRef.LoopValue,
-                        InitialPhaseValue = animRef.InitialPhaseValue,
+                        StartPhaseValue = animRef.StartPhaseValue,
+                        EndPhaseValue = animRef.EndPhaseValue,
                         BlendDurationValue = animRef.BlendDurationValue
                     };
 
@@ -735,11 +736,14 @@ namespace Engine.Animation
                     // 设置播放速度
                     layer.AnimationPlayer.Speed = speed;
 
-                    // 设置初始相位
-                    if (initialPhase > 0f)
-                    {
-                        layer.AnimationPlayer.SetNormalizedTime(initialPhase);
-                    }
+                    // 应用相位范围（静态值；表达式由 ClipAnimationSource 处理）
+                    float startPhase = animRef.GetStartPhaseProperty().IsExpression ? 0f : animRef.GetStartPhaseProperty().StaticValue;
+                    float endPhase = animRef.GetEndPhaseProperty().IsExpression ? 0f : animRef.GetEndPhaseProperty().StaticValue;
+                    layer.AnimationPlayer.StartPhase = startPhase;
+                    layer.AnimationPlayer.EndPhase = endPhase;
+
+                    // 应用 PreservePose
+                    layer.AnimationPlayer.PreservePose = animRef.PreservePose;
 
                     // 记录动画引用和循环设置（用于 OnComplete）
                     _layerAnimationRef[layerName] = animRef;
@@ -780,11 +784,14 @@ namespace Engine.Animation
                     // 设置播放速度
                     layer.AnimationPlayer.Speed = speed;
 
-                    // 设置初始相位
-                    if (initialPhase > 0f)
-                    {
-                        layer.AnimationPlayer.SetNormalizedTime(initialPhase);
-                    }
+                    // 应用相位范围（静态值；表达式由 ClipAnimationSource 处理）
+                    float startPhase = animRef.GetStartPhaseProperty().IsExpression ? 0f : animRef.GetStartPhaseProperty().StaticValue;
+                    float endPhase = animRef.GetEndPhaseProperty().IsExpression ? 0f : animRef.GetEndPhaseProperty().StaticValue;
+                    layer.AnimationPlayer.StartPhase = startPhase;
+                    layer.AnimationPlayer.EndPhase = endPhase;
+
+                    // 应用 PreservePose
+                    layer.AnimationPlayer.PreservePose = animRef.PreservePose;
 
                     // 记录动画引用和循环设置（用于 OnComplete）
                     _layerAnimationRef[layerName] = animRef;
@@ -1009,7 +1016,8 @@ namespace Engine.Animation
                     Source = aliasRef.Source,
                     SpeedValue = aliasRef.SpeedValue,
                     LoopValue = loop,  // 使用参数值
-                    InitialPhaseValue = aliasRef.InitialPhaseValue,
+                    StartPhaseValue = aliasRef.StartPhaseValue,
+                    EndPhaseValue = aliasRef.EndPhaseValue,
                     BlendDurationValue = blendDuration,  // 使用参数值
                     DriverArgs = aliasRef.DriverArgs,
                     OnComplete = aliasRef.OnComplete

@@ -44,6 +44,7 @@ namespace Engine.Animation
         /// </summary>
         public bool IsActive => _active && (
             _animationPlayer?.IsPlaying == true
+            || (_animationPlayer?.PreservePose == true && _animationPlayer.HasValidAnimation)
             || _driver != null
             || _transition?.IsActive == true);
 
@@ -235,6 +236,11 @@ namespace Engine.Animation
             else if (_animationPlayer != null && _animationPlayer.IsPlaying)
             {
                 _animationPlayer.SampleBoneTransforms(boneTransforms);
+            }
+            // preservePose: 非循环动画结束后保持最后帧
+            else if (_animationPlayer != null && _animationPlayer.PreservePose && _animationPlayer.HasValidAnimation)
+            {
+                _animationPlayer.SampleBoneTransformsAtPhase(boneTransforms, _animationPlayer.EndPhase);
             }
             // 最后尝试驱动器
             else if (_driver != null)

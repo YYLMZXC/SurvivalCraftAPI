@@ -50,8 +50,16 @@ namespace Engine.Animation
                         reference.LoopValue = ReadDynamicValue(ref reader);
                         break;
 
-                    case "initialphase":
-                        reference.InitialPhaseValue = ReadDynamicValue(ref reader);
+                    case "startphase":
+                        reference.StartPhaseValue = ReadDynamicValue(ref reader);
+                        break;
+
+                    case "endphase":
+                        reference.EndPhaseValue = ReadDynamicValue(ref reader);
+                        break;
+
+                    case "preservepose":
+                        reference.PreservePose = reader.GetBoolean();
                         break;
 
                     case "blendduration":
@@ -87,7 +95,13 @@ namespace Engine.Animation
 
             WriteDynamicValue(writer, "speed", value.SpeedValue);
             WriteDynamicValue(writer, "loop", value.LoopValue);
-            WriteDynamicValue(writer, "initialPhase", value.InitialPhaseValue);
+            WriteDynamicValue(writer, "startPhase", value.StartPhaseValue);
+            WriteDynamicValue(writer, "endPhase", value.EndPhaseValue);
+            if (value.PreservePose)
+            {
+                writer.WritePropertyName("preservePose");
+                writer.WriteBooleanValue(true);
+            }
             WriteDynamicValue(writer, "blendDuration", value.BlendDurationValue);
 
             if (value.DriverArgs != null && value.DriverArgs.Count > 0)

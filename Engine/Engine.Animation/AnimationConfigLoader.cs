@@ -197,16 +197,29 @@ namespace Engine.Animation
                             }
                         }
 
-                        // Validate InitialPhaseValue
-                        if (reference.InitialPhaseValue != null)
+                        // Validate StartPhaseValue
+                        if (reference.StartPhaseValue != null)
                         {
-                            if (reference.InitialPhaseValue is float phaseFloat && (phaseFloat < 0 || phaseFloat > 1))
+                            if (reference.StartPhaseValue is float startFloat && (startFloat < 0 || startFloat > 1))
                             {
-                                errors.Add($"Animation '{alias}': InitialPhase must be between 0 and 1 (got {phaseFloat})");
+                                errors.Add($"Animation '{alias}': startPhase must be between 0 and 1 (got {startFloat})");
                             }
-                            else if (reference.InitialPhaseValue is int phaseInt && (phaseInt < 0 || phaseInt > 1))
+                            else if (reference.StartPhaseValue is int startInt && (startInt < 0 || startInt > 1))
                             {
-                                errors.Add($"Animation '{alias}': InitialPhase must be between 0 and 1 (got {phaseInt})");
+                                errors.Add($"Animation '{alias}': startPhase must be between 0 and 1 (got {startInt})");
+                            }
+                        }
+
+                        // Validate EndPhaseValue
+                        if (reference.EndPhaseValue != null)
+                        {
+                            if (reference.EndPhaseValue is float endFloat && (endFloat < 0 || endFloat > 1))
+                            {
+                                errors.Add($"Animation '{alias}': endPhase must be between 0 and 1 (got {endFloat})");
+                            }
+                            else if (reference.EndPhaseValue is int endInt && (endInt < 0 || endInt > 1))
+                            {
+                                errors.Add($"Animation '{alias}': endPhase must be between 0 and 1 (got {endInt})");
                             }
                         }
 

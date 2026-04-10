@@ -240,7 +240,7 @@ namespace Engine.Animation
             // preservePose: 非循环动画结束后保持最后帧
             else if (_animationPlayer != null && _animationPlayer.PreservePose && _animationPlayer.HasValidAnimation)
             {
-                _animationPlayer.SampleBoneTransformsAtPhase(boneTransforms, _animationPlayer.EndPhase);
+                _animationPlayer.SampleBoneTransformsAtPhase(_animationPlayer.EndPhase, boneTransforms);
             }
             // 最后尝试驱动器
             else if (_driver != null)

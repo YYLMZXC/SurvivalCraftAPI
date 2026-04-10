@@ -106,8 +106,19 @@ namespace Engine.Animation
     /// </summary>
     public class AnimationEventConfig
     {
+        /// <summary>
+        /// 事件触发时间（归一化时间 0-1）
+        /// </summary>
         public float Time { get; set; }
+
+        /// <summary>
+        /// 事件名称
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// 事件参数（可选）
+        /// </summary>
         public string Data { get; set; }
     }
 }

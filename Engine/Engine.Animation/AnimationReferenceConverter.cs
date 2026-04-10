@@ -70,6 +70,10 @@ namespace Engine.Animation
                         reference.DriverArgs = ReadDriverArgs(ref reader, options);
                         break;
 
+                    case "events":
+                        reference.Events = JsonSerializer.Deserialize<List<AnimationEventConfig>>(ref reader, options);
+                        break;
+
                     case "oncomplete":
                         reference.OnComplete = JsonSerializer.Deserialize<OnCompleteAction>(ref reader, options);
                         break;
@@ -108,6 +112,12 @@ namespace Engine.Animation
             {
                 writer.WritePropertyName("driverArgs");
                 JsonSerializer.Serialize(writer, value.DriverArgs, options);
+            }
+
+            if (value.Events != null && value.Events.Count > 0)
+            {
+                writer.WritePropertyName("events");
+                JsonSerializer.Serialize(writer, value.Events, options);
             }
 
             if (value.OnComplete != null)

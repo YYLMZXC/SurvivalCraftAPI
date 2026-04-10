@@ -44,6 +44,7 @@ namespace Engine.Animation
         private Model _targetModel;
         private ModelAnimation _targetAnimation;
         private bool _targetLoop;
+        private AnimationEventHandler _targetPlayerEventHandler;  // 保存委托引用用于取消订阅
 
         /// <summary>
         /// 过渡时长（秒）
@@ -83,6 +84,11 @@ namespace Engine.Animation
         /// 目标动画播放器
         /// </summary>
         public AnimationPlayer TargetPlayer => _targetPlayer;
+
+        /// <summary>
+        /// 目标动画播放器的事件处理器（用于复制订阅）
+        /// </summary>
+        public event AnimationEventHandler TargetPlayerEvent;
 
         /// <summary>
         /// 创建动画过渡实例
@@ -139,9 +145,20 @@ namespace Engine.Animation
             _targetModel = targetModel;
             _targetAnimation = targetAnimation;
             _targetLoop = loop;
+
+            // 取消旧播放器的事件订阅（如果有）
+            if (_targetPlayer != null && _targetPlayerEventHandler != null)
+            {
+                _targetPlayer.OnAnimationEvent -= _targetPlayerEventHandler;
+            }
+
             _targetPlayer = new AnimationPlayer();
             _targetPlayer.SetAnimation(targetModel, targetAnimation);
             _targetPlayer.Play(loop);
+
+            // 订阅目标播放器的事件到过渡的事件（保存委托引用以便取消订阅）
+            _targetPlayerEventHandler = (evt) => TargetPlayerEvent?.Invoke(evt);
+            _targetPlayer.OnAnimationEvent += _targetPlayerEventHandler;
 
             // 设置过渡参数
             _duration = Math.Max(0f, duration);
@@ -251,10 +268,17 @@ namespace Engine.Animation
         /// </summary>
         public void CancelTransition()
         {
+            // 取消目标播放器的事件订阅
+            if (_targetPlayer != null && _targetPlayerEventHandler != null)
+            {
+                _targetPlayer.OnAnimationEvent -= _targetPlayerEventHandler;
+            }
+
             _isActive = false;
             _sourcePlayer = null;
             _sourceTransforms = null;
             _targetPlayer = null;
+            _targetPlayerEventHandler = null;
         }
 
         /// <summary>

@@ -158,8 +158,8 @@ namespace Engine.Animation
                     layerDef.BlendMode,
                     layerDef.BoneMask);
 
-                // 订阅层的动画事件
-                _layers[layerIndex].AnimationPlayer.OnAnimationEvent += ForwardAnimationEvent;
+                // 订阅层的动画事件（通过层的事件接口，统一处理主播放器和过渡播放器）
+                _layers[layerIndex].OnAnimationEvent += ForwardAnimationEvent;
                 layerIndex++;
             }
 
@@ -645,6 +645,7 @@ namespace Engine.Animation
                     PreservePose = aliasRef.PreservePose,
                     BlendDurationValue = aliasRef.BlendDurationValue,
                     DriverArgs = aliasRef.DriverArgs,
+                    Events = aliasRef.Events,
                     OnComplete = aliasRef.OnComplete
                 };
                 source = animRef.Source;
@@ -746,6 +747,9 @@ namespace Engine.Animation
                     // 应用 PreservePose
                     layer.AnimationPlayer.PreservePose = animRef.PreservePose;
 
+                    // 添加动画事件
+                    ApplyAnimationEvents(layer.AnimationPlayer, animation, animRef.Events);
+
                     // 记录动画引用和循环设置（用于 OnComplete）
                     _layerAnimationRef[layerName] = animRef;
                     _layerLooping[layerName] = loop;
@@ -794,12 +798,36 @@ namespace Engine.Animation
                 // 应用 PreservePose
                 layer.AnimationPlayer.PreservePose = animRef.PreservePose;
 
+                // 添加动画事件
+                ApplyAnimationEvents(layer.AnimationPlayer, animation, animRef.Events);
+
                 // 记录动画引用和循环设置（用于 OnComplete）
                 _layerAnimationRef[layerName] = animRef;
                 _layerLooping[layerName] = loop;
                 _layerWasPlaying[layerName] = true;
 
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// 应用动画事件到播放器
+        /// </summary>
+        /// <param name="player">动画播放器</param>
+        /// <param name="animation">动画（未使用，保留参数兼容性）</param>
+        /// <param name="events">事件配置列表（时间使用归一化时间 0-1）</param>
+        private void ApplyAnimationEvents(AnimationPlayer player, ModelAnimation animation, List<AnimationEventConfig> events)
+        {
+            // 清除旧事件
+            player.ClearEvents();
+
+            // 添加新事件（时间直接使用归一化时间）
+            if (events != null)
+            {
+                foreach (var evt in events)
+                {
+                    player.AddEvent(evt.Name, evt.Time, evt.Data);
+                }
             }
         }
 
@@ -1018,6 +1046,7 @@ namespace Engine.Animation
                     PreservePose = aliasRef.PreservePose,
                     BlendDurationValue = blendDuration,  // 使用参数值
                     DriverArgs = aliasRef.DriverArgs,
+                    Events = aliasRef.Events,
                     OnComplete = aliasRef.OnComplete
                 };
             }
@@ -1240,9 +1269,9 @@ namespace Engine.Animation
         {
             foreach (var layer in _layers)
             {
-                if (layer?.AnimationPlayer != null)
+                if (layer != null)
                 {
-                    layer.AnimationPlayer.OnAnimationEvent -= ForwardAnimationEvent;
+                    layer.OnAnimationEvent -= ForwardAnimationEvent;
                 }
             }
         }

@@ -13,7 +13,7 @@ namespace Engine.Animation {
         public string Name { get; set; }
 
         /// <summary>
-        /// 事件触发时间（秒）
+        /// 事件触发时间（归一化时间 0-1）
         /// </summary>
         public float Time { get; set; }
 
@@ -204,10 +204,10 @@ namespace Engine.Animation {
         /// 添加动画事件
         /// </summary>
         /// <param name="eventName">事件名称</param>
-        /// <param name="time">触发时间</param>
+        /// <param name="normalizedTime">触发时间（归一化时间 0-1）</param>
         /// <param name="parameter">可选参数</param>
-        public void AddEvent(string eventName, float time, object parameter = null) {
-            _events.Add(new AnimationEvent(eventName, time, parameter));
+        public void AddEvent(string eventName, float normalizedTime, object parameter = null) {
+            _events.Add(new AnimationEvent(eventName, normalizedTime, parameter));
             // 按时间排序
             _events.Sort((a, b) => a.Time.CompareTo(b.Time));
         }
@@ -328,10 +328,15 @@ namespace Engine.Animation {
             float duration = _animation?.Duration ?? 0f;
             if (duration <= 0f) return;
 
+            // 将绝对时间转换为归一化时间
+            float fromNormalized = fromTime / duration;
+            float toNormalized = toTime / duration;
+
             for (int i = 0; i < _events.Count; i++) {
                 var evt = _events[i];
+                // 事件时间使用归一化时间 (0-1)
                 // 检查事件时间是否在当前帧的时间范围内
-                if (evt.Time > fromTime && evt.Time <= toTime) {
+                if (evt.Time > fromNormalized && evt.Time <= toNormalized) {
                     // 确保每个事件只触发一次（通过索引跟踪）
                     if (i > _lastEventIndex) {
                         OnAnimationEvent?.Invoke(evt);

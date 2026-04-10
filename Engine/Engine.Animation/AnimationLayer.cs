@@ -64,6 +64,11 @@ namespace Engine.Animation
         public AnimationTransition Transition => _transition?.IsActive == true ? _transition : null;
 
         /// <summary>
+        /// 动画事件触发时调用（统一转发主播放器和过渡播放器的事件）
+        /// </summary>
+        public event AnimationEventHandler OnAnimationEvent;
+
+        /// <summary>
         /// 创建动画层
         /// </summary>
         public AnimationLayer(string name, int index, AnimationBlendMode blendMode, string[] boneMask = null)
@@ -74,6 +79,12 @@ namespace Engine.Animation
             BoneMask = boneMask;
             _animationPlayer = new AnimationPlayer();
             _transition = new AnimationTransition();
+
+            // 订阅主播放器的事件，转发到层的事件
+            _animationPlayer.OnAnimationEvent += (evt) => OnAnimationEvent?.Invoke(evt);
+
+            // 订阅过渡的 TargetPlayer 事件，转发到层的事件
+            _transition.TargetPlayerEvent += (evt) => OnAnimationEvent?.Invoke(evt);
         }
 
         /// <summary>

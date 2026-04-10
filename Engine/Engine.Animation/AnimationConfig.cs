@@ -81,6 +81,11 @@ namespace Engine.Animation
         public Dictionary<string, object> DriverArgs { get; set; }
 
         /// <summary>
+        /// 动画事件配置
+        /// </summary>
+        public List<AnimationEventConfig> Events { get; set; }
+
+        /// <summary>
         /// 动画完成时执行的动作（非循环动画）
         /// </summary>
         public OnCompleteAction OnComplete { get; set; }

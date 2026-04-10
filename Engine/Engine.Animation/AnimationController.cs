@@ -642,6 +642,7 @@ namespace Engine.Animation
                     LoopValue = aliasRef.LoopValue,
                     StartPhaseValue = aliasRef.StartPhaseValue,
                     EndPhaseValue = aliasRef.EndPhaseValue,
+                    PreservePose = aliasRef.PreservePose,
                     BlendDurationValue = aliasRef.BlendDurationValue,
                     DriverArgs = aliasRef.DriverArgs,
                     OnComplete = aliasRef.OnComplete
@@ -1018,6 +1019,7 @@ namespace Engine.Animation
                     LoopValue = loop,  // 使用参数值
                     StartPhaseValue = aliasRef.StartPhaseValue,
                     EndPhaseValue = aliasRef.EndPhaseValue,
+                    PreservePose = aliasRef.PreservePose,
                     BlendDurationValue = blendDuration,  // 使用参数值
                     DriverArgs = aliasRef.DriverArgs,
                     OnComplete = aliasRef.OnComplete

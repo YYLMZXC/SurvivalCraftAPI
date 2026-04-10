@@ -114,6 +114,7 @@ namespace Engine.Animation
             _transition?.CancelTransition();
             _animationPlayer.SetAnimation(model, animation);
             _animationPlayer.Play(loop);
+            _active = true;  // 激活层
         }
 
         /// <summary>
@@ -135,6 +136,7 @@ namespace Engine.Animation
             int priority = 0)
         {
             _driver = null;  // 清除驱动器
+            _active = true;  // 激活层
 
             // 检查是否可以开始新过渡
             if (!_transition.CanStartNewTransition(priority))

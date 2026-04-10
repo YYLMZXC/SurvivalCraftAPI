@@ -147,10 +147,10 @@ namespace Engine.Animation
             // 初始化共享的表达式求值器
             _expressionEvaluator = _ruleEvaluator.Evaluator;
 
-            // 初始化层
+            // 初始化层（按 Index 排序，确保混合顺序正确）
             _layers = new AnimationLayer[_template.Layers.Count];
             int layerIndex = 0;
-            foreach (var (name, layerDef) in _template.Layers)
+            foreach (var (name, layerDef) in _template.Layers.OrderBy(kvp => kvp.Value.Index))
             {
                 _layers[layerIndex] = new AnimationLayer(
                     name,
@@ -764,46 +764,42 @@ namespace Engine.Animation
                     a.Name.Equals(source, StringComparison.OrdinalIgnoreCase) ||
                     a.Name.Contains(source, StringComparison.OrdinalIgnoreCase));
 
-                if (animation != null)
+                if (animation == null) return false;
+
+                // 根据是否有过渡时长选择播放方式
+                if (blendDuration > 0f)
                 {
-                    // 根据是否有过渡时长选择播放方式
-                    if (blendDuration > 0f)
-                    {
-                        // 使用过渡播放
-                        layer.PlayAnimationWithTransition(
-                            _model,
-                            animation,
-                            loop,
-                            blendDuration);
-                    }
-                    else
-                    {
-                        // 立即播放
-                        layer.PlayAnimation(_model, animation, loop);
-                    }
-
-                    // 设置播放速度
-                    layer.AnimationPlayer.Speed = speed;
-
-                    // 应用相位范围（静态值；表达式由 ClipAnimationSource 处理）
-                    float startPhase = animRef.GetStartPhaseProperty().IsExpression ? 0f : animRef.GetStartPhaseProperty().StaticValue;
-                    float endPhase = animRef.GetEndPhaseProperty().IsExpression ? 0f : animRef.GetEndPhaseProperty().StaticValue;
-                    layer.AnimationPlayer.StartPhase = startPhase;
-                    layer.AnimationPlayer.EndPhase = endPhase;
-
-                    // 应用 PreservePose
-                    layer.AnimationPlayer.PreservePose = animRef.PreservePose;
-
-                    // 记录动画引用和循环设置（用于 OnComplete）
-                    _layerAnimationRef[layerName] = animRef;
-                    _layerLooping[layerName] = loop;
-                    _layerWasPlaying[layerName] = true;
-
-                    return true;
+                    // 使用过渡播放
+                    layer.PlayAnimationWithTransition(
+                        _model,
+                        animation,
+                        loop,
+                        blendDuration);
+                }
+                else
+                {
+                    // 立即播放
+                    layer.PlayAnimation(_model, animation, loop);
                 }
 
-                // 找不到动画
-                return false;
+                // 设置播放速度
+                layer.AnimationPlayer.Speed = speed;
+
+                // 应用相位范围（静态值；表达式由 ClipAnimationSource 处理）
+                float startPhase = animRef.GetStartPhaseProperty().IsExpression ? 0f : animRef.GetStartPhaseProperty().StaticValue;
+                float endPhase = animRef.GetEndPhaseProperty().IsExpression ? 0f : animRef.GetEndPhaseProperty().StaticValue;
+                layer.AnimationPlayer.StartPhase = startPhase;
+                layer.AnimationPlayer.EndPhase = endPhase;
+
+                // 应用 PreservePose
+                layer.AnimationPlayer.PreservePose = animRef.PreservePose;
+
+                // 记录动画引用和循环设置（用于 OnComplete）
+                _layerAnimationRef[layerName] = animRef;
+                _layerLooping[layerName] = loop;
+                _layerWasPlaying[layerName] = true;
+
+                return true;
             }
         }
 

@@ -115,7 +115,7 @@ namespace Engine.Animation
             var endBone = model.FindBone(endBoneName, false);
             if (endBone == null)
             {
-                Log.Warning($"IK chain: end bone '{endBoneName}' not found");
+                Log.Warning($"IK chain: end bone '{endBoneName}' not found.");
                 return null;
             }
 
@@ -264,20 +264,58 @@ namespace Engine.Animation
                 if (!_chains.TryGetValue(name, out var chain))
                     continue;
 
-                // 应用平滑过渡
-                var smoothedTarget = ApplySmoothing(chain, target, worldPositions);
-
-                // 检查目标是否可达
-                if (!IsTargetReachable(chain, smoothedTarget, worldPositions))
-                {
-                    HandleUnreachableTarget(chain, smoothedTarget, boneTransforms, worldPositions, model);
-                    continue;
-                }
-
                 // 获取算法
                 var algorithm = chain.Algorithm ?? GetDefaultAlgorithm(chain);
                 if (algorithm == null)
                     continue;
+
+                // 检查是否是 Aim-only 目标
+                bool isAimOnlyTarget = !target.Position.HasValue && target.AimDirection.HasValue;
+
+                // 创建求解用的目标副本
+                IKTarget solveTarget = target;
+
+                // 如果只有 Aim 目标没有 Position
+                if (isAimOnlyTarget)
+                {
+                    // 如果算法支持 Aim（如 AimIK），直接使用原目标
+                    if (algorithm.SupportsAim)
+                    {
+                        solveTarget = target;
+                    }
+                    else
+                    {
+                        // 算法需要 Position，自动生成
+                        int rootIdx = chain.BoneIndices[0];
+                        Vector3 bindPoseRootPos = model.m_bones[rootIdx].Transform.Translation;
+                        float chainLength = CalculateChainLength(chain, worldPositions);
+                        Vector3 aimDir = Vector3.Normalize(target.AimDirection.Value);
+                        Vector3 generatedPos = bindPoseRootPos + aimDir * chainLength;
+
+                        solveTarget = new IKTarget
+                        {
+                            Position = generatedPos,
+                            PositionWeight = target.AimWeight,
+                            AimDirection = target.AimDirection,
+                            AimWeight = target.AimWeight,
+                            PositionSmoothTime = target.PositionSmoothTime,
+                            AimSmoothTime = target.AimSmoothTime,
+                            _smoothInitialized = true,
+                            _smoothedPosition = generatedPos,
+                            _smoothedAimDirection = target.AimDirection.Value
+                        };
+                    }
+                }
+
+                // 应用平滑过渡
+                var smoothedTarget = ApplySmoothing(chain, solveTarget, worldPositions);
+
+                // 对于 Aim-only 目标，跳过可达性检查
+                if (!isAimOnlyTarget && !IsTargetReachable(chain, smoothedTarget, worldPositions))
+                {
+                    HandleUnreachableTarget(chain, smoothedTarget, boneTransforms, worldPositions, model);
+                    continue;
+                }
 
                 try
                 {
@@ -290,10 +328,7 @@ namespace Engine.Animation
                 }
                 catch (System.Exception ex)
                 {
-                    if (EnableDebugLogging)
-                    {
-                        Log.Warning($"IK solve failed for chain {chain.Name}: {ex.Message}");
-                    }
+                    Log.Error($"[IK] Solve failed for chain {chain.Name}: {ex.Message}");
                 }
             }
         }

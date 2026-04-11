@@ -17,24 +17,38 @@ namespace Engine.Animation
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
             IKAlgorithmConfig config = null)
         {
-            if (chain == null || chain.Length < 2 || !target.Position.HasValue)
+            if (chain == null || chain.Length < 2)
+                return;
+
+            int[] indices = chain.BoneIndices;
+            int rootIdx = indices[0];
+            int endIdx = indices[indices.Length - 1];
+
+            // 获取骨骼位置
+            Vector3 rootPos = worldPositions[rootIdx];
+            Vector3 endPos = worldPositions[endIdx];
+
+            // 如果只有一个骨骼连接（链长度为 2），使用简化逻辑
+            // 允许 AimDirection 或 Position
+            if (chain.Length == 2)
+            {
+                if (!target.AimDirection.HasValue && !target.Position.HasValue)
+                    return;
+                SolveSingleBone(chain, target, boneTransforms, worldPositions, model, rootIdx, endIdx, rootPos, endPos);
+                return;
+            }
+
+            // 链长度 > 2 时，必须有 Position
+            if (!target.Position.HasValue)
                 return;
 
             config ??= new IKAlgorithmConfig();
 
-            int[] indices = chain.BoneIndices;
-            int rootIdx = indices[0];
             int midIdx = indices[1];
-            int endIdx = indices.Length > 2 ? indices[2] : indices[1];
-
-            // 获取骨骼位置
-            Vector3 rootPos = worldPositions[rootIdx];
-            Vector3 midPos = worldPositions[midIdx];
-            Vector3 endPos = worldPositions[endIdx];
 
             // 计算骨骼长度
-            float len1 = Vector3.Distance(rootPos, midPos);
-            float len2 = Vector3.Distance(midPos, endPos);
+            float len1 = Vector3.Distance(rootPos, worldPositions[midIdx]);
+            float len2 = Vector3.Distance(worldPositions[midIdx], endPos);
 
             if (len1 < 0.0001f || len2 < 0.0001f)
                 return;
@@ -80,7 +94,7 @@ namespace Engine.Animation
 
                 // 计算中间骨骼相对目标的位置
                 // 需要考虑弯曲方向（Hint）
-                Vector3 bendDir = CalculateBendDirection(rootPos, midPos, targetPos, target.Hint);
+                Vector3 bendDir = CalculateBendDirection(rootPos, worldPositions[midIdx], targetPos, target.Hint);
 
                 // 构建中间骨骼位置
                 // 使用向量旋转计算
@@ -105,6 +119,7 @@ namespace Engine.Animation
             }
 
             // 计算根骨骼旋转
+            Vector3 midPos = worldPositions[midIdx];
             Vector3 oldRootDir = Vector3.Normalize(midPos - rootPos);
             Vector3 newRootDir = Vector3.Normalize(newMidPos - rootPos);
 
@@ -126,10 +141,7 @@ namespace Engine.Animation
             Quaternion midRotation = RotationBetweenVectors(oldMidDir, newMidDir);
 
             // 应用中间骨骼旋转
-            if (indices.Length > 2)
-            {
-                ApplyBoneRotation(boneTransforms, midIdx, midRotation, model);
-            }
+            ApplyBoneRotation(boneTransforms, midIdx, midRotation, model);
 
             // 应用关节限制
             ApplyJointLimits(chain, boneTransforms, model);
@@ -139,6 +151,71 @@ namespace Engine.Animation
             {
                 ApplyAimConstraint(chain, target, boneTransforms, worldPositions, model, indices);
             }
+        }
+
+        /// <summary>
+        /// 单骨骼 IK：旋转根骨骼让末端朝向目标方向
+        /// 消除 Roll（歪头）分量
+        /// </summary>
+        private void SolveSingleBone(IKChain chain, IKTarget target,
+            Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
+            int rootIdx, int endIdx, Vector3 rootPos, Vector3 endPos)
+        {
+            // 计算骨骼长度
+            float boneLength = Vector3.Distance(rootPos, endPos);
+            if (boneLength < 0.0001f)
+                return;
+
+            // 计算当前骨骼方向（模型空间）
+            Vector3 currentDir = Vector3.Normalize(endPos - rootPos);
+
+            // 目标方向
+            Vector3 targetDir;
+            if (target.AimDirection.HasValue)
+            {
+                targetDir = Vector3.Normalize(target.AimDirection.Value);
+            }
+            else if (target.Position.HasValue)
+            {
+                targetDir = Vector3.Normalize(target.Position.Value - rootPos);
+            }
+            else
+            {
+                return;
+            }
+
+            // 计算旋转轴和角度
+            Vector3 rotationAxis = Vector3.Cross(currentDir, targetDir);
+            if (rotationAxis.LengthSquared() < 0.0001f)
+                return; // 方向相同或相反
+
+            rotationAxis = Vector3.Normalize(rotationAxis);
+            float angle = MathF.Acos(Math.Clamp(Vector3.Dot(currentDir, targetDir), -1f, 1f));
+
+            // 消除 Roll：将旋转轴投影到垂直于骨骼方向的平面上
+            // 这确保旋转轴始终垂直于骨骼方向，不会产生"绕骨骼轴旋转"的效果
+            Vector3 projectedAxis = rotationAxis - Vector3.Dot(rotationAxis, currentDir) * currentDir;
+
+            if (projectedAxis.LengthSquared() < 0.0001f)
+            {
+                // 旋转轴平行于骨骼方向，这是纯 Roll，跳过
+                return;
+            }
+
+            projectedAxis = Vector3.Normalize(projectedAxis);
+
+            // 创建旋转
+            Quaternion rotation = Quaternion.CreateFromAxisAngle(projectedAxis, angle);
+
+            // 应用权重
+            float weight = target.AimWeight;
+            if (weight < 1.0f && weight > 0f)
+            {
+                rotation = Quaternion.Slerp(Quaternion.Identity, rotation, weight);
+            }
+
+            // 应用旋转
+            ApplyBoneRotation(boneTransforms, rootIdx, rotation, model);
         }
 
         /// <summary>

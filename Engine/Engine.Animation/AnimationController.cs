@@ -611,9 +611,21 @@ namespace Engine.Animation
                 else
                 {
                     // animation: null 表示该层不激活，让下层输出可见
-                    // 但不清除预配置的驱动器（保留 layers 中配置的驱动器）
                     var layer = _layers.FirstOrDefault(l => l.Name == trackConfig.Layer);
-                    layer?.Deactivate();
+                    if (layer != null)
+                    {
+                        // 检查层是否正在播放动画，如果是则使用过渡停用
+                        if (layer.IsActive && layer.AnimationPlayer?.IsPlaying == true)
+                        {
+                            // 使用过渡停用，实现平滑淡出
+                            layer.DeactivateWithBlend(0.2f);
+                        }
+                        else
+                        {
+                            // 没有活动动画，直接停用
+                            layer.Deactivate();
+                        }
+                    }
                 }
             }
         }
@@ -1155,6 +1167,10 @@ namespace Engine.Animation
                     }
                 }
             }
+
+            // 设置参数脏标记，确保下一帧会重新评估状态规则
+            // 这对于插播动画完成后立即切换到其他状态（如 Sit）很重要
+            _parameters.SetDirty();
         }
 
         /// <summary>

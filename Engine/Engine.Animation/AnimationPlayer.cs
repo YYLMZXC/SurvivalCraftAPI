@@ -133,6 +133,11 @@ namespace Engine.Animation {
         public bool IsPlaying => _playing;
 
         /// <summary>
+        /// 关联的模型
+        /// </summary>
+        public Model Model => _model;
+
+        /// <summary>
         /// 是否循环播放
         /// </summary>
         public bool Loop

@@ -46,6 +46,9 @@ namespace Engine.Animation
         private bool _targetLoop;
         private AnimationEventHandler _targetPlayerEventHandler;  // 保存委托引用用于取消订阅
 
+        // 停用过渡模式：淡出到无
+        private bool _isDeactivateTransition;
+
         /// <summary>
         /// 过渡时长（秒）
         /// </summary>
@@ -130,7 +133,9 @@ namespace Engine.Animation
 
             // 保存源状态
             _sourcePlayer = sourcePlayer;
-            if (_sourcePlayer != null && _sourcePlayer.IsPlaying && _sourcePlayer.Animation != null)
+            // 即使源动画已经停止播放，也要采样当前姿态用于过渡
+            // 这样非循环动画播放完成后，过渡到下一个动画时可以正确混合
+            if (_sourcePlayer != null && _sourcePlayer.Animation != null)
             {
                 // 确保源变换缓冲区足够大
                 int boneCount = targetModel != null ? targetModel.Bones.Count : 0;
@@ -207,6 +212,29 @@ namespace Engine.Animation
 
             int boneCount = model.Bones.Count;
 
+            // 停用过渡模式：淡出源动画到 Identity
+            if (_isDeactivateTransition)
+            {
+                if (_sourceTransforms == null || Progress >= 1f)
+                {
+                    // 过渡完成，不做任何事（层将被停用）
+                    return;
+                }
+
+                // 淡出源变换到 Identity
+                for (int i = 0; i < boneCount; i++)
+                {
+                    if (_sourceTransforms[i].HasValue)
+                    {
+                        boneTransforms[i] = BlendTransforms(
+                            _sourceTransforms[i].Value,
+                            Matrix.Identity,
+                            Progress);
+                    }
+                }
+                return;
+            }
+
             // 如果进度为 0 或没有源变换，使用源变换
             if (Progress <= 0f || _sourceTransforms == null || !_sourcePlayer?.IsPlaying == true)
             {
@@ -261,7 +289,13 @@ namespace Engine.Animation
             _isActive = false;
             _sourcePlayer = null;
             _sourceTransforms = null;
+            _isDeactivateTransition = false;
         }
+
+        /// <summary>
+        /// 是否是停用过渡
+        /// </summary>
+        public bool IsDeactivateTransition => _isDeactivateTransition;
 
         /// <summary>
         /// 取消过渡
@@ -279,6 +313,47 @@ namespace Engine.Animation
             _sourceTransforms = null;
             _targetPlayer = null;
             _targetPlayerEventHandler = null;
+            _isDeactivateTransition = false;
+        }
+
+        /// <summary>
+        /// 开始停用过渡（淡出到无）
+        /// </summary>
+        /// <param name="sourcePlayer">源动画播放器</param>
+        /// <param name="duration">过渡时长</param>
+        /// <returns>是否成功开始过渡</returns>
+        public bool StartDeactivateTransition(AnimationPlayer sourcePlayer, float duration)
+        {
+            if (sourcePlayer == null || !sourcePlayer.IsPlaying)
+                return false;
+
+            // 检查是否可以被中断
+            if (_isActive && InterruptMode == TransitionInterruptMode.CannotInterrupt)
+                return false;
+
+            // 保存源状态
+            _sourcePlayer = sourcePlayer;
+            var model = sourcePlayer.Model;
+            if (model != null)
+            {
+                EnsureSourceBufferSize(model.Bones.Count);
+                sourcePlayer.SampleBoneTransforms(_sourceTransforms);
+            }
+
+            // 清除目标状态
+            _targetPlayer = null;
+            _targetModel = null;
+            _targetAnimation = null;
+
+            // 设置过渡参数
+            _duration = Math.Max(0f, duration);
+            _elapsedTime = 0f;
+            _isActive = true;
+            _isDeactivateTransition = true;
+            _priority = 0;
+            InterruptMode = TransitionInterruptMode.CanInterrupt;
+
+            return true;
         }
 
         /// <summary>

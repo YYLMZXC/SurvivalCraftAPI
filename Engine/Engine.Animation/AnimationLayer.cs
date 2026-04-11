@@ -14,6 +14,18 @@ namespace Engine.Animation
         private AnimationTransition _transition;
         private bool _active = true;  // 层是否激活（参与采样）
 
+        // 停用渐变过渡状态
+        private bool _deactivating;
+        private float _deactivateElapsed;
+        private float _deactivateDuration;
+        private float _originalWeight;
+
+        // 激活渐变过渡状态（Override 层的权重渐入）
+        private bool _activating;
+        private float _activateElapsed;
+        private float _activateDuration;
+        private float _targetWeight;
+
         /// <summary>
         /// 层名称
         /// </summary>
@@ -42,11 +54,16 @@ namespace Engine.Animation
         /// <summary>
         /// 是否有活动内容（动画或驱动器）且已激活
         /// </summary>
-        public bool IsActive => _active && (
+        public bool IsActive => (_active || _deactivating || _activating) && (
             _animationPlayer?.IsPlaying == true
             || (_animationPlayer?.PreservePose == true && _animationPlayer.HasValidAnimation)
             || _driver != null
             || _transition?.IsActive == true);
+
+        /// <summary>
+        /// 层是否被显式停用（通过 Deactivate 方法）
+        /// </summary>
+        public bool IsDeactivated => !_active;
 
         /// <summary>
         /// 动画播放器（过渡期间返回目标播放器）
@@ -106,6 +123,63 @@ namespace Engine.Animation
             _active = false;
             _animationPlayer?.Stop();
             _transition?.CancelTransition();
+            CancelTransitioning();
+        }
+
+        /// <summary>
+        /// 取消所有渐变过渡状态，恢复权重
+        /// </summary>
+        private void CancelTransitioning()
+        {
+            if (_activating)
+            {
+                _activating = false;
+                Weight = _targetWeight;
+            }
+            if (_deactivating)
+            {
+                _deactivating = false;
+                Weight = _originalWeight;
+            }
+        }
+
+        /// <summary>
+        /// 带过渡效果的停用层
+        /// </summary>
+        /// <param name="blendDuration">过渡时长（秒）</param>
+        /// <returns>是否成功开始过渡</returns>
+        public bool DeactivateWithBlend(float blendDuration = 0.25f)
+        {
+            // 如果层已经不活动或没有播放动画，直接停用
+            if (!_active || _animationPlayer == null || !_animationPlayer.IsPlaying)
+            {
+                Deactivate();
+                return false;
+            }
+
+            // 对于 Override 模式的层，使用权重渐变过渡
+            // 逐渐降低 Weight，让下层内容平滑显现
+            if (BlendMode == AnimationBlendMode.Override)
+            {
+                if (blendDuration <= 0f)
+                {
+                    Deactivate();
+                    return true;
+                }
+                _deactivating = true;
+                _deactivateElapsed = 0f;
+                _deactivateDuration = blendDuration;
+                _originalWeight = Weight;
+                return true;
+            }
+
+            // 对于 Additive 模式的层，使用过渡淡出到 Identity
+            bool started = _transition.StartDeactivateTransition(_animationPlayer, blendDuration);
+            if (!started)
+            {
+                Deactivate();
+            }
+            return started;
         }
 
         /// <summary>
@@ -114,6 +188,7 @@ namespace Engine.Animation
         public void Activate()
         {
             _active = true;
+            CancelTransitioning();
         }
 
         /// <summary>
@@ -123,6 +198,7 @@ namespace Engine.Animation
         {
             _driver = null;  // 清除驱动器
             _transition?.CancelTransition();
+            CancelTransitioning();
             _animationPlayer.SetAnimation(model, animation);
             _animationPlayer.Play(loop);
             _active = true;  // 激活层
@@ -148,6 +224,29 @@ namespace Engine.Animation
         {
             _driver = null;  // 清除驱动器
             _active = true;  // 激活层
+            CancelTransitioning();
+
+            // 对于 Override 层，如果之前没有播放动画（层是停用或刚停用完）
+            // 使用权重渐入代替动画过渡
+            if (BlendMode == AnimationBlendMode.Override &&
+                !_animationPlayer.IsPlaying &&
+                transitionDuration > 0f)
+            {
+                // 保存目标权重（当前设置的权重）
+                _targetWeight = Weight > 0 ? Weight : 1f;
+
+                // 直接播放目标动画
+                _animationPlayer.SetAnimation(model, animation);
+                _animationPlayer.Play(loop);
+
+                // 启动权重渐入
+                Weight = 0f;
+                _activating = true;
+                _activateElapsed = 0f;
+                _activateDuration = transitionDuration;
+
+                return true;
+            }
 
             // 检查是否可以开始新过渡
             if (!_transition.CanStartNewTransition(priority))
@@ -209,17 +308,65 @@ namespace Engine.Animation
         /// </summary>
         public void Update(float deltaTime, AnimationParameters parameters)
         {
+            // 更新激活渐变过渡（Override 模式的权重渐入）
+            if (_activating)
+            {
+                _activateElapsed += deltaTime;
+                float progress = _activateDuration > 0 ? _activateElapsed / _activateDuration : 1f;
+
+                if (progress >= 1f)
+                {
+                    // 过渡完成，设置目标权重
+                    Weight = _targetWeight;
+                    _activating = false;
+                }
+                else
+                {
+                    // 渐变权重：从 0 渐变到目标权重
+                    Weight = _targetWeight * progress;
+                }
+            }
+
+            // 更新停用渐变过渡（Override 模式的权重渐变）
+            if (_deactivating)
+            {
+                _deactivateElapsed += deltaTime;
+                float progress = _deactivateDuration > 0 ? _deactivateElapsed / _deactivateDuration : 1f;
+
+                if (progress >= 1f)
+                {
+                    // 过渡完成，停用层并恢复原始权重
+                    Weight = _originalWeight;
+                    _deactivating = false;
+                    _active = false;
+                }
+                else
+                {
+                    // 渐变权重：从原始权重渐变到 0
+                    Weight = _originalWeight * (1f - progress);
+                }
+            }
+
             // 更新过渡
             if (_transition?.IsActive == true)
             {
                 _transition.Update(deltaTime);
 
                 // 检查过渡是否刚完成
-                if (!_transition.IsActive && _transition.TargetPlayer != null)
+                if (!_transition.IsActive)
                 {
-                    // 过渡完成，切换到目标动画
-                    _animationPlayer = _transition.TargetPlayer;
-                    _transition.CompleteTransition();
+                    if (_transition.IsDeactivateTransition)
+                    {
+                        // 停用过渡完成，停用层
+                        _transition.CompleteTransition();
+                        _active = false;
+                    }
+                    else if (_transition.TargetPlayer != null)
+                    {
+                        // 过渡完成，切换到目标动画
+                        _animationPlayer = _transition.TargetPlayer;
+                        _transition.CompleteTransition();
+                    }
                 }
             }
             // 更新普通动画

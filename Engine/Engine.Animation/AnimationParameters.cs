@@ -27,6 +27,11 @@ namespace Engine.Animation
         /// </summary>
         public void ClearDirty() => _isDirty = false;
 
+        /// <summary>
+        /// 设置脏标记（用于强制重新评估状态规则）
+        /// </summary>
+        public void SetDirty() => _isDirty = true;
+
         public void SetFloat(string name, float value)
         {
             // 检查值是否变化

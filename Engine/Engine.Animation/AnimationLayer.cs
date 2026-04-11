@@ -13,6 +13,7 @@ namespace Engine.Animation
         private IAnimationDriver _driver;
         private AnimationTransition _transition;
         private bool _active = true;  // 层是否激活（参与采样）
+        private bool _holdPose;       // 手动控制期间保持当前姿态（直到释放）
 
         // 停用渐变过渡状态
         private bool _deactivating;
@@ -25,6 +26,7 @@ namespace Engine.Animation
         private float _activateElapsed;
         private float _activateDuration;
         private float _targetWeight;
+        private Matrix?[] _activateSourceTransforms;  // 激活过渡时的源姿态
 
         /// <summary>
         /// 层名称
@@ -54,16 +56,12 @@ namespace Engine.Animation
         /// <summary>
         /// 是否有活动内容（动画或驱动器）且已激活
         /// </summary>
-        public bool IsActive => (_active || _deactivating || _activating) && (
+        public bool IsActive => (_active || _deactivating || _activating || _holdPose) && (
             _animationPlayer?.IsPlaying == true
             || (_animationPlayer?.PreservePose == true && _animationPlayer.HasValidAnimation)
+            || (_holdPose && _animationPlayer?.HasValidAnimation == true)
             || _driver != null
             || _transition?.IsActive == true);
-
-        /// <summary>
-        /// 层是否被显式停用（通过 Deactivate 方法）
-        /// </summary>
-        public bool IsDeactivated => !_active;
 
         /// <summary>
         /// 动画播放器（过渡期间返回目标播放器）
@@ -121,9 +119,20 @@ namespace Engine.Animation
         public void Deactivate()
         {
             _active = false;
+            _holdPose = false;
             _animationPlayer?.Stop();
             _transition?.CancelTransition();
             CancelTransitioning();
+        }
+
+        /// <summary>
+        /// 设置保持姿态模式（手动控制时使用）
+        /// 当非循环动画结束后，保持当前姿态直到释放
+        /// </summary>
+        /// <param name="hold">true 表示启用保持姿态模式；false 表示禁用</param>
+        public void SetHoldPose(bool hold)
+        {
+            _holdPose = hold;
         }
 
         /// <summary>
@@ -135,6 +144,11 @@ namespace Engine.Animation
             {
                 _activating = false;
                 Weight = _targetWeight;
+                // 清除源姿态
+                if (_activateSourceTransforms != null)
+                {
+                    Array.Clear(_activateSourceTransforms, 0, _activateSourceTransforms.Length);
+                }
             }
             if (_deactivating)
             {
@@ -226,14 +240,31 @@ namespace Engine.Animation
             _active = true;  // 激活层
             CancelTransitioning();
 
-            // 对于 Override 层，如果之前没有播放动画（层是停用或刚停用完）
+            // 对于 Override 层，如果之前没有任何动画（Animation == null）
             // 使用权重渐入代替动画过渡
+            // 注意：如果 Animation 存在但 IsPlaying=false（非循环动画结束），
+            // 应该使用正常过渡，因为我们有源姿态可以过渡
             if (BlendMode == AnimationBlendMode.Override &&
-                !_animationPlayer.IsPlaying &&
+                _animationPlayer.Animation == null &&
                 transitionDuration > 0f)
             {
                 // 保存目标权重（当前设置的权重）
                 _targetWeight = Weight > 0 ? Weight : 1f;
+
+                // 采样当前姿态作为源姿态（用于平滑过渡）
+                if (_animationPlayer.Animation != null && model != null)
+                {
+                    int boneCount = model.Bones.Count;
+                    if (boneCount > 0)
+                    {
+                        if (_activateSourceTransforms == null || _activateSourceTransforms.Length < boneCount)
+                        {
+                            _activateSourceTransforms = new Matrix?[boneCount];
+                        }
+                        Array.Clear(_activateSourceTransforms, 0, boneCount);
+                        _animationPlayer.SampleBoneTransforms(_activateSourceTransforms);
+                    }
+                }
 
                 // 直接播放目标动画
                 _animationPlayer.SetAnimation(model, animation);
@@ -319,6 +350,11 @@ namespace Engine.Animation
                     // 过渡完成，设置目标权重
                     Weight = _targetWeight;
                     _activating = false;
+                    // 清除源姿态
+                    if (_activateSourceTransforms != null)
+                    {
+                        Array.Clear(_activateSourceTransforms, 0, _activateSourceTransforms.Length);
+                    }
                 }
                 else
                 {
@@ -387,6 +423,40 @@ namespace Engine.Animation
         /// </summary>
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
+            // 激活渐变过渡：从保存的源姿态混合到目标动画
+            if (_activating && _activateSourceTransforms != null && model != null)
+            {
+                float progress = _activateDuration > 0 ? _activateElapsed / _activateDuration : 1f;
+                progress = Math.Clamp(progress, 0f, 1f);
+
+                // 采样目标动画
+                _animationPlayer?.SampleBoneTransforms(boneTransforms);
+
+                // 混合源姿态和目标姿态
+                int boneCount = Math.Min(boneTransforms.Length, _activateSourceTransforms.Length);
+                for (int i = 0; i < boneCount; i++)
+                {
+                    if (boneTransforms[i].HasValue && _activateSourceTransforms[i].HasValue)
+                    {
+                        // 两者都有值：正常混合
+                        boneTransforms[i] = BlendTransforms(
+                            _activateSourceTransforms[i].Value,
+                            boneTransforms[i].Value,
+                            progress);
+                    }
+                    else if (_activateSourceTransforms[i].HasValue)
+                    {
+                        // 只有源姿态有值：从源姿态淡出
+                        boneTransforms[i] = BlendTransforms(
+                            _activateSourceTransforms[i].Value,
+                            Matrix.Identity,
+                            progress);
+                    }
+                    // 如果只有目标有值，保持目标值（不需要处理）
+                }
+                return;
+            }
+
             // 如果有活动过渡，使用过渡采样
             if (_transition?.IsActive == true)
             {
@@ -397,16 +467,34 @@ namespace Engine.Animation
             {
                 _animationPlayer.SampleBoneTransforms(boneTransforms);
             }
-            // preservePose: 非循环动画结束后保持最后帧
+            // preservePose: 非循环动画结束后持续保持最终帧
             else if (_animationPlayer != null && _animationPlayer.PreservePose && _animationPlayer.HasValidAnimation)
             {
                 _animationPlayer.SampleBoneTransformsAtPhase(_animationPlayer.EndPhase, boneTransforms);
+            }
+            // holdPose: 手动控制期间非循环动画结束后保持当前姿态
+            else if (_holdPose && _animationPlayer != null && _animationPlayer.HasValidAnimation)
+            {
+                _animationPlayer.SampleBoneTransforms(boneTransforms);
             }
             // 最后尝试驱动器
             else if (_driver != null)
             {
                 _driver.SampleTransforms(boneTransforms, model);
             }
+        }
+
+        /// <summary>
+        /// 混合两个变换矩阵
+        /// </summary>
+        private static Matrix BlendTransforms(Matrix a, Matrix b, float t)
+        {
+            a.Decompose(out var tA, out var rA, out var sA);
+            b.Decompose(out var tB, out var rB, out var sB);
+
+            return Matrix.CreateScale(Vector3.Lerp(sA, sB, t))
+                 * Matrix.CreateFromQuaternion(Quaternion.Slerp(rA, rB, t))
+                 * Matrix.CreateTranslation(Vector3.Lerp(tA, tB, t));
         }
     }
 }

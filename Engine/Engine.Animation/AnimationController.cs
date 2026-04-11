@@ -1076,8 +1076,18 @@ namespace Engine.Animation
             // 3. 标记该层为手动控制
             _manualOverrideLayers.Add(layerName);
 
-            // 4. 应用到层并返回结果
-            return ApplyAnimationToLayer(layerName, animRef);
+            // 4. 设置保持姿态模式（非循环动画结束后保持当前姿态）
+            layer.SetHoldPose(true);
+
+            // 5. 应用到层并返回结果
+            bool success = ApplyAnimationToLayer(layerName, animRef);
+            if (!success)
+            {
+                // 应用失败时回滚状态
+                layer.SetHoldPose(false);
+                _manualOverrideLayers.Remove(layerName);
+            }
+            return success;
         }
 
         /// <summary>
@@ -1146,12 +1156,21 @@ namespace Engine.Animation
         {
             if (string.IsNullOrEmpty(layerName))
             {
+                // 清除所有层的保持姿态状态
+                foreach (var layer in _layers)
+                {
+                    layer?.SetHoldPose(false);
+                }
                 _manualOverrideLayers.Clear();
                 // 清除所有规则匹配缓存，强制重新评估
                 _lastMatchedRuleIndex.Clear();
             }
             else
             {
+                // 清除指定层的保持姿态状态
+                var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+                layer?.SetHoldPose(false);
+
                 _manualOverrideLayers.Remove(layerName);
 
                 // 清除该层相关状态轨道的规则匹配缓存

@@ -235,8 +235,9 @@ namespace Engine.Animation
                 return;
             }
 
-            // 如果进度为 0 或没有源变换，使用源变换
-            if (Progress <= 0f || _sourceTransforms == null || !_sourcePlayer?.IsPlaying == true)
+            // 如果进度为 0 或没有源变换，使用目标变换
+            // 注意：即使源动画已停止播放，只要 _sourceTransforms 有值就应该进行混合
+            if (Progress <= 0f || _sourceTransforms == null)
             {
                 _targetPlayer?.SampleBoneTransforms(boneTransforms);
                 return;

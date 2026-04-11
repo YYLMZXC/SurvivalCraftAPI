@@ -55,6 +55,7 @@ namespace Engine.Animation {
         float _endPhase = 1f;
         bool _preservePose = false;
         float _wrapOvershoot = 0f; // For loop boundary interpolation
+        float _keyInterval = 0f;   // Cached keyframe interval for boundary interpolation
 
         /// <summary>
         /// 当前动画
@@ -285,23 +286,34 @@ namespace Engine.Animation {
                 if (ActualDirection > 0) {
                     // 正向播放
                     if (_time > maxTime) {
-                        // 计算超出的部分用于边界插值
+                        // Wrap 发生：记录超出的时间作为边界插值的起始点
                         _wrapOvershoot = _time - maxTime;
                         _time = minTime + _wrapOvershoot;
-                        _wrapOvershoot = Math.Min(_wrapOvershoot, deltaTime * Math.Abs(Speed));
+                        // 缓存关键帧间隔（从动画数据获取）
+                        _keyInterval = EstimateKeyInterval();
                         _lastEventIndex = -1;
-                    } else {
-                        _wrapOvershoot = 0f;
+                    } else if (_wrapOvershoot > 0f) {
+                        // 已经在 wrap 后，累加时间
+                        _wrapOvershoot += deltaTime * Math.Abs(Speed);
+                        // 当累加超过关键帧间隔时，插值完成
+                        if (_keyInterval > 0f && _wrapOvershoot >= _keyInterval) {
+                            _wrapOvershoot = 0f;
+                            _keyInterval = 0f;
+                        }
                     }
                 } else {
                     // 反向播放
                     if (_time < minTime) {
                         _wrapOvershoot = minTime - _time;
                         _time = maxTime - _wrapOvershoot;
-                        _wrapOvershoot = Math.Min(_wrapOvershoot, deltaTime * Math.Abs(Speed));
+                        _keyInterval = EstimateKeyInterval();
                         _lastEventIndex = -1;
-                    } else {
-                        _wrapOvershoot = 0f;
+                    } else if (_wrapOvershoot > 0f) {
+                        _wrapOvershoot += deltaTime * Math.Abs(Speed);
+                        if (_keyInterval > 0f && _wrapOvershoot >= _keyInterval) {
+                            _wrapOvershoot = 0f;
+                            _keyInterval = 0f;
+                        }
                     }
                 }
             } else {
@@ -357,49 +369,7 @@ namespace Engine.Animation {
         public void SampleBoneTransforms(Matrix?[] boneTransforms) {
             if (_animation == null || _model == null || boneTransforms == null) return;
 
-            // 检查是否需要边界插值
-            if (_looping && _wrapOvershoot > 0f && PhaseRange > 0f) {
-                SampleWithBoundaryInterpolation(boneTransforms);
-                return;
-            }
-
             SampleAtTimeInternal(_time, boneTransforms);
-        }
-
-        /// <summary>
-        /// 带边界插值的采样（用于循环边界平滑过渡）
-        /// </summary>
-        void SampleWithBoundaryInterpolation(Matrix?[] boneTransforms) {
-            float duration = _animation.Duration;
-            float startTime = _startPhase * duration;
-            float endTime = _endPhase * duration;
-            float rangeDuration = PhaseRange * duration;
-
-            if (rangeDuration <= 0f) return;
-
-            // 计算插值权重
-            float blendWeight = _wrapOvershoot / rangeDuration;
-            blendWeight = Math.Clamp(blendWeight, 0f, 1f);
-
-            // 采样当前时间的变换
-            Matrix?[] currentTransforms = new Matrix?[boneTransforms.Length];
-            SampleAtTimeInternal(_time, currentTransforms);
-
-            // 采样边界另一端的变换
-            float boundaryTime = ActualDirection > 0 ? startTime : endTime;
-            Matrix?[] boundaryTransforms = new Matrix?[boneTransforms.Length];
-            SampleAtTimeInternal(boundaryTime, boundaryTransforms);
-
-            // 混合变换
-            for (int i = 0; i < boneTransforms.Length; i++) {
-                if (currentTransforms[i].HasValue && boundaryTransforms[i].HasValue) {
-                    boneTransforms[i] = BlendMatrix(currentTransforms[i].Value, boundaryTransforms[i].Value, blendWeight);
-                } else if (currentTransforms[i].HasValue) {
-                    boneTransforms[i] = currentTransforms[i];
-                } else if (boundaryTransforms[i].HasValue) {
-                    boneTransforms[i] = boundaryTransforms[i];
-                }
-            }
         }
 
         /// <summary>
@@ -517,7 +487,38 @@ namespace Engine.Animation {
             if (values.Length == 1) return values[0];
 
             int idx = FindKeyIndex(times, time);
+
             if (idx < 0) return values[0];
+
+            // 循环边界插值：当 wrap 发生后，从边界帧插值到当前位置
+            // _wrapOvershoot 会累积直到超过 _keyInterval
+            if (_looping && _wrapOvershoot > 0f && _keyInterval > 0f && times.Length >= 2) {
+                // 计算插值权重：wrap 后经过的时间 / 关键帧间隔
+                float blendAlpha = _wrapOvershoot / _keyInterval;
+                blendAlpha = Math.Clamp(blendAlpha, 0f, 1f);
+
+                // 获取当前位置的值（正常插值）
+                Vector3 currentValue;
+                if (idx >= values.Length - 1) {
+                    currentValue = values[0];
+                } else {
+                    float kt0 = times[idx];
+                    float kt1 = times[idx + 1];
+                    float kalpha = (time - kt0) / (kt1 - kt0);
+                    currentValue = interpolation switch {
+                        ModelAnimation.InterpolationType.Step => values[idx],
+                        _ => Vector3.Lerp(values[idx], values[idx + 1], kalpha)
+                    };
+                }
+
+                // 边界值：正向播放从最后一帧开始，反向播放从第一帧开始
+                Vector3 boundaryValue = ActualDirection > 0 ? values[^1] : values[0];
+                return interpolation switch {
+                    ModelAnimation.InterpolationType.Step => boundaryValue,
+                    _ => Vector3.Lerp(boundaryValue, currentValue, blendAlpha)
+                };
+            }
+
             if (idx >= values.Length - 1) return values[values.Length - 1];
 
             float t0 = times[idx];
@@ -526,7 +527,7 @@ namespace Engine.Animation {
 
             return interpolation switch {
                 ModelAnimation.InterpolationType.Step => values[idx],
-                ModelAnimation.InterpolationType.CubicSpline => CubicSplineInterpolate(values, idx, alpha), // 简化处理
+                ModelAnimation.InterpolationType.CubicSpline => CubicSplineInterpolate(values, idx, alpha),
                 _ => Vector3.Lerp(values[idx], values[idx + 1], alpha)
             };
         }
@@ -536,7 +537,36 @@ namespace Engine.Animation {
             if (values.Length == 1) return values[0];
 
             int idx = FindKeyIndex(times, time);
+
             if (idx < 0) return values[0];
+
+            // 循环边界插值：当 wrap 发生后，从边界帧插值到当前位置
+            if (_looping && _wrapOvershoot > 0f && _keyInterval > 0f && times.Length >= 2) {
+                float blendAlpha = _wrapOvershoot / _keyInterval;
+                blendAlpha = Math.Clamp(blendAlpha, 0f, 1f);
+
+                // 获取当前位置的值（正常插值）
+                Quaternion currentValue;
+                if (idx >= values.Length - 1) {
+                    currentValue = values[0];
+                } else {
+                    float qt0 = times[idx];
+                    float qt1 = times[idx + 1];
+                    float qalpha = (time - qt0) / (qt1 - qt0);
+                    currentValue = interpolation switch {
+                        ModelAnimation.InterpolationType.Step => values[idx],
+                        _ => Quaternion.Slerp(values[idx], values[idx + 1], qalpha)
+                    };
+                }
+
+                // 边界值：正向播放从最后一帧开始，反向播放从第一帧开始
+                Quaternion boundaryValue = ActualDirection > 0 ? values[^1] : values[0];
+                return interpolation switch {
+                    ModelAnimation.InterpolationType.Step => boundaryValue,
+                    _ => Quaternion.Slerp(boundaryValue, currentValue, blendAlpha)
+                };
+            }
+
             if (idx >= values.Length - 1) return values[values.Length - 1];
 
             float t0 = times[idx];
@@ -545,7 +575,7 @@ namespace Engine.Animation {
 
             return interpolation switch {
                 ModelAnimation.InterpolationType.Step => values[idx],
-                ModelAnimation.InterpolationType.CubicSpline => values[idx], // 简化处理
+                ModelAnimation.InterpolationType.CubicSpline => values[idx],
                 _ => Quaternion.Slerp(values[idx], values[idx + 1], alpha)
             };
         }
@@ -564,6 +594,26 @@ namespace Engine.Animation {
         Vector3 CubicSplineInterpolate(Vector3[] values, int idx, float t) {
             // 简化的三次样条插值
             return Vector3.Lerp(values[idx], values[Math.Min(idx + 1, values.Length - 1)], t);
+        }
+
+        /// <summary>
+        /// 估算关键帧间隔（用于循环边界插值）
+        /// </summary>
+        float EstimateKeyInterval() {
+            if (_animation == null || _animation.Channels == null || _animation.Channels.Count == 0)
+                return 0f;
+
+            // 从第一个有效的通道获取关键帧时间
+            foreach (var channel in _animation.Channels) {
+                var sampler = channel.Sampler;
+                if (sampler?.KeyTimes != null && sampler.KeyTimes.Length >= 2) {
+                    var times = sampler.KeyTimes;
+                    // 使用最后两个关键帧的间隔
+                    return times[^1] - times[^2];
+                }
+            }
+
+            return 0f;
         }
 
         void BuildBoneIndexMap() {

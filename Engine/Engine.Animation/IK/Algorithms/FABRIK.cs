@@ -13,6 +13,11 @@ namespace Engine.Animation
         public string Name => "FABRIK";
         public bool SupportsAim => false;
 
+        // 位置缓存
+        private Vector3[] _positionsCache;
+        // 骨骼长度缓存
+        private float[] _boneLengthsCache;
+
         public void Solve(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
             IKAlgorithmConfig config = null)
@@ -30,28 +35,32 @@ namespace Engine.Animation
             Vector3 targetPos = target.Position.Value;
             Vector3 rootPos = worldPositions[indices[0]];
 
+            // 确保缓存足够大
+            if (_positionsCache == null || _positionsCache.Length < n)
+                _positionsCache = new Vector3[n];
+            if (_boneLengthsCache == null || _boneLengthsCache.Length < n - 1)
+                _boneLengthsCache = new float[n - 1];
+
             // 计算骨骼长度
-            float[] boneLengths = new float[n - 1];
             for (int i = 0; i < n - 1; i++)
             {
-                boneLengths[i] = Vector3.Distance(
+                _boneLengthsCache[i] = Vector3.Distance(
                     worldPositions[indices[i]],
                     worldPositions[indices[i + 1]]);
             }
 
             // 计算总链长度
             float totalLength = 0;
-            foreach (float len in boneLengths)
-                totalLength += len;
+            for (int i = 0; i < n - 1; i++)
+                totalLength += _boneLengthsCache[i];
 
             // 检查目标是否可达
             float distToTarget = Vector3.Distance(rootPos, targetPos);
 
             // 初始化位置数组
-            Vector3[] positions = new Vector3[n];
             for (int i = 0; i < n; i++)
             {
-                positions[i] = worldPositions[indices[i]];
+                _positionsCache[i] = worldPositions[indices[i]];
             }
 
             // 如果目标不可达，伸展到最大
@@ -60,7 +69,7 @@ namespace Engine.Animation
                 Vector3 dir = Vector3.Normalize(targetPos - rootPos);
                 for (int i = 1; i < n; i++)
                 {
-                    positions[i] = positions[i - 1] + dir * boneLengths[i - 1];
+                    _positionsCache[i] = _positionsCache[i - 1] + dir * _boneLengthsCache[i - 1];
                 }
             }
             else
@@ -69,48 +78,48 @@ namespace Engine.Animation
                 for (int iter = 0; iter < maxIterations; iter++)
                 {
                     // 前向阶段：从末端向根
-                    positions[n - 1] = targetPos;
+                    _positionsCache[n - 1] = targetPos;
                     for (int i = n - 2; i >= 0; i--)
                     {
-                        Vector3 diff = positions[i] - positions[i + 1];
+                        Vector3 diff = _positionsCache[i] - _positionsCache[i + 1];
                         float dist = diff.Length();
                         if (dist < 0.0001f)
                         {
-                            positions[i] = positions[i + 1];
+                            _positionsCache[i] = _positionsCache[i + 1];
                         }
                         else
                         {
                             Vector3 dir = diff / dist;
-                            positions[i] = positions[i + 1] + dir * boneLengths[i];
+                            _positionsCache[i] = _positionsCache[i + 1] + dir * _boneLengthsCache[i];
                         }
                     }
 
                     // 后向阶段：从根向末端
-                    positions[0] = rootPos;
+                    _positionsCache[0] = rootPos;
                     for (int i = 1; i < n; i++)
                     {
-                        Vector3 diff = positions[i] - positions[i - 1];
+                        Vector3 diff = _positionsCache[i] - _positionsCache[i - 1];
                         float dist = diff.Length();
                         if (dist < 0.0001f)
                         {
-                            positions[i] = positions[i - 1];
+                            _positionsCache[i] = _positionsCache[i - 1];
                         }
                         else
                         {
                             Vector3 dir = diff / dist;
-                            positions[i] = positions[i - 1] + dir * boneLengths[i - 1];
+                            _positionsCache[i] = _positionsCache[i - 1] + dir * _boneLengthsCache[i - 1];
                         }
                     }
 
                     // 检查收敛
-                    float error = Vector3.Distance(positions[n - 1], targetPos);
+                    float error = Vector3.Distance(_positionsCache[n - 1], targetPos);
                     if (error < tolerance)
                         break;
                 }
             }
 
             // 从位置计算骨骼旋转
-            CalculateBoneRotations(chain, positions, boneTransforms, worldPositions, model);
+            CalculateBoneRotations(chain, _positionsCache, boneTransforms, worldPositions, model);
 
             // 应用关节限制
             ApplyJointLimits(chain, boneTransforms, model);
@@ -142,61 +151,10 @@ namespace Engine.Animation
                 Vector3 newDir = newDiff / newDist;
 
                 // 计算旋转
-                Quaternion rotation = RotationBetweenVectors(oldDir, newDir);
+                Quaternion rotation = IKUtils.RotationBetweenVectors(oldDir, newDir);
 
                 // 应用旋转
-                ApplyBoneRotation(boneTransforms, boneIdx, rotation, model);
-            }
-        }
-
-        /// <summary>
-        /// 计算从一个方向到另一个方向的旋转
-        /// </summary>
-        private static Quaternion RotationBetweenVectors(Vector3 from, Vector3 to)
-        {
-            from = Vector3.Normalize(from);
-            to = Vector3.Normalize(to);
-
-            float dot = Vector3.Dot(from, to);
-
-            if (dot > 0.9999f)
-                return Quaternion.Identity;
-
-            if (dot < -0.9999f)
-            {
-                Vector3 axis = Vector3.Cross(from, Vector3.UnitY);
-                if (axis.LengthSquared() < 0.0001f)
-                    axis = Vector3.Cross(from, Vector3.UnitX);
-                return Quaternion.CreateFromAxisAngle(Vector3.Normalize(axis), MathF.PI);
-            }
-
-            Vector3 rotationAxis = Vector3.Cross(from, to);
-            float s = MathF.Sqrt((1f + dot) * 2f);
-            float invS = 1f / s;
-
-            return new Quaternion(
-                rotationAxis.X * invS,
-                rotationAxis.Y * invS,
-                rotationAxis.Z * invS,
-                s * 0.5f);
-        }
-
-        /// <summary>
-        /// 应用骨骼旋转
-        /// </summary>
-        private void ApplyBoneRotation(Matrix?[] boneTransforms, int boneIndex, Quaternion rotation, Model model)
-        {
-            if (!boneTransforms[boneIndex].HasValue)
-            {
-                boneTransforms[boneIndex] = Matrix.CreateFromQuaternion(rotation);
-            }
-            else
-            {
-                var current = boneTransforms[boneIndex].Value;
-                current.Decompose(out var scale, out var currentRot, out var translation);
-                boneTransforms[boneIndex] = Matrix.CreateScale(scale)
-                    * Matrix.CreateFromQuaternion(rotation * currentRot)
-                    * Matrix.CreateTranslation(translation);
+                IKUtils.ApplyBoneRotation(boneTransforms, boneIdx, rotation);
             }
         }
 

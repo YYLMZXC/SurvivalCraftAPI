@@ -34,7 +34,7 @@ namespace Engine.Animation
             {
                 if (!target.AimDirection.HasValue && !target.Position.HasValue)
                     return;
-                SolveSingleBone(chain, target, boneTransforms, worldPositions, model, rootIdx, endIdx, rootPos, endPos);
+                SolveSingleBone(chain, target, boneTransforms, worldPositions, rootIdx, endIdx, rootPos, endPos);
                 return;
             }
 
@@ -120,13 +120,19 @@ namespace Engine.Animation
 
             // 计算根骨骼旋转
             Vector3 midPos = worldPositions[midIdx];
-            Vector3 oldRootDir = Vector3.Normalize(midPos - rootPos);
-            Vector3 newRootDir = Vector3.Normalize(newMidPos - rootPos);
+            Vector3 oldRootDiff = midPos - rootPos;
+            Vector3 newRootDiff = newMidPos - rootPos;
 
-            Quaternion rootRotation = RotationBetweenVectors(oldRootDir, newRootDir);
+            if (oldRootDiff.LengthSquared() < 0.0001f || newRootDiff.LengthSquared() < 0.0001f)
+                return;
+
+            Vector3 oldRootDir = Vector3.Normalize(oldRootDiff);
+            Vector3 newRootDir = Vector3.Normalize(newRootDiff);
+
+            Quaternion rootRotation = IKUtils.RotationBetweenVectors(oldRootDir, newRootDir);
 
             // 应用根骨骼旋转
-            ApplyBoneRotation(boneTransforms, rootIdx, rootRotation, model);
+            IKUtils.ApplyBoneRotation(boneTransforms, rootIdx, rootRotation);
 
             // 重新计算中间骨骼位置（基于新的根骨骼旋转）
             // 更新世界位置用于后续计算
@@ -138,10 +144,10 @@ namespace Engine.Animation
             Vector3 oldMidDir = Vector3.Normalize(endPos - midPos);
             Vector3 newMidDir = Vector3.Normalize(targetPos - newMidWorld);
 
-            Quaternion midRotation = RotationBetweenVectors(oldMidDir, newMidDir);
+            Quaternion midRotation = IKUtils.RotationBetweenVectors(oldMidDir, newMidDir);
 
             // 应用中间骨骼旋转
-            ApplyBoneRotation(boneTransforms, midIdx, midRotation, model);
+            IKUtils.ApplyBoneRotation(boneTransforms, midIdx, midRotation);
 
             // 应用关节限制
             ApplyJointLimits(chain, boneTransforms, model);
@@ -158,7 +164,7 @@ namespace Engine.Animation
         /// 消除 Roll（歪头）分量
         /// </summary>
         private void SolveSingleBone(IKChain chain, IKTarget target,
-            Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
+            Matrix?[] boneTransforms, Vector3[] worldPositions,
             int rootIdx, int endIdx, Vector3 rootPos, Vector3 endPos)
         {
             // 计算骨骼长度
@@ -215,7 +221,7 @@ namespace Engine.Animation
             }
 
             // 应用旋转
-            ApplyBoneRotation(boneTransforms, rootIdx, rotation, model);
+            IKUtils.ApplyBoneRotation(boneTransforms, rootIdx, rotation);
         }
 
         /// <summary>
@@ -244,61 +250,6 @@ namespace Engine.Animation
             }
 
             return Vector3.Normalize(bendDir);
-        }
-
-        /// <summary>
-        /// 计算从一个方向到另一个方向的旋转
-        /// </summary>
-        private static Quaternion RotationBetweenVectors(Vector3 from, Vector3 to)
-        {
-            from = Vector3.Normalize(from);
-            to = Vector3.Normalize(to);
-
-            float dot = Vector3.Dot(from, to);
-
-            // 如果方向几乎相同
-            if (dot > 0.9999f)
-                return Quaternion.Identity;
-
-            // 如果方向相反
-            if (dot < -0.9999f)
-            {
-                // 找一个垂直轴旋转 180 度
-                Vector3 axis = Vector3.Cross(from, Vector3.UnitY);
-                if (axis.LengthSquared() < 0.0001f)
-                    axis = Vector3.Cross(from, Vector3.UnitX);
-                return Quaternion.CreateFromAxisAngle(Vector3.Normalize(axis), MathF.PI);
-            }
-
-            // 一般情况
-            Vector3 rotationAxis = Vector3.Cross(from, to);
-            float s = MathF.Sqrt((1f + dot) * 2f);
-            float invS = 1f / s;
-
-            return new Quaternion(
-                rotationAxis.X * invS,
-                rotationAxis.Y * invS,
-                rotationAxis.Z * invS,
-                s * 0.5f);
-        }
-
-        /// <summary>
-        /// 应用骨骼旋转
-        /// </summary>
-        private void ApplyBoneRotation(Matrix?[] boneTransforms, int boneIndex, Quaternion rotation, Model model)
-        {
-            if (!boneTransforms[boneIndex].HasValue)
-            {
-                boneTransforms[boneIndex] = Matrix.CreateFromQuaternion(rotation);
-            }
-            else
-            {
-                var current = boneTransforms[boneIndex].Value;
-                current.Decompose(out var scale, out var currentRot, out var translation);
-                boneTransforms[boneIndex] = Matrix.CreateScale(scale)
-                    * Matrix.CreateFromQuaternion(rotation * currentRot)
-                    * Matrix.CreateTranslation(translation);
-            }
         }
 
         /// <summary>
@@ -350,7 +301,7 @@ namespace Engine.Animation
                 currentAimDir = Vector3.Normalize(currentAimDir);
 
                 // 计算旋转
-                aimRotation = RotationBetweenVectors(currentAimDir, targetDir);
+                aimRotation = IKUtils.RotationBetweenVectors(currentAimDir, targetDir);
 
                 // 应用权重
                 if (target.AimWeight < 1.0f)

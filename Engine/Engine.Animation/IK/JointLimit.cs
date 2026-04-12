@@ -68,7 +68,10 @@ namespace Engine.Animation
         private static Vector3 DecomposeToEulerAngles(Matrix matrix, EulerRotationOrder order)
         {
             // 提取旋转部分（忽略位移和缩放）
-            matrix.Decompose(out _, out Quaternion quaternion, out _);
+            if (!matrix.Decompose(out _, out Quaternion quaternion, out _))
+            {
+                return Vector3.Zero;
+            }
             return QuaternionToEulerAngles(quaternion, order);
         }
 

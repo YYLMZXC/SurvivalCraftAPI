@@ -405,6 +405,10 @@ namespace Engine.Animation
         /// <summary>
         /// 应用目标平滑过渡
         /// </summary>
+        /// <remarks>
+        /// 此方法会修改原始 target 的平滑状态（_smoothedPosition、_positionVelocity 等），
+        /// 以便在下一帧保持平滑连续性。返回的 smoothedTarget 包含平滑后的值。
+        /// </remarks>
         private IKTarget ApplySmoothing(IKChain chain, IKTarget target, Vector3[] worldPositions)
         {
             if (!target._smoothInitialized)
@@ -435,13 +439,13 @@ namespace Engine.Animation
             if (target.Position.HasValue && target.PositionSmoothTime > 0)
             {
                 smoothedTarget._smoothedPosition = SmoothDampVector3(
-                    target._smoothedPosition,
+                    smoothedTarget._smoothedPosition,
                     target.Position.Value,
-                    ref target._positionVelocity,
+                    ref smoothedTarget._positionVelocity,
                     target.PositionSmoothTime);
                 smoothedTarget.Position = smoothedTarget._smoothedPosition;
 
-                // 更新原始目标的平滑状态
+                // 更新原始目标的平滑状态（用于下一帧）
                 target._smoothedPosition = smoothedTarget._smoothedPosition;
                 target._positionVelocity = smoothedTarget._positionVelocity;
             }
@@ -454,14 +458,14 @@ namespace Engine.Animation
             if (target.AimDirection.HasValue && target.AimSmoothTime > 0)
             {
                 var smoothedDir = SmoothDampVector3(
-                    target._smoothedAimDirection,
+                    smoothedTarget._smoothedAimDirection,
                     target.AimDirection.Value,
-                    ref target._aimVelocity,
+                    ref smoothedTarget._aimVelocity,
                     target.AimSmoothTime);
                 smoothedTarget._smoothedAimDirection = Vector3.Normalize(smoothedDir);
                 smoothedTarget.AimDirection = smoothedTarget._smoothedAimDirection;
 
-                // 更新原始目标的平滑状态
+                // 更新原始目标的平滑状态（用于下一帧）
                 target._smoothedAimDirection = smoothedTarget._smoothedAimDirection;
                 target._aimVelocity = smoothedTarget._aimVelocity;
             }
@@ -580,13 +584,6 @@ namespace Engine.Animation
             float exp = 1f / (1f + x + 0.48f * x * x + 0.235f * x * x * x);
 
             Vector3 change = current - target;
-            float maxChange = float.MaxValue; // 不限制最大变化量
-            float sqrLen = change.LengthSquared();
-
-            if (sqrLen > maxChange * maxChange)
-            {
-                change = Vector3.Normalize(change) * maxChange;
-            }
 
             Vector3 temp = (velocity + omega * change) * Time.FrameDuration;
             velocity = (velocity - omega * temp) * exp;

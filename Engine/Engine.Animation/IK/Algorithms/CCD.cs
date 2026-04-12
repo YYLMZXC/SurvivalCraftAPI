@@ -48,7 +48,7 @@ namespace Engine.Animation
                 {
                     int boneIdx = indices[i];
 
-                    // 更新世界位置缓存（基于当前骨骼变换）
+                    // 更新世界位置缓存
                     UpdateWorldPositions(boneTransforms, model);
 
                     Vector3 bonePos = _worldPosCache[boneIdx];
@@ -85,7 +85,7 @@ namespace Engine.Animation
                     Quaternion rotation = Quaternion.CreateFromAxisAngle(rotationAxis, angle);
 
                     // 应用旋转到骨骼
-                    ApplyBoneRotation(boneTransforms, boneIdx, rotation, model);
+                    IKUtils.ApplyBoneRotation(boneTransforms, boneIdx, rotation);
 
                     // 应用关节限制
                     ApplyJointLimit(chain, boneTransforms, boneIdx, model);
@@ -123,25 +123,6 @@ namespace Engine.Animation
             }
 
             ComputeRecursive(model.m_rootBone, Matrix.Identity);
-        }
-
-        /// <summary>
-        /// 应用骨骼旋转
-        /// </summary>
-        private void ApplyBoneRotation(Matrix?[] boneTransforms, int boneIndex, Quaternion rotation, Model model)
-        {
-            if (!boneTransforms[boneIndex].HasValue)
-            {
-                boneTransforms[boneIndex] = Matrix.CreateFromQuaternion(rotation);
-            }
-            else
-            {
-                var current = boneTransforms[boneIndex].Value;
-                current.Decompose(out var scale, out var currentRot, out var translation);
-                boneTransforms[boneIndex] = Matrix.CreateScale(scale)
-                    * Matrix.CreateFromQuaternion(rotation * currentRot)
-                    * Matrix.CreateTranslation(translation);
-            }
         }
 
         /// <summary>

@@ -257,12 +257,6 @@ namespace Game {
                     // 使用模板名称创建控制器
                     AnimationController = new AnimationController(m_model, AnimationTemplateName);
                 }
-                // 后备：自动播放第一个动画
-                else if (m_model.Animations.Count > 0) {
-                    m_animationPlayer = new AnimationPlayer();
-                    m_animationPlayer.SetAnimation(m_model, m_model.Animations[0]);
-                    m_animationPlayer.Play(loop: true);
-                }
             }
             else {
                 m_boneTransforms = null;

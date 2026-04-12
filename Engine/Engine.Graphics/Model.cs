@@ -52,17 +52,28 @@ namespace Engine.Graphics {
         public static Texture2D DefaultWhiteTexture {
             get {
                 if (s_defaultWhiteTexture == null) {
-                    s_defaultWhiteTexture = CreateWhiteTexture();
+                    s_defaultWhiteTexture = CreateColorTexture(Color.White);
                 }
                 return s_defaultWhiteTexture;
+            }
+        }
+
+        static Texture2D s_defaultTransparentTexture;
+
+        public static Texture2D DefaultTransparentTexture {
+            get {
+                if (s_defaultTransparentTexture == null) {
+                    s_defaultTransparentTexture = CreateColorTexture(Color.Transparent);
+                }
+                return s_defaultTransparentTexture;
             }
         }
 
         /// <summary>
         /// 创建一个 1x1 的白色纹理
         /// </summary>
-        static Texture2D CreateWhiteTexture() {
-            return Texture2D.Load(Image.LoadPixelData([new Rgba32(0xFFFFFFFFu)], 1, 1));
+        static Texture2D CreateColorTexture(Color color) {
+            return Texture2D.Load(Image.LoadPixelData([new Rgba32(color.PackedValue)], 1, 1));
         }
 
         /// <summary>

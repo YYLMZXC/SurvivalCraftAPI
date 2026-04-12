@@ -405,7 +405,7 @@ namespace Game {
             }
 
             // Fallback to default white texture
-            return Model.DefaultWhiteTexture;
+            return Model.DefaultTransparentTexture;
         }
 
         public override void MeasureOverride(Vector2 parentAvailableSize) {

@@ -555,7 +555,6 @@ public static class ModsManager {
 
     public static void AddException(Exception e, bool AllowContinue_ = false) {
         LoadingScreen.Error(e.ToString());
-        Log.Error(e);
         AllowContinue = !SettingsManager.DisplayLog || AllowContinue_;
     }
 

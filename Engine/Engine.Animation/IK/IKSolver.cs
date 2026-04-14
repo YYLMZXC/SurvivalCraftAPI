@@ -338,18 +338,51 @@ namespace Engine.Animation
         /// </summary>
         private void BuildPendingChains(Model model)
         {
+            // 记录成功构建的链，构建后从待构建列表移除
+            var builtChains = new List<string>();
+
             foreach (var (name, info) in _pendingChains)
             {
                 if (_chains.ContainsKey(name))
+                {
+                    // 已存在，从待构建列表移除
+                    builtChains.Add(name);
                     continue;
+                }
 
                 var chain = BuildChainFromEndBone(info.Name, info.EndBoneName, info.MaxChainLength, model);
                 if (chain != null)
                 {
                     chain.Algorithm = info.Algorithm ?? GetDefaultAlgorithm(chain);
                     _chains[name] = chain;
+                    builtChains.Add(name);
                 }
             }
+
+            // 移除已处理的链
+            foreach (var name in builtChains)
+            {
+                _pendingChains.Remove(name);
+            }
+        }
+
+        /// <summary>
+        /// 立即构建 IK 链（用于需要在注册后立即访问链对象的场景）
+        /// </summary>
+        public IKChain BuildChainImmediate(string name, Model model)
+        {
+            if (!_pendingChains.TryGetValue(name, out var info))
+                return GetChain(name); // 返回已存在的链
+
+            var chain = BuildChainFromEndBone(info.Name, info.EndBoneName, info.MaxChainLength, model);
+            if (chain != null)
+            {
+                chain.Algorithm = info.Algorithm ?? GetDefaultAlgorithm(chain);
+                _chains[name] = chain;
+                _pendingChains.Remove(name);
+            }
+
+            return chain;
         }
 
         /// <summary>

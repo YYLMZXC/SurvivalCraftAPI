@@ -1288,6 +1288,17 @@ namespace Engine.Animation
         }
 
         /// <summary>
+        /// 注册 IK 链并立即构建（用于需要在注册后立即访问链对象的场景）
+        /// </summary>
+        /// <returns>构建的 IK 链，如果构建失败返回 null</returns>
+        public IKChain RegisterAndBuildIKChain(string name, string endBoneName,
+            string algorithmName = null, int maxChainLength = 3)
+        {
+            IKSolver.RegisterChainByName(name, endBoneName, algorithmName, maxChainLength);
+            return IKSolver.BuildChainImmediate(name, _model);
+        }
+
+        /// <summary>
         /// 获取 IK 目标
         /// </summary>
         public IKTarget GetIKTarget(string chainName)

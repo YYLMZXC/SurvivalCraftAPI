@@ -160,8 +160,7 @@ namespace Engine.Animation
         }
 
         /// <summary>
-        /// 单骨骼 IK：旋转根骨骼让末端朝向目标方向
-        /// 消除 Roll（歪头）分量
+        /// 单骨骼 IK：旋转根骨骼让末端的 AimAxis 朝向目标方向
         /// </summary>
         private void SolveSingleBone(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions,
@@ -172,10 +171,7 @@ namespace Engine.Animation
             if (boneLength < 0.0001f)
                 return;
 
-            // 计算当前骨骼方向（模型空间）
-            Vector3 currentDir = Vector3.Normalize(endPos - rootPos);
-
-            // 目标方向
+            // 目标方向（模型空间）
             Vector3 targetDir;
             if (target.AimDirection.HasValue)
             {
@@ -190,28 +186,23 @@ namespace Engine.Animation
                 return;
             }
 
-            // 计算旋转轴和角度
-            Vector3 rotationAxis = Vector3.Cross(currentDir, targetDir);
-            if (rotationAxis.LengthSquared() < 0.0001f)
-                return; // 方向相同或相反
-
-            rotationAxis = Vector3.Normalize(rotationAxis);
-            float angle = MathF.Acos(Math.Clamp(Vector3.Dot(currentDir, targetDir), -1f, 1f));
-
-            // 消除 Roll：将旋转轴投影到垂直于骨骼方向的平面上
-            // 这确保旋转轴始终垂直于骨骼方向，不会产生"绕骨骼轴旋转"的效果
-            Vector3 projectedAxis = rotationAxis - Vector3.Dot(rotationAxis, currentDir) * currentDir;
-
-            if (projectedAxis.LengthSquared() < 0.0001f)
+            // 获取末端骨骼当前的 AimAxis 方向（模型空间）
+            Vector3 currentAimDir;
+            if (boneTransforms[endIdx].HasValue)
             {
-                // 旋转轴平行于骨骼方向，这是纯 Roll，跳过
-                return;
+                var endTransform = boneTransforms[endIdx].Value;
+                // 将 AimAxis 从骨骼局部空间变换到模型空间
+                currentAimDir = Vector3.TransformNormal(chain.AimAxis, endTransform);
+                currentAimDir = Vector3.Normalize(currentAimDir);
+            }
+            else
+            {
+                // 回退：使用骨骼几何方向
+                currentAimDir = Vector3.Normalize(endPos - rootPos);
             }
 
-            projectedAxis = Vector3.Normalize(projectedAxis);
-
-            // 创建旋转
-            Quaternion rotation = Quaternion.CreateFromAxisAngle(projectedAxis, angle);
+            // 计算从当前 AimAxis 到目标方向的旋转
+            Quaternion rotation = IKUtils.RotationBetweenVectors(currentAimDir, targetDir);
 
             // 应用权重
             float weight = target.AimWeight;

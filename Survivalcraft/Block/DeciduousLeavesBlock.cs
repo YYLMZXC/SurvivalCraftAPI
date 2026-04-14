@@ -186,7 +186,7 @@ namespace Game {
         }
 
         public override string GetDisplayName(SubsystemTerrain subsystemTerrain, int value) =>
-            $"{LanguageControl.Get(fName, (int)GetSeason(Terrain.ExtractData(value)))}{base.GetDisplayName(subsystemTerrain, value)}";
+            string.Format(LanguageControl.Get(fName, (int)GetSeason(Terrain.ExtractData(value))), base.GetDisplayName(subsystemTerrain, value));
 
         public override IEnumerable<int> GetCreativeValues() {
             yield return Terrain.MakeBlockValue(BlockIndex, 0, SetSeason(SetTimeOfSeason(0, 0f), Season.Spring));

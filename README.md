@@ -83,8 +83,10 @@
 ## 感谢
 
 * 西班牙语 (Español) 翻译
-  * Fire Dragon (Discord: firedragon4095)
-  * Kike13 (Discord: .kike.04)
+  * 新的：JoãoCraft24 (Discord: joaocraft24sc)
+  * 旧的：
+    * Fire Dragon (Discord: firedragon4095)
+    * Kike13 (Discord: .kike.04)
 * 越南语 (Tiếng Việt) 翻译
   * Long (Discord: daylong89)
   * Tue (Discord: tuegaming3710)

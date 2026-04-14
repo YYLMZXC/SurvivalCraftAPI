@@ -1292,10 +1292,10 @@
     "Strict Pulling Piston"
   ],
   "DeciduousLeavesBlock": [
-    "Summer ",
-    "Autumn ",
-    "Winter ",
-    "Spring "
+    "Summer {0}",
+    "Autumn {0}",
+    "Winter {0}",
+    "Spring {0}"
   ],
   "SubsystemSeasons": [
     "Early Summer",

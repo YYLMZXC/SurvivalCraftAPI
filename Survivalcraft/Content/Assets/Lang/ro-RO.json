@@ -1102,10 +1102,10 @@
     "Piston de Tragere Strict"
   ],
   "DeciduousLeavesBlock": [
-    "Vară ",
-    "Toamnă ",
-    "Iarnă ",
-    "Primăvară "
+    "Vară {0}",
+    "Toamnă {0}",
+    "Iarnă {0}",
+    "Primăvară {0}"
   ],
   "SubsystemSeasons": [
     "Îmceputul Verii",

@@ -1263,10 +1263,10 @@
     "Pít-tông kéo chặt"
   ],
   "DeciduousLeavesBlock": [
-    "Mùa hè ",
-    "Mùa thu ",
-    "Mùa đông ",
-    "Mùa xuân "
+    "Mùa hè {0}",
+    "Mùa thu {0}",
+    "Mùa đông {0}",
+    "Mùa xuân {0}"
   ],
   "SubsystemSeasons": [
     "Đầu mùa hè",

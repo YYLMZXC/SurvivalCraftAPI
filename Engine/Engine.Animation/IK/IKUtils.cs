@@ -48,8 +48,12 @@ namespace Engine.Animation
         }
 
         /// <summary>
-        /// 应用骨骼旋转
+        /// 应用骨骼旋转（增量旋转，叠加到当前旋转上）
         /// </summary>
+        /// <remarks>
+        /// 旋转应用顺序：newRot = rotation * currentRot
+        /// 这表示 rotation 是一个增量旋转，在当前旋转之前应用。
+        /// </remarks>
         public static void ApplyBoneRotation(Matrix?[] boneTransforms, int boneIndex, Quaternion rotation)
         {
             if (!boneTransforms[boneIndex].HasValue)

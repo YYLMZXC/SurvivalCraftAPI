@@ -30,7 +30,7 @@ namespace Engine.Animation
         public IIKAlgorithm Algorithm { get; set; }
 
         /// <summary>
-        /// 末端骨骼的"前方"轴（模型空间）
+        /// 末端骨骼的"前方"轴（骨骼局部空间）
         /// </summary>
         public Vector3 AimAxis { get; set; } = Vector3.UnitZ;
 

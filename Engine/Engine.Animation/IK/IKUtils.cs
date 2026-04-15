@@ -69,5 +69,61 @@ namespace Engine.Animation
                     * Matrix.CreateTranslation(translation);
             }
         }
+
+        /// <summary>
+        /// 计算骨骼的模型空间变换（从局部变换累积）
+        /// </summary>
+        public static Matrix ComputeBoneWorldTransform(Matrix?[] boneTransforms, int boneIndex, Model model)
+        {
+            var bone = model.m_bones[boneIndex];
+            if (bone == null)
+                return Matrix.Identity;
+
+            // 收集从当前骨骼到根骨骼的路径
+            var path = new List<int>();
+            var current = bone;
+            while (current != null)
+            {
+                path.Add(current.Index);
+                current = current.ParentBone;
+            }
+
+            // 从根骨骼向下累积变换
+            Matrix worldTransform = Matrix.Identity;
+            for (int i = path.Count - 1; i >= 0; i--)
+            {
+                int idx = path[i];
+                Matrix localTransform = boneTransforms[idx].HasValue
+                    ? boneTransforms[idx].Value
+                    : model.m_bones[idx].Transform;
+                worldTransform = localTransform * worldTransform;
+            }
+
+            return worldTransform;
+        }
+
+        /// <summary>
+        /// 将模型空间旋转增量转换为骨骼局部旋转增量
+        /// </summary>
+        public static Quaternion ConvertModelRotationToLocal(Matrix?[] boneTransforms, int boneIndex, Quaternion modelRotation, Model model)
+        {
+            var bone = model.m_bones[boneIndex];
+            if (bone == null || bone.ParentBone == null)
+            {
+                // 根骨骼或无父骨骼，模型空间旋转就是局部旋转
+                return modelRotation;
+            }
+
+            // 获取父骨骼的世界旋转
+            int parentIdx = bone.ParentBone.Index;
+            Matrix parentWorldTransform = ComputeBoneWorldTransform(boneTransforms, parentIdx, model);
+            parentWorldTransform.Decompose(out _, out Quaternion parentWorldRot, out _);
+
+            // 模型空间旋转增量转换为局部空间：
+            // 局部增量 = 父世界旋转的逆 * 模型空间增量 * 父世界旋转
+            // 这样可以让旋转在正确的坐标系中执行
+            Quaternion invParentWorldRot = Quaternion.Inverse(parentWorldRot);
+            return invParentWorldRot * modelRotation * parentWorldRot;
+        }
     }
 }

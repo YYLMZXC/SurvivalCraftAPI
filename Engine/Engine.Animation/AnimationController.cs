@@ -1230,7 +1230,7 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="name">链名称</param>
         /// <param name="endBoneName">末端骨骼名称</param>
-        /// <param name="algorithmName">算法名称（TwoBoneIK/CCD/FABRIK），null 则自动选择</param>
+        /// <param name="algorithmName">算法名称（SingleBoneIK/TwoBoneIK/CCD/FABRIK），null 则自动选择</param>
         /// <param name="maxChainLength">最大链长度</param>
         public void RegisterIKChain(string name, string endBoneName,
             string algorithmName = null, int maxChainLength = 3)

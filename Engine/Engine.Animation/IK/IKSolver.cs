@@ -35,6 +35,7 @@ namespace Engine.Animation
         public IKSolver()
         {
             // 注册默认算法
+            RegisterAlgorithm(new SingleBoneIK());
             RegisterAlgorithm(new TwoBoneIK());
             RegisterAlgorithm(new CCD());
             RegisterAlgorithm(new FABRIK());
@@ -82,7 +83,7 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="name">链名称</param>
         /// <param name="endBoneName">末端骨骼名称</param>
-        /// <param name="algorithmName">算法名称（TwoBoneIK/CCD/FABRIK），null 则自动选择</param>
+        /// <param name="algorithmName">算法名称（SingleBoneIK/TwoBoneIK/CCD/FABRIK），null 则自动选择</param>
         /// <param name="maxChainLength">最大链长度</param>
         public void RegisterChainByName(string name, string endBoneName,
             string algorithmName = null, int maxChainLength = 3)
@@ -390,16 +391,11 @@ namespace Engine.Animation
         /// </summary>
         private IIKAlgorithm GetDefaultAlgorithm(IKChain chain)
         {
-            // 根据链长度选择算法
-            int length = chain.Length;
-
-            if (length == 2)
-            {
-                return _algorithms.TryGetValue("TwoBoneIK", out var algo) ? algo : null;
-            }
-            else
-            {
-                return _algorithms.TryGetValue("CCD", out var algo) ? algo : null;
+            switch (chain.Length) {
+                case <= 1: return null;
+                case 2: return _algorithms.TryGetValue("SingleBoneIK", out var algo1) ? algo1 : null;
+                case 3: return _algorithms.TryGetValue("TwoBoneIK", out var algo2) ? algo2 : null;
+                default: return _algorithms.TryGetValue("CCD", out var algo3) ? algo3 : null;
             }
         }
 

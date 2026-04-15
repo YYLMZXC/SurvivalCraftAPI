@@ -20,23 +20,9 @@ namespace Engine.Animation
             if (chain == null || chain.Length < 2)
                 return;
 
-            int[] indices = chain.BoneIndices;
-            int rootIdx = indices[0];
-            int endIdx = indices[indices.Length - 1];
-
-            // 获取骨骼位置
-            Vector3 rootPos = worldPositions[rootIdx];
-            Vector3 endPos = worldPositions[endIdx];
-
-            // 如果只有一个骨骼连接（链长度为 2），使用简化逻辑
-            // 允许 AimDirection 或 Position
+            // 链长度为 2 的情况由 SingleBoneIK 处理
             if (chain.Length == 2)
-            {
-                if (!target.AimDirection.HasValue && !target.Position.HasValue)
-                    return;
-                SolveSingleBone(chain, target, boneTransforms, worldPositions, rootIdx, endIdx, rootPos, model);
                 return;
-            }
 
             // 链长度 > 2 时，必须有 Position
             if (!target.Position.HasValue)
@@ -44,7 +30,14 @@ namespace Engine.Animation
 
             config ??= new IKAlgorithmConfig();
 
+            int[] indices = chain.BoneIndices;
+            int rootIdx = indices[0];
             int midIdx = indices[1];
+            int endIdx = indices[indices.Length - 1];
+
+            // 获取骨骼位置
+            Vector3 rootPos = worldPositions[rootIdx];
+            Vector3 endPos = worldPositions[endIdx];
 
             // 计算骨骼长度
             float len1 = Vector3.Distance(rootPos, worldPositions[midIdx]);
@@ -157,111 +150,6 @@ namespace Engine.Animation
             {
                 ApplyAimConstraint(chain, target, boneTransforms, worldPositions, model, indices);
             }
-        }
-
-        /// <summary>
-        /// 单骨骼 IK：旋转骨骼链让 AimAxis 朝向目标方向
-        /// 对于链长度为 2 的情况，旋转应用到根骨骼（脖子），以实现抬头效果
-        /// </summary>
-        private void SolveSingleBone(IKChain chain, IKTarget target,
-            Matrix?[] boneTransforms, Vector3[] worldPositions,
-            int rootIdx, int endIdx, Vector3 rootPos, Model model)
-        {
-            // 目标方向（模型空间）
-            Vector3 targetDir;
-            if (target.AimDirection.HasValue)
-            {
-                targetDir = Vector3.Normalize(target.AimDirection.Value);
-            }
-            else if (target.Position.HasValue)
-            {
-                targetDir = Vector3.Normalize(target.Position.Value - rootPos);
-            }
-            else
-            {
-                return;
-            }
-
-            // 始终使用末端骨骼（Head）的世界变换来计算当前 AimAxis 方向
-            // 因为我们想控制的是"头看向哪里"
-            Matrix endWorldTransform = ComputeBoneWorldTransform(boneTransforms, endIdx, model);
-            Vector3 currentAimDir = Vector3.Normalize(Vector3.TransformNormal(chain.AimAxis, endWorldTransform));
-
-            // 计算让 AimAxis 指向目标所需的旋转（模型空间）
-            Quaternion modelRotation = IKUtils.RotationBetweenVectors(currentAimDir, targetDir);
-
-            // 应用权重
-            float weight = target.AimWeight;
-            if (weight < 1.0f && weight > 0f)
-            {
-                modelRotation = Quaternion.Slerp(Quaternion.Identity, modelRotation, weight);
-            }
-
-            // 对于两骨骼链，旋转应用到根骨骼（脖子）
-            // 需要将模型空间旋转转换为根骨骼的局部旋转
-            int targetBoneIdx = (chain.Length == 2) ? rootIdx : endIdx;
-
-            // 转换模型空间旋转到骨骼局部空间
-            Quaternion localRotation = ConvertModelRotationToLocal(boneTransforms, targetBoneIdx, modelRotation, model);
-
-            // 应用旋转
-            IKUtils.ApplyBoneRotation(boneTransforms, targetBoneIdx, localRotation);
-        }
-
-        /// <summary>
-        /// 将模型空间旋转增量转换为骨骼局部旋转增量
-        /// </summary>
-        private Quaternion ConvertModelRotationToLocal(Matrix?[] boneTransforms, int boneIndex, Quaternion modelRotation, Model model)
-        {
-            var bone = model.m_bones[boneIndex];
-            if (bone == null || bone.ParentBone == null)
-            {
-                // 根骨骼或无父骨骼，模型空间旋转就是局部旋转
-                return modelRotation;
-            }
-
-            // 获取父骨骼的世界旋转
-            int parentIdx = bone.ParentBone.Index;
-            Matrix parentWorldTransform = ComputeBoneWorldTransform(boneTransforms, parentIdx, model);
-            parentWorldTransform.Decompose(out _, out Quaternion parentWorldRot, out _);
-
-            // 模型空间旋转增量转换为局部空间：
-            // 局部增量 = 父世界旋转的逆 * 模型空间增量 * 父世界旋转
-            // 这样可以让旋转在正确的坐标系中执行
-            Quaternion invParentWorldRot = Quaternion.Inverse(parentWorldRot);
-            return invParentWorldRot * modelRotation * parentWorldRot;
-        }
-
-        /// <summary>
-        /// 计算骨骼的模型空间变换（从局部变换累积）
-        /// </summary>
-        private Matrix ComputeBoneWorldTransform(Matrix?[] boneTransforms, int boneIndex, Model model)
-        {
-            var bone = model.m_bones[boneIndex];
-            if (bone == null)
-                return Matrix.Identity;
-
-            // 收集从当前骨骼到根骨骼的路径
-            var path = new List<int>();
-            var current = bone;
-            while (current != null)
-            {
-                path.Add(current.Index);
-                current = current.ParentBone;
-            }
-
-            // 从根骨骼向下累积变换
-            Matrix worldTransform = Matrix.Identity;
-            for (int i = path.Count - 1; i >= 0; i--)
-            {
-                int idx = path[i];
-                Matrix localTransform = boneTransforms[idx].HasValue
-                    ? boneTransforms[idx].Value
-                    : model.m_bones[idx].Transform;
-                worldTransform = localTransform * worldTransform;
-            }
-
-            return worldTransform;
         }
 
         /// <summary>

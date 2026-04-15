@@ -153,8 +153,11 @@ namespace Engine.Animation
                 // 计算旋转
                 Quaternion rotation = IKUtils.RotationBetweenVectors(oldDir, newDir);
 
+                // 转换模型空间旋转到骨骼局部空间
+                Quaternion localRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, boneIdx, rotation, model);
+
                 // 应用旋转
-                IKUtils.ApplyBoneRotation(boneTransforms, boneIdx, rotation);
+                IKUtils.ApplyBoneRotation(boneTransforms, boneIdx, localRotation);
             }
         }
 

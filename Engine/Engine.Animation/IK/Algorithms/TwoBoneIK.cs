@@ -124,8 +124,11 @@ namespace Engine.Animation
 
             Quaternion rootRotation = IKUtils.RotationBetweenVectors(oldRootDir, newRootDir);
 
+            // 转换模型空间旋转到骨骼局部空间
+            Quaternion rootLocalRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, rootIdx, rootRotation, model);
+
             // 应用根骨骼旋转
-            IKUtils.ApplyBoneRotation(boneTransforms, rootIdx, rootRotation);
+            IKUtils.ApplyBoneRotation(boneTransforms, rootIdx, rootLocalRotation);
 
             // 重新计算中间骨骼位置（基于新的根骨骼旋转）
             // 更新世界位置用于后续计算
@@ -139,8 +142,11 @@ namespace Engine.Animation
 
             Quaternion midRotation = IKUtils.RotationBetweenVectors(oldMidDir, newMidDir);
 
+            // 转换模型空间旋转到骨骼局部空间
+            Quaternion midLocalRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, midIdx, midRotation, model);
+
             // 应用中间骨骼旋转
-            IKUtils.ApplyBoneRotation(boneTransforms, midIdx, midRotation);
+            IKUtils.ApplyBoneRotation(boneTransforms, midIdx, midLocalRotation);
 
             // 应用关节限制
             ApplyJointLimits(chain, boneTransforms, model);
@@ -217,26 +223,24 @@ namespace Engine.Animation
             Vector3 targetDir = Vector3.Normalize(target.AimDirection.Value);
 
             // 计算当前末端骨骼的朝向
-            // 使用 AimAxis 作为骨骼的"前方"方向
-            if (boneTransforms[endIdx].HasValue)
+            // 使用末端骨骼的世界变换计算当前 AimAxis 方向
+            Matrix endWorldTransform = IKUtils.ComputeBoneWorldTransform(boneTransforms, endIdx, model);
+            Vector3 currentAimDir = Vector3.Normalize(Vector3.TransformNormal(aimAxis, endWorldTransform));
+
+            // 计算旋转
+            Quaternion aimRotation = IKUtils.RotationBetweenVectors(currentAimDir, targetDir);
+
+            // 应用权重
+            if (target.AimWeight < 1.0f)
             {
-                var currentTransform = boneTransforms[endIdx].Value;
-
-                // 将 AimAxis 从骨骼局部空间变换到模型空间
-                Vector3 currentAimDir = Vector3.Normalize(Vector3.TransformNormal(aimAxis, currentTransform));
-
-                // 计算旋转
-                Quaternion aimRotation = IKUtils.RotationBetweenVectors(currentAimDir, targetDir);
-
-                // 应用权重
-                if (target.AimWeight < 1.0f)
-                {
-                    aimRotation = Quaternion.Slerp(Quaternion.Identity, aimRotation, target.AimWeight);
-                }
-
-                // 应用旋转
-                IKUtils.ApplyBoneRotation(boneTransforms, endIdx, aimRotation);
+                aimRotation = Quaternion.Slerp(Quaternion.Identity, aimRotation, target.AimWeight);
             }
+
+            // 转换模型空间旋转到骨骼局部空间
+            Quaternion aimLocalRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, endIdx, aimRotation, model);
+
+            // 应用旋转
+            IKUtils.ApplyBoneRotation(boneTransforms, endIdx, aimLocalRotation);
         }
     }
 }

@@ -5,6 +5,7 @@ namespace Engine.Graphics {
         Vector3,
         Vector4,
         Matrix,
+        Matrix3,
         Texture2D,
         Sampler2D,
         Null

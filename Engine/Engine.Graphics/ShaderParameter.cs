@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Engine.Graphics {
     public class ShaderParameter {
         public object Resource;
@@ -26,6 +28,7 @@ namespace Engine.Graphics {
                 case ShaderParameterType.Vector2: Value = new float[2 * count]; break;
                 case ShaderParameterType.Vector3: Value = new float[3 * count]; break;
                 case ShaderParameterType.Vector4: Value = new float[4 * count]; break;
+                case ShaderParameterType.Matrix3: Value = new float[9 * count]; break;
                 case ShaderParameterType.Matrix: Value = new float[16 * count]; break;
                 default: throw new ArgumentException("type");
             }
@@ -338,6 +341,46 @@ namespace Engine.Graphics {
                     Value[num2++] = value[j].M43;
                     Value[num2++] = value[j].M44;
                 }
+            }
+        }
+
+        /// <summary>
+        /// 设置 mat3 uniform 值（从 Matrix3x2 转换）
+        /// Matrix3x2 转换为 mat3：
+        /// | M11 M12 0 |
+        /// | M21 M22 0 |
+        /// | M31 M32 1 |
+        /// </summary>
+        public void SetValue(Matrix3x2 value) {
+            if (Type == ShaderParameterType.Null) {
+                return;
+            }
+            if (Type != ShaderParameterType.Matrix3
+                || Count != 1) {
+                throw new InvalidOperationException("Shader parameter type mismatch.");
+            }
+            // Matrix3x2 到 mat3 的转换（列主序）
+            // mat3: col0=[M11, M21, 0], col1=[M12, M22, 0], col2=[M31, M32, 1]
+            if (IsChanged
+                || value.M11 != Value[0]
+                || value.M21 != Value[1]
+                || value.M12 != Value[3]
+                || value.M22 != Value[4]
+                || value.M31 != Value[6]
+                || value.M32 != Value[7]) {
+                // 第一列
+                Value[0] = value.M11;
+                Value[1] = value.M21;
+                Value[2] = 0f;
+                // 第二列
+                Value[3] = value.M12;
+                Value[4] = value.M22;
+                Value[5] = 0f;
+                // 第三列
+                Value[6] = value.M31;
+                Value[7] = value.M32;
+                Value[8] = 1f;
+                IsChanged = true;
             }
         }
 

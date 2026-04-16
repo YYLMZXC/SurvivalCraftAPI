@@ -1,0 +1,198 @@
+using Engine.Media;
+using Silk.NET.OpenGLES;
+
+namespace Engine.Graphics {
+    /// <summary>
+    /// 材质纹理绑定器
+    /// 负责将材质纹理绑定到着色器的纹理单元
+    /// 支持动态槽位：着色器没有的 uniform 会静默跳过
+    /// </summary>
+    /// <remarks>
+    /// UV 变换传递方式因着色器设计而异（uniform vs UBO），
+    /// 此类不处理 UV 变换，由使用者根据着色器设计自行处理。
+    /// </remarks>
+    public static class MaterialTextureBinder {
+        /// <summary>
+        /// 纹理槽位 uniform 映射
+        /// (槽位, 纹理 uniform 名称, 采样器 uniform 名称)
+        /// </summary>
+        static readonly (MaterialTextureSlot slot, string texUniform, string samplerUniform)[] SlotUniforms = {
+            // Core PBR textures
+            (MaterialTextureSlot.BaseColor, "u_BaseColorTexture", "u_BaseColorSampler"),
+            (MaterialTextureSlot.MetallicRoughness, "u_MetallicRoughnessTexture", "u_MetallicRoughnessSampler"),
+            (MaterialTextureSlot.Normal, "u_NormalTexture", "u_NormalSampler"),
+            (MaterialTextureSlot.Occlusion, "u_OcclusionTexture", "u_OcclusionSampler"),
+            (MaterialTextureSlot.Emissive, "u_EmissiveTexture", "u_EmissiveSampler"),
+
+            // ClearCoat
+            (MaterialTextureSlot.ClearCoat, "u_ClearcoatTexture", "u_ClearcoatSampler"),
+            (MaterialTextureSlot.ClearCoatRoughness, "u_ClearcoatRoughnessTexture", "u_ClearcoatRoughnessSampler"),
+            (MaterialTextureSlot.ClearCoatNormal, "u_ClearcoatNormalTexture", "u_ClearcoatNormalSampler"),
+
+            // Iridescence
+            (MaterialTextureSlot.Iridescence, "u_IridescenceTexture", "u_IridescenceSampler"),
+            (MaterialTextureSlot.IridescenceThickness, "u_IridescenceThicknessTexture", "u_IridescenceThicknessSampler"),
+
+            // Transmission
+            (MaterialTextureSlot.Transmission, "u_TransmissionTexture", "u_TransmissionSampler"),
+
+            // Volume
+            (MaterialTextureSlot.Thickness, "u_ThicknessTexture", "u_ThicknessSampler"),
+
+            // Sheen
+            (MaterialTextureSlot.SheenColor, "u_SheenColorTexture", "u_SheenColorSampler"),
+            (MaterialTextureSlot.SheenRoughness, "u_SheenRoughnessTexture", "u_SheenRoughnessSampler"),
+
+            // Specular
+            (MaterialTextureSlot.Specular, "u_SpecularTexture", "u_SpecularSampler"),
+            (MaterialTextureSlot.SpecularColor, "u_SpecularColorTexture", "u_SpecularColorSampler"),
+
+            // Anisotropy
+            (MaterialTextureSlot.Anisotropy, "u_AnisotropyTexture", "u_AnisotropySampler"),
+
+            // Diffuse Transmission
+            (MaterialTextureSlot.DiffuseTransmission, "u_DiffuseTransmissionTexture", "u_DiffuseTransmissionSampler"),
+            (MaterialTextureSlot.DiffuseTransmissionColor, "u_DiffuseTransmissionColorTexture", "u_DiffuseTransmissionColorSampler"),
+
+            // SpecularGlossiness workflow
+            (MaterialTextureSlot.Diffuse, "u_DiffuseTexture", "u_DiffuseSampler"),
+            (MaterialTextureSlot.SpecularGlossiness, "u_SpecularGlossinessTexture", "u_SpecularGlossinessSampler"),
+
+            // IBL textures
+            (MaterialTextureSlot.IBLLambertian, "u_LambertianEnvTexture", "u_LambertianEnvSampler"),
+            (MaterialTextureSlot.IBLGGX, "u_GGXEnvTexture", "u_GGXEnvSampler"),
+            (MaterialTextureSlot.IBLCharlie, "u_CharlieEnvTexture", "u_CharlieEnvSampler"),
+            (MaterialTextureSlot.IBLGGXLUT, "u_GGXLUTTexture", "u_GGXLUTSampler"),
+            (MaterialTextureSlot.IBLCharlieLUT, "u_CharlieLUTTexture", "u_CharlieLUTSampler"),
+        };
+
+        /// <summary>
+        /// 设置纹理槽位 uniform（不存在的槽位静默跳过）
+        /// 在着色器编译后调用一次即可
+        /// </summary>
+        public static void SetTextureSlotUniforms(Shader shader) {
+            foreach (var (slot, texUniform, samplerUniform) in SlotUniforms) {
+                // allowNull: true 返回 Null 类型参数，SetValue 会静默返回
+                shader.GetParameter(texUniform, allowNull: true).SetValue((int)slot);
+                shader.GetParameter(samplerUniform, allowNull: true).SetValue((int)slot);
+            }
+        }
+
+        /// <summary>
+        /// 绑定材质纹理到 GPU
+        /// </summary>
+        /// <param name="material">材质数据</param>
+        /// <param name="textures">纹理数组（来自 ModelData.Textures 或 Model.Textures）</param>
+        public static void BindMaterialTextures(ModelMaterial material, Texture2D[] textures) {
+            // Core PBR textures
+            BindTexture(material.BaseColorTexture, textures, MaterialTextureSlot.BaseColor);
+            BindTexture(material.MetallicRoughnessTexture, textures, MaterialTextureSlot.MetallicRoughness);
+            BindTexture(material.NormalTexture, textures, MaterialTextureSlot.Normal);
+            BindTexture(material.OcclusionTexture, textures, MaterialTextureSlot.Occlusion);
+            BindTexture(material.EmissiveTexture, textures, MaterialTextureSlot.Emissive);
+
+            // Extension textures
+            if (material.ClearCoat?.IsEnabled == true) {
+                BindTexture(material.ClearCoat.Texture, textures, MaterialTextureSlot.ClearCoat);
+                BindTexture(material.ClearCoat.RoughnessTexture, textures, MaterialTextureSlot.ClearCoatRoughness);
+                BindTexture(material.ClearCoat.NormalTexture, textures, MaterialTextureSlot.ClearCoatNormal);
+            }
+            if (material.Iridescence?.IsEnabled == true) {
+                BindTexture(material.Iridescence.Texture, textures, MaterialTextureSlot.Iridescence);
+                BindTexture(material.Iridescence.ThicknessTexture, textures, MaterialTextureSlot.IridescenceThickness);
+            }
+            if (material.Transmission?.IsEnabled == true) {
+                BindTexture(material.Transmission.Texture, textures, MaterialTextureSlot.Transmission);
+            }
+            if (material.Volume?.IsEnabled == true) {
+                BindTexture(material.Volume.ThicknessTexture, textures, MaterialTextureSlot.Thickness);
+            }
+            if (material.Sheen?.IsEnabled == true) {
+                BindTexture(material.Sheen.ColorTexture, textures, MaterialTextureSlot.SheenColor);
+                BindTexture(material.Sheen.RoughnessTexture, textures, MaterialTextureSlot.SheenRoughness);
+            }
+            if (material.Specular?.IsEnabled == true) {
+                BindTexture(material.Specular.SpecularTexture, textures, MaterialTextureSlot.Specular);
+                BindTexture(material.Specular.SpecularColorTexture, textures, MaterialTextureSlot.SpecularColor);
+            }
+            if (material.Anisotropy?.IsEnabled == true) {
+                BindTexture(material.Anisotropy.AnisotropyTexture, textures, MaterialTextureSlot.Anisotropy);
+            }
+            if (material.DiffuseTransmission?.IsEnabled == true) {
+                BindTexture(material.DiffuseTransmission.Texture, textures, MaterialTextureSlot.DiffuseTransmission);
+                BindTexture(material.DiffuseTransmission.ColorTexture, textures, MaterialTextureSlot.DiffuseTransmissionColor);
+            }
+            if (material.SpecularGlossiness?.IsEnabled == true) {
+                BindTexture(material.SpecularGlossiness.DiffuseTexture, textures, MaterialTextureSlot.Diffuse);
+                BindTexture(material.SpecularGlossiness.SpecularGlossinessTexture, textures, MaterialTextureSlot.SpecularGlossiness);
+            }
+        }
+
+        /// <summary>
+        /// 绑定单个纹理到指定槽位
+        /// </summary>
+        static void BindTexture(ModelMaterialTexture matTex, Texture2D[] textures, MaterialTextureSlot slot) {
+            if (matTex?.HasTexture != true) {
+                return;
+            }
+            int index = matTex.TextureIndex;
+            if (index < 0 || index >= textures.Length) {
+                return;
+            }
+            Texture2D texture = textures[index];
+            if (texture == null) {
+                return;
+            }
+
+            // 绑定纹理到指定纹理单元
+            BindTexture2D(texture.NativeHandle, slot);
+        }
+
+        /// <summary>
+        /// 绑定 Texture2D 到指定槽位
+        /// </summary>
+        public static void BindTexture2D(Texture2D texture, MaterialTextureSlot slot) {
+            if (texture == null) {
+                return;
+            }
+            BindTexture2D(texture.NativeHandle, slot);
+        }
+
+        /// <summary>
+        /// 绑定纹理句柄到指定槽位（Texture2D 类型）
+        /// </summary>
+        static void BindTexture2D(IntPtr textureHandle, MaterialTextureSlot slot) {
+            TextureUnit unit = (TextureUnit)((int)TextureUnit.Texture0 + (int)slot);
+            GLWrapper.GL.ActiveTexture(unit);
+            GLWrapper.GL.BindTexture(TextureTarget.Texture2D, (uint)textureHandle);
+        }
+
+        /// <summary>
+        /// 绑定 IBL 纹理（用于 PBR 渲染）
+        /// </summary>
+        public static void BindIBLTextures(
+            uint lambertianTexture,
+            uint ggxTexture,
+            uint charlieTexture,
+            uint ggxLut,
+            uint charlieLut) {
+            BindTextureHandle(lambertianTexture, TextureTarget.TextureCubeMap, MaterialTextureSlot.IBLLambertian);
+            BindTextureHandle(ggxTexture, TextureTarget.TextureCubeMap, MaterialTextureSlot.IBLGGX);
+            BindTextureHandle(charlieTexture, TextureTarget.TextureCubeMap, MaterialTextureSlot.IBLCharlie);
+            BindTextureHandle(ggxLut, TextureTarget.Texture2D, MaterialTextureSlot.IBLGGXLUT);
+            BindTextureHandle(charlieLut, TextureTarget.Texture2D, MaterialTextureSlot.IBLCharlieLUT);
+        }
+
+        /// <summary>
+        /// 绑定纹理句柄到指定槽位
+        /// </summary>
+        static void BindTextureHandle(uint textureHandle, TextureTarget target, MaterialTextureSlot slot) {
+            if (textureHandle == 0) {
+                return;
+            }
+            TextureUnit unit = (TextureUnit)((int)TextureUnit.Texture0 + (int)slot);
+            GLWrapper.GL.ActiveTexture(unit);
+            GLWrapper.GL.BindTexture(target, textureHandle);
+        }
+    }
+}

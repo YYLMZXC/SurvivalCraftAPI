@@ -768,6 +768,10 @@ namespace Engine.Graphics {
                             GL.Uniform4(shaderParameter.Location, (uint)shaderParameter.Count, shaderParameter.Value);
                             shaderParameter.IsChanged = false;
                             break;
+                        case ShaderParameterType.Matrix3:
+                            GL.UniformMatrix3(shaderParameter.Location, (uint)shaderParameter.Count, false, shaderParameter.Value);
+                            shaderParameter.IsChanged = false;
+                            break;
                         case ShaderParameterType.Matrix:
                             GL.UniformMatrix4(shaderParameter.Location, (uint)shaderParameter.Count, false, shaderParameter.Value);
                             shaderParameter.IsChanged = false;
@@ -955,6 +959,7 @@ namespace Engine.Graphics {
                 UniformType.FloatVec2 => ShaderParameterType.Vector2,
                 UniformType.FloatVec3 => ShaderParameterType.Vector3,
                 UniformType.FloatVec4 => ShaderParameterType.Vector4,
+                UniformType.FloatMat3 => ShaderParameterType.Matrix3,
                 UniformType.FloatMat4 => ShaderParameterType.Matrix,
                 UniformType.Sampler2D => ShaderParameterType.Texture2D,
                 _ => throw new InvalidOperationException("Unsupported shader parameter type.")

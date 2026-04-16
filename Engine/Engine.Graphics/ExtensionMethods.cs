@@ -31,13 +31,20 @@ namespace Engine.Graphics {
 
         public static int GetSize(this ColorFormat format) {
             return format switch {
+                // 未压缩格式
                 ColorFormat.Rgba8888 => 4,
+                ColorFormat.Rgba8888Srgb => 4,
                 ColorFormat.Rgb565 => 2,
                 ColorFormat.Rgba5551 => 2,
                 ColorFormat.R8 => 1,
+                // HDR 未压缩格式
                 ColorFormat.R32f => 4,
                 ColorFormat.RG32f => 8,
                 ColorFormat.RGBA32f => 16,
+                ColorFormat.Rgba16f => 8,
+                // ASTC 压缩格式 (像素大小估算，实际按 block 计算)
+                ColorFormat.LinearLDR => 4,
+                ColorFormat.SrgbLDR => 4,
                 _ => throw new InvalidOperationException("Unsupported ColorFormat.")
             };
         }

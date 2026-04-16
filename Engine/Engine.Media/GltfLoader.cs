@@ -285,14 +285,14 @@ namespace Engine.Media {
                 int matIndex = modelData.Materials.Count;
                 materialToIndex[gltfMaterial] = matIndex;
 
-                ModelMaterialData matData = new() {
+                ModelMaterial mat = new() {
                     Name = gltfMaterial.Name ?? $"Material{gltfMaterial.LogicalIndex}"
                 };
 
                 // 加载材质属性
-                LoadMaterialProperties(gltfMaterial, matData, textureToIndex);
+                LoadMaterialProperties(gltfMaterial, mat, textureToIndex);
 
-                modelData.Materials.Add(matData);
+                modelData.Materials.Add(mat);
             }
         }
 
@@ -320,53 +320,85 @@ namespace Engine.Media {
         /// <summary>
         /// 加载材质属性
         /// </summary>
-        static void LoadMaterialProperties(GltfMaterial gltfMaterial, ModelMaterialData matData, Dictionary<GltfTexture, int> textureToIndex) {
+        static void LoadMaterialProperties(GltfMaterial gltfMaterial, ModelMaterial mat, Dictionary<GltfTexture, int> textureToIndex) {
             // BaseColor
             MaterialChannel? channel = gltfMaterial.FindChannel("BaseColor");
             if (channel != null) {
                 var color = channel.Value.Color;
-                matData.BaseColorFactor = new Vector4(color.X, color.Y, color.Z, color.W);
-                matData.BaseColorTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+                mat.BaseColorFactor = new Vector4(color.X, color.Y, color.Z, color.W);
+                mat.BaseColorTexture = LoadMaterialTexture(channel, textureToIndex);
             }
 
             // MetallicRoughness
             channel = gltfMaterial.FindChannel("MetallicRoughness");
             if (channel != null) {
-                matData.MetallicFactor = GetFactorSafe(channel.Value, "MetallicFactor", 1f);
-                matData.RoughnessFactor = GetFactorSafe(channel.Value, "RoughnessFactor", 1f);
-                matData.MetallicRoughnessTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+                mat.MetallicFactor = GetFactorSafe(channel.Value, "MetallicFactor", 1f);
+                mat.RoughnessFactor = GetFactorSafe(channel.Value, "RoughnessFactor", 1f);
+                mat.MetallicRoughnessTexture = LoadMaterialTexture(channel, textureToIndex);
             }
 
             // Normal
             channel = gltfMaterial.FindChannel("Normal");
             if (channel != null) {
-                matData.NormalScale = GetFactorSafe(channel.Value, "NormalScale", 1f);
-                matData.NormalTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+                mat.NormalScale = GetFactorSafe(channel.Value, "NormalScale", 1f);
+                mat.NormalTexture = LoadMaterialTexture(channel, textureToIndex);
             }
 
             // Occlusion
             channel = gltfMaterial.FindChannel("Occlusion");
             if (channel != null) {
-                matData.OcclusionStrength = GetFactorSafe(channel.Value, "OcclusionStrength", 1f);
-                matData.OcclusionTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+                mat.OcclusionStrength = GetFactorSafe(channel.Value, "OcclusionStrength", 1f);
+                mat.OcclusionTexture = LoadMaterialTexture(channel, textureToIndex);
             }
 
             // Emissive
             channel = gltfMaterial.FindChannel("Emissive");
             if (channel != null) {
                 var emissive = channel.Value.Color;
-                matData.EmissiveFactor = new Vector3(emissive.X, emissive.Y, emissive.Z);
-                matData.EmissiveTextureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+                mat.EmissiveFactor = new Vector3(emissive.X, emissive.Y, emissive.Z);
+                mat.EmissiveTexture = LoadMaterialTexture(channel, textureToIndex);
             }
 
             // Alpha mode
-            matData.AlphaMode = gltfMaterial.Alpha switch {
+            mat.AlphaMode = gltfMaterial.Alpha switch {
                 AlphaMode.BLEND => ModelAlphaMode.Blend,
                 AlphaMode.MASK => ModelAlphaMode.Mask,
                 _ => ModelAlphaMode.Opaque
             };
-            matData.AlphaCutoff = gltfMaterial.AlphaCutoff;
-            matData.DoubleSided = gltfMaterial.DoubleSided;
+            mat.AlphaCutoff = gltfMaterial.AlphaCutoff;
+            mat.DoubleSided = gltfMaterial.DoubleSided;
+
+            // 源材质索引
+            mat.SourceMaterialIndex = gltfMaterial.LogicalIndex;
+        }
+
+        /// <summary>
+        /// 从材质通道加载 ModelMaterialTexture
+        /// </summary>
+        static ModelMaterialTexture LoadMaterialTexture(MaterialChannel? channel, Dictionary<GltfTexture, int> textureToIndex) {
+            if (channel?.Texture == null) {
+                return null;
+            }
+
+            int textureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+            if (textureIndex < 0) {
+                return null;
+            }
+
+            int uvIndex = channel.Value.TextureCoordinate;
+            ModelMaterialTexture matTex = new(textureIndex, uvIndex);
+
+            // 读取 KHR_texture_transform 扩展
+            TextureTransform transform = channel.Value.TextureTransform;
+            if (transform != null) {
+                matTex.SetTransform(
+                    new Vector2(transform.Offset.X, transform.Offset.Y),
+                    new Vector2(transform.Scale.X, transform.Scale.Y),
+                    transform.Rotation
+                );
+            }
+
+            return matTex;
         }
 
         static float GetFactorSafe(MaterialChannel channel, string factorName, float defaultValue) {

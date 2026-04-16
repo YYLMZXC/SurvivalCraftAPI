@@ -197,7 +197,7 @@ namespace Engine.Animation.RootMotion
             }
 
             // 从上次位置开始搜索（通常只需要 0-2 次比较）
-            int startIdx = Math.Max(0, _lastSampleIndex - 1);
+            int startIdx = _lastSampleIndex;
             for (int i = startIdx; i < _positionSamples.Count - 1; i++)
             {
                 if (_positionSamples[i].time <= time && _positionSamples[i + 1].time >= time)

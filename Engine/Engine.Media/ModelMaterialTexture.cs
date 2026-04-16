@@ -23,9 +23,9 @@ namespace Engine.Media {
         public Matrix3x2 UVTransform { get; set; } = Matrix3x2.Identity;
 
         /// <summary>
-        /// 是否有非默认的 UV 变换
+        /// 是否有非默认的 UV 变换（计算属性，基于 Offset/Scale/Rotation）
         /// </summary>
-        public bool HasUVTransform { get; set; }
+        public bool HasUVTransform => Offset != Vector2.Zero || Scale != Vector2.One || Rotation != 0f;
 
         /// <summary>
         /// UV 偏移量（用于动画）
@@ -74,7 +74,6 @@ namespace Engine.Media {
         /// </summary>
         public void RecomputeUVTransform() {
             UVTransform = CreateUVTransform(Offset, Scale, Rotation);
-            HasUVTransform = Offset != Vector2.Zero || Scale != Vector2.One || Rotation != 0f;
         }
 
         /// <summary>

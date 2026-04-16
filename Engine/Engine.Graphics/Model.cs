@@ -117,7 +117,7 @@ namespace Engine.Graphics {
         /// </summary>
         public Texture2D GetDefaultBaseColorTexture() {
             if (ModelData?.Materials.Count > 0) {
-                int texIndex = ModelData.Materials[0].BaseColorTextureIndex;
+                int texIndex = ModelData.Materials[0].BaseColorTexture?.TextureIndex ?? -1;
                 if (texIndex >= 0) {
                     return GetTexture(texIndex);
                 }
@@ -165,7 +165,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 获取指定索引的材质数据
         /// </summary>
-        public ModelMaterialData GetMaterial(int materialIndex) {
+        public ModelMaterial GetMaterial(int materialIndex) {
             if (ModelData == null || materialIndex < 0 || materialIndex >= ModelData.Materials.Count) {
                 return null;
             }

@@ -17,7 +17,7 @@ namespace Engine.Media {
         /// <summary>
         /// 材质数据列表（glTF 加载时填充）
         /// </summary>
-        public List<ModelMaterialData> Materials = [];
+        public List<ModelMaterial> Materials = [];
 
         /// <summary>
         /// 蒙皮数据（glTF 加载时填充）

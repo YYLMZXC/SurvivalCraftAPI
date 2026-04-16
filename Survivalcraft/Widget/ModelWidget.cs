@@ -395,9 +395,10 @@ namespace Game {
             // Then check material texture
             int materialIndex = meshPart.MaterialIndex;
             if (materialIndex >= 0) {
-                ModelMaterialData materialData = model.GetMaterial(materialIndex);
-                if (materialData?.BaseColorTextureIndex >= 0) {
-                    Texture2D materialTexture = model.GetTexture(materialData.BaseColorTextureIndex);
+                ModelMaterial material = model.GetMaterial(materialIndex);
+                int texIndex = material?.BaseColorTexture?.TextureIndex ?? -1;
+                if (texIndex >= 0) {
+                    Texture2D materialTexture = model.GetTexture(texIndex);
                     if (materialTexture != null) {
                         return materialTexture;
                     }

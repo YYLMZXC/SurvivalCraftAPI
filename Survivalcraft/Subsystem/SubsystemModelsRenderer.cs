@@ -334,14 +334,14 @@ namespace Game {
                     foreach (var kvp in dataByMaterial) {
                         int materialIndex = kvp.Key;
                         InstancedModelData instancedData = kvp.Value;
-                        ModelMaterialData materialData = materialIndex >= 0 ? model.GetMaterial(materialIndex) : null;
+                        ModelMaterial material = materialIndex >= 0 ? model.GetMaterial(materialIndex) : null;
 
                         // 设置材质颜色
                         Vector4 baseColor;
                         if (componentModel.DiffuseColor.HasValue) {
                             baseColor = new Vector4(componentModel.DiffuseColor.Value, 1f);
-                        } else if (materialData != null) {
-                            baseColor = materialData.BaseColorFactor;
+                        } else if (material != null) {
+                            baseColor = material.BaseColorFactor;
                         } else {
                             baseColor = model?.GetDefaultBaseColorFactor() ?? Vector4.One;
                         }
@@ -351,10 +351,13 @@ namespace Game {
                         // 设置纹理
                         if (componentModel.TextureOverride != null) {
                             modelShader.Texture = componentModel.TextureOverride;
-                        } else if (materialData?.BaseColorTextureIndex >= 0) {
-                            modelShader.Texture = model.GetTexture(materialData.BaseColorTextureIndex);
                         } else {
-                            modelShader.Texture = Model.DefaultWhiteTexture;
+                            int texIndex = material?.BaseColorTexture?.TextureIndex ?? -1;
+                            if (texIndex >= 0) {
+                                modelShader.Texture = model.GetTexture(texIndex);
+                            } else {
+                                modelShader.Texture = Model.DefaultWhiteTexture;
+                            }
                         }
 
                         // 设置采样器
@@ -471,14 +474,14 @@ namespace Game {
 
                     // 获取该 mesh part 的材质
                     int materialIndex = meshPart.MaterialIndex;
-                    ModelMaterialData materialData = materialIndex >= 0 ? model.GetMaterial(materialIndex) : null;
+                    ModelMaterial material = materialIndex >= 0 ? model.GetMaterial(materialIndex) : null;
 
                     // 设置材质颜色
                     Vector4 baseColor;
                     if (componentModel.DiffuseColor.HasValue) {
                         baseColor = new Vector4(componentModel.DiffuseColor.Value, 1f);
-                    } else if (materialData != null) {
-                        baseColor = materialData.BaseColorFactor;
+                    } else if (material != null) {
+                        baseColor = material.BaseColorFactor;
                     } else {
                         baseColor = model.GetDefaultBaseColorFactor() ?? Vector4.One;
                     }
@@ -488,10 +491,13 @@ namespace Game {
                     // 设置纹理
                     if (componentModel.TextureOverride != null) {
                         skinnedShader.Texture = componentModel.TextureOverride;
-                    } else if (materialData?.BaseColorTextureIndex >= 0) {
-                        skinnedShader.Texture = model.GetTexture(materialData.BaseColorTextureIndex);
                     } else {
-                        skinnedShader.Texture = Model.DefaultWhiteTexture;
+                        int texIndex = material?.BaseColorTexture?.TextureIndex ?? -1;
+                        if (texIndex >= 0) {
+                            skinnedShader.Texture = model.GetTexture(texIndex);
+                        } else {
+                            skinnedShader.Texture = Model.DefaultWhiteTexture;
+                        }
                     }
 
                     // 设置采样器

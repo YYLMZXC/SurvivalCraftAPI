@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Engine.Graphics;
 
 namespace Engine.Media {
@@ -36,6 +37,25 @@ namespace Engine.Media {
         /// 源材质在 glTF 中的逻辑索引（用于 KHR_animation_pointer）
         /// </summary>
         public int SourceMaterialIndex { get; set; } = -1;
+
+        // Extensions - known types for convenience
+        public ClearCoatExtension ClearCoat { get; set; }
+        public IridescenceExtension Iridescence { get; set; }
+        public TransmissionExtension Transmission { get; set; }
+        public VolumeExtension Volume { get; set; }
+        public SheenExtension Sheen { get; set; }
+        public SpecularExtension Specular { get; set; }
+        public IorExtension Ior { get; set; }
+        public EmissiveStrengthExtension EmissiveStrength { get; set; }
+        public DispersionExtension Dispersion { get; set; }
+        public AnisotropyExtension Anisotropy { get; set; }
+        public DiffuseTransmissionExtension DiffuseTransmission { get; set; }
+        public VolumeScatterExtension VolumeScatter { get; set; }
+        public UnlitExtension Unlit { get; set; }
+        public SpecularGlossinessExtension SpecularGlossiness { get; set; }
+
+        // Dynamic extensions storage
+        readonly Dictionary<string, MaterialExtension> _extensions = new();
 
         // 缓存的 ShaderDefines
         ShaderDefines _cachedDefines;
@@ -85,8 +105,66 @@ namespace Engine.Media {
                 }
             }
 
+            // Extensions
+            AppendExtensionDefines(defines);
+
             _cachedDefines = defines;
             return defines;
+        }
+
+        /// <summary>
+        /// 附加扩展 defines（统一调用各扩展的 AppendDefines 方法）
+        /// </summary>
+        void AppendExtensionDefines(ShaderDefines defines) {
+            if (ClearCoat?.IsEnabled == true) {
+                ClearCoat.AppendDefines(defines);
+            }
+            if (Iridescence?.IsEnabled == true) {
+                Iridescence.AppendDefines(defines);
+            }
+            if (Transmission?.IsEnabled == true) {
+                Transmission.AppendDefines(defines);
+            }
+            if (Volume?.IsEnabled == true) {
+                Volume.AppendDefines(defines);
+            }
+            if (Sheen?.IsEnabled == true) {
+                Sheen.AppendDefines(defines);
+            }
+            if (Specular?.IsEnabled == true) {
+                Specular.AppendDefines(defines);
+            }
+            if (Ior?.IsEnabled == true) {
+                Ior.AppendDefines(defines);
+            }
+            if (EmissiveStrength?.IsEnabled == true) {
+                EmissiveStrength.AppendDefines(defines);
+            }
+            if (Dispersion?.IsEnabled == true) {
+                Dispersion.AppendDefines(defines);
+            }
+            if (Anisotropy?.IsEnabled == true) {
+                Anisotropy.AppendDefines(defines);
+            }
+            if (DiffuseTransmission?.IsEnabled == true) {
+                DiffuseTransmission.AppendDefines(defines);
+            }
+            if (VolumeScatter?.IsEnabled == true) {
+                VolumeScatter.AppendDefines(defines);
+            }
+            if (Unlit?.IsEnabled == true) {
+                Unlit.AppendDefines(defines);
+            }
+            if (SpecularGlossiness?.IsEnabled == true) {
+                SpecularGlossiness.AppendDefines(defines);
+            }
+
+            // 其他动态注册的扩展
+            foreach (MaterialExtension ext in _extensions.Values) {
+                if (ext?.IsEnabled == true) {
+                    ext.AppendDefines(defines);
+                }
+            }
         }
     }
 

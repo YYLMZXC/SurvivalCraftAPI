@@ -33,15 +33,15 @@ namespace Engine.Graphics {
         /// <summary>
         /// 从 glTF 材质加载扩展数据
         /// </summary>
-        public abstract void LoadFromGltf(GltfMaterial material, Model model);
+        /// <param name="material">glTF 材质</param>
+        /// <param name="modelData">模型数据（包含纹理索引映射）</param>
+        public abstract void LoadFromGltf(GltfMaterial material, ModelData modelData);
 
         /// <summary>
         /// 附加着色器 defines（用于着色器变体编译）
         /// </summary>
         public virtual void AppendDefines(ShaderDefines defines) {
-            // 默认实现：添加 MATERIAL_XXX define
             if (IsEnabled) {
-                // 从扩展名提取简短名称（如 "KHR_materials_clearcoat" -> "CLEARCOAT"）
                 string shortName = ExtensionName.Replace("KHR_materials_", "").ToUpper();
                 defines.AddMaterialExtension(shortName);
             }
@@ -67,11 +67,17 @@ namespace Engine.Graphics {
             }
         }
 
-        protected static ModelMaterialTexture LoadTextureFromChannel(Model model, MaterialChannel? channel) {
+        /// <summary>
+        /// 从材质通道加载纹理（使用 ModelData 的纹理索引映射）
+        /// </summary>
+        protected static ModelMaterialTexture LoadTextureFromChannel(ModelData modelData, MaterialChannel? channel) {
             if (channel?.Texture == null) {
                 return null;
             }
-            int textureIndex = channel.Value.Texture.LogicalIndex;
+            int textureIndex = modelData.GetTextureIndex(channel.Value.Texture.LogicalIndex);
+            if (textureIndex < 0) {
+                return null;
+            }
             int texCoord = channel.Value.TextureCoordinate;
             ModelMaterialTexture matTex = new(textureIndex, texCoord);
             TextureTransform transform = channel.Value.TextureTransform;

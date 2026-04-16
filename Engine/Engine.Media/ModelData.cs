@@ -29,6 +29,21 @@ namespace Engine.Media {
         /// </summary>
         public List<ModelAnimation> Animations { get; set; } = [];
 
+        /// <summary>
+        /// glTF 纹理 LogicalIndex 到 Textures 列表索引的映射
+        /// 仅在加载过程中有效
+        /// </summary>
+        internal Dictionary<int, int> GltfTextureToModelIndex = new();
+
+        /// <summary>
+        /// 获取纹理在 Textures 列表中的索引
+        /// </summary>
+        /// <param name="gltfLogicalIndex">glTF 纹理的 LogicalIndex</param>
+        /// <returns>Textures 列表中的索引，不存在返回 -1</returns>
+        public int GetTextureIndex(int gltfLogicalIndex) {
+            return GltfTextureToModelIndex.TryGetValue(gltfLogicalIndex, out int index) ? index : -1;
+        }
+
         public static ModelFileFormat DetermineFileFormat(Stream stream) {
             long position = stream.Position;
             stream.Position = 0;

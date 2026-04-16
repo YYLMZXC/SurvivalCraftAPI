@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Graphics {
@@ -17,13 +18,10 @@ namespace Engine.Graphics {
         public override bool IsEnabled => _isEnabled;
 
         public override IEnumerable<MaterialTextureSlot> GetTextureSlots() {
-            // Unlit 使用基础颜色纹理，没有额外的纹理槽
             yield break;
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
-            // 检查材质是否实际有 KHR_materials_unlit 扩展
-            // SharpGLTF 的 material.Unlit 属性在材质有此扩展时返回 true
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             _isEnabled = material.Unlit;
         }
 

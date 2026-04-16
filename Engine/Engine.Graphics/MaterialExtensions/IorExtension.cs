@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Graphics {
@@ -20,13 +21,10 @@ namespace Engine.Graphics {
         public override bool IsEnabled => Ior != 1.5f;
 
         public override IEnumerable<MaterialTextureSlot> GetTextureSlots() {
-            // IOR 没有纹理
             yield break;
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
-            // SharpGLTF 直接通过 Material.IndexOfRefraction 属性访问 IOR 值
-            // 不使用 Channel API
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             Ior = material.IndexOfRefraction;
         }
 

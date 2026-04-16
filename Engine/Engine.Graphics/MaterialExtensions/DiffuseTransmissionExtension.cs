@@ -8,7 +8,6 @@ namespace Engine.Graphics {
     /// <summary>
     /// KHR_materials_diffuse_transmission 扩展
     /// 支持漫反射透射（如薄纸、树叶）
-    /// SharpGLTF 原生支持此扩展（MaterialDiffuseTransmission），但类型是 internal
     /// </summary>
     public class DiffuseTransmissionExtension : MaterialExtension {
         public override string ExtensionName => "KHR_materials_diffuse_transmission";
@@ -47,17 +46,17 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? channel = material.FindChannel("DiffuseTransmissionFactor");
             if (channel != null) {
                 Factor = GetChannelFactor(channel, "DiffuseTransmissionFactor", 0f);
-                Texture = LoadTextureFromChannel(model, channel);
+                Texture = LoadTextureFromChannel(modelData, channel);
             }
             channel = material.FindChannel("DiffuseTransmissionColor");
             if (channel != null) {
-                var color = channel.Value.Color; // System.Numerics.Vector4
+                var color = channel.Value.Color;
                 ColorFactor = new Vector3(color.X, color.Y, color.Z);
-                ColorTexture = LoadTextureFromChannel(model, channel);
+                ColorTexture = LoadTextureFromChannel(modelData, channel);
             }
         }
 

@@ -22,11 +22,10 @@ namespace Engine.Graphics {
         public override bool IsEnabled => EmissiveStrength != 1f;
 
         public override IEnumerable<MaterialTextureSlot> GetTextureSlots() {
-            // Emissive Strength 没有纹理
             yield break;
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? channel = material.FindChannel("EmissiveStrength");
             if (channel != null) {
                 EmissiveStrength = GetChannelFactor(channel, "EmissiveStrength", 1f);

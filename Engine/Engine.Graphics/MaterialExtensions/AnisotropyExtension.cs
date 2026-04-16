@@ -37,12 +37,12 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? channel = material.FindChannel("Anisotropy");
             if (channel != null) {
                 AnisotropyStrength = GetChannelFactor(channel, "AnisotropyStrength", 0f);
                 AnisotropyRotation = GetChannelFactor(channel, "AnisotropyRotation", 0f);
-                AnisotropyTexture = LoadTextureFromChannel(model, channel);
+                AnisotropyTexture = LoadTextureFromChannel(modelData, channel);
             }
         }
 

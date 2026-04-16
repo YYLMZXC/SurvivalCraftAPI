@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Graphics {
@@ -20,13 +21,10 @@ namespace Engine.Graphics {
         public override bool IsEnabled => Dispersion > 0f;
 
         public override IEnumerable<MaterialTextureSlot> GetTextureSlots() {
-            // Dispersion 没有纹理
             yield break;
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
-            // SharpGLTF 直接通过 Material.Dispersion 属性访问
-            // 不使用 Channel API
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             Dispersion = material.Dispersion;
         }
 

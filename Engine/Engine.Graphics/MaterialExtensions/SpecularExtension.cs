@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-
 using SharpGLTF.Schema2;
 using System.Numerics;
 using Engine.Media;
@@ -47,18 +46,17 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
-            // SharpGLTF 使用 "SpecularFactor" 作为 KHR_materials_specular 的因子通道名
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? channel = material.FindChannel("SpecularFactor");
             if (channel != null) {
                 SpecularFactor = GetChannelFactor(channel, "SpecularFactor", 1f);
-                SpecularTexture = LoadTextureFromChannel(model, channel);
+                SpecularTexture = LoadTextureFromChannel(modelData, channel);
             }
             channel = material.FindChannel("SpecularColor");
             if (channel != null) {
-                var color = channel.Value.Color; // System.Numerics.Vector4
+                var color = channel.Value.Color;
                 SpecularColorFactor = new Vector3(color.X, color.Y, color.Z);
-                SpecularColorTexture = LoadTextureFromChannel(model, channel);
+                SpecularColorTexture = LoadTextureFromChannel(modelData, channel);
             }
         }
 

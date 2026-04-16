@@ -28,16 +28,16 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? channel;
             channel = material.FindChannel("Iridescence");
             Factor = GetChannelFactor(channel, "IridescenceFactor", 0f);
             IOR = GetChannelFactor(channel, "IndexOfRefraction", 1.3f);
-            Texture = LoadTextureFromChannel(model, channel);
+            Texture = LoadTextureFromChannel(modelData, channel);
             channel = material.FindChannel("IridescenceThickness");
             ThicknessMinimum = GetChannelFactor(channel, "Minimum", 100f);
             ThicknessMaximum = GetChannelFactor(channel, "Maximum", 400f);
-            ThicknessTexture = LoadTextureFromChannel(model, channel);
+            ThicknessTexture = LoadTextureFromChannel(modelData, channel);
         }
 
         /// <summary>

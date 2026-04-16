@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Graphics {
@@ -27,22 +28,15 @@ namespace Engine.Graphics {
         public override bool IsEnabled => true;
 
         public override IEnumerable<MaterialTextureSlot> GetTextureSlots() {
-            // Volume Scatter 使用 frame buffer，不需要纹理槽
             yield break;
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
-            // SharpGLTF 不原生支持 KHR_materials_volume_scatter，需要通过反射读取未知扩展
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             object volumeScatterExt = GetUnknownExtension(material, "KHR_materials_volume_scatter");
             if (volumeScatterExt == null) {
-                Log.Warning($"[VolumeScatter] Extension not found");
                 return;
             }
-
-            // 读取 multiscatterColor
             MultiscatterColor = GetExtensionColor(volumeScatterExt, "multiscatterColor", Vector3.Zero);
-
-            // 读取 scatterAnisotropy
             ScatterAnisotropy = GetExtensionFloat(volumeScatterExt, "scatterAnisotropy");
         }
 

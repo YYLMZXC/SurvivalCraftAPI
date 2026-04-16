@@ -34,13 +34,12 @@ namespace Engine.Graphics {
         public Vector3 AttenuationColor { get; set; } = Vector3.One;
 
         /// <summary>
-        /// 标记扩展是否被加载（从 glTF 加载成功后为 true）
-        /// 官方渲染器：只要扩展存在就启用，不管 thicknessFactor 值
+        /// 标记扩展是否被加载
         /// </summary>
         public bool IsLoaded { get; private set; }
 
         /// <summary>
-        /// 只要扩展被加载就认为是启用的（与官方渲染器一致）
+        /// 只要扩展被加载就认为是启用的
         /// </summary>
         public override bool IsEnabled => IsLoaded;
 
@@ -50,34 +49,19 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
-            // SharpGLTF 使用两个不同的 channel:
-            // - "VolumeThickness" 包含 thicknessFactor 和 thicknessTexture
-            // - "VolumeAttenuation" 包含 attenuationColor 和 attenuationDistance
-
-            // 检查是否有 Volume 扩展
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? thicknessChannel = material.FindChannel("VolumeThickness");
             MaterialChannel? attenuationChannel = material.FindChannel("VolumeAttenuation");
-            if (thicknessChannel != null
-                || attenuationChannel != null) {
-                // 标记扩展已加载（官方渲染器：只要扩展存在就启用）
+            if (thicknessChannel != null || attenuationChannel != null) {
                 IsLoaded = true;
-
-                // 从 VolumeThickness channel 读取
                 if (thicknessChannel != null) {
                     ThicknessFactor = GetChannelFactor(thicknessChannel, "ThicknessFactor", 0f);
-                    ThicknessTexture = LoadTextureFromChannel(model, thicknessChannel);
+                    ThicknessTexture = LoadTextureFromChannel(modelData, thicknessChannel);
                 }
-
-                // 从 VolumeAttenuation channel 读取
                 if (attenuationChannel != null) {
-                    // 注意：AttenuationDistance 默认值应为无限大（float.MaxValue）
-                    // SharpGLTF 的 GetFactor 返回 0 表示未设置，需要转换为 float.MaxValue
                     float attDist = GetChannelFactor(attenuationChannel, "AttenuationDistance", float.MaxValue);
                     AttenuationDistance = attDist == 0f ? float.MaxValue : attDist;
-
-                    // AttenuationColor 存储在 Color 属性中
-                    var color = attenuationChannel.Value.Color; // System.Numerics.Vector4
+                    var color = attenuationChannel.Value.Color;
                     AttenuationColor = new Vector3(color.X, color.Y, color.Z);
                 }
             }

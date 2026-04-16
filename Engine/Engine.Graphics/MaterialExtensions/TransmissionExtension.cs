@@ -29,11 +29,11 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? channel = material.FindChannel("Transmission");
             if (channel != null) {
                 Factor = GetChannelFactor(channel, "TransmissionFactor", 0f);
-                Texture = LoadTextureFromChannel(model, channel);
+                Texture = LoadTextureFromChannel(modelData, channel);
             }
         }
 

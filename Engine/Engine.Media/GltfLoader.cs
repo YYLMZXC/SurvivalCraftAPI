@@ -253,6 +253,7 @@ namespace Engine.Media {
 
                 int texIndex = modelData.Textures.Count;
                 textureToIndex[gltfTexture] = texIndex;
+                modelData.GltfTextureToModelIndex[gltfTexture.LogicalIndex] = texIndex;
 
                 bool isSrgb = textureIsSrgb.GetValueOrDefault(gltfTexture.LogicalIndex, true);
 
@@ -261,20 +262,13 @@ namespace Engine.Media {
                     IsSrgb = isSrgb
                 };
 
-                // 检查是内嵌纹理还是外置纹理
-                // SharpGLTF 在加载模型时会自动加载外置资源，所以 Content 不会是空的
-                // 但我们可以通过 SourcePath 来判断来源：
-                // - 内嵌纹理（GLB）：SourcePath 为 null 或空
-                // - 外置纹理（glTF）：SourcePath 包含文件路径
                 string sourcePath = image.Content.SourcePath;
                 if (!string.IsNullOrEmpty(sourcePath)) {
                     texInfo.SourceImage = image.Content;
                 } else {
-                    // 内嵌纹理：保存图像数据
                     texInfo.SourceImage = image.Content;
                 }
 
-                // 设置采样器状态
                 texInfo.SetSampler(gltfTexture.Sampler);
 
                 modelData.Textures.Add(texInfo);
@@ -289,8 +283,7 @@ namespace Engine.Media {
                     Name = gltfMaterial.Name ?? $"Material{gltfMaterial.LogicalIndex}"
                 };
 
-                // 加载材质属性
-                LoadMaterialProperties(gltfMaterial, mat, textureToIndex);
+                LoadMaterialProperties(gltfMaterial, mat, modelData);
 
                 modelData.Materials.Add(mat);
             }
@@ -320,13 +313,13 @@ namespace Engine.Media {
         /// <summary>
         /// 加载材质属性
         /// </summary>
-        static void LoadMaterialProperties(GltfMaterial gltfMaterial, ModelMaterial mat, Dictionary<GltfTexture, int> textureToIndex) {
+        static void LoadMaterialProperties(GltfMaterial gltfMaterial, ModelMaterial mat, ModelData modelData) {
             // BaseColor
             MaterialChannel? channel = gltfMaterial.FindChannel("BaseColor");
             if (channel != null) {
                 var color = channel.Value.Color;
                 mat.BaseColorFactor = new Vector4(color.X, color.Y, color.Z, color.W);
-                mat.BaseColorTexture = LoadMaterialTexture(channel, textureToIndex);
+                mat.BaseColorTexture = LoadMaterialTexture(channel, modelData);
             }
 
             // MetallicRoughness
@@ -334,21 +327,21 @@ namespace Engine.Media {
             if (channel != null) {
                 mat.MetallicFactor = GetFactorSafe(channel.Value, "MetallicFactor", 1f);
                 mat.RoughnessFactor = GetFactorSafe(channel.Value, "RoughnessFactor", 1f);
-                mat.MetallicRoughnessTexture = LoadMaterialTexture(channel, textureToIndex);
+                mat.MetallicRoughnessTexture = LoadMaterialTexture(channel, modelData);
             }
 
             // Normal
             channel = gltfMaterial.FindChannel("Normal");
             if (channel != null) {
                 mat.NormalScale = GetFactorSafe(channel.Value, "NormalScale", 1f);
-                mat.NormalTexture = LoadMaterialTexture(channel, textureToIndex);
+                mat.NormalTexture = LoadMaterialTexture(channel, modelData);
             }
 
             // Occlusion
             channel = gltfMaterial.FindChannel("Occlusion");
             if (channel != null) {
                 mat.OcclusionStrength = GetFactorSafe(channel.Value, "OcclusionStrength", 1f);
-                mat.OcclusionTexture = LoadMaterialTexture(channel, textureToIndex);
+                mat.OcclusionTexture = LoadMaterialTexture(channel, modelData);
             }
 
             // Emissive
@@ -356,7 +349,7 @@ namespace Engine.Media {
             if (channel != null) {
                 var emissive = channel.Value.Color;
                 mat.EmissiveFactor = new Vector3(emissive.X, emissive.Y, emissive.Z);
-                mat.EmissiveTexture = LoadMaterialTexture(channel, textureToIndex);
+                mat.EmissiveTexture = LoadMaterialTexture(channel, modelData);
             }
 
             // Alpha mode
@@ -370,17 +363,73 @@ namespace Engine.Media {
 
             // 源材质索引
             mat.SourceMaterialIndex = gltfMaterial.LogicalIndex;
+
+            // 加载材质扩展
+            LoadMaterialExtensions(gltfMaterial, mat, modelData);
+        }
+
+        /// <summary>
+        /// 加载材质扩展
+        /// </summary>
+        static void LoadMaterialExtensions(GltfMaterial gltfMaterial, ModelMaterial mat, ModelData modelData) {
+            foreach (var jsonSerializable in gltfMaterial.Extensions) {
+                Type type = jsonSerializable.GetType();
+                string extName = null;
+
+                // 获取扩展名称
+                if (jsonSerializable is ExtraProperties) {
+                    var method = type.GetMethod("GetSchemaName", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                    extName = (string)method?.Invoke(jsonSerializable, null);
+                } else {
+                    var nameProp = type.GetProperty("Name", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+                    extName = (string)nameProp?.GetValue(jsonSerializable);
+                }
+
+                if (extName == null || !MaterialExtensionManager.IsExtensionEnabled(extName)) {
+                    continue;
+                }
+
+                // 创建扩展实例
+                MaterialExtension extension = MaterialExtensionRegistry.Create(extName);
+                if (extension == null) {
+                    continue;
+                }
+
+                // 加载扩展数据
+                extension.LoadFromGltf(gltfMaterial, modelData);
+                if (!extension.IsEnabled) {
+                    continue;
+                }
+
+                // 存储到材质
+                switch (extension) {
+                    case ClearCoatExtension cc: mat.ClearCoat = cc; break;
+                    case IridescenceExtension irid: mat.Iridescence = irid; break;
+                    case TransmissionExtension trans: mat.Transmission = trans; break;
+                    case VolumeExtension vol: mat.Volume = vol; break;
+                    case SheenExtension sheen: mat.Sheen = sheen; break;
+                    case SpecularExtension spec: mat.Specular = spec; break;
+                    case IorExtension ior: mat.Ior = ior; break;
+                    case EmissiveStrengthExtension emissiveStr: mat.EmissiveStrength = emissiveStr; break;
+                    case DispersionExtension disp: mat.Dispersion = disp; break;
+                    case AnisotropyExtension aniso: mat.Anisotropy = aniso; break;
+                    case DiffuseTransmissionExtension diffTrans: mat.DiffuseTransmission = diffTrans; break;
+                    case VolumeScatterExtension volScatter: mat.VolumeScatter = volScatter; break;
+                    case UnlitExtension unlit: mat.Unlit = unlit; break;
+                    case SpecularGlossinessExtension sg: mat.SpecularGlossiness = sg; break;
+                }
+            }
         }
 
         /// <summary>
         /// 从材质通道加载 ModelMaterialTexture
         /// </summary>
-        static ModelMaterialTexture LoadMaterialTexture(MaterialChannel? channel, Dictionary<GltfTexture, int> textureToIndex) {
+        static ModelMaterialTexture LoadMaterialTexture(MaterialChannel? channel, ModelData modelData) {
             if (channel?.Texture == null) {
                 return null;
             }
 
-            int textureIndex = GetTextureIndex(channel.Value.Texture, textureToIndex);
+            int textureIndex = modelData.GetTextureIndex(channel.Value.Texture.LogicalIndex);
             if (textureIndex < 0) {
                 return null;
             }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-
 using SharpGLTF.Schema2;
 using System.Numerics;
 using Engine.Media;
@@ -47,20 +46,17 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
-            // SharpGLTF 使用两个 channel:
-            // - "SheenColor" 包含 ColorFactor 和 ColorTexture
-            // - "SheenRoughness" 包含 RoughnessFactor 和 RoughnessTexture
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? channel = material.FindChannel("SheenColor");
             if (channel != null) {
-                var color = channel.Value.Color; // System.Numerics.Vector4
+                var color = channel.Value.Color;
                 ColorFactor = new Vector3(color.X, color.Y, color.Z);
-                ColorTexture = LoadTextureFromChannel(model, channel);
+                ColorTexture = LoadTextureFromChannel(modelData, channel);
             }
             channel = material.FindChannel("SheenRoughness");
             if (channel != null) {
                 RoughnessFactor = GetChannelFactor(channel, "RoughnessFactor", 0f);
-                RoughnessTexture = LoadTextureFromChannel(model, channel);
+                RoughnessTexture = LoadTextureFromChannel(modelData, channel);
             }
         }
 

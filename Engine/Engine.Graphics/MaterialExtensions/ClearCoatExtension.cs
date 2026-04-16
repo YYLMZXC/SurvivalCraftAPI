@@ -31,17 +31,17 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? channel;
             channel = material.FindChannel("ClearCoat");
             Factor = GetChannelFactor(channel, "ClearCoatFactor", 0f);
-            Texture = LoadTextureFromChannel(model, channel);
+            Texture = LoadTextureFromChannel(modelData, channel);
             channel = material.FindChannel("ClearCoatRoughness");
             RoughnessFactor = GetChannelFactor(channel, "RoughnessFactor", 0f);
-            RoughnessTexture = LoadTextureFromChannel(model, channel);
+            RoughnessTexture = LoadTextureFromChannel(modelData, channel);
             channel = material.FindChannel("ClearCoatNormal");
             NormalScale = GetChannelFactor(channel, "NormalScale", 1f);
-            NormalTexture = LoadTextureFromChannel(model, channel);
+            NormalTexture = LoadTextureFromChannel(modelData, channel);
         }
 
         /// <summary>

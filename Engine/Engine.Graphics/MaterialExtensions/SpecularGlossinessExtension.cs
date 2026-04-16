@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-
 using SharpGLTF.Schema2;
 using System.Numerics;
 using Engine.Media;
@@ -54,17 +53,15 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void LoadFromGltf(GltfMaterial material, Model model) {
-            // 通过 SharpGLTF 的 channel API 获取数据
+        public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? diffuseChannel = material.FindChannel("Diffuse");
             if (diffuseChannel != null) {
                 DiffuseFactor = diffuseChannel.Value.Color;
-                DiffuseTexture = LoadTextureFromChannel(model, diffuseChannel);
+                DiffuseTexture = LoadTextureFromChannel(modelData, diffuseChannel);
                 _isEnabled = true;
             }
             MaterialChannel? sgChannel = material.FindChannel("SpecularGlossiness");
             if (sgChannel != null) {
-                // 遍历参数获取 SpecularFactor (Vector3) 和 GlossinessFactor (float)
                 foreach (IMaterialParameter param in sgChannel.Value.Parameters) {
                     if (param.Name == "SpecularFactor"
                         && param.ValueType == typeof(System.Numerics.Vector3)) {
@@ -76,7 +73,7 @@ namespace Engine.Graphics {
                         GlossinessFactor = (float)param.Value;
                     }
                 }
-                SpecularGlossinessTexture = LoadTextureFromChannel(model, sgChannel);
+                SpecularGlossinessTexture = LoadTextureFromChannel(modelData, sgChannel);
                 _isEnabled = true;
             }
         }

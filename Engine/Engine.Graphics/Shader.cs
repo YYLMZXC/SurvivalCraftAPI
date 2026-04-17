@@ -76,6 +76,8 @@ namespace Engine.Graphics {
             }
         }
 
+        public Shader() { }
+
         public Shader(string vertexShaderCode, string pixelShaderCode, params ShaderMacro[] shaderMacros) {
             Construct(vertexShaderCode, pixelShaderCode, shaderMacros);
         }

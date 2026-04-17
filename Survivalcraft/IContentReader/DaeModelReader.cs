@@ -18,7 +18,5 @@ namespace Game.IContentReader {
             }
             return Model.Load(content.Duplicate(), true);
         }
-
-        public static void SetupTextureLoadingCallback() => GltfLoader.LoadExternalStreamCallback = ContentManager.GetStream;
     }
 }

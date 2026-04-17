@@ -22,8 +22,7 @@ namespace Engine.Media {
     /// </summary>
     public static class GltfLoader {
         /// <summary>
-        /// 外置纹理加载回调
-        /// 参数：纹理相对路径，返回：纹理数据流
+        /// 外置文件加载回调，一般和 Storage.LoadContentStreamCallback 相同
         /// </summary>
         public static Func<string, Stream> LoadExternalStreamCallback { get; set; }
 

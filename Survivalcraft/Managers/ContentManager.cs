@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using Engine;
 using Engine.Graphics;
 using Engine.Media;
-using Game.IContentReader;
 // ReSharper disable MethodOverloadWithOptionalParameter
 
 namespace Game {
@@ -59,7 +58,8 @@ namespace Game {
             Resources.Clear();
             Caches.Clear();
             Display.DeviceReset += Display_DeviceReset;
-            DaeModelReader.SetupTextureLoadingCallback();
+            Storage.LoadContentStreamCallback = GetStream;
+            GltfLoader.LoadExternalStreamCallback = GetStream;
         }
 
         public static T Get<T>(string name) where T : class => Get(typeof(T), name, null, true) as T;

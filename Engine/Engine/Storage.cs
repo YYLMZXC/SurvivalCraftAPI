@@ -28,6 +28,12 @@ namespace Engine {
         const bool m_isAndroidPlatform = true;
 #endif
 
+        /// <summary>
+        /// Content 加载回调
+        /// 参数：ContentManager 中绝对路径
+        /// </summary>
+        public static Func<string, Stream> LoadContentStreamCallback { get; set; }
+
         public static void Initialize() {
 #if BROWSER
             MountOPFS("/__root__");

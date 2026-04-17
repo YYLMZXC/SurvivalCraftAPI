@@ -28,6 +28,60 @@ namespace Engine.Graphics {
             set => m_tag = value;
         }
 
+        #region Morph Target Support
+
+        /// <summary>
+        /// Morph target 纹理（包含 morph target 数据的 Texture2DArray）
+        /// </summary>
+        public MorphTargetTexture MorphTargetTexture { get; set; }
+
+        /// <summary>
+        /// Morph target 数量
+        /// </summary>
+        public int MorphTargetCount { get; set; }
+
+        /// <summary>
+        /// 是否有 morph targets（需要同时满足数量和纹理存在）
+        /// </summary>
+        public bool HasMorphTargets => MorphTargetTexture != null && MorphTargetCount > 0;
+
+        /// <summary>
+        /// Morph target 纹理偏移量（用于着色器 uniform）
+        /// 从 MorphTargetTexture 自动获取
+        /// </summary>
+        public int MorphTargetPositionOffset => MorphTargetTexture?.PositionOffset ?? 0;
+        public int MorphTargetNormalOffset => MorphTargetTexture?.NormalOffset ?? 0;
+        public int MorphTargetTangentOffset => MorphTargetTexture?.TangentOffset ?? 0;
+        public int MorphTargetTexCoord0Offset => MorphTargetTexture?.TexCoord0Offset ?? 0;
+        public int MorphTargetTexCoord1Offset => MorphTargetTexture?.TexCoord1Offset ?? 0;
+        public int MorphTargetColor0Offset => MorphTargetTexture?.Color0Offset ?? 0;
+
+        /// <summary>
+        /// Morph target 属性标志（从 MorphTargetTexture 自动获取）
+        /// </summary>
+        public bool HasMorphTargetPosition => MorphTargetTexture?.HasPosition ?? false;
+        public bool HasMorphTargetNormal => MorphTargetTexture?.HasNormal ?? false;
+        public bool HasMorphTargetTangent => MorphTargetTexture?.HasTangent ?? false;
+        public bool HasMorphTargetTexCoord0 => MorphTargetTexture?.HasTexCoord0 ?? false;
+        public bool HasMorphTargetTexCoord1 => MorphTargetTexture?.HasTexCoord1 ?? false;
+        public bool HasMorphTargetColor0 => MorphTargetTexture?.HasColor0 ?? false;
+
+        #endregion
+
+        #region GPU Instancing Support
+
+        /// <summary>
+        /// 实例数量（大于 0 表示使用 GPU 实例化）
+        /// </summary>
+        public int InstanceCount { get; set; }
+
+        /// <summary>
+        /// 是否使用 GPU 实例化
+        /// </summary>
+        public bool UseInstancing => InstanceCount > 0;
+
+        #endregion
+
         public void Dispose() {
             if (VertexBuffer != null) {
                 VertexBuffer.Dispose();
@@ -36,6 +90,10 @@ namespace Engine.Graphics {
             if (IndexBuffer != null) {
                 IndexBuffer.Dispose();
                 IndexBuffer = null;
+            }
+            if (MorphTargetTexture != null) {
+                MorphTargetTexture.Dispose();
+                MorphTargetTexture = null;
             }
         }
     }

@@ -316,71 +316,16 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
-        /// 创建默认的片段着色器 defines（仅 PBR 核心）
+        /// 从 VertexDeclaration 创建着色器 defines
         /// </summary>
-        public static ShaderDefines CreateFragmentDefines() {
+        public static ShaderDefines CreateFromVertexDeclaration(VertexDeclaration declaration, bool enableSkinning = true) {
             ShaderDefines defines = new();
+            if (declaration == null) {
+                return defines;
+            }
 
-            // ALPHAMODE_* constants are defined in functions.glsl
-            // ALPHAMODE will be set via SetAlphaMode() based on material
-
-            // Vertex attribute defines (needed for fragment shader debug views)
-            // These should match what the vertex shader provides
-            defines.Add("HAS_TEXCOORD_0_VEC2");
-            defines.Add("MATERIAL_METALLICROUGHNESS");
-            return defines;
-        }
-
-        // TODO: CreateFromMesh - 需要适配 SurvivalcraftApi 的 ModelMesh 类型
-        // public static ShaderDefines CreateFromMesh(Mesh mesh) => CreateFromMesh(mesh, true, true);
-
-        // TODO: CreateFromMesh (with params) - 需要适配 SurvivalcraftApi 的 ModelMesh 和 MorphTargetTexture 类型
-        // public static ShaderDefines CreateFromMesh(Mesh mesh, bool enableSkinning, bool enableMorphing) {
-        //     ShaderDefines defines = CreateVertexDefines(
-        //         mesh.HasSurfaceAttributes,
-        //         mesh.HasSurfaceAttributes, // SurfaceVertices contains tangents (original or generated)
-        //         true,
-        //         mesh.HasUV1,
-        //         mesh.HasColor0,
-        //         enableSkinning && mesh.HasSkinAttributes
-        //     );
-        //
-        //     // 添加 GPU 实例化支持
-        //     if (mesh.UseInstancing) {
-        //         defines.Add("USE_INSTANCING");
-        //     }
-        //
-        //     // 添加 Morph Target 支持
-        //     if (enableMorphing
-        //         && mesh.HasMorphTargets
-        //         && mesh.MorphTargetTexture != null) {
-        //         MorphTargetTexture tex = mesh.MorphTargetTexture;
-        //         defines.SetMorphTargetDefines(
-        //             mesh.MorphTargetCount,
-        //             tex.HasPosition,
-        //             tex.HasNormal,
-        //             tex.HasTangent,
-        //             tex.HasTexCoord0,
-        //             tex.HasTexCoord1,
-        //             tex.HasColor0,
-        //             tex.PositionOffset,
-        //             tex.NormalOffset,
-        //             tex.TangentOffset,
-        //             tex.TexCoord0Offset,
-        //             tex.TexCoord1Offset,
-        //             tex.Color0Offset
-        //         );
-        //     }
-        //     return defines;
-        // }
-
-        /// <summary>
-        /// 从顶点声明创建顶点着色器 defines
-        /// </summary>
-        public static ShaderDefines CreateFromVertexDeclaration(VertexDeclaration declaration, bool useSkinning = false) {
-            ShaderDefines defines = new();
-            int weightCount = 4;
-            int jointCount = 4;
+            bool hasJoints = false;
+            bool hasWeights = false;
 
             foreach (VertexElement element in declaration.VertexElements) {
                 string semantic = element.SemanticName.ToUpperInvariant();
@@ -403,28 +348,81 @@ namespace Engine.Graphics {
                         break;
                     case "COLOR":
                         if (element.SemanticIndex == 0) {
-                            defines.Add("HAS_COLOR_0_VEC4");
+                            defines.Add(componentCount == 3 ? "HAS_COLOR_0_VEC3" : "HAS_COLOR_0_VEC4");
                         }
                         break;
-                    case "BLENDWEIGHT":
-                    case "BLENDINDICES":
-                        useSkinning = true;
-                        if (semantic == "BLENDWEIGHT") {
-                            weightCount = componentCount;
-                        }
-                        else {
-                            jointCount = componentCount;
-                        }
+                    case "JOINTS":
+                        hasJoints = true;
+                        break;
+                    case "WEIGHTS":
+                        hasWeights = true;
                         break;
                 }
             }
 
-            if (useSkinning) {
+            // GPU Skinning
+            if (enableSkinning && hasJoints && hasWeights) {
                 defines.Add("USE_SKINNING");
                 defines.Add("HAS_JOINTS_0_VEC4");
                 defines.Add("HAS_WEIGHTS_0_VEC4");
-                defines.SetWeightCount(weightCount);
-                defines.SetJointCount(jointCount);
+                defines.SetWeightCount(4);
+                defines.SetJointCount(4);
+            }
+
+            return defines;
+        }
+
+        /// <summary>
+        /// 创建默认的片段着色器 defines（仅 PBR 核心）
+        /// </summary>
+        public static ShaderDefines CreateFragmentDefines() {
+            ShaderDefines defines = new();
+
+            // ALPHAMODE_* constants are defined in functions.glsl
+            // ALPHAMODE will be set via SetAlphaMode() based on material
+
+            // Vertex attribute defines (needed for fragment shader debug views)
+            // These should match what the vertex shader provides
+            defines.Add("HAS_TEXCOORD_0_VEC2");
+            defines.Add("MATERIAL_METALLICROUGHNESS");
+            return defines;
+        }
+
+        /// <summary>
+        /// 从 ModelMeshPart 创建顶点着色器 defines
+        /// </summary>
+        public static ShaderDefines CreateFromModelMeshPart(ModelMeshPart meshPart,
+            bool enableSkinning = true,
+            bool enableMorphing = true) {
+            if (meshPart?.VertexBuffer == null) {
+                return new ShaderDefines();
+            }
+
+            VertexDeclaration declaration = meshPart.VertexBuffer.VertexDeclaration;
+            ShaderDefines defines = CreateFromVertexDeclaration(declaration, enableSkinning);
+
+            // GPU Instancing
+            if (meshPart.UseInstancing) {
+                defines.Add("USE_INSTANCING");
+            }
+
+            // Morph Targets
+            if (enableMorphing && meshPart.HasMorphTargets) {
+                defines.SetMorphTargetDefines(
+                    meshPart.MorphTargetCount,
+                    meshPart.HasMorphTargetPosition,
+                    meshPart.HasMorphTargetNormal,
+                    meshPart.HasMorphTargetTangent,
+                    meshPart.HasMorphTargetTexCoord0,
+                    meshPart.HasMorphTargetTexCoord1,
+                    meshPart.HasMorphTargetColor0,
+                    meshPart.MorphTargetPositionOffset,
+                    meshPart.MorphTargetNormalOffset,
+                    meshPart.MorphTargetTangentOffset,
+                    meshPart.MorphTargetTexCoord0Offset,
+                    meshPart.MorphTargetTexCoord1Offset,
+                    meshPart.MorphTargetColor0Offset
+                );
             }
 
             return defines;
@@ -438,40 +436,51 @@ namespace Engine.Graphics {
             bool useLinearOutput,
             ToneMapMode toneMapMode,
             int lightCount,
-            bool hasNormals = false,
-            bool hasTangents = false,
-            bool hasTexcoord1 = false,
-            bool hasColor0 = false,
+            ModelMeshPart meshPart = null,
+            bool enableMorphing = true,
+            bool isScatterPass = false,
             DebugChannel debugChannel = DebugChannel.None) {
             // 从材质获取基础 defines（已缓存），然后克隆一份添加上下文相关的 defines
             ShaderDefines defines = (material?.GetDefines() ?? CreateFragmentDefines()).Clone();
 
             // 片段着色器也需要顶点属性 defines（用于声明 varying 输入变量）
             // 否则 v_TBN/v_Normal/v_Color 不会被声明
-            if (hasNormals) {
-                defines.AddVertexAttribute("NORMAL", 3);
-            }
-            if (hasTangents) {
-                defines.AddVertexAttribute("TANGENT", 4);
-            }
-            if (hasTexcoord1) {
-                defines.AddVertexAttribute("TEXCOORD_1", 2);
-            }
-            if (hasColor0) {
-                defines.Add("HAS_COLOR_0_VEC4");
+            if (meshPart?.VertexBuffer != null) {
+                VertexDeclaration declaration = meshPart.VertexBuffer.VertexDeclaration;
+                foreach (VertexElement element in declaration.VertexElements) {
+                    string semantic = element.SemanticName.ToUpperInvariant();
+                    int componentCount = element.Format.GetElementsCount();
+
+                    switch (semantic) {
+                        case "NORMAL":
+                            defines.AddVertexAttribute("NORMAL", componentCount);
+                            break;
+                        case "TANGENT":
+                            defines.AddVertexAttribute("TANGENT", componentCount);
+                            break;
+                        case "TEXCOORD":
+                            if (element.SemanticIndex == 1) {
+                                defines.AddVertexAttribute("TEXCOORD_1", componentCount);
+                            }
+                            break;
+                        case "COLOR":
+                            if (element.SemanticIndex == 0) {
+                                defines.Add("HAS_COLOR_0_VEC4");
+                            }
+                            break;
+                    }
+                }
             }
 
             // 添加 IBL 支持
-            // TODO: Diffuse Transmission 扩展支持（需要 MaterialExtension 系统）
-            // if (useIBL || material?.DiffuseTransmission?.IsEnabled == true) {
-            if (useIBL) {
+            // 注意：Diffuse Transmission 也需要 IBL 来采样背面环境光
+            if (useIBL || material?.DiffuseTransmission?.IsEnabled == true) {
                 defines.Add("USE_IBL");
             }
 
             // 添加 Punctual Lights 支持 (KHR_lights_punctual)
-            // TODO: Unlit 材质优化（需要 MaterialExtension 系统）
-            // if (lightCount > 0 && !(material?.Unlit?.IsEnabled ?? false)) {
-            if (lightCount > 0) {
+            // 注意：Unlit 材质不需要灯光计算
+            if (lightCount > 0 && !(material?.Unlit?.IsEnabled ?? false)) {
                 defines.Add("USE_PUNCTUAL");
             }
 

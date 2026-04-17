@@ -78,6 +78,17 @@ namespace Engine.Graphics {
 
         public Shader() { }
 
+        /// <summary>
+        /// 从已链接的 program handle 创建 Shader（供 ShaderCache 使用）
+        /// </summary>
+        internal Shader(uint programHandle) {
+            m_program = (int)programHandle;
+            m_vertexShader = 0;
+            m_pixelShader = 0;
+            CacheUniformParameters();
+            m_glymulParameter = GetParameter("u_glymul", true);
+        }
+
         public Shader(string vertexShaderCode, string pixelShaderCode, params ShaderMacro[] shaderMacros) {
             Construct(vertexShaderCode, pixelShaderCode, shaderMacros);
         }
@@ -334,6 +345,50 @@ namespace Engine.Graphics {
                 GLWrapper.GL.DeleteShader(pixelShader);
                 m_pixelShader = 0;
             }
+        }
+
+        /// <summary>
+        /// 缓存所有 active uniform 参数（从 GL program 查询）
+        /// </summary>
+        internal void CacheUniformParameters() {
+            if (m_program == 0) {
+                return;
+            }
+
+            GLWrapper.GL.GetProgram((uint)m_program, ProgramPropertyARB.ActiveUniforms, out int uniformCount);
+
+            List<ShaderParameter> list = [];
+            Dictionary<string, ShaderParameter> dict = [];
+
+            for (uint i = 0; i < uniformCount; i++) {
+                GLWrapper.GL.GetActiveUniform(
+                    (uint)m_program,
+                    i,
+                    256u,
+                    out _,
+                    out int size,
+                    out UniformType type,
+                    out string name
+                );
+
+                int location = GLWrapper.GL.GetUniformLocation((uint)m_program, name);
+                ShaderParameterType paramType = GLWrapper.TranslateActiveUniformType(type);
+
+                // 处理数组 uniform
+                int bracketIndex = name.IndexOf('[');
+                if (bracketIndex > 0) {
+                    name = name.Substring(0, bracketIndex);
+                }
+
+                ShaderParameter param = new(this, name, paramType, size) { Location = location };
+                if (!dict.ContainsKey(name)) {
+                    dict.Add(name, param);
+                    list.Add(param);
+                }
+            }
+
+            m_parameters = [.. list];
+            m_parametersByName = dict;
         }
     }
 }

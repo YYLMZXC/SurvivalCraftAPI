@@ -22,7 +22,7 @@ namespace Engine.Media {
     /// </summary>
     public static class GltfLoader {
         /// <summary>
-        /// 外置文件加载回调，一般和 Storage.LoadContentStreamCallback 相同
+        /// 外置文件加载回调，一般情况下和 Storage.LoadContentStreamCallback 相同
         /// </summary>
         public static Func<string, Stream> LoadExternalStreamCallback { get; set; }
 
@@ -35,7 +35,7 @@ namespace Engine.Media {
         }
 
         /// <summary>
-        /// 从文件路径加载 glTF 模型（便利方法，用于测试）
+        /// 从文件路径加载 glTF 模型（便利方法，仅用于测试，将持久修改 LoadExternalStreamCallback）
         /// </summary>
         /// <param name="filePath">模型文件路径（.gltf 或 .glb）</param>
         /// <returns>ModelData 实例</returns>

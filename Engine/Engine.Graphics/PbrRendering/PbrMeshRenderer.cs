@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Engine.Media;
 using Silk.NET.OpenGLES;
@@ -33,6 +34,9 @@ namespace Engine.Graphics {
         int _cachedContextHash;
         (bool useIBL, bool useLinearOutput, ToneMapMode toneMapMode, int lightCount, DebugChannel debugChannel) _lastContextParams;
         bool _uvTransformDirty = true;
+
+        // Uniform location 缓存
+        readonly Dictionary<int, int> _jointSamplerLocationCache = [];
 
         /// <summary>
         /// 当前视图投影矩阵
@@ -90,9 +94,18 @@ namespace Engine.Graphics {
                 CameraPos = new Vector4(cameraPos, 1f),
                 Exposure = 1f,
                 EnvironmentStrength = 1f,
-                MipCount = 0
+                MipCount = 0,
+                EnvRotationCol0 = new Vector4(1f, 0f, 0f, 0f),
+                EnvRotationCol1 = new Vector4(0f, 1f, 0f, 0f),
+                EnvRotationCol2 = new Vector4(0f, 0f, 1f, 0f)
             };
             SceneUBO.Update(ref sceneData);
+
+            // 初始化 LightsData UBO
+            LightsData lightsData = new() {
+                LightCount = context.LightCount
+            };
+            LightsUBO.Update(ref lightsData);
 
             // 重置材质缓存
             LastMaterial = null;
@@ -100,9 +113,15 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
+        /// 骨骼纹理纹理槽
+        /// 注意：MaterialTextureSlot.MorphTargets = 30，JointTexture 使用 slot 31 避免冲突
+        /// </summary>
+        protected const int JointTextureSlot = 31;
+
+        /// <summary>
         /// 渲染网格
         /// </summary>
-        public virtual void Render(ModelMesh mesh, ModelMaterial material, Matrix4x4 worldMatrix, Texture2D[] textures) {
+        public virtual void Render(ModelMesh mesh, ModelMaterial material, Matrix4x4 worldMatrix, Model model, JointTexture jointTexture = null) {
             if (mesh == null) return;
 
             // 获取或创建着色器
@@ -121,9 +140,13 @@ namespace Engine.Graphics {
             UpdateUVTransformUBO(material);
 
             // 绑定纹理
-            if (textures != null && material != null) {
-                MaterialTextureBinder.BindMaterialTextures(material, textures);
-                MaterialTextureBinder.SetTextureSlotUniforms(shader);
+            if (model != null && material != null) {
+                BindMaterialTextures(model, material, shader);
+            }
+
+            // 绑定骨骼纹理
+            if (jointTexture != null) {
+                BindJointTexture(jointTexture, shader);
             }
 
             // 设置剔除模式
@@ -317,6 +340,41 @@ namespace Engine.Graphics {
             uint blockIndex = GLWrapper.GL.GetUniformBlockIndex(programHandle, blockName);
             if (blockIndex != uint.MaxValue) {
                 GLWrapper.GL.UniformBlockBinding(programHandle, blockIndex, bindingPoint);
+            }
+        }
+
+        /// <summary>
+        /// 绑定材质纹理（从 Model 延迟加载）
+        /// </summary>
+        protected virtual void BindMaterialTextures(Model model, ModelMaterial material, Shader shader) {
+            int textureCount = model.ModelData?.Textures.Count ?? 0;
+            if (textureCount == 0) return;
+
+            Texture2D[] textures = new Texture2D[textureCount];
+            for (int i = 0; i < textureCount; i++) {
+                textures[i] = model.GetTexture(i);
+            }
+
+            MaterialTextureBinder.BindMaterialTextures(material, textures);
+            MaterialTextureBinder.SetTextureSlotUniforms(shader);
+        }
+
+        /// <summary>
+        /// 绑定骨骼纹理到指定纹理槽并设置 shader uniform
+        /// </summary>
+        /// <param name="jointTexture">骨骼矩阵纹理</param>
+        /// <param name="shader">使用该纹理的着色器</param>
+        protected virtual void BindJointTexture(JointTexture jointTexture, Shader shader) {
+            jointTexture.Bind(JointTextureSlot);
+
+            int programHandle = shader.m_program;
+            if (!_jointSamplerLocationCache.TryGetValue(programHandle, out int location)) {
+                location = GLWrapper.GL.GetUniformLocation((uint)programHandle, "u_jointsSampler");
+                _jointSamplerLocationCache[programHandle] = location;
+            }
+
+            if (location >= 0) {
+                GLWrapper.GL.Uniform1(location, JointTextureSlot);
             }
         }
 

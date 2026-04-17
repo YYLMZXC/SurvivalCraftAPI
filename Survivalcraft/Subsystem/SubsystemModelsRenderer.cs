@@ -53,6 +53,11 @@ namespace Game {
         public ModelShader m_shaderSkinnedAlphaTested;
 
         /// <summary>
+        /// PBR 渲染器实例（由 Mod 设置）
+        /// </summary>
+        public PbrMeshRenderer PbrRenderer;
+
+        /// <summary>
         /// Maximum number of joints per model for GPU skinning
         /// </summary>
         public const int MaxJointsCount = 64;
@@ -67,8 +72,12 @@ namespace Game {
 
         // Pre-allocated buffers for skinning (avoid GC pressure)
         readonly Matrix[] m_jointMatricesBuffer = new Matrix[MaxJointsCount];
+        readonly System.Numerics.Matrix4x4[] m_jointMatricesBuffer4x4 = new System.Numerics.Matrix4x4[MaxJointsCount];
         readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
         readonly List<ModelData> m_skinnedModelsBuffer = [];
+
+        // JointTexture for PBR skinned models (reused across frames)
+        JointTexture m_jointTexture;
 
         public static bool DisableDrawingModels = false;
 
@@ -79,6 +88,23 @@ namespace Game {
         public PrimitivesRenderer3D PrimitivesRenderer => m_primitivesRenderer;
 
         public int[] DrawOrders => m_drawOrders;
+
+        /// <summary>
+        /// 判断模型是否需要 PBR 渲染
+        /// </summary>
+        public bool UsePbrRendering(Model model) {
+            if (PbrRenderer == null || model == null) return false;
+
+            foreach (ModelMesh mesh in model.Meshes) {
+                foreach (ModelMeshPart part in mesh.MeshParts) {
+                    ModelMaterial material = model.GetMaterial(part.MaterialIndex);
+                    if (material != null && MaterialUboBuilder.HasExtensions(material)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         public virtual void Draw(Camera camera, int drawOrder) {
             //准备模型
@@ -264,6 +290,22 @@ namespace Game {
         }
 
         public virtual void DrawInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
+            // Check if any model needs PBR rendering
+            bool usePbr = false;
+            if (PbrRenderer != null) {
+                foreach (var modelData in modelsData) {
+                    if (UsePbrRendering(modelData.ComponentModel.Model)) {
+                        usePbr = true;
+                        break;
+                    }
+                }
+            }
+
+            if (usePbr) {
+                DrawPbrInstancedModels(camera, modelsData, alphaThreshold);
+                return;
+            }
+
             ModelShader modelShader = ShaderOpaque != null && ShaderAlphaTested != null ? alphaThreshold.HasValue ? ShaderAlphaTested : ShaderOpaque :
                 alphaThreshold.HasValue ? m_shaderAlphaTested : m_shaderOpaque;
             modelShader.LightDirection1 = -Vector3.TransformNormal(LightingManager.DirectionToLight1, camera.ViewMatrix);
@@ -387,6 +429,49 @@ namespace Game {
         }
 
         /// <summary>
+        /// Draw instanced models using PBR renderer
+        /// </summary>
+        public virtual void DrawPbrInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
+            RenderContext context = new() {
+                View = camera.ViewMatrix,
+                Projection = camera.ProjectionMatrix,
+                UseIBL = false,
+                ToneMapMode = ToneMapMode.KhrPbrNeutral,
+                LightCount = 0
+            };
+
+            PbrRenderer.BeginFrame(context);
+
+            foreach (var modelData in modelsData) {
+                ComponentModel componentModel = modelData.ComponentModel;
+                Model model = componentModel.Model;
+                if (model == null) continue;
+
+                // Get world matrix from first bone transform
+                System.Numerics.Matrix4x4 worldMatrix = componentModel.AbsoluteBoneTransformsForCamera.Length > 0
+                    ? componentModel.AbsoluteBoneTransformsForCamera[0]
+                    : System.Numerics.Matrix4x4.Identity;
+
+                // Render each mesh part
+                foreach (int meshIndex in componentModel.MeshDrawOrders) {
+                    if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
+                    ModelMesh mesh = model.Meshes[meshIndex];
+
+                    foreach (ModelMeshPart part in mesh.MeshParts) {
+                        ModelMaterial material = model.GetMaterial(part.MaterialIndex);
+
+                        // Skip if material doesn't need PBR rendering
+                        if (!MaterialUboBuilder.HasExtensions(material)) continue;
+
+                        PbrRenderer.Render(mesh, material, worldMatrix, model);
+                    }
+                }
+
+                ModelsDrawn++;
+            }
+        }
+
+        /// <summary>
         /// Draw a single skinned model with GPU skinning
         /// </summary>
         public virtual void DrawSkinnedModel(Camera camera, ModelData modelData, float? alphaThreshold) {
@@ -394,6 +479,12 @@ namespace Game {
             Model model = componentModel.Model;
 
             if (model?.Skin == null) return;
+
+            // Check if model needs PBR rendering
+            if (UsePbrRendering(model)) {
+                DrawPbrSkinnedModel(camera, modelData, alphaThreshold);
+                return;
+            }
 
             // Select skinned shader
             ModelShader skinnedShader = ShaderSkinnedOpaque != null && ShaderSkinnedAlphaTested != null
@@ -431,38 +522,12 @@ namespace Game {
 
             // Calculate joint matrices for GPU skinning
             // Reference: Plan/GPUSkinningPitfalls.md
-            ModelSkin skin = model.Skin;
-            int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
-
-            // Get inverted view matrix to convert camera-space transforms back to world space
             Matrix invertedView = camera.InvertedViewMatrix;
+            int jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer4x4);
 
-            // Get root bone transform (coordinate conversion) and its inverse
-            Matrix rootBoneTransform = model.RootBone.Transform;
-            Matrix invRootBoneTransform = Matrix.Invert(rootBoneTransform);
-
+            // Convert Matrix4x4[] to Matrix[] for ModelShader
             for (int i = 0; i < jointCount; i++) {
-                if (i < skin.Joints.Count && skin.Joints[i] != null) {
-                    ModelBone joint = skin.Joints[i];
-
-                    // Step 1: Get joint world transform (in game space, includes entity position)
-                    Matrix jointWorld = componentModel.AbsoluteBoneTransformsForCamera[joint.Index] * invertedView;
-
-                    // Step 2: Convert to glTF space (remove root bone's coordinate conversion)
-                    Matrix jointWorldGlTF = jointWorld * invRootBoneTransform;
-
-                    // Step 3: Get inverse bind matrix (in glTF space)
-                    Matrix inverseBind = i < skin.InverseBindMatrices?.Length
-                        ? skin.InverseBindMatrices[i]
-                        : Matrix.Identity;
-
-                    // Step 4: Calculate joint matrix
-                    // jointMatrix = inverseBind * jointWorldGlTF * rootBoneTransform
-                    // This transforms: vertex(glTF) -> bind space -> glTF world -> game world
-                    m_jointMatricesBuffer[i] = inverseBind * jointWorldGlTF * rootBoneTransform;
-                } else {
-                    m_jointMatricesBuffer[i] = Matrix.Identity;
-                }
+                m_jointMatricesBuffer[i] = m_jointMatricesBuffer4x4[i];
             }
             skinnedShader.JointMatrices = m_jointMatricesBuffer;
 
@@ -516,6 +581,63 @@ namespace Game {
             ModelsDrawn++;
         }
 
+        /// <summary>
+        /// Draw a skinned model using PBR renderer
+        /// </summary>
+        public virtual void DrawPbrSkinnedModel(Camera camera, ModelData modelData, float? alphaThreshold) {
+            ComponentModel componentModel = modelData.ComponentModel;
+            Model model = componentModel.Model;
+            if (model?.Skin == null) return;
+
+            RenderContext context = new() {
+                View = camera.ViewMatrix,
+                Projection = camera.ProjectionMatrix,
+                UseIBL = false,
+                ToneMapMode = ToneMapMode.KhrPbrNeutral,
+                LightCount = 0,
+                EnableSkinning = true
+            };
+
+            PbrRenderer.BeginFrame(context);
+
+            // Calculate joint matrices for GPU skinning
+            ModelSkin skin = model.Skin;
+            int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
+
+            // Ensure JointTexture is created
+            if (m_jointTexture == null || m_jointTexture.MaxJointCount < jointCount) {
+                m_jointTexture?.Dispose();
+                m_jointTexture = new JointTexture(jointCount);
+            }
+
+            // Calculate joint matrices
+            Matrix invertedView = camera.InvertedViewMatrix;
+            jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer4x4);
+
+            // Update JointTexture (use span to avoid allocation)
+            m_jointTexture.Update(m_jointMatricesBuffer4x4.AsSpan(0, jointCount));
+
+            // For skinned models, world matrix should be identity (bones handle the transform)
+            System.Numerics.Matrix4x4 worldMatrix = System.Numerics.Matrix4x4.Identity;
+
+            // Render each mesh part
+            foreach (int meshIndex in componentModel.MeshDrawOrders) {
+                if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
+                ModelMesh mesh = model.Meshes[meshIndex];
+
+                foreach (ModelMeshPart part in mesh.MeshParts) {
+                    ModelMaterial material = model.GetMaterial(part.MaterialIndex);
+
+                    // Skip if material doesn't need PBR rendering
+                    if (!MaterialUboBuilder.HasExtensions(material)) continue;
+
+                    PbrRenderer.Render(mesh, material, worldMatrix, model, m_jointTexture);
+                }
+            }
+
+            ModelsDrawn++;
+        }
+
         public virtual void DrawModelsExtras(Camera camera, List<ModelData> modelsData) {
             foreach (ModelData modelData in modelsData) {
                 if (modelData.ComponentBody != null
@@ -527,6 +649,53 @@ namespace Game {
                 }
                 modelData.ComponentModel.DrawExtras(camera);
             }
+        }
+
+        /// <summary>
+        /// 计算骨骼矩阵用于 GPU skinning
+        /// </summary>
+        /// <param name="componentModel">模型组件</param>
+        /// <param name="model">模型对象</param>
+        /// <param name="invertedView">反转的视图矩阵</param>
+        /// <param name="output">输出缓冲区</param>
+        /// <returns>实际计算的骨骼数量</returns>
+        int CalculateJointMatrices(ComponentModel componentModel, Model model, Matrix invertedView, Span<System.Numerics.Matrix4x4> output) {
+            ModelSkin skin = model.Skin;
+            int jointCount = Math.Min(skin.JointCount, Math.Min(output.Length, MaxJointsCount));
+
+            // Warn if model exceeds maximum joint count
+            if (skin.JointCount > MaxJointsCount) {
+                Log.Warning($"Model has {skin.JointCount} joints, but only {MaxJointsCount} are supported. Visual artifacts may occur.");
+            }
+
+            // Get root bone transform (coordinate conversion) and its inverse
+            Matrix rootBoneTransform = model.RootBone.Transform;
+            Matrix invRootBoneTransform = Matrix.Invert(rootBoneTransform);
+
+            for (int i = 0; i < jointCount; i++) {
+                if (i < skin.Joints.Count && skin.Joints[i] != null) {
+                    ModelBone joint = skin.Joints[i];
+
+                    // Step 1: Get joint world transform (in game space, includes entity position)
+                    Matrix jointWorld = componentModel.AbsoluteBoneTransformsForCamera[joint.Index] * invertedView;
+
+                    // Step 2: Convert to glTF space (remove root bone's coordinate conversion)
+                    Matrix jointWorldGlTF = jointWorld * invRootBoneTransform;
+
+                    // Step 3: Get inverse bind matrix (in glTF space)
+                    Matrix inverseBind = i < skin.InverseBindMatrices?.Length
+                        ? skin.InverseBindMatrices[i]
+                        : Matrix.Identity;
+
+                    // Step 4: Calculate joint matrix
+                    // jointMatrix = inverseBind * jointWorldGlTF * rootBoneTransform
+                    output[i] = inverseBind * jointWorldGlTF * rootBoneTransform;
+                } else {
+                    output[i] = System.Numerics.Matrix4x4.Identity;
+                }
+            }
+
+            return jointCount;
         }
 
         public virtual float? CalculateModelLight(ModelData modelData) {
@@ -600,6 +769,12 @@ namespace Game {
                     }
                 }
             }
+        }
+
+        public override void Dispose() {
+            m_jointTexture?.Dispose();
+            m_jointTexture = null;
+            base.Dispose();
         }
     }
 }

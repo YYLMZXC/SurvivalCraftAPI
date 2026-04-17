@@ -441,17 +441,15 @@ namespace Engine.Graphics {
     /// <summary>
     /// UV 变换矩阵（mat3 存储为 3 个 vec4，用于 std140 布局）
     /// </summary>
+    /// <remarks>
+    /// GLSL mat3 是列主序。Col0/Col1/Col2 对应 mat3 的三列。
+    /// 使用 MaterialUboBuilder.BuildUVMatrix 从 Matrix3x2 构建正确的 UV 变换。
+    /// </remarks>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct UVMatrix3 {
         public Vector4 Col0; // xyz = first column of mat3
         public Vector4 Col1; // xyz = second column of mat3
         public Vector4 Col2; // xyz = third column of mat3
-
-        public UVMatrix3(Matrix4x4 matrix) {
-            Col0 = new Vector4(matrix.M11, matrix.M21, matrix.M31, 0f);
-            Col1 = new Vector4(matrix.M12, matrix.M22, matrix.M32, 0f);
-            Col2 = new Vector4(matrix.M13, matrix.M23, matrix.M33, 0f);
-        }
 
         public static UVMatrix3 Identity => new(new Vector4(1f, 0f, 0f, 0f), new Vector4(0f, 1f, 0f, 0f), new Vector4(0f, 0f, 1f, 0f));
 

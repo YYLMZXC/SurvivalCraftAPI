@@ -46,6 +46,10 @@ namespace Engine.Graphics {
         ScatterDepthFramebuffer = 29,
 
         // Morph Target Texture (TEXTURE_2D_ARRAY)
-        MorphTargets = 30
+        MorphTargets = 30,
+
+        // Joint/Bone Matrix Texture for GPU skinning (TEXTURE_2D, RGBA32F)
+        // Used by PbrMeshRenderer for skeletal animation
+        JointMatrices = 31
     }
 }

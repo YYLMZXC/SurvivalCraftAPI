@@ -49,7 +49,7 @@ namespace Engine.Graphics {
         MorphTargets = 30,
 
         // Joint/Bone Matrix Texture for GPU skinning (TEXTURE_2D, RGBA32F)
-        // Used by PbrMeshRenderer for skeletal animation
+        // Used by AdvancedMeshRenderer for skeletal animation
         JointMatrices = 31
     }
 }

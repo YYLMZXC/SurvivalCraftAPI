@@ -6,34 +6,37 @@ using Silk.NET.OpenGLES;
 
 namespace Engine.Graphics {
     /// <summary>
-    /// PBR 网格渲染器基类
-    /// 模组开发者继承此类实现自定义 PBR 渲染
+    /// 高级网格渲染器基类
+    /// 模组开发者继承此类实现自定义渲染（PBR、卡通渲染等）
     /// </summary>
     /// <remarks>
+    /// 基类管理通用 UBO：Scene、RenderState、Lights、UVTransform
+    /// 子类管理材质相关 UBO（如 PBR 的 MaterialCore、MaterialExtension）
+    ///
     /// 子类需要实现：
     /// - LoadShaderSources(): 加载 .vert, .frag, .glsl 文件
     /// - SetupShaderCallbacks(): 设置 Attribute/UBO 绑定回调
     /// - CreateShaderVariant(): 构建着色器变体
     /// </remarks>
-    public abstract class PbrMeshRenderer : IDisposable {
-        // UBO 实例
+    public abstract class AdvancedMeshRenderer : IDisposable {
+        // 通用 UBO 实例（基类管理）
         protected UniformBuffer<SceneData> SceneUBO;
-        protected UniformBuffer<MaterialCoreData> MaterialCoreUBO;
         protected UniformBuffer<LightsData> LightsUBO;
         protected UniformBuffer<RenderStateData> RenderStateUBO;
         protected UniformBuffer<UVTransformData> UVTransformUBO;
-        protected UniformBuffer<MaterialExtensionData> MaterialExtUBO;
 
         // 渲染状态
         protected RenderStateData RenderStateData;
         protected RenderContext CurrentContext;
+
+        // 材质缓存状态（子类可访问）
         protected ModelMaterial LastMaterial;
         protected int LastExtensionFlags;
+        protected bool UvTransformDirty = true;
 
         // 缓存优化
         int _cachedContextHash;
         (bool useIBL, bool useLinearOutput, ToneMapMode toneMapMode, int lightCount, DebugChannel debugChannel) _lastContextParams;
-        bool _uvTransformDirty = true;
 
         // Uniform location 缓存
         readonly Dictionary<int, int> _jointSamplerLocationCache = [];
@@ -43,14 +46,12 @@ namespace Engine.Graphics {
         /// </summary>
         public Matrix4x4 CurrentViewProjection { get; private set; }
 
-        protected PbrMeshRenderer() {
-            // 创建 UBO
+        protected AdvancedMeshRenderer() {
+            // 创建通用 UBO
             SceneUBO = new(0);
-            MaterialCoreUBO = new(1);
             LightsUBO = new(2);
             RenderStateUBO = new(3);
             UVTransformUBO = new(4);
-            MaterialExtUBO = new(6);
 
             // 初始化 ShaderCache
             ShaderCache.Initialize();
@@ -109,7 +110,7 @@ namespace Engine.Graphics {
 
             // 重置材质缓存
             LastMaterial = null;
-            _uvTransformDirty = true;
+            UvTransformDirty = true;
         }
 
         /// <summary>
@@ -132,9 +133,6 @@ namespace Engine.Graphics {
 
             // 更新 RenderState UBO
             UpdateRenderStateUBO(worldMatrix);
-
-            // 更新材质 UBO
-            UpdateMaterialUBOs(material, false);
 
             // 更新 UV 变换 UBO
             UpdateUVTransformUBO(material);
@@ -163,12 +161,31 @@ namespace Engine.Graphics {
         /// 获取或创建着色器变体
         /// </summary>
         protected virtual Shader GetOrCreateShader(ModelMesh mesh, ModelMaterial material, in RenderContext context) {
-            // 尝试从缓存获取（子类可重写以优化 hash 计算）
-            Shader shader = ShaderCache.TryGetShaderProgram(0, 0);
+            // 计算材质 hash（子类可重写以优化）
+            int materialHash = ComputeMaterialHash(material);
+            int contextHash = CachedContextHash;
+
+            // 尝试从缓存获取
+            Shader shader = ShaderCache.TryGetShaderProgram(materialHash, contextHash);
             if (shader != null) return shader;
 
             // 创建新的着色器变体
             return CreateShaderVariant(mesh, material, context);
+        }
+
+        /// <summary>
+        /// 计算材质 hash（子类可重写以优化）
+        /// </summary>
+        protected virtual int ComputeMaterialHash(ModelMaterial material) {
+            if (material == null) return 0;
+            unchecked {
+                int hash = 17;
+                hash = hash * 31 + material.AlphaMode.GetHashCode();
+                hash = hash * 31 + material.DoubleSided.GetHashCode();
+                hash = hash * 31 + (int)MaterialUboBuilder.BuildExtensionFlags(material);
+                hash = hash * 31 + (int)MaterialUboBuilder.BuildTextureFlags(material);
+                return hash;
+            }
         }
 
         /// <summary>
@@ -188,38 +205,14 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
-        /// 更新材质 UBO（带缓存优化）
-        /// </summary>
-        protected void UpdateMaterialUBOs(ModelMaterial material, bool useGeneratedTangents) {
-            int extensionFlags = (int)MaterialUboBuilder.BuildExtensionFlags(material);
-
-            if (LastMaterial != material) {
-                MaterialCoreData coreData = MaterialUboBuilder.BuildMaterialCoreData(material, useGeneratedTangents);
-                MaterialCoreUBO.Update(ref coreData);
-
-                MaterialExtensionData extData = MaterialUboBuilder.BuildMaterialExtensionData(material);
-                MaterialExtUBO.Update(ref extData);
-
-                LastMaterial = material;
-                LastExtensionFlags = extensionFlags;
-                _uvTransformDirty = true;
-            }
-            else if (LastExtensionFlags != extensionFlags) {
-                MaterialExtensionData extData = MaterialUboBuilder.BuildMaterialExtensionData(material);
-                MaterialExtUBO.Update(ref extData);
-                LastExtensionFlags = extensionFlags;
-            }
-        }
-
-        /// <summary>
         /// 更新 UV 变换 UBO（懒更新）
         /// </summary>
         protected void UpdateUVTransformUBO(ModelMaterial material) {
-            if (!_uvTransformDirty) return;
+            if (!UvTransformDirty) return;
 
             UVTransformData uvTransformData = MaterialUboBuilder.BuildUVTransformData(material);
             UVTransformUBO.Update(ref uvTransformData);
-            _uvTransformDirty = false;
+            UvTransformDirty = false;
         }
 
         /// <summary>
@@ -380,11 +373,9 @@ namespace Engine.Graphics {
 
         public virtual void Dispose() {
             SceneUBO?.Dispose();
-            MaterialCoreUBO?.Dispose();
             LightsUBO?.Dispose();
             RenderStateUBO?.Dispose();
             UVTransformUBO?.Dispose();
-            MaterialExtUBO?.Dispose();
         }
     }
 }

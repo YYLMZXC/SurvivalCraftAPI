@@ -53,9 +53,14 @@ namespace Game {
         public ModelShader m_shaderSkinnedAlphaTested;
 
         /// <summary>
-        /// PBR 渲染器实例（由 Mod 设置）
+        /// 高级渲染器实例（由 Mod 设置，如 PbrMeshRenderer、ToonMeshRenderer 等）
         /// </summary>
-        public PbrMeshRenderer PbrRenderer;
+        public AdvancedMeshRenderer AdvancedRenderer;
+
+        /// <summary>
+        /// 是否使用自定义渲染（由 Mod 设置）
+        /// </summary>
+        public bool UseCustomRendering;
 
         /// <summary>
         /// Maximum number of joints per model for GPU skinning
@@ -76,7 +81,7 @@ namespace Game {
         readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
         readonly List<ModelData> m_skinnedModelsBuffer = [];
 
-        // JointTexture for PBR skinned models (reused across frames)
+        // JointTexture for skinned models (reused across frames)
         JointTexture m_jointTexture;
 
         public static bool DisableDrawingModels = false;
@@ -88,23 +93,6 @@ namespace Game {
         public PrimitivesRenderer3D PrimitivesRenderer => m_primitivesRenderer;
 
         public int[] DrawOrders => m_drawOrders;
-
-        /// <summary>
-        /// 判断模型是否需要 PBR 渲染
-        /// </summary>
-        public bool UsePbrRendering(Model model) {
-            if (PbrRenderer == null || model == null) return false;
-
-            foreach (ModelMesh mesh in model.Meshes) {
-                foreach (ModelMeshPart part in mesh.MeshParts) {
-                    ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                    if (material != null && MaterialUboBuilder.HasExtensions(material)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
 
         public virtual void Draw(Camera camera, int drawOrder) {
             //准备模型
@@ -290,19 +278,9 @@ namespace Game {
         }
 
         public virtual void DrawInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
-            // Check if any model needs PBR rendering
-            bool usePbr = false;
-            if (PbrRenderer != null) {
-                foreach (var modelData in modelsData) {
-                    if (UsePbrRendering(modelData.ComponentModel.Model)) {
-                        usePbr = true;
-                        break;
-                    }
-                }
-            }
-
-            if (usePbr) {
-                DrawPbrInstancedModels(camera, modelsData, alphaThreshold);
+            // Check if custom rendering is enabled
+            if (AdvancedRenderer != null && UseCustomRendering) {
+                DrawCustomInstancedModels(camera, modelsData, alphaThreshold);
                 return;
             }
 
@@ -429,9 +407,9 @@ namespace Game {
         }
 
         /// <summary>
-        /// Draw instanced models using PBR renderer
+        /// Draw instanced models using custom renderer
         /// </summary>
-        public virtual void DrawPbrInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
+        public virtual void DrawCustomInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
             RenderContext context = new() {
                 View = camera.ViewMatrix,
                 Projection = camera.ProjectionMatrix,
@@ -440,7 +418,7 @@ namespace Game {
                 LightCount = 0
             };
 
-            PbrRenderer.BeginFrame(context);
+            AdvancedRenderer.BeginFrame(context);
 
             foreach (var modelData in modelsData) {
                 ComponentModel componentModel = modelData.ComponentModel;
@@ -459,11 +437,7 @@ namespace Game {
 
                     foreach (ModelMeshPart part in mesh.MeshParts) {
                         ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-
-                        // Skip if material doesn't need PBR rendering
-                        if (!MaterialUboBuilder.HasExtensions(material)) continue;
-
-                        PbrRenderer.Render(mesh, material, worldMatrix, model);
+                        AdvancedRenderer.Render(mesh, material, worldMatrix, model);
                     }
                 }
 
@@ -480,9 +454,9 @@ namespace Game {
 
             if (model?.Skin == null) return;
 
-            // Check if model needs PBR rendering
-            if (UsePbrRendering(model)) {
-                DrawPbrSkinnedModel(camera, modelData, alphaThreshold);
+            // Check if custom rendering is enabled
+            if (AdvancedRenderer != null && UseCustomRendering) {
+                DrawCustomSkinnedModel(camera, modelData, alphaThreshold);
                 return;
             }
 
@@ -582,9 +556,9 @@ namespace Game {
         }
 
         /// <summary>
-        /// Draw a skinned model using PBR renderer
+        /// Draw a skinned model using custom renderer
         /// </summary>
-        public virtual void DrawPbrSkinnedModel(Camera camera, ModelData modelData, float? alphaThreshold) {
+        public virtual void DrawCustomSkinnedModel(Camera camera, ModelData modelData, float? alphaThreshold) {
             ComponentModel componentModel = modelData.ComponentModel;
             Model model = componentModel.Model;
             if (model?.Skin == null) return;
@@ -598,7 +572,7 @@ namespace Game {
                 EnableSkinning = true
             };
 
-            PbrRenderer.BeginFrame(context);
+            AdvancedRenderer.BeginFrame(context);
 
             // Calculate joint matrices for GPU skinning
             ModelSkin skin = model.Skin;
@@ -627,11 +601,7 @@ namespace Game {
 
                 foreach (ModelMeshPart part in mesh.MeshParts) {
                     ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-
-                    // Skip if material doesn't need PBR rendering
-                    if (!MaterialUboBuilder.HasExtensions(material)) continue;
-
-                    PbrRenderer.Render(mesh, material, worldMatrix, model, m_jointTexture);
+                    AdvancedRenderer.Render(mesh, material, worldMatrix, model, m_jointTexture);
                 }
             }
 

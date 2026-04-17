@@ -1,0 +1,332 @@
+using System;
+using System.Numerics;
+using Engine.Media;
+using Silk.NET.OpenGLES;
+
+namespace Engine.Graphics {
+    /// <summary>
+    /// PBR 网格渲染器基类
+    /// 模组开发者继承此类实现自定义 PBR 渲染
+    /// </summary>
+    /// <remarks>
+    /// 子类需要实现：
+    /// - LoadShaderSources(): 加载 .vert, .frag, .glsl 文件
+    /// - SetupShaderCallbacks(): 设置 Attribute/UBO 绑定回调
+    /// - CreateShaderVariant(): 构建着色器变体
+    /// </remarks>
+    public abstract class PbrMeshRenderer : IDisposable {
+        // UBO 实例
+        protected UniformBuffer<SceneData> SceneUBO;
+        protected UniformBuffer<MaterialCoreData> MaterialCoreUBO;
+        protected UniformBuffer<LightsData> LightsUBO;
+        protected UniformBuffer<RenderStateData> RenderStateUBO;
+        protected UniformBuffer<UVTransformData> UVTransformUBO;
+        protected UniformBuffer<MaterialExtensionData> MaterialExtUBO;
+
+        // 渲染状态
+        protected RenderStateData RenderStateData;
+        protected RenderContext CurrentContext;
+        protected ModelMaterial LastMaterial;
+        protected int LastExtensionFlags;
+
+        // 缓存优化
+        int _cachedContextHash;
+        (bool useIBL, bool useLinearOutput, ToneMapMode toneMapMode, int lightCount, DebugChannel debugChannel) _lastContextParams;
+        bool _uvTransformDirty = true;
+
+        /// <summary>
+        /// 当前视图投影矩阵
+        /// </summary>
+        public Matrix4x4 CurrentViewProjection { get; private set; }
+
+        protected PbrMeshRenderer() {
+            // 创建 UBO
+            SceneUBO = new(0);
+            MaterialCoreUBO = new(1);
+            LightsUBO = new(2);
+            RenderStateUBO = new(3);
+            UVTransformUBO = new(4);
+            MaterialExtUBO = new(6);
+
+            // 初始化 ShaderCache
+            ShaderCache.Initialize();
+
+            // 调用抽象方法让子类设置
+            LoadShaderSources();
+            SetupShaderCallbacks();
+        }
+
+        /// <summary>
+        /// 加载着色器源码（由模组实现）
+        /// </summary>
+        protected abstract void LoadShaderSources();
+
+        /// <summary>
+        /// 设置 Attribute/UBO 绑定回调（由模组实现）
+        /// </summary>
+        protected abstract void SetupShaderCallbacks();
+
+        /// <summary>
+        /// 创建着色器变体（由模组实现）
+        /// </summary>
+        protected abstract Shader CreateShaderVariant(ModelMesh mesh, ModelMaterial material, in RenderContext context);
+
+        /// <summary>
+        /// 开始帧渲染
+        /// </summary>
+        public virtual void BeginFrame(in RenderContext context) {
+            CurrentContext = context;
+            UpdateContextHash(context);
+
+            // 更新视图投影矩阵
+            CurrentViewProjection = context.View * context.Projection;
+
+            // 更新 SceneData UBO
+            Vector3 cameraPos;
+            Matrix4x4.Invert(context.View, out Matrix4x4 invView);
+            cameraPos = invView.Translation;
+
+            SceneData sceneData = new() {
+                CameraPos = new Vector4(cameraPos, 1f),
+                Exposure = 1f,
+                EnvironmentStrength = 1f,
+                MipCount = 0
+            };
+            SceneUBO.Update(ref sceneData);
+
+            // 重置材质缓存
+            LastMaterial = null;
+            _uvTransformDirty = true;
+        }
+
+        /// <summary>
+        /// 渲染网格
+        /// </summary>
+        public virtual void Render(ModelMesh mesh, ModelMaterial material, Matrix4x4 worldMatrix, Texture2D[] textures) {
+            if (mesh == null) return;
+
+            // 获取或创建着色器
+            Shader shader = GetOrCreateShader(mesh, material, CurrentContext);
+            if (shader == null) return;
+
+            shader.PrepareForDrawing();
+
+            // 更新 RenderState UBO
+            UpdateRenderStateUBO(worldMatrix);
+
+            // 更新材质 UBO
+            UpdateMaterialUBOs(material, false);
+
+            // 更新 UV 变换 UBO
+            UpdateUVTransformUBO(material);
+
+            // 绑定纹理
+            if (textures != null && material != null) {
+                MaterialTextureBinder.BindMaterialTextures(material, textures);
+                MaterialTextureBinder.SetTextureSlotUniforms(shader);
+            }
+
+            // 设置剔除模式
+            SetupCullMode(material);
+
+            // 设置混合模式
+            SetupBlendMode(material, CurrentContext);
+
+            // 绘制
+            DrawMesh(mesh);
+        }
+
+        /// <summary>
+        /// 获取或创建着色器变体
+        /// </summary>
+        protected virtual Shader GetOrCreateShader(ModelMesh mesh, ModelMaterial material, in RenderContext context) {
+            // 尝试从缓存获取（子类可重写以优化 hash 计算）
+            Shader shader = ShaderCache.TryGetShaderProgram(0, 0);
+            if (shader != null) return shader;
+
+            // 创建新的着色器变体
+            return CreateShaderVariant(mesh, material, context);
+        }
+
+        /// <summary>
+        /// 更新 RenderState UBO
+        /// </summary>
+        protected void UpdateRenderStateUBO(Matrix4x4 worldMatrix) {
+            RenderStateData.ModelMatrix = worldMatrix;
+            RenderStateData.ViewProjectionMatrix = CurrentViewProjection;
+            RenderStateData.ViewMatrix = CurrentContext.View;
+            RenderStateData.ProjectionMatrix = CurrentContext.Projection;
+
+            // 计算法线矩阵
+            Matrix4x4.Invert(worldMatrix, out Matrix4x4 invWorld);
+            RenderStateData.NormalMatrix = Matrix4x4.Transpose(invWorld);
+
+            RenderStateUBO.Update(ref RenderStateData);
+        }
+
+        /// <summary>
+        /// 更新材质 UBO（带缓存优化）
+        /// </summary>
+        protected void UpdateMaterialUBOs(ModelMaterial material, bool useGeneratedTangents) {
+            int extensionFlags = (int)MaterialUboBuilder.BuildExtensionFlags(material);
+
+            if (LastMaterial != material) {
+                MaterialCoreData coreData = MaterialUboBuilder.BuildMaterialCoreData(material, useGeneratedTangents);
+                MaterialCoreUBO.Update(ref coreData);
+
+                MaterialExtensionData extData = MaterialUboBuilder.BuildMaterialExtensionData(material);
+                MaterialExtUBO.Update(ref extData);
+
+                LastMaterial = material;
+                LastExtensionFlags = extensionFlags;
+                _uvTransformDirty = true;
+            }
+            else if (LastExtensionFlags != extensionFlags) {
+                MaterialExtensionData extData = MaterialUboBuilder.BuildMaterialExtensionData(material);
+                MaterialExtUBO.Update(ref extData);
+                LastExtensionFlags = extensionFlags;
+            }
+        }
+
+        /// <summary>
+        /// 更新 UV 变换 UBO（懒更新）
+        /// </summary>
+        protected void UpdateUVTransformUBO(ModelMaterial material) {
+            if (!_uvTransformDirty) return;
+
+            UVTransformData uvTransformData = MaterialUboBuilder.BuildUVTransformData(material);
+            UVTransformUBO.Update(ref uvTransformData);
+            _uvTransformDirty = false;
+        }
+
+        /// <summary>
+        /// 设置剔除模式
+        /// </summary>
+        protected virtual void SetupCullMode(ModelMaterial material) {
+            if (material?.DoubleSided == true) {
+                GLWrapper.Disable(EnableCap.CullFace);
+            }
+            else {
+                GLWrapper.Enable(EnableCap.CullFace);
+                GLWrapper.CullFace(TriangleFace.Back);
+                GLWrapper.FrontFace(FrontFaceDirection.Ccw);
+            }
+        }
+
+        /// <summary>
+        /// 设置混合模式
+        /// </summary>
+        protected virtual void SetupBlendMode(ModelMaterial material, in RenderContext context) {
+            ModelAlphaMode alphaMode = material?.AlphaMode ?? ModelAlphaMode.Opaque;
+
+            if (alphaMode == ModelAlphaMode.Blend) {
+                GLWrapper.Enable(EnableCap.Blend);
+                GLWrapper.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            }
+            else {
+                GLWrapper.Disable(EnableCap.Blend);
+            }
+        }
+
+        /// <summary>
+        /// 绘制网格
+        /// </summary>
+        protected virtual void DrawMesh(ModelMesh mesh) {
+            if (mesh == null) return;
+
+            foreach (ModelMeshPart part in mesh.MeshParts) {
+                DrawMeshPart(part);
+            }
+        }
+
+        /// <summary>
+        /// 绘制网格部件
+        /// </summary>
+        protected virtual void DrawMeshPart(ModelMeshPart part) {
+            if (part?.VertexBuffer == null || part.IndexBuffer == null) return;
+
+            // 绑定顶点缓冲
+            GLWrapper.BindBuffer(BufferTargetARB.ArrayBuffer, part.VertexBuffer.m_buffer);
+            GLWrapper.BindBuffer(BufferTargetARB.ElementArrayBuffer, part.IndexBuffer.m_buffer);
+
+            // 设置顶点属性
+            SetupVertexAttributes(part.VertexBuffer.VertexDeclaration);
+
+            // 绘制
+            IntPtr startIndex = (IntPtr)part.StartIndex;
+            GLWrapper.GL.DrawElements(
+                Silk.NET.OpenGLES.PrimitiveType.Triangles,
+                (uint)part.IndicesCount,
+                GLWrapper.TranslateIndexFormat(part.IndexBuffer.IndexFormat),
+                in startIndex
+            );
+        }
+
+        /// <summary>
+        /// 设置顶点属性（由子类实现，因为 attribute location 依赖着色器）
+        /// </summary>
+        protected virtual void SetupVertexAttributes(VertexDeclaration declaration) {
+            // 子类应根据着色器的 attribute layout 实现
+        }
+
+        void UpdateContextHash(in RenderContext context) {
+            var contextParams = (context.UseIBL, context.UseLinearOutput, context.ToneMapMode, context.LightCount, context.DebugChannel);
+            if (_lastContextParams == contextParams) return;
+
+            _lastContextParams = contextParams;
+            _cachedContextHash = ComputeContextHash(context);
+        }
+
+        /// <summary>
+        /// 计算渲染上下文的 defines hash
+        /// </summary>
+        protected static int ComputeContextHash(in RenderContext context) {
+            unchecked {
+                int hash = 17;
+                if (context.UseIBL) hash = hash * 31 + "USE_IBL 1".GetHashCode();
+                if (context.LightCount > 0) hash = hash * 31 + "USE_PUNCTUAL 1".GetHashCode();
+                if (context.UseLinearOutput) {
+                    hash = hash * 31 + "LINEAR_OUTPUT 1".GetHashCode();
+                }
+                else {
+                    string tonemapDefine = context.ToneMapMode switch {
+                        ToneMapMode.KhrPbrNeutral => "TONEMAP_KHR_PBR_NEUTRAL 1",
+                        ToneMapMode.AcesNarkowicz => "TONEMAP_ACES_NARKOWICZ 1",
+                        ToneMapMode.AcesHill => "TONEMAP_ACES_HILL 1",
+                        ToneMapMode.AcesHillExposureBoost => "TONEMAP_ACES_HILL_EXPOSURE_BOOST 1",
+                        _ => "LINEAR_OUTPUT 1"
+                    };
+                    hash = hash * 31 + tonemapDefine.GetHashCode();
+                }
+                if (context.DebugChannel != DebugChannel.None) {
+                    hash = hash * 31 + $"DEBUG {(int)context.DebugChannel}".GetHashCode();
+                }
+                return hash;
+            }
+        }
+
+        /// <summary>
+        /// 获取缓存的上下文 hash
+        /// </summary>
+        protected int CachedContextHash => _cachedContextHash;
+
+        /// <summary>
+        /// 绑定 Uniform Block
+        /// </summary>
+        protected static void BindUniformBlock(uint programHandle, string blockName, uint bindingPoint) {
+            uint blockIndex = GLWrapper.GL.GetUniformBlockIndex(programHandle, blockName);
+            if (blockIndex != uint.MaxValue) {
+                GLWrapper.GL.UniformBlockBinding(programHandle, blockIndex, bindingPoint);
+            }
+        }
+
+        public virtual void Dispose() {
+            SceneUBO?.Dispose();
+            MaterialCoreUBO?.Dispose();
+            LightsUBO?.Dispose();
+            RenderStateUBO?.Dispose();
+            UVTransformUBO?.Dispose();
+            MaterialExtUBO?.Dispose();
+        }
+    }
+}

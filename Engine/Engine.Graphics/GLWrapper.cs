@@ -776,6 +776,10 @@ namespace Engine.Graphics {
                             GL.UniformMatrix4(shaderParameter.Location, (uint)shaderParameter.Count, false, shaderParameter.Value);
                             shaderParameter.IsChanged = false;
                             break;
+                        case ShaderParameterType.Int:
+                            GL.Uniform1(shaderParameter.Location, (uint)shaderParameter.Count, shaderParameter.IntValue);
+                            shaderParameter.IsChanged = false;
+                            break;
                         default: throw new InvalidOperationException("Unsupported shader parameter type.");
                         case ShaderParameterType.Texture2D:
                         case ShaderParameterType.Sampler2D: break;
@@ -962,6 +966,7 @@ namespace Engine.Graphics {
                 UniformType.FloatMat3 => ShaderParameterType.Matrix3,
                 UniformType.FloatMat4 => ShaderParameterType.Matrix,
                 UniformType.Sampler2D => ShaderParameterType.Texture2D,
+                UniformType.Int => ShaderParameterType.Int,
                 _ => throw new InvalidOperationException("Unsupported shader parameter type.")
             };
         }

@@ -8,6 +8,7 @@ namespace Engine.Graphics {
         Matrix3,
         Texture2D,
         Sampler2D,
-        Null
+        Null,
+        Int
     }
 }

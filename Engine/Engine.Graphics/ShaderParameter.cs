@@ -10,6 +10,7 @@ namespace Engine.Graphics {
         public readonly int Count;
         public int Location;
         public float[] Value;
+        public int[] IntValue;
 
         public ShaderParameter(string name, ShaderParameterType type) {
             Name = name;
@@ -30,6 +31,7 @@ namespace Engine.Graphics {
                 case ShaderParameterType.Vector4: Value = new float[4 * count]; break;
                 case ShaderParameterType.Matrix3: Value = new float[9 * count]; break;
                 case ShaderParameterType.Matrix: Value = new float[16 * count]; break;
+                case ShaderParameterType.Int: IntValue = new int[count]; break;
                 default: throw new ArgumentException("type");
             }
         }
@@ -409,6 +411,43 @@ namespace Engine.Graphics {
             if (value != Resource) {
                 Resource = value;
                 IsChanged = true;
+            }
+        }
+
+        public void SetValue(int value) {
+            if (Type == ShaderParameterType.Null) {
+                return;
+            }
+            if (Type != ShaderParameterType.Int
+                || Count != 1) {
+                throw new InvalidOperationException("Shader parameter type mismatch.");
+            }
+            if (value != IntValue[0]) {
+                IntValue[0] = value;
+                IsChanged = true;
+            }
+        }
+
+        public void SetValue(int[] value, int count) {
+            if (Type == ShaderParameterType.Null) {
+                return;
+            }
+            if (Type != ShaderParameterType.Int
+                || Count != count) {
+                throw new InvalidOperationException("Shader parameter type mismatch.");
+            }
+            if (!IsChanged) {
+                for (int i = 0; i < count; i++) {
+                    if (IntValue[i] != value[i]) {
+                        IsChanged = true;
+                        break;
+                    }
+                }
+            }
+            if (IsChanged) {
+                for (int j = 0; j < count; j++) {
+                    IntValue[j] = value[j];
+                }
             }
         }
 

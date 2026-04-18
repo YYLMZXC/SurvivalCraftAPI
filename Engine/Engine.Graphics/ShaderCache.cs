@@ -50,17 +50,15 @@ namespace Engine.Graphics {
         /// <summary>
         /// 加载着色器源码
         /// </summary>
-        /// <param name="stream">着色器文件流</param>
+        /// <param name="source">着色器内容</param>
         /// <param name="shaderName">着色器名称（用于缓存键）</param>
         /// <param name="basePath">用于 #include 解析的相对路径前缀</param>
-        public static void LoadShaderSource(Stream stream, string shaderName, string basePath = null) {
+        public static void LoadShaderSource(string source, string shaderName, string basePath = null) {
             if (!IsInitialized) {
                 throw new InvalidOperationException("ShaderCache not initialized. Call Initialize() first.");
             }
 
-            using StreamReader reader = new(stream);
-            string content = reader.ReadToEnd();
-            _sources[shaderName] = content;
+            _sources[shaderName] = source;
 
             // 解析 #include
             ResolveIncludes(basePath);
@@ -69,16 +67,15 @@ namespace Engine.Graphics {
         /// <summary>
         /// 加载多个着色器源码
         /// </summary>
-        /// <param name="shaders">着色器名称和流的字典</param>
+        /// <param name="shaders">着色器名称和内容的字典</param>
         /// <param name="basePath">用于 #include 解析的相对路径前缀</param>
-        public static void LoadShaderSources(Dictionary<string, Stream> shaders, string basePath = null) {
+        public static void LoadShaderSources(Dictionary<string, string> shaders, string basePath = null) {
             if (!IsInitialized) {
                 throw new InvalidOperationException("ShaderCache not initialized. Call Initialize() first.");
             }
 
-            foreach (var kvp in shaders) {
-                using StreamReader reader = new(kvp.Value);
-                _sources[kvp.Key] = reader.ReadToEnd();
+            foreach ((string name, string source) in shaders) {
+                _sources[name] = source;
             }
 
             ResolveIncludes(basePath);
@@ -418,7 +415,7 @@ namespace Engine.Graphics {
                 BitConverter.TryWriteBytes(binary, formatValue);
 
                 string cacheFile = Path.Combine(CacheDirectory, $"{cacheKey}.bin");
-                File.WriteAllBytes(cacheFile, binary);
+                Storage.WriteAllBytes(cacheFile, binary);
             }
             catch {
                 // 保存失败不影响正常流程

@@ -387,7 +387,7 @@ namespace Engine.Graphics {
                 }
             }
 
-            m_parameters = [.. list];
+            m_parameters = list.ToArray();
             m_parametersByName = dict;
         }
     }

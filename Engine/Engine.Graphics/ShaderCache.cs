@@ -98,7 +98,7 @@ namespace Engine.Graphics {
             bool changed = true;
             while (changed) {
                 changed = false;
-                string[] keys = [.. _sources.Keys];
+                string[] keys = _sources.Keys.ToArray();
                 foreach (string key in keys) {
                     string src = _sources[key];
                     MatchCollection matches = Regex.Matches(src, @"#include\s+<([^>]+)>");

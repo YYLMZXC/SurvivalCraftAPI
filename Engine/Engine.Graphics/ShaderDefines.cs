@@ -220,7 +220,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 获取 defines 列表（用于 ShaderCache.SelectShader）
         /// </summary>
-        public List<string> GetDefinesList() => [.. _defines];
+        public IEnumerable<string> GetDefinesList() => _defines;
 
         /// <summary>
         /// 计算组合 hash（用于着色器缓存）

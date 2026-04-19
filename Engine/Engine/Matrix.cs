@@ -923,11 +923,21 @@ namespace Engine {
         }
 
         public static implicit operator System.Numerics.Matrix4x4(Matrix m) {
-            return System.Runtime.CompilerServices.Unsafe.As<Matrix, System.Numerics.Matrix4x4>(ref m);
+            return new System.Numerics.Matrix4x4(
+                m.M11, m.M12, m.M13, m.M14,
+                m.M21, m.M22, m.M23, m.M24,
+                m.M31, m.M32, m.M33, m.M34,
+                m.M41, m.M42, m.M43, m.M44
+            );
         }
 
         public static implicit operator Matrix(System.Numerics.Matrix4x4 m) {
-            return System.Runtime.CompilerServices.Unsafe.As<System.Numerics.Matrix4x4, Matrix>(ref m);
+            return new Matrix(
+                m.M11, m.M12, m.M13, m.M14,
+                m.M21, m.M22, m.M23, m.M24,
+                m.M31, m.M32, m.M33, m.M34,
+                m.M41, m.M42, m.M43, m.M44
+            );
         }
     }
 }

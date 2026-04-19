@@ -411,11 +411,12 @@ namespace Game {
         /// </summary>
         public virtual void DrawCustomInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
             RenderContext context = new() {
-                View = camera.ViewMatrix,
+                View = System.Numerics.Matrix4x4.Identity,
                 Projection = camera.ProjectionMatrix,
-                UseIBL = false,
+                CameraView = camera.ViewMatrix,
+                UseIBL = AdvancedRenderer is PbrMeshRenderer pbr && pbr.HasIBL,
                 ToneMapMode = ToneMapMode.KhrPbrNeutral,
-                LightCount = 0
+                LightCount = 1
             };
 
             AdvancedRenderer.BeginFrame(context);
@@ -425,22 +426,36 @@ namespace Game {
                 Model model = componentModel.Model;
                 if (model == null) continue;
 
-                // Get world matrix from first bone transform
-                System.Numerics.Matrix4x4 worldMatrix = componentModel.AbsoluteBoneTransformsForCamera.Length > 0
-                    ? componentModel.AbsoluteBoneTransformsForCamera[0]
-                    : System.Numerics.Matrix4x4.Identity;
+                // DAE 等非 glTF 模型使用 TextureOverride
+                AdvancedRenderer.TextureOverride = componentModel.TextureOverride;
 
-                // Render each mesh part
+                // 每个 mesh 使用其 ParentBone 的变换（而非固定 bone[0]）
+                Matrix projectionMatrix = camera.ProjectionMatrix;
+
                 foreach (int meshIndex in componentModel.MeshDrawOrders) {
                     if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
                     ModelMesh mesh = model.Meshes[meshIndex];
 
+                    int boneIndex = mesh.ParentBone?.Index ?? 0;
+                    System.Numerics.Matrix4x4 wvpMatrix4x4;
+                    System.Numerics.Matrix4x4 worldMatrix4x4;
+                    if (boneIndex < componentModel.AbsoluteBoneTransformsForCamera.Length) {
+                        Matrix worldMatrix = componentModel.AbsoluteBoneTransformsForCamera[boneIndex];
+                        Matrix.MultiplyRestricted(ref worldMatrix, ref projectionMatrix, out Matrix wvp);
+                        wvpMatrix4x4 = wvp;
+                        worldMatrix4x4 = worldMatrix;
+                    } else {
+                        wvpMatrix4x4 = projectionMatrix;
+                        worldMatrix4x4 = System.Numerics.Matrix4x4.Identity;
+                    }
+
                     foreach (ModelMeshPart part in mesh.MeshParts) {
                         ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                        AdvancedRenderer.Render(mesh, material, worldMatrix, model);
+                        AdvancedRenderer.Render(mesh, material, wvpMatrix4x4, worldMatrix4x4, model);
                     }
                 }
 
+                AdvancedRenderer.TextureOverride = null;
                 ModelsDrawn++;
             }
         }
@@ -564,11 +579,12 @@ namespace Game {
             if (model?.Skin == null) return;
 
             RenderContext context = new() {
-                View = camera.ViewMatrix,
+                View = System.Numerics.Matrix4x4.Identity,
                 Projection = camera.ProjectionMatrix,
-                UseIBL = false,
+                CameraView = camera.ViewMatrix,
+                UseIBL = AdvancedRenderer is PbrMeshRenderer pbr2 && pbr2.HasIBL,
                 ToneMapMode = ToneMapMode.KhrPbrNeutral,
-                LightCount = 0,
+                LightCount = 1,
                 EnableSkinning = true
             };
 
@@ -578,30 +594,29 @@ namespace Game {
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
 
-            // Ensure JointTexture is created
             if (m_jointTexture == null || m_jointTexture.MaxJointCount < jointCount) {
                 m_jointTexture?.Dispose();
                 m_jointTexture = new JointTexture(jointCount);
             }
 
-            // Calculate joint matrices
             Matrix invertedView = camera.InvertedViewMatrix;
             jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer4x4);
-
-            // Update JointTexture (use span to avoid allocation)
             m_jointTexture.Update(m_jointMatricesBuffer4x4.AsSpan(0, jointCount));
 
-            // For skinned models, world matrix should be identity (bones handle the transform)
-            System.Numerics.Matrix4x4 worldMatrix = System.Numerics.Matrix4x4.Identity;
+            // 预组合 WVP = ViewMatrix * Projection（与游戏正常路径一致）
+            Matrix viewMatrix = camera.ViewMatrix;
+            Matrix projectionMatrix = camera.ProjectionMatrix;
+            Matrix.MultiplyRestricted(ref viewMatrix, ref projectionMatrix, out Matrix wvp);
+            System.Numerics.Matrix4x4 wvpMatrix4x4 = wvp;
+            System.Numerics.Matrix4x4 worldMatrix4x4 = camera.ViewMatrix;
 
-            // Render each mesh part
             foreach (int meshIndex in componentModel.MeshDrawOrders) {
                 if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
                 ModelMesh mesh = model.Meshes[meshIndex];
 
                 foreach (ModelMeshPart part in mesh.MeshParts) {
                     ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                    AdvancedRenderer.Render(mesh, material, worldMatrix, model, m_jointTexture);
+                    AdvancedRenderer.Render(mesh, material, wvpMatrix4x4, worldMatrix4x4, model, m_jointTexture);
                 }
             }
 

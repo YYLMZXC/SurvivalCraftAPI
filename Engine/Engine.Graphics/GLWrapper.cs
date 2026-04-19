@@ -253,16 +253,8 @@ namespace Engine.Graphics {
             m_arrayBuffer = -1;
             m_elementArrayBuffer = -1;
             m_texture2D = -1;
-            m_activeTexturesByUnit = [
-                -1,
-                -1,
-                -1,
-                -1,
-                -1,
-                -1,
-                -1,
-                -1
-            ];
+            m_activeTexturesByUnit = new int[32];
+            Array.Fill(m_activeTexturesByUnit, -1);
             m_activeTextureUnit = (TextureUnit)(-1);
             m_program = -1;
             m_framebuffer = -1;
@@ -782,7 +774,8 @@ namespace Engine.Graphics {
                             break;
                         default: throw new InvalidOperationException("Unsupported shader parameter type.");
                         case ShaderParameterType.Texture2D:
-                        case ShaderParameterType.Sampler2D: break;
+                        case ShaderParameterType.Sampler2D:
+                        case ShaderParameterType.SamplerCube: break;
                     }
                 }
                 if (shaderParameter.Type == ShaderParameterType.Texture2D) {
@@ -966,6 +959,7 @@ namespace Engine.Graphics {
                 UniformType.FloatMat3 => ShaderParameterType.Matrix3,
                 UniformType.FloatMat4 => ShaderParameterType.Matrix,
                 UniformType.Sampler2D => ShaderParameterType.Texture2D,
+                UniformType.SamplerCube => ShaderParameterType.SamplerCube,
                 UniformType.Int => ShaderParameterType.Int,
                 _ => throw new InvalidOperationException("Unsupported shader parameter type.")
             };

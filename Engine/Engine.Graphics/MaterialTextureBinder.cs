@@ -68,13 +68,21 @@ namespace Engine.Graphics {
 
         /// <summary>
         /// 设置纹理槽位 uniform（不存在的槽位静默跳过）
-        /// 在着色器编译后调用一次即可
+        /// TODO: sampler2D uniform 需要用 glUniform1i 直接设置，需要改进
         /// </summary>
         public static void SetTextureSlotUniforms(Shader shader) {
+            uint program = (uint)shader.m_program;
             foreach (var (slot, texUniform, samplerUniform) in SlotUniforms) {
-                // allowNull: true 返回 Null 类型参数，SetValue 会静默返回
-                shader.GetParameter(texUniform, allowNull: true).SetValue((int)slot);
-                shader.GetParameter(samplerUniform, allowNull: true).SetValue((int)slot);
+                int slotValue = (int)slot;
+                // 使用原始 GL 调用设置纹理槽位（兼容 sampler2D、samplerCube 等所有类型）
+                int texLoc = GLWrapper.GL.GetUniformLocation(program, texUniform);
+                if (texLoc >= 0) {
+                    GLWrapper.GL.Uniform1(texLoc, slotValue);
+                }
+                int samplerLoc = GLWrapper.GL.GetUniformLocation(program, samplerUniform);
+                if (samplerLoc >= 0) {
+                    GLWrapper.GL.Uniform1(samplerLoc, slotValue);
+                }
             }
         }
 
@@ -163,8 +171,11 @@ namespace Engine.Graphics {
         /// </summary>
         static void BindTexture2D(IntPtr textureHandle, MaterialTextureSlot slot) {
             TextureUnit unit = (TextureUnit)((int)TextureUnit.Texture0 + (int)slot);
-            GLWrapper.GL.ActiveTexture(unit);
-            GLWrapper.GL.BindTexture(TextureTarget.Texture2D, (uint)textureHandle);
+            GLWrapper.ActiveTexture(unit);
+            GLWrapper.BindTexture(TextureTarget.Texture2D, (int)textureHandle, true);
+            // 确保纹理可采样：如果 min filter 使用 mipmap 但没有生成 mipmap，
+            // 纹理不完整，采样返回黑色。生成 mipmap 使其完整。
+            GLWrapper.GL.GenerateMipmap(TextureTarget.Texture2D);
         }
 
         /// <summary>
@@ -191,8 +202,8 @@ namespace Engine.Graphics {
                 return;
             }
             TextureUnit unit = (TextureUnit)((int)TextureUnit.Texture0 + (int)slot);
-            GLWrapper.GL.ActiveTexture(unit);
-            GLWrapper.GL.BindTexture(target, textureHandle);
+            GLWrapper.ActiveTexture(unit);
+            GLWrapper.BindTexture(target, (int)textureHandle, true);
         }
     }
 }

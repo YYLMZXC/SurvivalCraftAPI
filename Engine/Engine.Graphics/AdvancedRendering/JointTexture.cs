@@ -46,7 +46,8 @@ namespace Engine.Graphics {
 
         unsafe void CreateTexture() {
             TextureHandle = GLWrapper.GL.GenTexture();
-            GLWrapper.GL.BindTexture(TextureTarget.Texture2D, TextureHandle);
+            GLWrapper.ActiveTexture(TextureUnit.Texture0);
+            GLWrapper.BindTexture(TextureTarget.Texture2D, (int)TextureHandle, true);
 
             GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
             GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
@@ -64,7 +65,7 @@ namespace Engine.Graphics {
                 PixelType.Float,
                 null
             );
-            GLWrapper.GL.BindTexture(TextureTarget.Texture2D, 0);
+            GLWrapper.BindTexture(TextureTarget.Texture2D, 0, true);
         }
 
         /// <summary>
@@ -90,7 +91,8 @@ namespace Engine.Graphics {
         }
 
         unsafe void UpdateCore(Matrix4x4* matricesPtr, int count) {
-            GLWrapper.GL.BindTexture(TextureTarget.Texture2D, TextureHandle);
+            GLWrapper.ActiveTexture(TextureUnit.Texture0);
+            GLWrapper.BindTexture(TextureTarget.Texture2D, (int)TextureHandle, true);
 
             for (int i = 0; i < count; i++) {
                 Matrix4x4 jointMatrix = matricesPtr[i];
@@ -120,7 +122,7 @@ namespace Engine.Graphics {
                     ptr
                 );
             }
-            GLWrapper.GL.BindTexture(TextureTarget.Texture2D, 0);
+            GLWrapper.BindTexture(TextureTarget.Texture2D, 0, true);
         }
 
         static void WriteMatrixToTextureData(float[] data, int offset, Matrix4x4 matrix) {
@@ -147,8 +149,10 @@ namespace Engine.Graphics {
         /// 绑定骨骼纹理到指定纹理单元
         /// </summary>
         public void Bind(int textureSlot) {
-            GLWrapper.GL.ActiveTexture(TextureUnit.Texture0 + textureSlot);
-            GLWrapper.GL.BindTexture(TextureTarget.Texture2D, TextureHandle);
+            // 必须使用 GLWrapper 封装方法以保持内部缓存同步
+            // 直接调用 GLWrapper.GL 会绕过缓存，导致后续渲染的纹理绑定到错误的 texture unit
+            GLWrapper.ActiveTexture(TextureUnit.Texture0 + textureSlot);
+            GLWrapper.BindTexture(TextureTarget.Texture2D, (int)TextureHandle, true);
         }
 
         public void Dispose() {

@@ -24,7 +24,8 @@ namespace Engine.Graphics {
             Count = count;
             switch (type) {
                 case ShaderParameterType.Texture2D:
-                case ShaderParameterType.Sampler2D: break;
+                case ShaderParameterType.Sampler2D:
+                case ShaderParameterType.SamplerCube: break;
                 case ShaderParameterType.Float: Value = new float[count]; break;
                 case ShaderParameterType.Vector2: Value = new float[2 * count]; break;
                 case ShaderParameterType.Vector3: Value = new float[3 * count]; break;

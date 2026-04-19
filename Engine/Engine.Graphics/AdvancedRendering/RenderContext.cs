@@ -47,6 +47,12 @@ namespace Engine.Graphics {
         public DebugChannel DebugChannel { get; init; }
 
         /// <summary>
+        /// 实际的相机视图矩阵（用于光照空间变换）
+        /// 与 View 不同：View 是 Identity（游戏引擎约定），CameraView 是真实相机矩阵
+        /// </summary>
+        public Matrix4x4 CameraView { get; init; }
+
+        /// <summary>
         /// 是否启用蒙皮动画
         /// </summary>
         public bool EnableSkinning { get; init; }

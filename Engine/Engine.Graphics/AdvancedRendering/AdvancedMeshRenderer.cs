@@ -46,6 +46,22 @@ namespace Engine.Graphics {
         /// </summary>
         public Matrix4x4 CurrentViewProjection { get; private set; }
 
+        /// <summary>
+        /// IBL 环境贴图强度（默认 1.0）
+        /// </summary>
+        public float EnvironmentStrength { get; set; } = 1.0f;
+
+        /// <summary>
+        /// IBL mipmap 层数
+        /// </summary>
+        public int MipCount { get; set; }
+
+        /// <summary>
+        /// 纹理覆盖（用于 DAE 等非 glTF 模型的 TextureOverride）
+        /// 每帧渲染前设置，渲染后清除
+        /// </summary>
+        public Texture2D TextureOverride { get; set; }
+
         protected AdvancedMeshRenderer() {
             // 创建通用 UBO
             SceneUBO = new(0);
@@ -87,24 +103,41 @@ namespace Engine.Graphics {
             CurrentViewProjection = context.View * context.Projection;
 
             // 更新 SceneData UBO
-            Vector3 cameraPos;
-            Matrix4x4.Invert(context.View, out Matrix4x4 invView);
-            cameraPos = invView.Translation;
+            // SC 引擎的 ModelMatrix 含 ViewMatrix（AbsoluteBoneTransformsForCamera），
+            // 所以 v_Position 和法线在 view space。
+            // CameraPos 设为 view space 原点 (0,0,0)，使 v = normalize(-v_Position) 正确。
+            // EnvRotation = transpose(mat3(CameraView))，将 view space 向量变换回 world space 采样 IBL。
+            Matrix4x4 cameraView = context.CameraView;
 
             SceneData sceneData = new() {
-                CameraPos = new Vector4(cameraPos, 1f),
+                CameraPos = new Vector4(0f, 0f, 0f, 1f),
                 Exposure = 1f,
-                EnvironmentStrength = 1f,
-                MipCount = 0,
-                EnvRotationCol0 = new Vector4(1f, 0f, 0f, 0f),
-                EnvRotationCol1 = new Vector4(0f, 1f, 0f, 0f),
-                EnvRotationCol2 = new Vector4(0f, 0f, 1f, 0f)
+                EnvironmentStrength = EnvironmentStrength,
+                MipCount = MipCount,
+                EnvRotationCol0 = new Vector4(cameraView.M11, cameraView.M21, cameraView.M31, 0f),
+                EnvRotationCol1 = new Vector4(cameraView.M12, cameraView.M22, cameraView.M32, 0f),
+                EnvRotationCol2 = new Vector4(cameraView.M13, cameraView.M23, cameraView.M33, 0f)
             };
             SceneUBO.Update(ref sceneData);
 
-            // 初始化 LightsData UBO
+            // 方向光：使用 CameraView 将世界空间光照方向变换到 view space
+            // 因为 v_Position 和法线都在 view space（ModelMatrix 含 ViewMatrix）
+            Vector3 worldLightDir = new(-0.5f, -1f, -0.5f);
+            // 用 3x3 部分变换方向向量到 view space
+            Vector3 viewLightDir = Vector3.Normalize(new Vector3(
+                worldLightDir.X * cameraView.M11 + worldLightDir.Y * cameraView.M12 + worldLightDir.Z * cameraView.M13,
+                worldLightDir.X * cameraView.M21 + worldLightDir.Y * cameraView.M22 + worldLightDir.Z * cameraView.M23,
+                worldLightDir.X * cameraView.M31 + worldLightDir.Y * cameraView.M32 + worldLightDir.Z * cameraView.M33
+            ));
+
             LightsData lightsData = new() {
-                LightCount = context.LightCount
+                LightCount = 1
+            };
+            lightsData.Light0 = new LightData {
+                Direction = viewLightDir,
+                Color = new Vector3(1f, 1f, 1f),
+                Intensity = 1f,
+                Type = 0
             };
             LightsUBO.Update(ref lightsData);
 
@@ -122,17 +155,30 @@ namespace Engine.Graphics {
         /// <summary>
         /// 渲染网格
         /// </summary>
-        public virtual void Render(ModelMesh mesh, ModelMaterial material, Matrix4x4 worldMatrix, Model model, JointTexture jointTexture = null) {
+        public virtual void Render(ModelMesh mesh, ModelMaterial material, Matrix4x4 wvpMatrix, Matrix4x4 worldMatrix, Model model, JointTexture jointTexture = null) {
             if (mesh == null) return;
 
             // 获取或创建着色器
             Shader shader = GetOrCreateShader(mesh, material, CurrentContext);
-            if (shader == null) return;
+            if (shader == null) {
+                Engine.Log.Error("AdvancedMeshRenderer.Render: shader is null, skipping draw");
+                return;
+            }
 
             shader.PrepareForDrawing();
 
+            // 绑定着色器程序（通过 GLWrapper 封装以保持缓存同步）
+            GLWrapper.UseProgram(shader.m_program);
+
+            // 上传 u_glymul uniform
+            int glymulLoc = GLWrapper.GL.GetUniformLocation((uint)shader.m_program, "u_glymul");
+            if (glymulLoc >= 0) {
+                float glymul = Display.RenderTarget != null ? -1f : 1f;
+                GLWrapper.GL.Uniform1(glymulLoc, glymul);
+            }
+
             // 更新 RenderState UBO
-            UpdateRenderStateUBO(worldMatrix);
+            UpdateRenderStateUBO(wvpMatrix, worldMatrix);
 
             // 更新 UV 变换 UBO
             UpdateUVTransformUBO(material);
@@ -146,6 +192,9 @@ namespace Engine.Graphics {
             if (jointTexture != null) {
                 BindJointTexture(jointTexture, shader);
             }
+
+            // 设置深度状态
+            SetupDepthState(material);
 
             // 设置剔除模式
             SetupCullMode(material);
@@ -177,29 +226,38 @@ namespace Engine.Graphics {
         /// 计算材质 hash（子类可重写以优化）
         /// </summary>
         protected virtual int ComputeMaterialHash(ModelMaterial material) {
-            if (material == null) return 0;
             unchecked {
                 int hash = 17;
-                hash = hash * 31 + material.AlphaMode.GetHashCode();
-                hash = hash * 31 + material.DoubleSided.GetHashCode();
-                hash = hash * 31 + (int)MaterialUboBuilder.BuildExtensionFlags(material);
-                hash = hash * 31 + (int)MaterialUboBuilder.BuildTextureFlags(material);
+                if (material != null) {
+                    hash = hash * 31 + material.AlphaMode.GetHashCode();
+                    hash = hash * 31 + material.DoubleSided.GetHashCode();
+                    hash = hash * 31 + (int)MaterialUboBuilder.BuildExtensionFlags(material);
+                    hash = hash * 31 + (int)MaterialUboBuilder.BuildTextureFlags(material);
+                }
+                if (TextureOverride != null) {
+                    hash = hash * 31 + "__TEX_OVERRIDE__".GetHashCode();
+                }
                 return hash;
             }
         }
 
         /// <summary>
         /// 更新 RenderState UBO
+        /// wvpMatrix: 预组合的 WVP（用于 gl_Position）
+        /// worldMatrix: 世界矩阵，已含 ViewMatrix（用于 v_Position、法线变换）
         /// </summary>
-        protected void UpdateRenderStateUBO(Matrix4x4 worldMatrix) {
+        protected void UpdateRenderStateUBO(Matrix4x4 wvpMatrix, Matrix4x4 worldMatrix) {
+            RenderStateData.ViewProjectionMatrix = wvpMatrix;
             RenderStateData.ModelMatrix = worldMatrix;
-            RenderStateData.ViewProjectionMatrix = CurrentViewProjection;
             RenderStateData.ViewMatrix = CurrentContext.View;
             RenderStateData.ProjectionMatrix = CurrentContext.Projection;
 
-            // 计算法线矩阵
-            Matrix4x4.Invert(worldMatrix, out Matrix4x4 invWorld);
-            RenderStateData.NormalMatrix = Matrix4x4.Transpose(invWorld);
+            // 计算法线矩阵 = transpose(inverse(worldMatrix))
+            if (System.Numerics.Matrix4x4.Invert(worldMatrix, out Matrix4x4 invModel)) {
+                RenderStateData.NormalMatrix = System.Numerics.Matrix4x4.Transpose(invModel);
+            } else {
+                RenderStateData.NormalMatrix = Matrix4x4.Identity;
+            }
 
             RenderStateUBO.Update(ref RenderStateData);
         }
@@ -216,6 +274,15 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
+        /// 设置深度测试（确保自定义渲染参与深度遮挡）
+        /// </summary>
+        protected virtual void SetupDepthState(ModelMaterial material) {
+            GLWrapper.Enable(EnableCap.DepthTest);
+            GLWrapper.DepthFunc(DepthFunction.Lequal);
+            GLWrapper.DepthMask(true);
+        }
+
+        /// <summary>
         /// 设置剔除模式
         /// </summary>
         protected virtual void SetupCullMode(ModelMaterial material) {
@@ -225,7 +292,7 @@ namespace Engine.Graphics {
             else {
                 GLWrapper.Enable(EnableCap.CullFace);
                 GLWrapper.CullFace(TriangleFace.Back);
-                GLWrapper.FrontFace(FrontFaceDirection.Ccw);
+                GLWrapper.FrontFace(FrontFaceDirection.CW);
             }
         }
 
@@ -269,20 +336,71 @@ namespace Engine.Graphics {
             SetupVertexAttributes(part.VertexBuffer.VertexDeclaration);
 
             // 绘制
-            IntPtr startIndex = (IntPtr)part.StartIndex;
-            GLWrapper.GL.DrawElements(
-                Silk.NET.OpenGLES.PrimitiveType.Triangles,
-                (uint)part.IndicesCount,
-                GLWrapper.TranslateIndexFormat(part.IndexBuffer.IndexFormat),
-                in startIndex
-            );
+            unsafe {
+                IntPtr indexOffset = new IntPtr(part.StartIndex * part.IndexBuffer.IndexFormat.GetSize());
+                GLWrapper.GL.DrawElements(
+                    Silk.NET.OpenGLES.PrimitiveType.Triangles,
+                    (uint)part.IndicesCount,
+                    GLWrapper.TranslateIndexFormat(part.IndexBuffer.IndexFormat),
+                    indexOffset.ToPointer()
+                );
+            }
         }
 
         /// <summary>
-        /// 设置顶点属性（由子类实现，因为 attribute location 依赖着色器）
+        /// 设置顶点属性
+        /// 将 VertexDeclaration 中的 semantic 映射到着色器的 attribute location
         /// </summary>
         protected virtual void SetupVertexAttributes(VertexDeclaration declaration) {
-            // 子类应根据着色器的 attribute layout 实现
+            if (declaration == null) return;
+
+            // 禁用所有 attribute（最多 8 个）
+            for (int i = 0; i < 8; i++) {
+                GLWrapper.VertexAttribArray(i, false);
+            }
+
+            // 遍历 vertex elements，映射到 attribute locations
+            foreach (VertexElement element in declaration.VertexElements) {
+                int location = SemanticToLocation(element.Semantic);
+                if (location < 0) continue;
+
+                GLWrapper.TranslateVertexElementFormat(element.Format,
+                    out VertexAttribPointerType type, out bool normalize);
+
+                int size = element.Format.GetElementsCount();
+                int stride = declaration.VertexStride;
+
+                unsafe {
+                    GLWrapper.GL.VertexAttribPointer(
+                        (uint)location,
+                        size,
+                        type,
+                        normalize,
+                        (uint)stride,
+                        new IntPtr(element.Offset).ToPointer()
+                    );
+                }
+                GLWrapper.VertexAttribArray(location, true);
+            }
+        }
+
+        /// <summary>
+        /// 将 vertex semantic 字符串映射到着色器 attribute location
+        /// </summary>
+        protected static int SemanticToLocation(string semantic) {
+            return semantic switch {
+                "POSITION" => 0,
+                "NORMAL" => 1,
+                "TEXCOORD" => 2,
+                "TEXCOORD0" => 2,
+                "TEXCOORD1" => 3,
+                "TEXCOORD2" => 3,
+                "COLOR" => 4,
+                "TANGENT" => 5,
+                "BLENDINDICES" => 6,
+                "BLENDWEIGHTS" => 7,
+                _ => -1
+            };
         }
 
         void UpdateContextHash(in RenderContext context) {
@@ -340,6 +458,13 @@ namespace Engine.Graphics {
         /// 绑定材质纹理（从 Model 延迟加载）
         /// </summary>
         protected virtual void BindMaterialTextures(Model model, ModelMaterial material, Shader shader) {
+            // TextureOverride：DAE 等非 glTF 模型使用 ComponentModel.TextureOverride
+            if (TextureOverride != null) {
+                MaterialTextureBinder.BindTexture2D(TextureOverride, MaterialTextureSlot.BaseColor);
+                MaterialTextureBinder.SetTextureSlotUniforms(shader);
+                return;
+            }
+
             int textureCount = model.ModelData?.Textures.Count ?? 0;
             if (textureCount == 0) return;
 

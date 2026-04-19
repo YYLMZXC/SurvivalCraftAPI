@@ -19,7 +19,12 @@ namespace Engine.Graphics {
             MaterialExtUBO = new(6);
         }
 
-        public override void Render(ModelMesh mesh, ModelMaterial material, Matrix4x4 worldMatrix, Model model, JointTexture jointTexture = null) {
+        /// <summary>
+        /// 是否已加载 IBL 环境贴图
+        /// </summary>
+        public virtual bool HasIBL => false;
+
+        public override void Render(ModelMesh mesh, ModelMaterial material, Matrix4x4 wvpMatrix, Matrix4x4 worldMatrix, Model model, JointTexture jointTexture = null) {
             if (mesh == null) return;
 
             // 获取或创建着色器
@@ -29,7 +34,7 @@ namespace Engine.Graphics {
             shader.PrepareForDrawing();
 
             // 更新 RenderState UBO
-            UpdateRenderStateUBO(worldMatrix);
+            UpdateRenderStateUBO(wvpMatrix, worldMatrix);
 
             // 更新材质 UBO（PBR 专用）
             UpdateMaterialUBOs(material, false);
@@ -46,6 +51,9 @@ namespace Engine.Graphics {
             if (jointTexture != null) {
                 BindJointTexture(jointTexture, shader);
             }
+
+            // 设置深度状态
+            SetupDepthState(material);
 
             // 设置剔除模式
             SetupCullMode(material);

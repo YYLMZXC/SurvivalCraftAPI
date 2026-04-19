@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Engine;
 using Engine.Graphics;
 using Engine.Media;
@@ -410,13 +409,27 @@ namespace Game {
         /// Draw instanced models using custom renderer
         /// </summary>
         public virtual void DrawCustomInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
+            // 计算太阳方向（与 SubsystemSky.DrawSunAndMoon 相同逻辑）
+            float timeOfDay = m_subsystemTimeOfDay.TimeOfDay;
+            float sunAngle = MathF.PI * 2f * (timeOfDay - m_subsystemTimeOfDay.Midday) + MathF.PI;
+            float seasonAngle = m_subsystemSky.CalculateSeasonAngle();
+            Engine.Vector3 sunDir = Engine.Vector3.Normalize(
+                Engine.Vector3.Transform(
+                    Engine.Vector3.UnitY,
+                    Engine.Matrix.CreateRotationZ(-sunAngle) * Engine.Matrix.CreateRotationX(seasonAngle)
+                )
+            );
+            float skyIntensity = m_subsystemSky.SkyLightIntensity;
+
             RenderContext context = new() {
                 View = System.Numerics.Matrix4x4.Identity,
                 Projection = camera.ProjectionMatrix,
                 CameraView = camera.ViewMatrix,
                 UseIBL = AdvancedRenderer is PbrMeshRenderer pbr && pbr.HasIBL,
                 ToneMapMode = ToneMapMode.KhrPbrNeutral,
-                LightCount = 1
+                LightCount = 1,
+                LightDirection = sunDir,
+                LightColor = new System.Numerics.Vector3(skyIntensity)
             };
 
             AdvancedRenderer.BeginFrame(context);
@@ -428,34 +441,43 @@ namespace Game {
 
                 // DAE 等非 glTF 模型使用 TextureOverride
                 AdvancedRenderer.TextureOverride = componentModel.TextureOverride;
+                AdvancedRenderer.ModelLightIntensity = modelData.Light;
 
-                // 每个 mesh 使用其 ParentBone 的变换（而非固定 bone[0]）
-                Matrix projectionMatrix = camera.ProjectionMatrix;
+                try {
+                    // 每个 mesh 使用其 ParentBone 的变换构建 WVP 和 WorldMatrix。
+                    // 注意：蒙皮模型的骨骼变换通过 JointTexture 在着色器中应用，
+                    // 此处的 WorldMatrix 仅用于静态部分（mesh 整体位置/朝向），
+                    // 不包含逐骨骼权重混合。
+                    Matrix projectionMatrix = camera.ProjectionMatrix;
 
-                foreach (int meshIndex in componentModel.MeshDrawOrders) {
-                    if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
-                    ModelMesh mesh = model.Meshes[meshIndex];
+                    foreach (int meshIndex in componentModel.MeshDrawOrders) {
+                        if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
+                        ModelMesh mesh = model.Meshes[meshIndex];
 
-                    int boneIndex = mesh.ParentBone?.Index ?? 0;
-                    System.Numerics.Matrix4x4 wvpMatrix4x4;
-                    System.Numerics.Matrix4x4 worldMatrix4x4;
-                    if (boneIndex < componentModel.AbsoluteBoneTransformsForCamera.Length) {
-                        Matrix worldMatrix = componentModel.AbsoluteBoneTransformsForCamera[boneIndex];
-                        Matrix.MultiplyRestricted(ref worldMatrix, ref projectionMatrix, out Matrix wvp);
-                        wvpMatrix4x4 = wvp;
-                        worldMatrix4x4 = worldMatrix;
-                    } else {
-                        wvpMatrix4x4 = projectionMatrix;
-                        worldMatrix4x4 = System.Numerics.Matrix4x4.Identity;
-                    }
+                        int boneIndex = mesh.ParentBone?.Index ?? 0;
+                        System.Numerics.Matrix4x4 wvpMatrix4x4;
+                        System.Numerics.Matrix4x4 worldMatrix4x4;
+                        if (boneIndex < componentModel.AbsoluteBoneTransformsForCamera.Length) {
+                            Matrix worldMatrix = componentModel.AbsoluteBoneTransformsForCamera[boneIndex];
+                            Matrix.MultiplyRestricted(ref worldMatrix, ref projectionMatrix, out Matrix wvp);
+                            wvpMatrix4x4 = wvp;
+                            worldMatrix4x4 = worldMatrix;
+                        } else {
+                            wvpMatrix4x4 = projectionMatrix;
+                            worldMatrix4x4 = System.Numerics.Matrix4x4.Identity;
+                        }
 
-                    foreach (ModelMeshPart part in mesh.MeshParts) {
-                        ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                        AdvancedRenderer.Render(mesh, material, wvpMatrix4x4, worldMatrix4x4, model);
+                        foreach (ModelMeshPart part in mesh.MeshParts) {
+                            ModelMaterial material = model.GetMaterial(part.MaterialIndex);
+                            AdvancedRenderer.Render(mesh, material, wvpMatrix4x4, worldMatrix4x4, model);
+                        }
                     }
                 }
+                finally {
+                    AdvancedRenderer.TextureOverride = null;
+                    AdvancedRenderer.ModelLightIntensity = 1f;
+                }
 
-                AdvancedRenderer.TextureOverride = null;
                 ModelsDrawn++;
             }
         }
@@ -578,6 +600,18 @@ namespace Game {
             Model model = componentModel.Model;
             if (model?.Skin == null) return;
 
+            // 计算太阳方向（与 DrawCustomInstancedModels 相同逻辑）
+            float timeOfDay = m_subsystemTimeOfDay.TimeOfDay;
+            float sunAngle = MathF.PI * 2f * (timeOfDay - m_subsystemTimeOfDay.Midday) + MathF.PI;
+            float seasonAngle = m_subsystemSky.CalculateSeasonAngle();
+            Engine.Vector3 sunDir = Engine.Vector3.Normalize(
+                Engine.Vector3.Transform(
+                    Engine.Vector3.UnitY,
+                    Engine.Matrix.CreateRotationZ(-sunAngle) * Engine.Matrix.CreateRotationX(seasonAngle)
+                )
+            );
+            float skyIntensity = m_subsystemSky.SkyLightIntensity;
+
             RenderContext context = new() {
                 View = System.Numerics.Matrix4x4.Identity,
                 Projection = camera.ProjectionMatrix,
@@ -585,12 +619,13 @@ namespace Game {
                 UseIBL = AdvancedRenderer is PbrMeshRenderer pbr2 && pbr2.HasIBL,
                 ToneMapMode = ToneMapMode.KhrPbrNeutral,
                 LightCount = 1,
-                EnableSkinning = true
+                EnableSkinning = true,
+                LightDirection = sunDir,
+                LightColor = new System.Numerics.Vector3(skyIntensity)
             };
 
             AdvancedRenderer.BeginFrame(context);
-
-            // Calculate joint matrices for GPU skinning
+            AdvancedRenderer.ModelLightIntensity = modelData.Light;
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
 

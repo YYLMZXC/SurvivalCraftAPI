@@ -14,6 +14,7 @@ namespace Engine.Graphics {
         int m_mipLevelsCount;
         object m_tag;
         string m_debugName;
+        SamplerState m_samplerState;
         public int m_texture;
         public PixelFormat m_pixelFormat;
         public PixelType m_pixelType;
@@ -67,6 +68,11 @@ namespace Engine.Graphics {
         public object Tag {
             get => m_tag;
             set => m_tag = value;
+        }
+
+        public SamplerState SamplerState {
+            get => m_samplerState;
+            set => m_samplerState = value;
         }
 
         public Texture2D() { }

@@ -63,6 +63,16 @@ namespace Engine.Graphics {
         public bool EnableMorphing { get; init; }
 
         /// <summary>
+        /// 主光源方向（世界空间，指向光源）
+        /// </summary>
+        public Vector3 LightDirection { get; init; }
+
+        /// <summary>
+        /// 主光源颜色
+        /// </summary>
+        public Vector3 LightColor { get; init; }
+
+        /// <summary>
         /// 创建默认渲染上下文
         /// </summary>
         public static RenderContext Default => new() {

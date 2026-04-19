@@ -34,12 +34,17 @@ namespace Engine.Graphics {
         protected int LastExtensionFlags;
         protected bool UvTransformDirty = true;
 
+        // 帧级光照数据（逐模型缩放时使用）
+        Vector3 _baseLightColor;
+        Vector3 _viewLightDir;
+
         // 缓存优化
         int _cachedContextHash;
         (bool useIBL, bool useLinearOutput, ToneMapMode toneMapMode, int lightCount, DebugChannel debugChannel) _lastContextParams;
 
         // Uniform location 缓存
         readonly Dictionary<int, int> _jointSamplerLocationCache = [];
+        protected readonly Dictionary<int, int> _glymulLocationCache = [];
 
         /// <summary>
         /// 当前视图投影矩阵
@@ -61,6 +66,11 @@ namespace Engine.Graphics {
         /// 每帧渲染前设置，渲染后清除
         /// </summary>
         public Texture2D TextureOverride { get; set; }
+
+        /// <summary>
+        /// 逐模型光照强度（来自地形方块光照计算）
+        /// </summary>
+        public float ModelLightIntensity { get; set; } = 1f;
 
         protected AdvancedMeshRenderer() {
             // 创建通用 UBO
@@ -121,25 +131,10 @@ namespace Engine.Graphics {
             SceneUBO.Update(ref sceneData);
 
             // 方向光：使用 CameraView 将世界空间光照方向变换到 view space
-            // 因为 v_Position 和法线都在 view space（ModelMatrix 含 ViewMatrix）
-            Vector3 worldLightDir = new(-0.5f, -1f, -0.5f);
-            // 用 3x3 部分变换方向向量到 view space
-            Vector3 viewLightDir = Vector3.Normalize(new Vector3(
-                worldLightDir.X * cameraView.M11 + worldLightDir.Y * cameraView.M12 + worldLightDir.Z * cameraView.M13,
-                worldLightDir.X * cameraView.M21 + worldLightDir.Y * cameraView.M22 + worldLightDir.Z * cameraView.M23,
-                worldLightDir.X * cameraView.M31 + worldLightDir.Y * cameraView.M32 + worldLightDir.Z * cameraView.M33
-            ));
+            _viewLightDir = Vector3.Normalize(Vector3.TransformNormal(context.LightDirection, cameraView));
+            _baseLightColor = context.LightColor;
 
-            LightsData lightsData = new() {
-                LightCount = 1
-            };
-            lightsData.Light0 = new LightData {
-                Direction = viewLightDir,
-                Color = new Vector3(1f, 1f, 1f),
-                Intensity = 1f,
-                Type = 0
-            };
-            LightsUBO.Update(ref lightsData);
+            UpdateLightsUBO(1f);
 
             // 重置材质缓存
             LastMaterial = null;
@@ -170,8 +165,12 @@ namespace Engine.Graphics {
             // 绑定着色器程序（通过 GLWrapper 封装以保持缓存同步）
             GLWrapper.UseProgram(shader.m_program);
 
-            // 上传 u_glymul uniform
-            int glymulLoc = GLWrapper.GL.GetUniformLocation((uint)shader.m_program, "u_glymul");
+            // 上传 u_glymul uniform（缓存 location 避免每帧查询）
+            int programHandle = shader.m_program;
+            if (!_glymulLocationCache.TryGetValue(programHandle, out int glymulLoc)) {
+                glymulLoc = GLWrapper.GL.GetUniformLocation((uint)programHandle, "u_glymul");
+                _glymulLocationCache[programHandle] = glymulLoc;
+            }
             if (glymulLoc >= 0) {
                 float glymul = Display.RenderTarget != null ? -1f : 1f;
                 GLWrapper.GL.Uniform1(glymulLoc, glymul);
@@ -179,6 +178,9 @@ namespace Engine.Graphics {
 
             // 更新 RenderState UBO
             UpdateRenderStateUBO(wvpMatrix, worldMatrix);
+
+            // 更新光照 UBO（逐模型强度缩放）
+            UpdateLightsUBO(ModelLightIntensity);
 
             // 更新 UV 变换 UBO
             UpdateUVTransformUBO(material);
@@ -263,6 +265,22 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
+        /// 更新光照 UBO（逐模型光照强度缩放）
+        /// </summary>
+        protected void UpdateLightsUBO(float intensity) {
+            LightsData lightsData = new() {
+                LightCount = 1
+            };
+            lightsData.Light0 = new LightData {
+                Direction = _viewLightDir,
+                Color = _baseLightColor * intensity,
+                Intensity = 1f,
+                Type = 0
+            };
+            LightsUBO.Update(ref lightsData);
+        }
+
+        /// <summary>
         /// 更新 UV 变换 UBO（懒更新）
         /// </summary>
         protected void UpdateUVTransformUBO(ModelMaterial material) {
@@ -292,7 +310,9 @@ namespace Engine.Graphics {
             else {
                 GLWrapper.Enable(EnableCap.CullFace);
                 GLWrapper.CullFace(TriangleFace.Back);
-                GLWrapper.FrontFace(FrontFaceDirection.CW);
+                GLWrapper.FrontFace(Display.RenderTarget != null
+                    ? FrontFaceDirection.Ccw
+                    : FrontFaceDirection.CW);
             }
         }
 
@@ -394,7 +414,7 @@ namespace Engine.Graphics {
                 "TEXCOORD" => 2,
                 "TEXCOORD0" => 2,
                 "TEXCOORD1" => 3,
-                "TEXCOORD2" => 3,
+                "TEXCOORD2" => -1,
                 "COLOR" => 4,
                 "TANGENT" => 5,
                 "BLENDINDICES" => 6,
@@ -501,6 +521,8 @@ namespace Engine.Graphics {
             LightsUBO?.Dispose();
             RenderStateUBO?.Dispose();
             UVTransformUBO?.Dispose();
+            _jointSamplerLocationCache.Clear();
+            _glymulLocationCache.Clear();
         }
     }
 }

@@ -1048,7 +1048,8 @@ namespace Engine.Graphics {
             return addressMode switch {
                 TextureAddressMode.Clamp => TextureWrapMode.ClampToEdge,
                 TextureAddressMode.Wrap => TextureWrapMode.Repeat,
-                _ => throw new InvalidOperationException("Unsupported texture address mode.")
+                TextureAddressMode.MirrorWrap => TextureWrapMode.MirroredRepeat,
+                _ => TextureWrapMode.Repeat
             };
         }
 

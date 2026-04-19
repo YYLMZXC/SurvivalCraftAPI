@@ -12,6 +12,9 @@ namespace Engine.Graphics {
     /// 此类不处理 UV 变换，由使用者根据着色器设计自行处理。
     /// </remarks>
     public static class MaterialTextureBinder {
+        // 缓存已应用的 sampler，避免重复 GL 调用
+        static readonly Dictionary<int, SamplerState> _appliedSamplers = new();
+
         /// <summary>
         /// 纹理槽位 uniform 映射
         /// (槽位, 纹理 uniform 名称, 采样器 uniform 名称)
@@ -157,13 +160,48 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
-        /// 绑定 Texture2D 到指定槽位
+        /// 绑定 Texture2D 到指定槽位，应用 SamplerState 采样参数
         /// </summary>
         public static void BindTexture2D(Texture2D texture, MaterialTextureSlot slot) {
             if (texture == null) {
                 return;
             }
             BindTexture2D(texture.NativeHandle, slot);
+            ApplySamplerState(texture);
+        }
+
+        static void ApplySamplerState(Texture2D texture) {
+            int handle = (int)texture.NativeHandle;
+            SamplerState sampler = texture.SamplerState;
+
+            // 跳过已应用相同 sampler 的纹理
+            if (_appliedSamplers.TryGetValue(handle, out SamplerState cached) && cached == sampler) {
+                return;
+            }
+            _appliedSamplers[handle] = sampler;
+
+            bool hasMipmap = texture.MipLevelsCount > 1;
+            TextureMinFilter minFilter;
+            TextureMagFilter magFilter;
+            TextureWrapMode wrapS, wrapT;
+
+            if (sampler != null) {
+                minFilter = GLWrapper.TranslateTextureFilterModeMin(sampler.FilterMode, hasMipmap);
+                magFilter = GLWrapper.TranslateTextureFilterModeMag(sampler.FilterMode);
+                wrapS = GLWrapper.TranslateTextureAddressMode(sampler.AddressModeU);
+                wrapT = GLWrapper.TranslateTextureAddressMode(sampler.AddressModeV);
+            }
+            else {
+                minFilter = hasMipmap ? TextureMinFilter.LinearMipmapLinear : TextureMinFilter.Nearest;
+                magFilter = hasMipmap ? TextureMagFilter.Linear : TextureMagFilter.Nearest;
+                wrapS = TextureWrapMode.Repeat;
+                wrapT = TextureWrapMode.Repeat;
+            }
+
+            GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)minFilter);
+            GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)magFilter);
+            GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)wrapS);
+            GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)wrapT);
         }
 
         /// <summary>
@@ -173,9 +211,6 @@ namespace Engine.Graphics {
             TextureUnit unit = (TextureUnit)((int)TextureUnit.Texture0 + (int)slot);
             GLWrapper.ActiveTexture(unit);
             GLWrapper.BindTexture(TextureTarget.Texture2D, (int)textureHandle, true);
-            // 确保纹理可采样：如果 min filter 使用 mipmap 但没有生成 mipmap，
-            // 纹理不完整，采样返回黑色。生成 mipmap 使其完整。
-            GLWrapper.GL.GenerateMipmap(TextureTarget.Texture2D);
         }
 
         /// <summary>

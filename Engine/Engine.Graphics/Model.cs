@@ -1,4 +1,5 @@
 #nullable disable
+using System;
 using Engine.Animation;
 using Engine.Media;
 using SixLabors.ImageSharp.PixelFormats;
@@ -96,11 +97,17 @@ namespace Engine.Graphics {
             }
 
             // 直接从 Stream 创建 Texture2D
+            // sRGB 纹理（BaseColor、Emissive）使用 Srgb8Alpha8 格式，GPU 采样时自动 sRGB→线性解码
             Texture2D texture = null;
             try {
                 using var stream = texInfo.SourceImage.Open();
-                texture = Texture2D.Load(stream);
+                Engine.Media.Image img = Engine.Media.Image.Load(stream);
+                int mipLevels = (int)Math.Floor(Math.Log2(Math.Max(img.Width, img.Height))) + 1;
+                texture = texInfo.IsSrgb
+                    ? Texture2D.LoadSrgb(img.m_trueImage, mipLevels)
+                    : Texture2D.Load(img, mipLevels);
                 texture.Tag = texInfo.Name;
+                texture.SamplerState = texInfo.SamplerState;
             }
             catch (System.Exception ex) {
                 Log.Error($"[Model] Failed to load texture '{texInfo.Name}': {ex.Message}");

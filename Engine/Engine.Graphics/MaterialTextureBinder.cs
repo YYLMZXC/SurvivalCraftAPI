@@ -65,8 +65,8 @@ namespace Engine.Graphics {
             (MaterialTextureSlot.IBLLambertian, "u_LambertianEnvTexture", "u_LambertianEnvSampler"),
             (MaterialTextureSlot.IBLGGX, "u_GGXEnvTexture", "u_GGXEnvSampler"),
             (MaterialTextureSlot.IBLCharlie, "u_CharlieEnvTexture", "u_CharlieEnvSampler"),
-            (MaterialTextureSlot.IBLGGXLUT, "u_GGXLUTTexture", "u_GGXLUTSampler"),
-            (MaterialTextureSlot.IBLCharlieLUT, "u_CharlieLUTTexture", "u_CharlieLUTSampler"),
+            (MaterialTextureSlot.IBLGGXLUT, "u_GGXLUT", "u_GGXLUTSampler"),
+            (MaterialTextureSlot.IBLCharlieLUT, "u_CharlieLUT", "u_CharlieLUTSampler"),
         };
 
         /// <summary>

@@ -26,6 +26,11 @@ namespace Engine.Graphics {
         SpecularFactor = 20,
         SpecularColor = 21,
         Transmission = 22,
-        VolumeThickness = 23
+        VolumeThickness = 23,
+        IblRaw = 32,
+        NdotV = 33,
+        FresnelDielectric = 34,
+        IblDiffuse = 35,
+        IblSpecular = 36
     }
 }

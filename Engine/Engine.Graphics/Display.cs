@@ -202,6 +202,7 @@ namespace Engine.Graphics {
         public static void Initialize() {
             GLWrapper.Initialize();
             GLWrapper.InitializeCache();
+            ShaderCache.Initialize();
             Resize();
         }
 

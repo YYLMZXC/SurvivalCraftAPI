@@ -373,22 +373,6 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
-        /// 创建默认的片段着色器 defines（仅 PBR 核心）
-        /// </summary>
-        public static ShaderDefines CreateFragmentDefines() {
-            ShaderDefines defines = new();
-
-            // ALPHAMODE_* constants are defined in functions.glsl
-            // ALPHAMODE will be set via SetAlphaMode() based on material
-
-            // Vertex attribute defines (needed for fragment shader debug views)
-            // These should match what the vertex shader provides
-            defines.Add("HAS_TEXCOORD_0_VEC2");
-            defines.Add("MATERIAL_METALLICROUGHNESS");
-            return defines;
-        }
-
-        /// <summary>
         /// 从 ModelMeshPart 创建顶点着色器 defines
         /// </summary>
         public static ShaderDefines CreateFromModelMeshPart(ModelMeshPart meshPart,
@@ -401,12 +385,10 @@ namespace Engine.Graphics {
             VertexDeclaration declaration = meshPart.VertexBuffer.VertexDeclaration;
             ShaderDefines defines = CreateFromVertexDeclaration(declaration, enableSkinning);
 
-            // GPU Instancing
             if (meshPart.UseInstancing) {
                 defines.Add("USE_INSTANCING");
             }
 
-            // Morph Targets
             if (enableMorphing && meshPart.HasMorphTargets) {
                 defines.SetMorphTargetDefines(
                     meshPart.MorphTargetCount,
@@ -425,97 +407,6 @@ namespace Engine.Graphics {
                 );
             }
 
-            return defines;
-        }
-
-        /// <summary>
-        /// 从材质创建基础着色器 defines（纹理、扩展、alpha 模式）
-        /// </summary>
-        public static ShaderDefines CreateMaterialDefines(ModelMaterial material) {
-            ShaderDefines defines = CreateFragmentDefines();
-            if (material != null) {
-                defines.SetAlphaMode(material.AlphaMode);
-                material.PopulateDefines(defines);
-            }
-            return defines;
-        }
-
-        /// <summary>
-        /// 从材质和渲染状态创建片段着色器 defines
-        /// </summary>
-        public static ShaderDefines CreateFromMaterial(ModelMaterial material,
-            bool useIBL,
-            bool useLinearOutput,
-            ToneMapMode toneMapMode,
-            int lightCount,
-            ModelMeshPart meshPart = null,
-            bool enableMorphing = true,
-            bool isScatterPass = false,
-            DebugChannel debugChannel = DebugChannel.None) {
-            // 从材质获取基础 defines，然后克隆一份添加上下文相关的 defines
-            ShaderDefines defines = CreateMaterialDefines(material).Clone();
-
-            // 片段着色器也需要顶点属性 defines（用于声明 varying 输入变量）
-            // 否则 v_TBN/v_Normal/v_Color 不会被声明
-            if (meshPart?.VertexBuffer != null) {
-                VertexDeclaration declaration = meshPart.VertexBuffer.VertexDeclaration;
-                foreach (VertexElement element in declaration.VertexElements) {
-                    string semantic = element.SemanticName.ToUpperInvariant();
-                    int componentCount = element.Format.GetElementsCount();
-
-                    switch (semantic) {
-                        case "NORMAL":
-                            defines.AddVertexAttribute("NORMAL", componentCount);
-                            break;
-                        case "TANGENT":
-                            defines.AddVertexAttribute("TANGENT", componentCount);
-                            break;
-                        case "TEXCOORD":
-                            if (element.SemanticIndex == 1) {
-                                defines.AddVertexAttribute("TEXCOORD_1", componentCount);
-                            }
-                            break;
-                        case "COLOR":
-                            if (element.SemanticIndex == 0) {
-                                defines.Add("HAS_COLOR_0_VEC4");
-                            }
-                            break;
-                    }
-                }
-            }
-
-            // 添加 IBL 支持
-            // 注意：Diffuse Transmission 也需要 IBL 来采样背面环境光
-            if (useIBL || material?.DiffuseTransmission?.IsEnabled == true) {
-                defines.Add("USE_IBL");
-            }
-
-            // 添加 Punctual Lights 支持 (KHR_lights_punctual)
-            // 注意：Unlit 材质不需要灯光计算
-            if (lightCount > 0 && !(material?.Unlit?.IsEnabled ?? false)) {
-                defines.Add("USE_PUNCTUAL");
-            }
-
-            // 添加色调映射（当 useLinearOutput 为 true 时跳过，输出保持线性空间）
-            if (!useLinearOutput) {
-                defines.Add(
-                    toneMapMode switch {
-                        ToneMapMode.KhrPbrNeutral => "TONEMAP_KHR_PBR_NEUTRAL",
-                        ToneMapMode.AcesNarkowicz => "TONEMAP_ACES_NARKOWICZ",
-                        ToneMapMode.AcesHill => "TONEMAP_ACES_HILL 1",
-                        ToneMapMode.AcesHillExposureBoost => "TONEMAP_ACES_HILL_EXPOSURE_BOOST",
-                        _ => "LINEAR_OUTPUT"
-                    }
-                );
-            }
-            else {
-                defines.Add("LINEAR_OUTPUT");
-            }
-
-            // 添加 Debug Channel
-            if (debugChannel != DebugChannel.None) {
-                defines.AddRaw($"DEBUG {(int)debugChannel}");
-            }
             return defines;
         }
 

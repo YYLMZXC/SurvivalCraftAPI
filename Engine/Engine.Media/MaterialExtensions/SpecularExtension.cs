@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using SharpGLTF.Schema2;
 using System.Numerics;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_specular 扩展
     /// 支持镜面反射强度和颜色控制
@@ -60,7 +59,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("SPECULAR");
                 if (SpecularTexture != null) {

@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using SharpGLTF.Schema2;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_iridescence 扩展
     /// </summary>
@@ -43,7 +42,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 附加着色器 defines（参考官方 getDefines 模式）
         /// </summary>
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (!IsEnabled) {
                 return;
             }

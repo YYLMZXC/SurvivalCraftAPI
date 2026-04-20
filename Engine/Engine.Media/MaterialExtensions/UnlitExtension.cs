@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_unlit 扩展
     /// 不进行光照计算，直接输出基础颜色
@@ -25,7 +24,7 @@ namespace Engine.Graphics {
             _isEnabled = material.Unlit;
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("UNLIT");
             }

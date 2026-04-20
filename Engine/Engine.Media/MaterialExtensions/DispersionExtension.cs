@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_dispersion 扩展
     /// 支持色散效果（棱镜分解光）
@@ -28,7 +27,7 @@ namespace Engine.Graphics {
             Dispersion = material.Dispersion;
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("DISPERSION");
             }

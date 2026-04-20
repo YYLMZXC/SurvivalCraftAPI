@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using SharpGLTF.Schema2;
 using System.Numerics;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_volume 扩展
     /// 支持体积吸收、厚度控制
@@ -67,7 +66,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("VOLUME");
                 if (ThicknessTexture != null) {

@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using SharpGLTF.Schema2;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_emissive_strength 扩展
     /// 支持发光强度控制（用于 HDR 发光）
@@ -32,7 +31,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("EMISSIVE_STRENGTH");
             }

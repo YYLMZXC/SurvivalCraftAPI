@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using SharpGLTF.Schema2;
 using System.Numerics;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_pbrSpecularGlossiness 扩展
     /// 旧版 PBR 工作流，使用 Specular-Glossiness 替代 Metallic-Roughness
@@ -78,7 +77,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             defines.Add("MATERIAL_SPECULARGLOSSINESS");
             if (DiffuseTexture != null) {
                 defines.AddTextureMap("DIFFUSE");

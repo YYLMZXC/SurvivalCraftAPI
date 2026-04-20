@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using SharpGLTF.Schema2;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_anisotropy 扩展
     /// 支持各向异性反射（如拉丝金属）
@@ -46,7 +45,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("ANISOTROPY");
                 if (AnisotropyTexture != null) {

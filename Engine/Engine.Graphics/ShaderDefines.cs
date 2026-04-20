@@ -7,7 +7,7 @@ namespace Engine.Graphics {
     /// 着色器预处理器定义列表
     /// 对应官方 renderer.js 中的 defines 数组
     /// </summary>
-    public class ShaderDefines {
+    public class ShaderDefines : IShaderDefineBuilder {
         readonly List<string> _defines = [];
 
         // 缓存的 hash，避免每次遍历计算

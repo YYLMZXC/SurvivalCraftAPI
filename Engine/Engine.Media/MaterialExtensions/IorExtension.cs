@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_ior 扩展
     /// 支持材质的折射率控制
@@ -28,7 +27,7 @@ namespace Engine.Graphics {
             Ior = material.IndexOfRefraction;
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("IOR");
             }

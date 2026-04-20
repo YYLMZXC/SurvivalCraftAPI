@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using SharpGLTF.Schema2;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_transmission 扩展
     /// 支持折射透射效果（玻璃、水）
@@ -37,7 +36,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("TRANSMISSION");
                 if (Texture != null) {

@@ -6,11 +6,10 @@ using System.Reflection;
 using System.Text.Json.Nodes;
 using SharpGLTF.IO;
 using SharpGLTF.Schema2;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 using IExtraProperties = SharpGLTF.Schema2.IExtraProperties;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// 材质扩展基类
     /// </summary>
@@ -40,7 +39,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 附加着色器 defines（用于着色器变体编译）
         /// </summary>
-        public virtual void AppendDefines(ShaderDefines defines) {
+        public virtual void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 string shortName = ExtensionName.Replace("KHR_materials_", "").ToUpper();
                 defines.AddMaterialExtension(shortName);

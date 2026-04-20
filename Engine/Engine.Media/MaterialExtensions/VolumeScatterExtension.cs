@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Engine.Media;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// KHR_materials_volume_scatter 扩展
     /// 使用 Burley 扩散剖面进行次表面散射
@@ -40,7 +39,7 @@ namespace Engine.Graphics {
             ScatterAnisotropy = GetExtensionFloat(volumeScatterExt, "scatterAnisotropy");
         }
 
-        public override void AppendDefines(ShaderDefines defines) {
+        public override void AppendDefines(IShaderDefineBuilder defines) {
             if (IsEnabled) {
                 defines.AddMaterialExtension("VOLUME_SCATTER");
                 defines.Add("HAS_VOLUME_SCATTER");

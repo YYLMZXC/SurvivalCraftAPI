@@ -1,4 +1,4 @@
-namespace Engine.Graphics {
+namespace Engine.Media {
     /// <summary>
     /// 材质纹理槽位枚举
     /// 定义纹理绑定到着色器的纹理单元

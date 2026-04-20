@@ -429,6 +429,18 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
+        /// 从材质创建基础着色器 defines（纹理、扩展、alpha 模式）
+        /// </summary>
+        public static ShaderDefines CreateMaterialDefines(ModelMaterial material) {
+            ShaderDefines defines = CreateFragmentDefines();
+            if (material != null) {
+                defines.SetAlphaMode(material.AlphaMode);
+                material.PopulateDefines(defines);
+            }
+            return defines;
+        }
+
+        /// <summary>
         /// 从材质和渲染状态创建片段着色器 defines
         /// </summary>
         public static ShaderDefines CreateFromMaterial(ModelMaterial material,
@@ -440,8 +452,8 @@ namespace Engine.Graphics {
             bool enableMorphing = true,
             bool isScatterPass = false,
             DebugChannel debugChannel = DebugChannel.None) {
-            // 从材质获取基础 defines（已缓存），然后克隆一份添加上下文相关的 defines
-            ShaderDefines defines = (material?.GetDefines() ?? CreateFragmentDefines()).Clone();
+            // 从材质获取基础 defines，然后克隆一份添加上下文相关的 defines
+            ShaderDefines defines = CreateMaterialDefines(material).Clone();
 
             // 片段着色器也需要顶点属性 defines（用于声明 varying 输入变量）
             // 否则 v_TBN/v_Normal/v_Color 不会被声明

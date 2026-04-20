@@ -292,42 +292,40 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
-        /// 设置深度测试（确保自定义渲染参与深度遮挡）
+        /// 设置深度测试
+        /// 通过 ApplyDepthStencilState 保持 GLWrapper 缓存同步
         /// </summary>
         protected virtual void SetupDepthState(ModelMaterial material) {
-            GLWrapper.Enable(EnableCap.DepthTest);
-            GLWrapper.DepthFunc(DepthFunction.Lequal);
-            GLWrapper.DepthMask(true);
+            GLWrapper.ApplyDepthStencilState(DepthStencilState.Default);
         }
 
         /// <summary>
         /// 设置剔除模式
+        /// 通过 ApplyRasterizerState 保持 GLWrapper 缓存同步
         /// </summary>
         protected virtual void SetupCullMode(ModelMaterial material) {
             if (material?.DoubleSided == true) {
-                GLWrapper.Disable(EnableCap.CullFace);
+                GLWrapper.ApplyRasterizerState(RasterizerState.CullNoneScissor);
             }
             else {
-                GLWrapper.Enable(EnableCap.CullFace);
-                GLWrapper.CullFace(TriangleFace.Back);
-                GLWrapper.FrontFace(Display.RenderTarget != null
-                    ? FrontFaceDirection.Ccw
-                    : FrontFaceDirection.CW);
+                GLWrapper.ApplyRasterizerState(RasterizerState.CullCounterClockwiseScissor);
             }
         }
 
         /// <summary>
         /// 设置混合模式
+        /// 必须通过 ApplyBlendState 设置，保持 GLWrapper.m_blendState 缓存同步。
+        /// 直接调用 Enable/Disable(Blend) 会绕过缓存，导致后续 Display.DrawIndexed
+        /// 的 ApplyBlendState 跳过 GL 调用，混合状态异常。
         /// </summary>
         protected virtual void SetupBlendMode(ModelMaterial material, in RenderContext context) {
             ModelAlphaMode alphaMode = material?.AlphaMode ?? ModelAlphaMode.Opaque;
 
             if (alphaMode == ModelAlphaMode.Blend) {
-                GLWrapper.Enable(EnableCap.Blend);
-                GLWrapper.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                GLWrapper.ApplyBlendState(BlendState.AlphaBlend);
             }
             else {
-                GLWrapper.Disable(EnableCap.Blend);
+                GLWrapper.ApplyBlendState(BlendState.Opaque);
             }
         }
 
@@ -336,6 +334,17 @@ namespace Engine.Graphics {
         /// </summary>
         protected virtual void DrawMesh(ModelMesh mesh) {
             if (mesh == null) return;
+
+            // 同步 Display.Viewport 到 GL（包含 DepthRange）
+            // 本渲染器直接调用 GLWrapper.GL.DrawElements 绕过 Display.DrawIndexed，
+            // 不会触发 GLWrapper.ApplyViewportScissor。
+            // 若不手动同步，ComponentFirstPersonModel 的压缩深度范围会残留，
+            // 导致 PBR 模型深度值异常，不被地形遮挡。
+            GLWrapper.ApplyViewportScissor(
+                Display.Viewport,
+                Display.ScissorRectangle,
+                Display.RasterizerState.ScissorTestEnable
+            );
 
             foreach (ModelMeshPart part in mesh.MeshParts) {
                 DrawMeshPart(part);

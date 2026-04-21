@@ -79,6 +79,7 @@ namespace Game {
         readonly System.Numerics.Matrix4x4[] m_jointMatricesBuffer4x4 = new System.Numerics.Matrix4x4[MaxJointsCount];
         readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
         readonly List<ModelData> m_skinnedModelsBuffer = [];
+        readonly List<InstanceRenderData> m_instanceRenderDataBuffer = [];
 
         // JointTexture for skinned models (reused across frames)
         JointTexture m_jointTexture;
@@ -412,6 +413,8 @@ namespace Game {
         public virtual void DrawCustomInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
             AdvancedRenderer.BeginFrame(camera);
 
+            m_instanceRenderDataBuffer.Clear();
+
             foreach (var modelData in modelsData) {
                 ComponentModel componentModel = modelData.ComponentModel;
                 Model model = componentModel.Model;
@@ -420,31 +423,35 @@ namespace Game {
                 float light = modelData.Light;
                 Texture2D textureOverride = componentModel.TextureOverride;
 
-                Matrix projectionMatrix = camera.ProjectionMatrix;
-
                 foreach (int meshIndex in componentModel.MeshDrawOrders) {
                     if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
                     ModelMesh mesh = model.Meshes[meshIndex];
 
                     int boneIndex = mesh.ParentBone?.Index ?? 0;
-                    Matrix wvpMatrix;
                     Matrix worldMatrix;
                     if (boneIndex < componentModel.AbsoluteBoneTransformsForCamera.Length) {
                         worldMatrix = componentModel.AbsoluteBoneTransformsForCamera[boneIndex];
-                        Matrix.MultiplyRestricted(ref worldMatrix, ref projectionMatrix, out wvpMatrix);
                     } else {
-                        wvpMatrix = projectionMatrix;
                         worldMatrix = Matrix.Identity;
                     }
 
                     foreach (ModelMeshPart part in mesh.MeshParts) {
                         ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                        AdvancedRenderer.Render(mesh, material, wvpMatrix, worldMatrix, model, light, textureOverride);
+                        m_instanceRenderDataBuffer.Add(new InstanceRenderData {
+                            Mesh = mesh,
+                            Material = material,
+                            WorldMatrix = worldMatrix,
+                            Model = model,
+                            TextureOverride = textureOverride,
+                            LightIntensity = light
+                        });
                     }
                 }
 
                 ModelsDrawn++;
             }
+
+            AdvancedRenderer.RenderInstances(m_instanceRenderDataBuffer);
         }
 
         /// <summary>

@@ -35,10 +35,7 @@ namespace Game {
         /// <summary>
         /// 渲染单个 mesh（蒙皮模型等无法实例化的场景）
         /// </summary>
-        void Render(ModelMesh mesh, ModelMaterial material,
-            Matrix wvpMatrix, Matrix worldMatrix, Model model,
-            float lightIntensity, float celestialBodyVisible, Texture2D textureOverride,
-            JointTexture jointTexture = null);
+        void Render(ModelMesh mesh, ModelMaterial material, SubsystemModelsRenderer.ModelData modelData, Texture2D textureOverride, JointTexture jointTexture = null);
 
         /// <summary>
         /// 批量渲染实例（非蒙皮模型）

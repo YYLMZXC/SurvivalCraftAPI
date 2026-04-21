@@ -579,8 +579,6 @@ namespace Game {
 
             AdvancedRenderer.BeginFrame(camera);
 
-            float light = modelData.Light;
-            float celestialBodyVisible = modelData.CelestialBodyVisible ? 1f : 0f;
             Texture2D textureOverride = componentModel.TextureOverride;
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
@@ -594,18 +592,13 @@ namespace Game {
             jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer4x4);
             m_jointTexture.Update(m_jointMatricesBuffer4x4.AsSpan(0, jointCount));
 
-            Matrix viewMatrix = camera.ViewMatrix;
-            Matrix projectionMatrix = camera.ProjectionMatrix;
-            Matrix.MultiplyRestricted(ref viewMatrix, ref projectionMatrix, out Matrix wvpMatrix);
-            Matrix worldMatrix = camera.ViewMatrix;
-
             foreach (int meshIndex in componentModel.MeshDrawOrders) {
                 if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
                 ModelMesh mesh = model.Meshes[meshIndex];
 
                 foreach (ModelMeshPart part in mesh.MeshParts) {
                     ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                    AdvancedRenderer.Render(mesh, material, wvpMatrix, worldMatrix, model, light, celestialBodyVisible, textureOverride, m_jointTexture);
+                    AdvancedRenderer.Render(mesh, material, modelData, textureOverride, m_jointTexture);
                 }
             }
 

@@ -14,6 +14,7 @@ namespace Game {
         public Model Model;
         public Texture2D TextureOverride;
         public float LightIntensity;
+        public float CelestialBodyVisible;
     }
 
     /// <summary>
@@ -36,7 +37,7 @@ namespace Game {
         /// </summary>
         void Render(ModelMesh mesh, ModelMaterial material,
             Matrix wvpMatrix, Matrix worldMatrix, Model model,
-            float lightIntensity, Texture2D textureOverride,
+            float lightIntensity, float celestialBodyVisible, Texture2D textureOverride,
             JointTexture jointTexture = null);
 
         /// <summary>
@@ -44,5 +45,11 @@ namespace Game {
         /// 模组应按 mesh+material 分组，使用 GPU 实例化减少 draw call
         /// </summary>
         void RenderInstances(List<InstanceRenderData> instances);
+
+        /// <summary>
+        /// 当前激活的方向光方向（世界空间）
+        /// 引擎用于计算太阳遮挡 raycast
+        /// </summary>
+        Engine.Vector3 ActiveLightDirection { get; }
     }
 }

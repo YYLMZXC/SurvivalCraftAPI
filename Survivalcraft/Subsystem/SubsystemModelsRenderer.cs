@@ -13,6 +13,8 @@ namespace Game {
 
             public float Light;
 
+            public bool CelestialBodyVisible;
+
             public double NextLightTime;
 
             public int LastAnimateFrame;
@@ -246,6 +248,7 @@ namespace Game {
                 if (num.HasValue) {
                     modelData.Light = num.Value;
                 }
+                modelData.CelestialBodyVisible = CalculateCelestialBodyVisibility(modelData);
                 modelData.NextLightTime = Time.FrameStartTime + 0.1;
             }
             modelData.ComponentModel.CalculateAbsoluteBonesTransforms(camera);
@@ -421,6 +424,7 @@ namespace Game {
                 if (model == null) continue;
 
                 float light = modelData.Light;
+                float celestialBodyVisible = modelData.CelestialBodyVisible ? 1f : 0f;
                 Texture2D textureOverride = componentModel.TextureOverride;
 
                 foreach (int meshIndex in componentModel.MeshDrawOrders) {
@@ -443,7 +447,8 @@ namespace Game {
                             WorldMatrix = worldMatrix,
                             Model = model,
                             TextureOverride = textureOverride,
-                            LightIntensity = light
+                            LightIntensity = light,
+                            CelestialBodyVisible = celestialBodyVisible
                         });
                     }
                 }
@@ -575,6 +580,8 @@ namespace Game {
             AdvancedRenderer.BeginFrame(camera);
 
             float light = modelData.Light;
+            float celestialBodyVisible = modelData.CelestialBodyVisible ? 1f : 0f;
+            Texture2D textureOverride = componentModel.TextureOverride;
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
 
@@ -598,7 +605,7 @@ namespace Game {
 
                 foreach (ModelMeshPart part in mesh.MeshParts) {
                     ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                    AdvancedRenderer.Render(mesh, material, wvpMatrix, worldMatrix, model, light, null, m_jointTexture);
+                    AdvancedRenderer.Render(mesh, material, wvpMatrix, worldMatrix, model, light, celestialBodyVisible, textureOverride, m_jointTexture);
                 }
             }
 
@@ -676,6 +683,35 @@ namespace Game {
                 p = !boneTransform.HasValue ? Vector3.Zero : boneTransform.Value.Translation + new Vector3(0f, 0.9f, 0f);
             }
             return LightingManager.CalculateSmoothLight(m_subsystemTerrain, p);
+        }
+
+        public virtual bool CalculateCelestialBodyVisibility(ModelData modelData) {
+            if (AdvancedRenderer == null) return true;
+            Vector3 dir = new Vector3(
+                -AdvancedRenderer.ActiveLightDirection.X,
+                -AdvancedRenderer.ActiveLightDirection.Y,
+                -AdvancedRenderer.ActiveLightDirection.Z);
+            // 太阳在地平线以下时无需检测
+            if (dir.Y < 0f) return false;
+
+            Vector3 p;
+            if (modelData.ComponentBody != null) {
+                p = modelData.ComponentBody.Position;
+                p.Y += 0.95f * (modelData.ComponentBody.BoundingBox.Max.Y - modelData.ComponentBody.BoundingBox.Min.Y);
+            }
+            else {
+                Matrix? boneTransform = modelData.ComponentModel.GetBoneTransform(modelData.ComponentModel.Model.RootBone.Index);
+                p = !boneTransform.HasValue ? Vector3.Zero : boneTransform.Value.Translation + new Vector3(0f, 0.9f, 0f);
+            }
+
+            int cellX = Terrain.ToCell(p.X);
+            int cellZ = Terrain.ToCell(p.Z);
+            int topHeight = m_subsystemTerrain.Terrain.CalculateTopmostCellHeight(cellX, cellZ);
+            float maxDist = p.Y >= topHeight ? 16f : 32f;
+
+            Vector3 end = p + dir * maxDist;
+            TerrainRaycastResult? result = m_subsystemTerrain.Raycast(p, end, false, true, null);
+            return !result.HasValue;
         }
 
         //阴影绘制

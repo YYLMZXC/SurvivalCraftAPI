@@ -153,7 +153,7 @@ namespace Engine.Media {
                 int boneIndex = i + boneOffset;
                 tempBones[boneIndex] = new ModelBoneData {
                     Name = node.Name ?? $"Node{node.LogicalIndex}",
-                    Transform = ConvertMatrix(node.LocalMatrix),
+                    Transform = node.LocalMatrix,
                     ParentBoneIndex = -1 // 先设为 -1，后面再更新
                 };
             }
@@ -694,7 +694,7 @@ namespace Engine.Media {
             Matrix[] ibm = new Matrix[jointCount];
             for (int i = 0; i < jointCount; i++) {
                 if (i < inverseBindMatrices.Count) {
-                    ibm[i] = ConvertMatrix(inverseBindMatrices[i]);
+                    ibm[i] = inverseBindMatrices[i];
                 } else {
                     ibm[i] = Matrix.Identity;
                 }
@@ -813,15 +813,6 @@ namespace Engine.Media {
             float duration = (float)channel.LogicalParent.Duration;
             int estimatedFrames = Math.Max(1, (int)(duration * 30f));
             return Math.Min(estimatedFrames, 300); // 限制最大帧数避免内存问题
-        }
-
-        static Matrix ConvertMatrix(System.Numerics.Matrix4x4 matrix) {
-            return new Matrix(
-                matrix.M11, matrix.M12, matrix.M13, matrix.M14,
-                matrix.M21, matrix.M22, matrix.M23, matrix.M24,
-                matrix.M31, matrix.M32, matrix.M33, matrix.M34,
-                matrix.M41, matrix.M42, matrix.M43, matrix.M44
-            );
         }
 
         static unsafe void WriteFloat(byte[] buffer, int offset, float value) {

@@ -78,7 +78,6 @@ namespace Game {
 
         // Pre-allocated buffers for skinning (avoid GC pressure)
         readonly Matrix[] m_jointMatricesBuffer = new Matrix[MaxJointsCount];
-        readonly System.Numerics.Matrix4x4[] m_jointMatricesBuffer4x4 = new System.Numerics.Matrix4x4[MaxJointsCount];
         readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
         readonly List<ModelData> m_skinnedModelsBuffer = [];
         readonly List<InstanceRenderData> m_instanceRenderDataBuffer = [];
@@ -511,12 +510,7 @@ namespace Game {
             // Calculate joint matrices for GPU skinning
             // Reference: Plan/GPUSkinningPitfalls.md
             Matrix invertedView = camera.InvertedViewMatrix;
-            int jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer4x4);
-
-            // Convert Matrix4x4[] to Matrix[] for ModelShader
-            for (int i = 0; i < jointCount; i++) {
-                m_jointMatricesBuffer[i] = m_jointMatricesBuffer4x4[i];
-            }
+            int jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer);
             skinnedShader.JointMatrices = m_jointMatricesBuffer;
 
             // Draw model meshes directly (not using InstancedModelsManager which doesn't support skinned vertices)
@@ -589,8 +583,8 @@ namespace Game {
             }
 
             Matrix invertedView = camera.InvertedViewMatrix;
-            jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer4x4);
-            m_jointTexture.Update(m_jointMatricesBuffer4x4.AsSpan(0, jointCount));
+            jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer);
+            m_jointTexture.Update(m_jointMatricesBuffer.AsSpan(0, jointCount));
 
             foreach (int meshIndex in componentModel.MeshDrawOrders) {
                 if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
@@ -626,7 +620,7 @@ namespace Game {
         /// <param name="invertedView">反转的视图矩阵</param>
         /// <param name="output">输出缓冲区</param>
         /// <returns>实际计算的骨骼数量</returns>
-        int CalculateJointMatrices(ComponentModel componentModel, Model model, Matrix invertedView, Span<System.Numerics.Matrix4x4> output) {
+        int CalculateJointMatrices(ComponentModel componentModel, Model model, Matrix invertedView, Span<Matrix> output) {
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, Math.Min(output.Length, MaxJointsCount));
 
@@ -658,7 +652,7 @@ namespace Game {
                     // jointMatrix = inverseBind * jointWorldGlTF * rootBoneTransform
                     output[i] = inverseBind * jointWorldGlTF * rootBoneTransform;
                 } else {
-                    output[i] = System.Numerics.Matrix4x4.Identity;
+                    output[i] = Matrix.Identity;
                 }
             }
 

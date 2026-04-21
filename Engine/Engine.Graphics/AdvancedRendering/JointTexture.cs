@@ -10,7 +10,7 @@ namespace Engine.Graphics {
     public class JointTexture : IDisposable {
         bool _disposed;
         readonly float[] _textureData;
-        readonly Matrix4x4[] _normalMatrices;
+        readonly Matrix[] _normalMatrices;
 
         /// <summary>
         /// 纹理句柄
@@ -40,7 +40,7 @@ namespace Engine.Graphics {
             TextureSize = (int)Math.Ceiling(Math.Sqrt(maxJoints * 8));
 
             _textureData = new float[TextureSize * TextureSize * 4];
-            _normalMatrices = new Matrix4x4[maxJoints];
+            _normalMatrices = new Matrix[maxJoints];
             CreateTexture();
         }
 
@@ -72,9 +72,9 @@ namespace Engine.Graphics {
         /// 更新骨骼纹理数据
         /// </summary>
         /// <param name="jointMatrices">关节矩阵数组（已与逆绑定矩阵相乘）</param>
-        public unsafe void Update(Matrix4x4[] jointMatrices) {
+        public unsafe void Update(Matrix[] jointMatrices) {
             if (jointMatrices == null || jointMatrices.Length == 0) return;
-            fixed (Matrix4x4* ptr = jointMatrices) {
+            fixed (Matrix* ptr = jointMatrices) {
                 UpdateCore(ptr, Math.Min(jointMatrices.Length, MaxJointCount));
             }
         }
@@ -83,23 +83,22 @@ namespace Engine.Graphics {
         /// 更新骨骼纹理数据（使用 span 避免数组分配）
         /// </summary>
         /// <param name="jointMatrices">关节矩阵 span</param>
-        public unsafe void Update(ReadOnlySpan<Matrix4x4> jointMatrices) {
+        public unsafe void Update(ReadOnlySpan<Matrix> jointMatrices) {
             if (jointMatrices.IsEmpty) return;
-            fixed (Matrix4x4* ptr = jointMatrices) {
+            fixed (Matrix* ptr = jointMatrices) {
                 UpdateCore(ptr, Math.Min(jointMatrices.Length, MaxJointCount));
             }
         }
 
-        unsafe void UpdateCore(Matrix4x4* matricesPtr, int count) {
+        unsafe void UpdateCore(Matrix* matricesPtr, int count) {
             GLWrapper.ActiveTexture(TextureUnit.Texture0);
             GLWrapper.BindTexture(TextureTarget.Texture2D, (int)TextureHandle, true);
 
             for (int i = 0; i < count; i++) {
-                Matrix4x4 jointMatrix = matricesPtr[i];
+                Matrix jointMatrix = matricesPtr[i];
 
                 // 计算法线矩阵（逆转置）
-                Matrix4x4.Invert(jointMatrix, out _normalMatrices[i]);
-                _normalMatrices[i] = Matrix4x4.Transpose(_normalMatrices[i]);
+                _normalMatrices[i] = Matrix.Transpose(Matrix.Invert(jointMatrix));
 
                 // 写入 jointMatrix（offset = i * 32 floats）
                 int offset = i * 32;
@@ -125,8 +124,7 @@ namespace Engine.Graphics {
             GLWrapper.BindTexture(TextureTarget.Texture2D, 0, true);
         }
 
-        static void WriteMatrixToTextureData(float[] data, int offset, Matrix4x4 matrix) {
-            // OpenGL 使用列主序存储矩阵，Matrix4x4 是行主序，需要转置
+        static void WriteMatrixToTextureData(float[] data, int offset, Matrix matrix) {
             data[offset + 0] = matrix.M11;
             data[offset + 1] = matrix.M12;
             data[offset + 2] = matrix.M13;

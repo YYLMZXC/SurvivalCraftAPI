@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Silk.NET.OpenGLES;
 
 namespace Engine.Graphics {
@@ -125,22 +126,9 @@ namespace Engine.Graphics {
         }
 
         static void WriteMatrixToTextureData(float[] data, int offset, Matrix matrix) {
-            data[offset + 0] = matrix.M11;
-            data[offset + 1] = matrix.M12;
-            data[offset + 2] = matrix.M13;
-            data[offset + 3] = matrix.M14;
-            data[offset + 4] = matrix.M21;
-            data[offset + 5] = matrix.M22;
-            data[offset + 6] = matrix.M23;
-            data[offset + 7] = matrix.M24;
-            data[offset + 8] = matrix.M31;
-            data[offset + 9] = matrix.M32;
-            data[offset + 10] = matrix.M33;
-            data[offset + 11] = matrix.M34;
-            data[offset + 12] = matrix.M41;
-            data[offset + 13] = matrix.M42;
-            data[offset + 14] = matrix.M43;
-            data[offset + 15] = matrix.M44;
+            Span<Matrix> span = MemoryMarshal.CreateSpan(ref matrix, 1);
+            Span<float> floats = MemoryMarshal.Cast<Matrix, float>(span);
+            floats.CopyTo(data.AsSpan(offset));
         }
 
         /// <summary>

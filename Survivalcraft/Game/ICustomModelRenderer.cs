@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Engine;
 using Engine.Graphics;
 using Engine.Media;
@@ -11,10 +10,8 @@ namespace Game {
         public ModelMesh Mesh;
         public ModelMaterial Material;
         public Matrix WorldMatrix;
-        public Model Model;
+        public SubsystemModelsRenderer.ModelData ModelData;
         public Texture2D TextureOverride;
-        public float LightIntensity;
-        public float CelestialBodyVisible;
     }
 
     /// <summary>
@@ -23,7 +20,7 @@ namespace Game {
     /// </summary>
     public interface ICustomModelRenderer : IDisposable {
         /// <summary>
-        /// 初始化渲染器
+        /// 初始化渲染器。需要在模组中自行调用
         /// </summary>
         void Initialize(SubsystemModelsRenderer subsystemModelsRenderer);
 
@@ -33,9 +30,9 @@ namespace Game {
         void BeginFrame(Camera camera);
 
         /// <summary>
-        /// 渲染单个 mesh（蒙皮模型等无法实例化的场景）
+        /// 渲染单个 mesh part（per-part 材质的蒙皮模型）
         /// </summary>
-        void Render(ModelMesh mesh, ModelMaterial material, SubsystemModelsRenderer.ModelData modelData, Texture2D textureOverride, JointTexture jointTexture = null);
+        void RenderPart(ModelMesh mesh, ModelMeshPart part, ModelMaterial material, SubsystemModelsRenderer.ModelData modelData, Texture2D textureOverride, JointTexture jointTexture = null);
 
         /// <summary>
         /// 批量渲染实例（非蒙皮模型）
@@ -47,6 +44,6 @@ namespace Game {
         /// 当前激活的方向光方向（世界空间）
         /// 引擎用于计算太阳遮挡 raycast
         /// </summary>
-        Engine.Vector3 ActiveLightDirection { get; }
+        Vector3 ActiveLightDirection { get; }
     }
 }

@@ -13,8 +13,6 @@ namespace Game {
 
             public float Light;
 
-            public bool CelestialBodyVisible;
-
             public double NextLightTime;
 
             public int LastAnimateFrame;
@@ -56,7 +54,7 @@ namespace Game {
         /// <summary>
         /// 自定义渲染器实例（由模组设置）
         /// </summary>
-        public ICustomModelRenderer AdvancedRenderer;
+        public ICustomModelRenderer CustomRenderer;
 
         /// <summary>
         /// 是否使用自定义渲染（由 Mod 设置）
@@ -127,6 +125,9 @@ namespace Game {
                         PrepareModel(item, camera);
                         m_modelsToDraw[(int)item.ComponentModel.RenderingMode].Add(item);
                     }
+                    if (UseCustomRendering && CustomRenderer != null) {
+                        CustomRenderer.BeginFrame(camera);
+                    }
                 }
             }
             if (!DisableDrawingModels) {
@@ -184,7 +185,6 @@ namespace Game {
             m_subsystemTerrain = Project.FindSubsystem<SubsystemTerrain>(true);
             m_subsystemSky = Project.FindSubsystem<SubsystemSky>(true);
             m_subsystemShadows = Project.FindSubsystem<SubsystemShadows>(true);
-            AdvancedRenderer?.Initialize(this);
             ModsManager.HookAction(
                 "GetMaxInstancesCount",
                 modLoader => {
@@ -247,7 +247,6 @@ namespace Game {
                 if (num.HasValue) {
                     modelData.Light = num.Value;
                 }
-                modelData.CelestialBodyVisible = CalculateCelestialBodyVisibility(modelData);
                 modelData.NextLightTime = Time.FrameStartTime + 0.1;
             }
             modelData.ComponentModel.CalculateAbsoluteBonesTransforms(camera);
@@ -266,27 +265,29 @@ namespace Game {
                 }
             }
 
-            // Draw non-skinned models with instancing
-            if (m_nonSkinnedModelsBuffer.Count > 0) {
-                DrawInstancedModels(camera, m_nonSkinnedModelsBuffer, alphaThreshold);
+            if (UseCustomRendering && CustomRenderer != null) {
+                if (m_nonSkinnedModelsBuffer.Count > 0) {
+                    DrawCustomInstancedModels(camera, m_nonSkinnedModelsBuffer, alphaThreshold);
+                }
+                foreach (var skinnedModel in m_skinnedModelsBuffer) {
+                    DrawCustomSkinnedModel(camera, skinnedModel, alphaThreshold);
+                }
+            }
+            else {
+                if (m_nonSkinnedModelsBuffer.Count > 0) {
+                    DrawInstancedModels(camera, m_nonSkinnedModelsBuffer, alphaThreshold);
+                }
+                foreach (var skinnedModel in m_skinnedModelsBuffer) {
+                    DrawSkinnedModel(camera, skinnedModel, alphaThreshold);
+                }
             }
 
-            // Draw skinned models individually (no instancing for skinned models)
-            foreach (var skinnedModel in m_skinnedModelsBuffer) {
-                DrawSkinnedModel(camera, skinnedModel, alphaThreshold);
-            }
 
             // Draw extras (shadows, etc.)
             DrawModelsExtras(camera, modelsData);
         }
 
         public virtual void DrawInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
-            // Check if custom rendering is enabled
-            if (AdvancedRenderer != null && UseCustomRendering) {
-                DrawCustomInstancedModels(camera, modelsData, alphaThreshold);
-                return;
-            }
-
             ModelShader modelShader = ShaderOpaque != null && ShaderAlphaTested != null ? alphaThreshold.HasValue ? ShaderAlphaTested : ShaderOpaque :
                 alphaThreshold.HasValue ? m_shaderAlphaTested : m_shaderOpaque;
             modelShader.LightDirection1 = -Vector3.TransformNormal(LightingManager.DirectionToLight1, camera.ViewMatrix);
@@ -374,18 +375,18 @@ namespace Game {
                         // 设置纹理
                         if (componentModel.TextureOverride != null) {
                             modelShader.Texture = componentModel.TextureOverride;
+                            modelShader.SamplerState = SamplerState.PointClamp;
                         } else {
                             int texIndex = material?.BaseColorTexture?.TextureIndex ?? -1;
                             if (texIndex >= 0) {
-                                modelShader.Texture = model.GetTexture(texIndex);
+                                Texture2D texture = model.GetTexture(texIndex);
+                                modelShader.Texture = texture;
+                                modelShader.SamplerState = texture.SamplerState;
                             } else {
                                 modelShader.Texture = Model.DefaultWhiteTexture;
+                                modelShader.SamplerState = SamplerState.PointClamp;
                             }
                         }
-
-                        // 设置采样器
-                        // TODO:可能不应该用 model 默认的，而是具体纹理指定的
-                        modelShader.SamplerState = model?.GetDefaultSamplerState() ?? SamplerState.LinearWrap;
 
                         Display.DrawIndexed(
                             PrimitiveType.TriangleList,
@@ -413,8 +414,6 @@ namespace Game {
         /// Draw instanced models using custom renderer
         /// </summary>
         public virtual void DrawCustomInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
-            AdvancedRenderer.BeginFrame(camera);
-
             m_instanceRenderDataBuffer.Clear();
 
             foreach (var modelData in modelsData) {
@@ -422,8 +421,6 @@ namespace Game {
                 Model model = componentModel.Model;
                 if (model == null) continue;
 
-                float light = modelData.Light;
-                float celestialBodyVisible = modelData.CelestialBodyVisible ? 1f : 0f;
                 Texture2D textureOverride = componentModel.TextureOverride;
 
                 foreach (int meshIndex in componentModel.MeshDrawOrders) {
@@ -444,10 +441,8 @@ namespace Game {
                             Mesh = mesh,
                             Material = material,
                             WorldMatrix = worldMatrix,
-                            Model = model,
-                            TextureOverride = textureOverride,
-                            LightIntensity = light,
-                            CelestialBodyVisible = celestialBodyVisible
+                            ModelData = modelData,
+                            TextureOverride = textureOverride
                         });
                     }
                 }
@@ -455,7 +450,7 @@ namespace Game {
                 ModelsDrawn++;
             }
 
-            AdvancedRenderer.RenderInstances(m_instanceRenderDataBuffer);
+            CustomRenderer.RenderInstances(m_instanceRenderDataBuffer);
         }
 
         /// <summary>
@@ -466,12 +461,6 @@ namespace Game {
             Model model = componentModel.Model;
 
             if (model?.Skin == null) return;
-
-            // Check if custom rendering is enabled
-            if (AdvancedRenderer != null && UseCustomRendering) {
-                DrawCustomSkinnedModel(camera, modelData, alphaThreshold);
-                return;
-            }
 
             // Select skinned shader
             ModelShader skinnedShader = ShaderSkinnedOpaque != null && ShaderSkinnedAlphaTested != null
@@ -571,8 +560,6 @@ namespace Game {
             Model model = componentModel.Model;
             if (model?.Skin == null) return;
 
-            AdvancedRenderer.BeginFrame(camera);
-
             Texture2D textureOverride = componentModel.TextureOverride;
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
@@ -592,7 +579,7 @@ namespace Game {
 
                 foreach (ModelMeshPart part in mesh.MeshParts) {
                     ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                    AdvancedRenderer.Render(mesh, material, modelData, textureOverride, m_jointTexture);
+                    CustomRenderer.RenderPart(mesh, part, material, modelData, textureOverride, m_jointTexture);
                 }
             }
 
@@ -670,35 +657,6 @@ namespace Game {
                 p = !boneTransform.HasValue ? Vector3.Zero : boneTransform.Value.Translation + new Vector3(0f, 0.9f, 0f);
             }
             return LightingManager.CalculateSmoothLight(m_subsystemTerrain, p);
-        }
-
-        public virtual bool CalculateCelestialBodyVisibility(ModelData modelData) {
-            if (AdvancedRenderer == null) return true;
-            Vector3 dir = new Vector3(
-                -AdvancedRenderer.ActiveLightDirection.X,
-                -AdvancedRenderer.ActiveLightDirection.Y,
-                -AdvancedRenderer.ActiveLightDirection.Z);
-            // 太阳在地平线以下时无需检测
-            if (dir.Y < 0f) return false;
-
-            Vector3 p;
-            if (modelData.ComponentBody != null) {
-                p = modelData.ComponentBody.Position;
-                p.Y += 0.95f * (modelData.ComponentBody.BoundingBox.Max.Y - modelData.ComponentBody.BoundingBox.Min.Y);
-            }
-            else {
-                Matrix? boneTransform = modelData.ComponentModel.GetBoneTransform(modelData.ComponentModel.Model.RootBone.Index);
-                p = !boneTransform.HasValue ? Vector3.Zero : boneTransform.Value.Translation + new Vector3(0f, 0.9f, 0f);
-            }
-
-            int cellX = Terrain.ToCell(p.X);
-            int cellZ = Terrain.ToCell(p.Z);
-            int topHeight = m_subsystemTerrain.Terrain.CalculateTopmostCellHeight(cellX, cellZ);
-            float maxDist = p.Y >= topHeight ? 16f : 32f;
-
-            Vector3 end = p + dir * maxDist;
-            TerrainRaycastResult? result = m_subsystemTerrain.Raycast(p, end, false, true, null);
-            return !result.HasValue;
         }
 
         //阴影绘制

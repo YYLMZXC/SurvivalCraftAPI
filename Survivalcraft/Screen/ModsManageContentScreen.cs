@@ -17,7 +17,7 @@ public class ModsManageContentScreen : Screen {
 
     public static bool IsOldApiVersionMod(ModEntity modEntity, out string description) {
         ModInfo modInfo = modEntity.modInfo;
-        if (modInfo == null) {
+        if (modInfo == null || string.IsNullOrEmpty(modInfo.ApiVersion)) {
             description = string.Format(LanguageControl.Get(fName, "68"), LanguageControl.Unknown);
             return true;
         }

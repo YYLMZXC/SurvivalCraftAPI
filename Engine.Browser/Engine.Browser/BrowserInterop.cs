@@ -32,9 +32,6 @@ namespace Engine.Browser {
         [JSImport("setNeedPointerLock", "main.js")]
         public static partial void SetNeedPointerLock(bool need);
 
-        [JSImport("getGamepadStates", "main.js")]
-        public static partial double[] GetGamepadStates();
-
         [JSImport("showOpenFilePicker", "main.js")]
         public static partial Task<JSObject> ShowOpenFilePicker(string[] descAndExtArray, int[] extCounts, string defaultPath);
 
@@ -74,8 +71,5 @@ namespace Engine.Browser {
             stream.Position = 0;
             Window.FileDropHandler(stream, fileName);
         }
-
-        //[JSExport]
-        //public static async Task SetHostedHref(string href) => Window.HostedHref = href;
     }
 }

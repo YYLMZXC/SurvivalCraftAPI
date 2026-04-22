@@ -41,6 +41,11 @@ namespace Engine.Graphics {
         public int MorphTargetCount { get; set; }
 
         /// <summary>
+        /// Morph target 权重数组（动画系统更新）
+        /// </summary>
+        public float[] MorphWeights { get; set; }
+
+        /// <summary>
         /// 是否有 morph targets（需要同时满足数量和纹理存在）
         /// </summary>
         public bool HasMorphTargets => MorphTargetTexture != null && MorphTargetCount > 0;

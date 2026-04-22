@@ -33,6 +33,9 @@ namespace Engine.Graphics {
                 case ShaderParameterType.Matrix3: Value = new float[9 * count]; break;
                 case ShaderParameterType.Matrix: Value = new float[16 * count]; break;
                 case ShaderParameterType.Int: IntValue = new int[count]; break;
+                case ShaderParameterType.IntVec2: IntValue = new int[2 * count]; break;
+                case ShaderParameterType.IntVec3: IntValue = new int[3 * count]; break;
+                case ShaderParameterType.IntVec4: IntValue = new int[4 * count]; break;
                 default: throw new ArgumentException("type");
             }
         }
@@ -48,6 +51,64 @@ namespace Engine.Graphics {
             if (value != Value[0]) {
                 Value[0] = value;
                 IsChanged = true;
+            }
+        }
+
+        public void SetValue(float[] value) {
+            if (Type == ShaderParameterType.Null) {
+                return;
+            }
+            if (Count != 1) {
+                throw new InvalidOperationException("Shader parameter type mismatch.");
+            }
+            switch (value.Length) {
+                case 1:
+                    if (Type != ShaderParameterType.Float) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (value[0] != Value[0]) {
+                        Value[0] = value[0];
+                        IsChanged = true;
+                    }
+                    break;
+                case 2:
+                    if (Type != ShaderParameterType.Vector2) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (!value.SequenceEqual(Value)) {
+                        Array.Copy(value, Value, 2);
+                        IsChanged = true;
+                    }
+                    break;
+                case 3:
+                    if (Type != ShaderParameterType.Vector3) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (!value.SequenceEqual(Value)) {
+                        Array.Copy(value, Value, 3);
+                        IsChanged = true;
+                    }
+                    break;
+                case 4:
+                    if (Type != ShaderParameterType.Vector4) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (!value.SequenceEqual(Value)) {
+                        Array.Copy(value, Value, 4);
+                        IsChanged = true;
+                    }
+                    break;
+                case 16:
+                    if (Type != ShaderParameterType.Matrix) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (!value.SequenceEqual(Value)) {
+                        Array.Copy(value, Value, 16);
+                        IsChanged = true;
+                    }
+                    break;
+                default:
+                    throw new ArgumentException("value");
             }
         }
 
@@ -426,6 +487,55 @@ namespace Engine.Graphics {
             if (value != IntValue[0]) {
                 IntValue[0] = value;
                 IsChanged = true;
+            }
+        }
+
+        public void SetValue(int[] value) {
+            if (Type == ShaderParameterType.Null) {
+                return;
+            }
+            if (Count != 1) {
+                throw new InvalidOperationException("Shader parameter type mismatch.");
+            }
+            switch (value.Length) {
+                case 1:
+                    if (Type != ShaderParameterType.Int) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (value[0] != IntValue[0]) {
+                        IntValue[0] = value[0];
+                        IsChanged = true;
+                    }
+                    break;
+                case 2:
+                    if (Type != ShaderParameterType.IntVec2) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (!value.SequenceEqual(IntValue)) {
+                        Array.Copy(value, IntValue, 2);
+                        IsChanged = true;
+                    }
+                    break;
+                case 3:
+                    if (Type != ShaderParameterType.IntVec3) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (!value.SequenceEqual(IntValue)) {
+                        Array.Copy(value, IntValue, 3);
+                        IsChanged = true;
+                    }
+                    break;
+                case 4:
+                    if (Type != ShaderParameterType.IntVec4) {
+                        throw new InvalidOperationException("Shader parameter type mismatch.");
+                    }
+                    if (!value.SequenceEqual(IntValue)) {
+                        Array.Copy(value, IntValue, 4);
+                        IsChanged = true;
+                    }
+                    break;
+                default:
+                    throw new InvalidOperationException("Shader parameter type mismatch.");
             }
         }
 

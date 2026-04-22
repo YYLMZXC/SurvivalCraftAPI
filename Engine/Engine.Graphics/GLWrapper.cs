@@ -961,6 +961,9 @@ namespace Engine.Graphics {
                 UniformType.Sampler2D => ShaderParameterType.Texture2D,
                 UniformType.SamplerCube => ShaderParameterType.SamplerCube,
                 UniformType.Int => ShaderParameterType.Int,
+                UniformType.IntVec2 => ShaderParameterType.IntVec2,
+                UniformType.IntVec3 => ShaderParameterType.IntVec3,
+                UniformType.IntVec4 => ShaderParameterType.IntVec4,
                 _ => throw new InvalidOperationException("Unsupported shader parameter type.")
             };
         }

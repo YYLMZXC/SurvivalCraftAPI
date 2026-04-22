@@ -75,13 +75,13 @@ namespace Game {
         public List<ModelData>[] m_modelsToDraw = [[], [], [], []];
 
         // Pre-allocated buffers for skinning (avoid GC pressure)
-        readonly Matrix[] m_jointMatricesBuffer = new Matrix[MaxJointsCount];
+        public readonly Matrix[] m_jointMatricesBuffer = new Matrix[MaxJointsCount];
         readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
         readonly List<ModelData> m_skinnedModelsBuffer = [];
         readonly List<InstanceRenderData> m_instanceRenderDataBuffer = [];
 
         // JointTexture for skinned models (reused across frames)
-        JointTexture m_jointTexture;
+        public JointTexture m_jointTexture;
 
         public static bool DisableDrawingModels = false;
 
@@ -610,7 +610,7 @@ namespace Game {
         /// <param name="invertedView">反转的视图矩阵</param>
         /// <param name="output">输出缓冲区</param>
         /// <returns>实际计算的骨骼数量</returns>
-        int CalculateJointMatrices(ComponentModel componentModel, Model model, Matrix invertedView, Span<Matrix> output) {
+        public int CalculateJointMatrices(ComponentModel componentModel, Model model, Matrix invertedView, Span<Matrix> output) {
             ModelSkin skin = model.Skin;
             int jointCount = Math.Min(skin.JointCount, Math.Min(output.Length, MaxJointsCount));
 

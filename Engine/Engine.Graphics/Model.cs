@@ -21,6 +21,50 @@ namespace Engine.Graphics {
 
         public ModelData ModelData { get; set; }
 
+        bool _hasTransmission;
+        bool _hasScatter;
+        bool _materialCacheComputed;
+
+        /// <summary>
+        /// 模型是否包含 transmission 材质（缓存，惰性计算）
+        /// </summary>
+        public bool HasTransmission {
+            get {
+                EnsureMaterialCache();
+                return _hasTransmission;
+            }
+        }
+
+        /// <summary>
+        /// 模型是否包含 volume scatter 材质（缓存，惰性计算）
+        /// </summary>
+        public bool HasScatter {
+            get {
+                EnsureMaterialCache();
+                return _hasScatter;
+            }
+        }
+
+        void EnsureMaterialCache() {
+            if (_materialCacheComputed) return;
+            _materialCacheComputed = true;
+            if (ModelData?.Materials == null) return;
+            foreach (ModelMesh mesh in m_meshes) {
+                if (mesh?.MeshParts == null) continue;
+                foreach (ModelMeshPart part in mesh.MeshParts) {
+                    ModelMaterial mat = GetMaterial(part.MaterialIndex);
+                    if (!_hasTransmission && mat?.Transmission?.IsEnabled == true) _hasTransmission = true;
+                    if (!_hasScatter && mat?.VolumeScatter?.IsEnabled == true) _hasScatter = true;
+                    if (_hasTransmission && _hasScatter) return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 材质变更后调用，使缓存失效
+        /// </summary>
+        public void InvalidateMaterialCache() => _materialCacheComputed = false;
+
         /// <summary>
         /// 蒙皮数据（如果有骨骼蒙皮）
         /// </summary>

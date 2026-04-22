@@ -143,6 +143,9 @@ namespace Game {
                 if (!skipped) {
                     if (drawOrder == m_drawOrders[1]) //绘制类型为AlphaThreshold的Model
                     {
+                        if (UseCustomRendering && CustomRenderer != null) {
+                            CustomRenderer.PreRenderPass(camera, m_modelsToDraw);
+                        }
                         Display.DepthStencilState = DepthStencilState.Default;
                         Display.RasterizerState = RasterizerState.CullCounterClockwiseScissor;
                         Display.BlendState = BlendState.Opaque;

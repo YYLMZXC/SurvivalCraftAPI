@@ -82,6 +82,20 @@ namespace Engine.Graphics {
             GLWrapper.GL.GenerateMipmap(TextureTarget.Texture2D);
         }
 
+        /// <summary>
+        /// 从当前默认 FBO 复制颜色内容到本 RenderTarget 的颜色纹理
+        /// </summary>
+        public void CopyFromBackbuffer(int screenWidth, int screenHeight) {
+            // 确保从默认 FBO（backbuffer）读取
+            GLWrapper.BindFramebuffer(0);
+            GLWrapper.BindTexture(TextureTarget.Texture2D, m_texture, true);
+            GLWrapper.GL.CopyTexSubImage2D(
+                TextureTarget.Texture2D, 0, 0, 0, 0, 0,
+                (uint)Math.Min(screenWidth, Width),
+                (uint)Math.Min(screenHeight, Height)
+            );
+        }
+
         public override void HandleDeviceLost() {
             DeleteRenderTarget();
         }
@@ -90,7 +104,7 @@ namespace Engine.Graphics {
             AllocateRenderTarget();
         }
 
-        public void AllocateRenderTarget() {
+        public virtual void AllocateRenderTarget() {
             GLWrapper.GL.GenFramebuffers(1u, out uint frameBuffer);
             m_frameBuffer = (int)frameBuffer;
             GLWrapper.BindFramebuffer(m_frameBuffer);
@@ -144,7 +158,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public void DeleteRenderTarget() {
+        public virtual void DeleteRenderTarget() {
             if (m_depthBuffer != 0) {
                 uint depthBuffer = (uint)m_depthBuffer;
                 GLWrapper.GL.DeleteRenderbuffers(1, in depthBuffer);

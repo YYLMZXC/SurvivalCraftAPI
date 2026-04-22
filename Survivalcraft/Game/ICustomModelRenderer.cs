@@ -30,6 +30,12 @@ namespace Game {
         void BeginFrame(Camera camera);
 
         /// <summary>
+        /// 在 DrawModels 之前调用，用于多 Pass 预渲染（如 transmission/scatter）
+        /// 仅在 drawOrder == 1（不透明阶段）时调用
+        /// </summary>
+        void PreRenderPass(Camera camera, List<SubsystemModelsRenderer.ModelData>[] modelsToDraw);
+
+        /// <summary>
         /// 渲染单个 mesh part（per-part 材质的蒙皮模型）
         /// </summary>
         void RenderPart(ModelMesh mesh, ModelMeshPart part, ModelMaterial material, SubsystemModelsRenderer.ModelData modelData, Texture2D textureOverride, JointTexture jointTexture = null);

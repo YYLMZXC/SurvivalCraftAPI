@@ -157,6 +157,10 @@ namespace Game {
                     }
                     else if (drawOrder == m_drawOrders[2]) //绘制TransparentBeforeWater的Model
                     {
+                        // 在透明阶段渲染前，让自定义渲染器捕获 backbuffer（此时不透明内容已完成）
+                        if (UseCustomRendering && CustomRenderer != null) {
+                            CustomRenderer.PreTransparentPass(camera);
+                        }
                         Display.DepthStencilState = DepthStencilState.Default;
                         Display.RasterizerState = RasterizerState.CullNoneScissor;
                         Display.BlendState = BlendState.AlphaBlend;

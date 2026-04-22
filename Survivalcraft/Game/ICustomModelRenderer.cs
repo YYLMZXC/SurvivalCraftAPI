@@ -36,6 +36,13 @@ namespace Game {
         void PreRenderPass(Camera camera, List<SubsystemModelsRenderer.ModelData>[] modelsToDraw);
 
         /// <summary>
+        /// 在透明阶段渲染之前调用（drawOrder == 99）
+        /// 此时 backbuffer 已包含天空+地形+不透明物体
+        /// 用于捕获 backbuffer 供 transmission 材质采样
+        /// </summary>
+        void PreTransparentPass(Camera camera);
+
+        /// <summary>
         /// 渲染单个 mesh part（per-part 材质的蒙皮模型）
         /// </summary>
         void RenderPart(ModelMesh mesh, ModelMeshPart part, ModelMaterial material, SubsystemModelsRenderer.ModelData modelData, Texture2D textureOverride, JointTexture jointTexture = null);

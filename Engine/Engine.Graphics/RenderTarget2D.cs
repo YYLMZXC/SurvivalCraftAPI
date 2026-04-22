@@ -83,17 +83,22 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
-        /// 从当前默认 FBO 复制颜色内容到本 RenderTarget 的颜色纹理
+        /// 从 backbuffer blit 颜色内容到本 RenderTarget（支持格式转换如 RGBA8→RGBA16F）
         /// </summary>
-        public void CopyFromBackbuffer(int screenWidth, int screenHeight) {
-            // 确保从默认 FBO（backbuffer）读取
-            GLWrapper.BindFramebuffer(0);
-            GLWrapper.BindTexture(TextureTarget.Texture2D, m_texture, true);
-            GLWrapper.GL.CopyTexSubImage2D(
-                TextureTarget.Texture2D, 0, 0, 0, 0, 0,
-                (uint)Math.Min(screenWidth, Width),
-                (uint)Math.Min(screenHeight, Height)
+        public void BlitFromBackbuffer(int screenWidth, int screenHeight) {
+            // READ framebuffer = backbuffer, DRAW framebuffer = this
+            GLWrapper.GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)GLWrapper.m_mainFramebuffer);
+            GLWrapper.GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, (uint)m_frameBuffer);
+            GLWrapper.GL.BlitFramebuffer(
+                0, 0, (int)Math.Min(screenWidth, Width), (int)Math.Min(screenHeight, Height),
+                0, 0, Width, Height,
+                ClearBufferMask.ColorBufferBit,
+                BlitFramebufferFilter.Linear
             );
+            // Raw GL 调用绕过了 GLWrapper 缓存，必须使缓存失效
+            GLWrapper.m_framebuffer = -1;
+            GLWrapper.BindFramebuffer(GLWrapper.m_mainFramebuffer);
+            GLWrapper.m_viewport = null;
         }
 
         public override void HandleDeviceLost() {

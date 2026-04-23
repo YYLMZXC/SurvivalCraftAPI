@@ -8,6 +8,8 @@ namespace Engine.Graphics {
 
         public ModelBone ParentBone { get; set; }
 
+        public bool IsVisible { get; set; } = true;
+
         public BoundingBox BoundingBox {
             get => m_boundingBox;
             set => m_boundingBox = value;

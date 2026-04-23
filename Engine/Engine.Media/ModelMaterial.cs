@@ -37,6 +37,12 @@ namespace Engine.Media {
         /// </summary>
         public int SourceMaterialIndex { get; set; } = -1;
 
+        /// <summary>
+        /// 材质版本号，每次 pointer 动画修改属性时递增。
+        /// 渲染器用于检测材质变化并重建 UBO。
+        /// </summary>
+        public int Version;
+
         // Extensions - known types for convenience
         public ClearCoatExtension ClearCoat { get; set; }
         public IridescenceExtension Iridescence { get; set; }

@@ -36,6 +36,12 @@ namespace Engine.Media {
         internal Dictionary<int, int> GltfTextureToModelIndex = new();
 
         /// <summary>
+        /// glTF node LogicalIndex 到 Meshes 列表索引的映射（KHR_node_visibility 用）
+        /// 仅在加载过程中有效
+        /// </summary>
+        internal Dictionary<int, int> GltfNodeToMeshIndex = new();
+
+        /// <summary>
         /// 获取纹理在 Textures 列表中的索引
         /// </summary>
         /// <param name="gltfLogicalIndex">glTF 纹理的 LogicalIndex</param>

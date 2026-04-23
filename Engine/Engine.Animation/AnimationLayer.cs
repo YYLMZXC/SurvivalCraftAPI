@@ -39,6 +39,11 @@ namespace Engine.Animation
         public int Index { get; }
 
         /// <summary>
+        /// 动画播放器（用于 pointer 采样）
+        /// </summary>
+        public AnimationPlayer Player => _animationPlayer;
+
+        /// <summary>
         /// 混合模式
         /// </summary>
         public AnimationBlendMode BlendMode { get; }

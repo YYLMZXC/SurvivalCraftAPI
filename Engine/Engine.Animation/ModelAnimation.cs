@@ -1,3 +1,5 @@
+using Engine.Graphics;
+
 namespace Engine.Animation {
     /// <summary>
     /// 动画数据
@@ -6,6 +8,17 @@ namespace Engine.Animation {
         public string Name { get; set; } = string.Empty;
         public float Duration { get; set; }
         public List<AnimationChannel> Channels { get; set; } = [];
+        /// <summary>
+        /// KHR_animation_pointer targets. Action&lt;float&gt; 接受时间（秒），
+        /// 采样曲线并直接修改目标属性。
+        /// </summary>
+        public List<Action<float>> PointerTargets { get; set; } = [];
+
+        /// <summary>
+        /// KHR_node_visibility targets. Action&lt;float, Model&gt; 接受时间（秒）和 Model，
+        /// 采样曲线并设置对应 ModelMesh 的 IsVisible。
+        /// </summary>
+        public List<Action<float, Model>> NodeVisibilityTargets { get; set; } = [];
 
         /// <summary>
         /// 动画通道，对应一个骨骼的某个属性

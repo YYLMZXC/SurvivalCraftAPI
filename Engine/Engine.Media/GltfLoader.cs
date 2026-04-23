@@ -484,13 +484,21 @@ namespace Engine.Media {
         }
 
         static void ProcessNodeForMesh(Node node, ModelData modelData, List<Node> allNodes,
-            Dictionary<Node, int> nodeToIndex, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex) {
+            Dictionary<Node, int> nodeToIndex, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex,
+            bool parentVisible = true) {
+            // 解析当前节点的 visibility 状态
+            bool nodeVisible = parentVisible;
+            if (node.TryGetVisibility(out bool vis)) {
+                nodeVisible = vis && parentVisible;
+            }
+
             if (node.Mesh != null) {
                 int boneIndex = nodeToIndex.TryGetValue(node, out int idx) ? idx : 0;
 
                 ModelMeshData meshData = new() {
                     Name = node.Mesh.Name ?? $"Mesh{node.Mesh.LogicalIndex}",
-                    ParentBoneIndex = boneIndex
+                    ParentBoneIndex = boneIndex,
+                    IsVisible = nodeVisible
                 };
 
                 foreach (MeshPrimitive primitive in node.Mesh.Primitives) {
@@ -508,11 +516,14 @@ namespace Engine.Media {
                     // 计算包围盒
                     CalculateMeshBoundingBox(meshData, meshData.MeshParts);
                     modelData.Meshes.Add(meshData);
+                    // 记录 node → mesh 索引映射（KHR_node_visibility 动画用）
+                    modelData.GltfNodeToMeshIndex[node.LogicalIndex] = modelData.Meshes.Count - 1;
                 }
             }
 
             foreach (Node child in node.VisualChildren) {
-                ProcessNodeForMesh(child, modelData, allNodes, nodeToIndex, ref bufferIndex, materialToIndex);
+                ProcessNodeForMesh(child, modelData, allNodes, nodeToIndex, ref bufferIndex, materialToIndex,
+                    nodeVisible);
             }
         }
 
@@ -714,6 +725,14 @@ namespace Engine.Media {
         }
 
         static void ConvertAnimations(ModelRoot modelRoot, ModelData modelData) {
+            // 构建 material source index → ModelMaterial 查找表
+            Dictionary<int, ModelMaterial> materialsByIndex = new();
+            foreach (ModelMaterial mat in modelData.Materials) {
+                if (mat.SourceMaterialIndex >= 0) {
+                    materialsByIndex[mat.SourceMaterialIndex] = mat;
+                }
+            }
+
             foreach (SharpGLTF.Schema2.Animation anim in modelRoot.LogicalAnimations) {
                 ModelAnimation modelAnim = new() {
                     Name = anim.Name ?? $"Animation{anim.LogicalIndex}",
@@ -721,15 +740,30 @@ namespace Engine.Media {
                 };
 
                 foreach (AnimationChannel channel in anim.Channels) {
-                    ModelAnimation.AnimationChannel modelChannel = new() {
-                        TargetBoneName = channel.TargetNode?.Name ?? $"Node{channel.TargetNode?.LogicalIndex ?? 0}",
-                        Property = ConvertAnimationProperty(channel.TargetNodePath)
-                    };
-
-                    // 根据属性类型获取采样器数据
-                    modelChannel.Sampler = ConvertSamplerByPath(channel);
-
-                    modelAnim.Channels.Add(modelChannel);
+                    if (channel.TargetNodePath == PropertyPath.pointer) {
+                        // KHR_animation_pointer 通道
+                        string path = channel.TargetPointerPath;
+                        if (path != null && path.StartsWith("/nodes/")) {
+                            Action<float, Model> nodeTarget = CreateNodeVisibilityTarget(channel, modelData.GltfNodeToMeshIndex);
+                            if (nodeTarget != null) {
+                                modelAnim.NodeVisibilityTargets.Add(nodeTarget);
+                            }
+                        } else {
+                            Action<float> target = CreatePointerTarget(channel, materialsByIndex);
+                            if (target != null) {
+                                modelAnim.PointerTargets.Add(target);
+                            }
+                        }
+                    }
+                    else {
+                        // 标准骨骼动画通道
+                        ModelAnimation.AnimationChannel modelChannel = new() {
+                            TargetBoneName = channel.TargetNode?.Name ?? $"Node{channel.TargetNode?.LogicalIndex ?? 0}",
+                            Property = ConvertAnimationProperty(channel.TargetNodePath)
+                        };
+                        modelChannel.Sampler = ConvertSamplerByPath(channel);
+                        modelAnim.Channels.Add(modelChannel);
+                    }
                 }
 
                 modelData.Animations.Add(modelAnim);
@@ -807,13 +841,256 @@ namespace Engine.Media {
             return result;
         }
 
+        #region KHR_animation_pointer
+
+        static Action<float> CreatePointerTarget(AnimationChannel channel, Dictionary<int, ModelMaterial> materialsByIndex) {
+            string path = channel.TargetPointerPath;
+            if (string.IsNullOrEmpty(path)) return null;
+
+            string[] segments = path.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length < 3) return null;
+
+            try {
+                if (segments[0] == "materials") {
+                    return CreateMaterialPointerTarget(segments, channel, materialsByIndex);
+                }
+            }
+            catch (Exception ex) {
+                Log.Warning($"[GltfLoader] Pointer target failed for {path}: {ex.Message}");
+            }
+            return null;
+        }
+
+        static Action<float> CreateMaterialPointerTarget(string[] segments, AnimationChannel channel, Dictionary<int, ModelMaterial> materialsByIndex) {
+            if (!int.TryParse(segments[1], out int materialIndex)) return null;
+            if (!materialsByIndex.TryGetValue(materialIndex, out ModelMaterial mat)) return null;
+
+            string propertyPath = string.Join("/", segments, 2, segments.Length - 2);
+
+            // Core PBR
+            switch (propertyPath) {
+                case "pbrMetallicRoughness/baseColorFactor":
+                    return CreateVec4Target(channel, v => { mat.BaseColorFactor = v; mat.Version++; });
+                case "pbrMetallicRoughness/metallicFactor":
+                    return CreateFloatTarget(channel, v => { mat.MetallicFactor = v; mat.Version++; });
+                case "pbrMetallicRoughness/roughnessFactor":
+                    return CreateFloatTarget(channel, v => { mat.RoughnessFactor = v; mat.Version++; });
+                case "emissiveFactor":
+                    return CreateVec3Target(channel, v => { mat.EmissiveFactor = v; mat.Version++; });
+                case "alphaCutoff":
+                    return CreateFloatTarget(channel, v => { mat.AlphaCutoff = v; mat.Version++; });
+            }
+
+            // Texture transform
+            if (propertyPath.Contains("/extensions/KHR_texture_transform/")) {
+                return CreateTextureTransformTarget(propertyPath, channel, mat);
+            }
+
+            // Extensions
+            if (propertyPath.StartsWith("extensions/")) {
+                return CreateExtensionTarget(propertyPath.Substring(11), channel, mat);
+            }
+            return null;
+        }
+
+        static Action<float> CreateTextureTransformTarget(string propertyPath, AnimationChannel channel, ModelMaterial mat) {
+            const string suffix = "/extensions/KHR_texture_transform/";
+            int idx = propertyPath.IndexOf(suffix);
+            if (idx < 0) return null;
+            string texturePath = propertyPath.Substring(0, idx);
+            string propName = propertyPath.Substring(idx + suffix.Length);
+
+            ModelMaterialTexture tex = GetMaterialTexture(mat, texturePath);
+            if (tex == null) return null;
+
+            return propName switch {
+                "offset" => CreateVec2Target(channel, v => { tex.Offset = v; tex.RecomputeUVTransform(); mat.Version++; }),
+                "scale" => CreateVec2Target(channel, v => { tex.Scale = v; tex.RecomputeUVTransform(); mat.Version++; }),
+                "rotation" => CreateFloatTarget(channel, v => { tex.Rotation = v; tex.RecomputeUVTransform(); mat.Version++; }),
+                _ => null
+            };
+        }
+
+        static ModelMaterialTexture GetMaterialTexture(ModelMaterial mat, string texturePath) {
+            if (texturePath == "pbrMetallicRoughness/baseColorTexture") return mat.BaseColorTexture;
+            if (texturePath == "pbrMetallicRoughness/metallicRoughnessTexture") return mat.MetallicRoughnessTexture;
+            if (texturePath == "normalTexture") return mat.NormalTexture;
+            if (texturePath == "occlusionTexture") return mat.OcclusionTexture;
+            if (texturePath == "emissiveTexture") return mat.EmissiveTexture;
+            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatTexture") return mat.ClearCoat?.Texture;
+            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatRoughnessTexture") return mat.ClearCoat?.RoughnessTexture;
+            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatNormalTexture") return mat.ClearCoat?.NormalTexture;
+            if (texturePath == "extensions/KHR_materials_sheen/sheenColorTexture") return mat.Sheen?.ColorTexture;
+            if (texturePath == "extensions/KHR_materials_sheen/sheenRoughnessTexture") return mat.Sheen?.RoughnessTexture;
+            if (texturePath == "extensions/KHR_materials_transmission/transmissionTexture") return mat.Transmission?.Texture;
+            if (texturePath == "extensions/KHR_materials_volume/thicknessTexture") return mat.Volume?.ThicknessTexture;
+            if (texturePath == "extensions/KHR_materials_iridescence/iridescenceTexture") return mat.Iridescence?.Texture;
+            if (texturePath == "extensions/KHR_materials_iridescence/iridescenceThicknessTexture") return mat.Iridescence?.ThicknessTexture;
+            if (texturePath == "extensions/KHR_materials_specular/specularTexture") return mat.Specular?.SpecularTexture;
+            if (texturePath == "extensions/KHR_materials_specular/specularColorTexture") return mat.Specular?.SpecularColorTexture;
+            if (texturePath == "extensions/KHR_materials_anisotropy/anisotropyTexture") return mat.Anisotropy?.AnisotropyTexture;
+            if (texturePath == "extensions/KHR_materials_diffuse_transmission/diffuseTransmissionTexture") return mat.DiffuseTransmission?.Texture;
+            if (texturePath == "extensions/KHR_materials_diffuse_transmission/diffuseTransmissionColorTexture") return mat.DiffuseTransmission?.ColorTexture;
+            return null;
+        }
+
+        static Action<float> CreateExtensionTarget(string extPath, AnimationChannel channel, ModelMaterial mat) {
+            string[] parts = extPath.Split('/');
+            if (parts.Length < 2) return null;
+            string ext = parts[0], prop = parts[1];
+
+            switch (ext) {
+                case "KHR_materials_emissive_strength":
+                    if (mat.EmissiveStrength != null && prop == "emissiveStrength")
+                        return CreateFloatTarget(channel, v => { mat.EmissiveStrength.EmissiveStrength = v; mat.Version++; });
+                    break;
+                case "KHR_materials_ior":
+                    if (mat.Ior != null && prop == "ior")
+                        return CreateFloatTarget(channel, v => { mat.Ior.Ior = v; mat.Version++; });
+                    break;
+                case "KHR_materials_specular":
+                    if (mat.Specular != null) {
+                        if (prop == "specularFactor")
+                            return CreateFloatTarget(channel, v => { mat.Specular.SpecularFactor = v; mat.Version++; });
+                        if (prop == "specularColorFactor")
+                            return CreateVec3Target(channel, v => { mat.Specular.SpecularColorFactor = v; mat.Version++; });
+                    }
+                    break;
+                case "KHR_materials_sheen":
+                    if (mat.Sheen != null) {
+                        if (prop == "sheenColorFactor")
+                            return CreateVec3Target(channel, v => { mat.Sheen.ColorFactor = v; mat.Version++; });
+                        if (prop == "sheenRoughnessFactor")
+                            return CreateFloatTarget(channel, v => { mat.Sheen.RoughnessFactor = v; mat.Version++; });
+                    }
+                    break;
+                case "KHR_materials_clearcoat":
+                    if (mat.ClearCoat != null) {
+                        if (prop == "clearcoatFactor")
+                            return CreateFloatTarget(channel, v => { mat.ClearCoat.Factor = v; mat.Version++; });
+                        if (prop == "clearcoatRoughnessFactor")
+                            return CreateFloatTarget(channel, v => { mat.ClearCoat.RoughnessFactor = v; mat.Version++; });
+                    }
+                    break;
+                case "KHR_materials_transmission":
+                    if (mat.Transmission != null && prop == "transmissionFactor")
+                        return CreateFloatTarget(channel, v => { mat.Transmission.Factor = v; mat.Version++; });
+                    break;
+                case "KHR_materials_volume":
+                    if (mat.Volume != null) {
+                        if (prop == "thicknessFactor")
+                            return CreateFloatTarget(channel, v => { mat.Volume.ThicknessFactor = v; mat.Version++; });
+                        if (prop == "attenuationDistance")
+                            return CreateFloatTarget(channel, v => { mat.Volume.AttenuationDistance = v; mat.Version++; });
+                        if (prop == "attenuationColor")
+                            return CreateVec3Target(channel, v => { mat.Volume.AttenuationColor = v; mat.Version++; });
+                    }
+                    break;
+                case "KHR_materials_iridescence":
+                    if (mat.Iridescence != null) {
+                        if (prop == "iridescenceFactor")
+                            return CreateFloatTarget(channel, v => { mat.Iridescence.Factor = v; mat.Version++; });
+                        if (prop == "iridescenceIor")
+                            return CreateFloatTarget(channel, v => { mat.Iridescence.IOR = v; mat.Version++; });
+                        if (prop == "iridescenceThicknessMinimum")
+                            return CreateFloatTarget(channel, v => { mat.Iridescence.ThicknessMinimum = v; mat.Version++; });
+                        if (prop == "iridescenceThicknessMaximum")
+                            return CreateFloatTarget(channel, v => { mat.Iridescence.ThicknessMaximum = v; mat.Version++; });
+                    }
+                    break;
+                case "KHR_materials_anisotropy":
+                    if (mat.Anisotropy != null) {
+                        if (prop == "anisotropyStrength")
+                            return CreateFloatTarget(channel, v => { mat.Anisotropy.AnisotropyStrength = v; mat.Version++; });
+                        if (prop == "anisotropyRotation")
+                            return CreateFloatTarget(channel, v => { mat.Anisotropy.AnisotropyRotation = v; mat.Version++; });
+                    }
+                    break;
+                case "KHR_materials_dispersion":
+                    if (mat.Dispersion != null && prop == "dispersion")
+                        return CreateFloatTarget(channel, v => { mat.Dispersion.Dispersion = v; mat.Version++; });
+                    break;
+                case "KHR_materials_volume_scatter":
+                    if (mat.VolumeScatter != null) {
+                        if (prop == "multiscatterColor")
+                            return CreateVec3Target(channel, v => { mat.VolumeScatter.MultiscatterColor = v; mat.Version++; });
+                        if (prop == "scatterAnisotropy")
+                            return CreateFloatTarget(channel, v => { mat.VolumeScatter.ScatterAnisotropy = v; mat.Version++; });
+                    }
+                    break;
+                case "KHR_materials_diffuse_transmission":
+                    if (mat.DiffuseTransmission != null) {
+                        if (prop == "diffuseTransmissionFactor")
+                            return CreateFloatTarget(channel, v => { mat.DiffuseTransmission.Factor = v; mat.Version++; });
+                        if (prop == "diffuseTransmissionColorFactor")
+                            return CreateVec3Target(channel, v => { mat.DiffuseTransmission.ColorFactor = v; mat.Version++; });
+                    }
+                    break;
+            }
+            return null;
+        }
+
+        // Typed closure factories — isolateMemory=true ensures independence from ModelRoot
+
+        static Action<float> CreateFloatTarget(AnimationChannel channel, Action<float> set) {
+            var sampler = channel.GetSamplerOrNull<float>();
+            if (sampler == null) return null;
+            var curve = sampler.CreateCurveSampler(true);
+            return time => set(curve.GetPoint(time));
+        }
+
+        static Action<float> CreateVec2Target(AnimationChannel channel, Action<Vector2> set) {
+            var sampler = channel.GetSamplerOrNull<System.Numerics.Vector2>();
+            if (sampler == null) return null;
+            var curve = sampler.CreateCurveSampler(true);
+            return time => set(new Vector2(curve.GetPoint(time).X, curve.GetPoint(time).Y));
+        }
+
+        static Action<float> CreateVec3Target(AnimationChannel channel, Action<Vector3> set) {
+            var sampler = channel.GetSamplerOrNull<System.Numerics.Vector3>();
+            if (sampler == null) return null;
+            var curve = sampler.CreateCurveSampler(true);
+            return time => { var v = curve.GetPoint(time); set(new Vector3(v.X, v.Y, v.Z)); };
+        }
+
+        static Action<float> CreateVec4Target(AnimationChannel channel, Action<Vector4> set) {
+            var sampler = channel.GetSamplerOrNull<System.Numerics.Vector4>();
+            if (sampler == null) return null;
+            var curve = sampler.CreateCurveSampler(true);
+            return time => { var v = curve.GetPoint(time); set(new Vector4(v.X, v.Y, v.Z, v.W)); };
+        }
+
         static int EstimateKeyFrameCount(AnimationChannel channel) {
-            // 尝试获取实际的关键帧数量，否则使用默认值
-            // 动画采样间隔基于动画时长，每秒约 30 帧
             float duration = (float)channel.LogicalParent.Duration;
             int estimatedFrames = Math.Max(1, (int)(duration * 30f));
-            return Math.Min(estimatedFrames, 300); // 限制最大帧数避免内存问题
+            return Math.Min(estimatedFrames, 300);
         }
+
+        static Action<float, Model> CreateNodeVisibilityTarget(AnimationChannel channel, Dictionary<int, int> nodeToMeshIndex) {
+            string path = channel.TargetPointerPath;
+            // Expected: /nodes/{index}/extensions/KHR_node_visibility/visible
+            if (!path.StartsWith("/nodes/")) return null;
+
+            string[] segments = path.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
+            // segments: ["nodes", "{index}", "extensions", "KHR_node_visibility", "visible"]
+            if (segments.Length < 5 || segments[0] != "nodes" || segments[2] != "extensions")
+                return null;
+
+            if (!int.TryParse(segments[1], out int nodeIndex)) return null;
+            if (!nodeToMeshIndex.TryGetValue(nodeIndex, out int meshIndex)) return null;
+
+            var sampler = channel.GetSamplerOrNull<float>();
+            if (sampler == null) return null;
+            var curve = sampler.CreateCurveSampler(true);
+
+            return (time, model) => {
+                if (model == null || meshIndex < 0 || meshIndex >= model.Meshes.Count) return;
+                float value = curve.GetPoint(time);
+                model.Meshes[meshIndex].IsVisible = value >= 0.5f;
+            };
+        }
+
+        #endregion
 
         static unsafe void WriteFloat(byte[] buffer, int offset, float value) {
             // 使用指针直接写入，避免 BitConverter.GetBytes 的数组分配

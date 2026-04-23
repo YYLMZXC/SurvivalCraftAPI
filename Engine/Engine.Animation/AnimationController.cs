@@ -966,7 +966,14 @@ namespace Engine.Animation
             // 1. 层混合
             _blender.BlendLayers(_layers, boneTransforms, _model);
 
-            // 2. IK 后处理（在层混合后应用）
+            // 2. KHR_animation_pointer 采样（材质/纹理属性动画）
+            for (int i = 0; i < _layers.Length; i++)
+            {
+                if (_layers[i].IsActive)
+                    _layers[i].Player?.SamplePointerTargets(_model);
+            }
+
+            // 3. IK 后处理（在层混合后应用）
             _ikSolver?.Solve(boneTransforms, _model);
         }
 

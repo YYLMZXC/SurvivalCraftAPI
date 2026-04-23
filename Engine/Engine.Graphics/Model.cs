@@ -384,6 +384,7 @@ namespace Engine.Graphics {
             Skin?.ResolveJoints(m_bones);
             foreach (ModelMeshData mesh in modelData.Meshes) {
                 ModelMesh modelMesh = NewMesh(mesh.Name, m_bones[mesh.ParentBoneIndex], mesh.BoundingBox);
+                modelMesh.IsVisible = mesh.IsVisible;
                 m_meshes.Add(modelMesh);
                 foreach (ModelMeshPartData meshPart in mesh.MeshParts) {
                     modelMesh.NewMeshPart(

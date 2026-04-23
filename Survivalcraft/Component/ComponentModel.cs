@@ -22,7 +22,7 @@ namespace Game {
 
         public float m_boundingSphereRadius;
 
-        AnimationPlayer m_animationPlayer;
+        public AnimationPlayer m_animationPlayer;
 
         /// <summary>
         /// 动画控制器
@@ -183,6 +183,7 @@ namespace Game {
 
                 m_animationPlayer.Update(Time.FrameDuration);
                 m_animationPlayer.SampleBoneTransforms(m_boneTransforms);
+                m_animationPlayer.SamplePointerTargets(Model);
 
                 // 标记动画已处理
                 Animated = true;

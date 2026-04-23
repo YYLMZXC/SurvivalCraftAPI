@@ -373,6 +373,28 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 采样 KHR_animation_pointer 目标（材质属性等）
+        /// 直接修改 ModelMaterial 属性，递增 Version。
+        /// </summary>
+        public void SamplePointerTargets(Model model = null) {
+            if (_animation == null) return;
+            Model m = model ?? _model;
+            float time = GetEffectiveTime();
+
+            if (_animation.PointerTargets.Count > 0) {
+                for (int i = 0; i < _animation.PointerTargets.Count; i++) {
+                    _animation.PointerTargets[i](time);
+                }
+            }
+
+            if (_animation.NodeVisibilityTargets.Count > 0 && m != null) {
+                for (int i = 0; i < _animation.NodeVisibilityTargets.Count; i++) {
+                    _animation.NodeVisibilityTargets[i](time, m);
+                }
+            }
+        }
+
+        /// <summary>
         /// 在指定时间采样骨骼变换
         /// </summary>
         public void SampleAtTime(float time, Matrix?[] boneTransforms) {

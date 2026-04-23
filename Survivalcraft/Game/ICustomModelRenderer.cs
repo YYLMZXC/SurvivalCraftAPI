@@ -32,10 +32,12 @@ namespace Game {
         void RenderOpaquePass(Camera camera);
 
         /// <summary>
-        /// drawOrder 99/201 调用：排序并渲染 transparent/transmission/scatter parts
+        /// drawOrder 150 调用两次(underwater=false/true)：捕获 transmission FBO，
+        /// 合并所有透明条目并统一 back-to-front 排序渲染。
+        /// 实现可在第一次调用时完成全部工作，第二次调用时 no-op。
         /// </summary>
         /// <param name="camera">当前相机</param>
-        /// <param name="underwater">true = drawOrder 201（水后），false = drawOrder 99（水前）</param>
+        /// <param name="underwater">是否为水后透明物体 pass（实现可忽略此参数）</param>
         void RenderTransparentPass(Camera camera, bool underwater);
 
         /// <summary>

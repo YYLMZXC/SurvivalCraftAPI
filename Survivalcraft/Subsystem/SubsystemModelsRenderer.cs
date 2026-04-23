@@ -86,7 +86,7 @@ namespace Game {
 
         public int ModelsDrawn;
 
-        public int[] m_drawOrders = [-10000, 1, 99, 201];
+        public int[] m_drawOrders = [-10000, 1, 99, 150, 201];
 
         public PrimitivesRenderer3D PrimitivesRenderer => m_primitivesRenderer;
 
@@ -168,7 +168,7 @@ namespace Game {
                     else if (drawOrder == m_drawOrders[2]) //绘制TransparentBeforeWater的Model
                     {
                         if (UseCustomRendering && CustomRenderer != null) {
-                            CustomRenderer.RenderTransparentPass(camera, underwater: false);
+                            // 自定义渲染在 drawOrders[3](150) 统一处理，此处跳过
                         }
                         else {
                             Display.DepthStencilState = DepthStencilState.Default;
@@ -177,10 +177,17 @@ namespace Game {
                             DrawModels(camera, m_modelsToDraw[2], null);
                         }
                     }
-                    else if (drawOrder == m_drawOrders[3]) //绘制TransparentAfterWater的Model
+                    else if (drawOrder == m_drawOrders[3]) //水面之后：自定义FBO捕获+透明渲染
                     {
                         if (UseCustomRendering && CustomRenderer != null) {
+                            CustomRenderer.RenderTransparentPass(camera, underwater: false);
                             CustomRenderer.RenderTransparentPass(camera, underwater: true);
+                        }
+                    }
+                    else if (drawOrder == m_drawOrders[4]) //绘制TransparentAfterWater的Model
+                    {
+                        if (UseCustomRendering && CustomRenderer != null) {
+                            // 自定义渲染已在 drawOrders[3] 统一处理，此处跳过
                         }
                         else {
                             Display.DepthStencilState = DepthStencilState.Default;

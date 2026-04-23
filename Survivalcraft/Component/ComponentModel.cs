@@ -270,12 +270,13 @@ namespace Game {
         public virtual void ProcessBoneHierarchy(ModelBone modelBone, Matrix currentTransform, Matrix[] transforms) {
             Matrix m = modelBone.Transform;
             if (m_boneTransforms[modelBone.Index].HasValue) {
-                if (Model.HasSkin) {
-                    // glTF 蒙皮模型：动画采样的是完整的局部变换，直接替换骨骼变换
+                // AnimationPlayer/AnimationController 输出完整局部变换（含平移），直接替换
+                // DAE 模型通过 SetBoneTransform 设旋转，需要保留原始平移
+                bool fullTransform = Model.HasSkin
+                    || m_animationPlayer?.IsPlaying == true;
+                if (fullTransform) {
                     m = m_boneTransforms[modelBone.Index].Value;
                 } else {
-                    // DAE 模型：保留骨骼的原始平移，只替换旋转/缩放
-                    // 这是为了兼容 Mod 通过 SetBoneTransform 设置骨骼动画的场景
                     Vector3 translation = m.Translation;
                     m.Translation = Vector3.Zero;
                     m *= m_boneTransforms[modelBone.Index].Value;

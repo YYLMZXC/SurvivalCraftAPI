@@ -4,19 +4,9 @@ using Engine.Media;
 
 namespace Game {
     /// <summary>
-    /// 实例渲染数据
-    /// </summary>
-    public struct InstanceRenderData {
-        public ModelMesh Mesh;
-        public ModelMaterial Material;
-        public Matrix WorldMatrix;
-        public SubsystemModelsRenderer.ModelData ModelData;
-        public Texture2D TextureOverride;
-    }
-
-    /// <summary>
     /// 自定义模型渲染器接口
     /// 模组实现此接口以提供自定义渲染（如 PBR）
+    /// 每个模型按 mesh part 独立分类到不同渲染队列
     /// </summary>
     public interface ICustomModelRenderer : IDisposable {
         /// <summary>
@@ -25,33 +15,28 @@ namespace Game {
         void Initialize(SubsystemModelsRenderer subsystemModelsRenderer);
 
         /// <summary>
-        /// 开始新帧渲染
+        /// 开始新帧渲染（设置光源、更新 Scene/Lights UBO 等）
         /// </summary>
         void BeginFrame(Camera camera);
 
         /// <summary>
-        /// 在 DrawModels 之前调用，用于多 Pass 预渲染（如 transmission/scatter）
-        /// 仅在 drawOrder == 1（不透明阶段）时调用
+        /// 准备阶段调用：扫描所有模型的 mesh part，按材质分类到不同渲染队列
+        /// 在所有模型 PrepareModel 完成后调用
         /// </summary>
-        void PreRenderPass(Camera camera, List<SubsystemModelsRenderer.ModelData>[] modelsToDraw);
+        void PrepareCustomQueues(Camera camera, List<SubsystemModelsRenderer.ModelData> allModels);
 
         /// <summary>
-        /// 在透明阶段渲染之前调用（drawOrder == 99）
-        /// 此时 backbuffer 已包含天空+地形+不透明物体
-        /// 用于捕获 backbuffer 供 transmission 材质采样
+        /// drawOrder 1 调用：scatter pass + opaque pass + transmission FBO 捕获
+        /// 自定义渲染器全权管理 GL 状态和渲染
         /// </summary>
-        void PreTransparentPass(Camera camera);
+        void RenderOpaquePass(Camera camera);
 
         /// <summary>
-        /// 渲染单个 mesh part（per-part 材质的蒙皮模型）
+        /// drawOrder 99/201 调用：排序并渲染 transparent/transmission/scatter parts
         /// </summary>
-        void RenderPart(ModelMesh mesh, ModelMeshPart part, ModelMaterial material, SubsystemModelsRenderer.ModelData modelData, Texture2D textureOverride, JointTexture jointTexture = null);
-
-        /// <summary>
-        /// 批量渲染实例（非蒙皮模型）
-        /// 模组应按 mesh+material 分组，使用 GPU 实例化减少 draw call
-        /// </summary>
-        void RenderInstances(List<InstanceRenderData> instances);
+        /// <param name="camera">当前相机</param>
+        /// <param name="underwater">true = drawOrder 201（水后），false = drawOrder 99（水前）</param>
+        void RenderTransparentPass(Camera camera, bool underwater);
 
         /// <summary>
         /// 当前激活的方向光方向（世界空间）

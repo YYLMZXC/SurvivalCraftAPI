@@ -78,7 +78,6 @@ namespace Game {
         public readonly Matrix[] m_jointMatricesBuffer = new Matrix[MaxJointsCount];
         readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
         readonly List<ModelData> m_skinnedModelsBuffer = [];
-        readonly List<InstanceRenderData> m_instanceRenderDataBuffer = [];
 
         // JointTexture for skinned models (reused across frames)
         public JointTexture m_jointTexture;
@@ -121,12 +120,21 @@ namespace Game {
                         }
                     }
                     m_modelsToPrepare.Sort();
-                    foreach (ModelData item in m_modelsToPrepare) {
-                        PrepareModel(item, camera);
-                        m_modelsToDraw[(int)item.ComponentModel.RenderingMode].Add(item);
-                    }
                     if (UseCustomRendering && CustomRenderer != null) {
+                        // 自定义渲染：不走 m_modelsToDraw，自定义渲染器管理自己的队列
+                        foreach (ModelData item in m_modelsToPrepare) {
+                            PrepareModel(item, camera);
+                        }
+                        CustomRenderer.PrepareCustomQueues(camera, m_modelsToPrepare);
                         CustomRenderer.BeginFrame(camera);
+                        ModelsDrawn += m_modelsToPrepare.Count;
+                    }
+                    else {
+                        // 标准路径
+                        foreach (ModelData item in m_modelsToPrepare) {
+                            PrepareModel(item, camera);
+                            m_modelsToDraw[(int)item.ComponentModel.RenderingMode].Add(item);
+                        }
                     }
                 }
             }
@@ -144,40 +152,48 @@ namespace Game {
                     if (drawOrder == m_drawOrders[1]) //绘制类型为AlphaThreshold的Model
                     {
                         if (UseCustomRendering && CustomRenderer != null) {
-                            CustomRenderer.PreRenderPass(camera, m_modelsToDraw);
+                            CustomRenderer.RenderOpaquePass(camera);
                         }
-                        Display.DepthStencilState = DepthStencilState.Default;
-                        Display.RasterizerState = RasterizerState.CullCounterClockwiseScissor;
-                        Display.BlendState = BlendState.Opaque;
-                        DrawModels(camera, m_modelsToDraw[0], null);
-                        Display.RasterizerState = RasterizerState.CullNoneScissor;
-                        DrawModels(camera, m_modelsToDraw[1], 0f);
-                        Display.RasterizerState = RasterizerState.CullCounterClockwiseScissor;
-                        m_primitivesRenderer.Flush(camera.ProjectionMatrix, true, 0);
+                        else {
+                            Display.DepthStencilState = DepthStencilState.Default;
+                            Display.RasterizerState = RasterizerState.CullCounterClockwiseScissor;
+                            Display.BlendState = BlendState.Opaque;
+                            DrawModels(camera, m_modelsToDraw[0], null);
+                            Display.RasterizerState = RasterizerState.CullNoneScissor;
+                            DrawModels(camera, m_modelsToDraw[1], 0f);
+                            Display.RasterizerState = RasterizerState.CullCounterClockwiseScissor;
+                            m_primitivesRenderer.Flush(camera.ProjectionMatrix, true, 0);
+                        }
                     }
                     else if (drawOrder == m_drawOrders[2]) //绘制TransparentBeforeWater的Model
                     {
-                        // 在透明阶段渲染前，让自定义渲染器捕获 backbuffer（此时不透明内容已完成）
                         if (UseCustomRendering && CustomRenderer != null) {
-                            CustomRenderer.PreTransparentPass(camera);
+                            CustomRenderer.RenderTransparentPass(camera, underwater: false);
                         }
-                        Display.DepthStencilState = DepthStencilState.Default;
-                        Display.RasterizerState = RasterizerState.CullNoneScissor;
-                        Display.BlendState = BlendState.AlphaBlend;
-                        DrawModels(camera, m_modelsToDraw[2], null);
+                        else {
+                            Display.DepthStencilState = DepthStencilState.Default;
+                            Display.RasterizerState = RasterizerState.CullNoneScissor;
+                            Display.BlendState = BlendState.AlphaBlend;
+                            DrawModels(camera, m_modelsToDraw[2], null);
+                        }
                     }
                     else if (drawOrder == m_drawOrders[3]) //绘制TransparentAfterWater的Model
                     {
-                        Display.DepthStencilState = DepthStencilState.Default;
-                        Display.RasterizerState = RasterizerState.CullNoneScissor;
-                        Display.BlendState = BlendState.AlphaBlend;
-                        DrawModels(camera, m_modelsToDraw[3], null);
-                        if (ShaderOpaque != null
-                            && ShaderAlphaTested != null) {
-                            m_primitivesRenderer.Flush(camera.ProjectionMatrix);
+                        if (UseCustomRendering && CustomRenderer != null) {
+                            CustomRenderer.RenderTransparentPass(camera, underwater: true);
                         }
                         else {
-                            m_primitivesRenderer.Flush(camera.ProjectionMatrix);
+                            Display.DepthStencilState = DepthStencilState.Default;
+                            Display.RasterizerState = RasterizerState.CullNoneScissor;
+                            Display.BlendState = BlendState.AlphaBlend;
+                            DrawModels(camera, m_modelsToDraw[3], null);
+                            if (ShaderOpaque != null
+                                && ShaderAlphaTested != null) {
+                                m_primitivesRenderer.Flush(camera.ProjectionMatrix);
+                            }
+                            else {
+                                m_primitivesRenderer.Flush(camera.ProjectionMatrix);
+                            }
                         }
                     }
                 }
@@ -272,21 +288,11 @@ namespace Game {
                 }
             }
 
-            if (UseCustomRendering && CustomRenderer != null) {
-                if (m_nonSkinnedModelsBuffer.Count > 0) {
-                    DrawCustomInstancedModels(camera, m_nonSkinnedModelsBuffer, alphaThreshold);
-                }
-                foreach (var skinnedModel in m_skinnedModelsBuffer) {
-                    DrawCustomSkinnedModel(camera, skinnedModel, alphaThreshold);
-                }
+            if (m_nonSkinnedModelsBuffer.Count > 0) {
+                DrawInstancedModels(camera, m_nonSkinnedModelsBuffer, alphaThreshold);
             }
-            else {
-                if (m_nonSkinnedModelsBuffer.Count > 0) {
-                    DrawInstancedModels(camera, m_nonSkinnedModelsBuffer, alphaThreshold);
-                }
-                foreach (var skinnedModel in m_skinnedModelsBuffer) {
-                    DrawSkinnedModel(camera, skinnedModel, alphaThreshold);
-                }
+            foreach (var skinnedModel in m_skinnedModelsBuffer) {
+                DrawSkinnedModel(camera, skinnedModel, alphaThreshold);
             }
 
 
@@ -418,49 +424,6 @@ namespace Game {
         }
 
         /// <summary>
-        /// Draw instanced models using custom renderer
-        /// </summary>
-        public virtual void DrawCustomInstancedModels(Camera camera, List<ModelData> modelsData, float? alphaThreshold) {
-            m_instanceRenderDataBuffer.Clear();
-
-            foreach (var modelData in modelsData) {
-                ComponentModel componentModel = modelData.ComponentModel;
-                Model model = componentModel.Model;
-                if (model == null) continue;
-
-                Texture2D textureOverride = componentModel.TextureOverride;
-
-                foreach (int meshIndex in componentModel.MeshDrawOrders) {
-                    if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
-                    ModelMesh mesh = model.Meshes[meshIndex];
-
-                    int boneIndex = mesh.ParentBone?.Index ?? 0;
-                    Matrix worldMatrix;
-                    if (boneIndex < componentModel.AbsoluteBoneTransformsForCamera.Length) {
-                        worldMatrix = componentModel.AbsoluteBoneTransformsForCamera[boneIndex];
-                    } else {
-                        worldMatrix = Matrix.Identity;
-                    }
-
-                    foreach (ModelMeshPart part in mesh.MeshParts) {
-                        ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                        m_instanceRenderDataBuffer.Add(new InstanceRenderData {
-                            Mesh = mesh,
-                            Material = material,
-                            WorldMatrix = worldMatrix,
-                            ModelData = modelData,
-                            TextureOverride = textureOverride
-                        });
-                    }
-                }
-
-                ModelsDrawn++;
-            }
-
-            CustomRenderer.RenderInstances(m_instanceRenderDataBuffer);
-        }
-
-        /// <summary>
         /// Draw a single skinned model with GPU skinning
         /// </summary>
         public virtual void DrawSkinnedModel(Camera camera, ModelData modelData, float? alphaThreshold) {
@@ -556,40 +519,6 @@ namespace Game {
                     );
                 }
             }
-            ModelsDrawn++;
-        }
-
-        /// <summary>
-        /// Draw a skinned model using custom renderer
-        /// </summary>
-        public virtual void DrawCustomSkinnedModel(Camera camera, ModelData modelData, float? alphaThreshold) {
-            ComponentModel componentModel = modelData.ComponentModel;
-            Model model = componentModel.Model;
-            if (model?.Skin == null) return;
-
-            Texture2D textureOverride = componentModel.TextureOverride;
-            ModelSkin skin = model.Skin;
-            int jointCount = Math.Min(skin.JointCount, MaxJointsCount);
-
-            if (m_jointTexture == null || m_jointTexture.MaxJointCount < jointCount) {
-                m_jointTexture?.Dispose();
-                m_jointTexture = new JointTexture(jointCount);
-            }
-
-            Matrix invertedView = camera.InvertedViewMatrix;
-            jointCount = CalculateJointMatrices(componentModel, model, invertedView, m_jointMatricesBuffer);
-            m_jointTexture.Update(m_jointMatricesBuffer.AsSpan(0, jointCount));
-
-            foreach (int meshIndex in componentModel.MeshDrawOrders) {
-                if (meshIndex < 0 || meshIndex >= model.Meshes.Count) continue;
-                ModelMesh mesh = model.Meshes[meshIndex];
-
-                foreach (ModelMeshPart part in mesh.MeshParts) {
-                    ModelMaterial material = model.GetMaterial(part.MaterialIndex);
-                    CustomRenderer.RenderPart(mesh, part, material, modelData, textureOverride, m_jointTexture);
-                }
-            }
-
             ModelsDrawn++;
         }
 

@@ -25,7 +25,7 @@ namespace Engine.Media {
         }
 
         public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
-            MaterialChannel? channel = material.FindChannel("EmissiveStrength");
+            MaterialChannel? channel = material.FindChannel("Emissive");
             if (channel != null) {
                 EmissiveStrength = GetChannelFactor(channel, "EmissiveStrength", 1f);
             }

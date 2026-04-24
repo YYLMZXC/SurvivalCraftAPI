@@ -495,29 +495,32 @@ namespace Engine.Media {
             if (node.Mesh != null) {
                 int boneIndex = nodeToIndex.TryGetValue(node, out int idx) ? idx : 0;
 
-                ModelMeshData meshData = new() {
-                    Name = node.Mesh.Name ?? $"Mesh{node.Mesh.LogicalIndex}",
-                    ParentBoneIndex = boneIndex,
-                    IsVisible = nodeVisible
-                };
-
+                // 每个 primitive 创建独立 ModelMeshData，避免同一 mesh 内不同材质的 parts 被错误地一起绘制
                 foreach (MeshPrimitive primitive in node.Mesh.Primitives) {
                     if (primitive.DrawPrimitiveType != GltfPrimitiveType.TRIANGLES) {
                         continue;
                     }
 
                     ModelMeshPartData meshPart = ProcessPrimitive(primitive, modelData, ref bufferIndex, materialToIndex);
-                    if (meshPart != null) {
-                        meshData.MeshParts.Add(meshPart);
-                    }
-                }
+                    if (meshPart == null) continue;
 
-                if (meshData.MeshParts.Count > 0) {
-                    // 计算包围盒
+                    ModelMeshData meshData = new() {
+                        Name = node.Mesh.Name ?? $"Mesh{node.Mesh.LogicalIndex}",
+                        ParentBoneIndex = boneIndex,
+                        IsVisible = nodeVisible
+                    };
+                    meshData.MeshParts.Add(meshPart);
                     CalculateMeshBoundingBox(meshData, meshData.MeshParts);
                     modelData.Meshes.Add(meshData);
-                    // 记录 node → mesh 索引映射（KHR_node_visibility 动画用）
-                    modelData.GltfNodeToMeshIndex[node.LogicalIndex] = modelData.Meshes.Count - 1;
+                }
+
+                // 记录 node → mesh 索引映射（KHR_node_visibility 动画用）
+                // 存储该 node 第一个 mesh 的索引，CreateNodeVisibilityTarget 通过 ParentBoneIndex 查找所有同级 mesh
+                for (int mi = modelData.Meshes.Count - 1; mi >= 0; mi--) {
+                    if (modelData.Meshes[mi].ParentBoneIndex == boneIndex) {
+                        modelData.GltfNodeToMeshIndex[node.LogicalIndex] = mi;
+                        break;
+                    }
                 }
             }
 
@@ -1202,7 +1205,14 @@ namespace Engine.Media {
                 float value = curve.GetPoint(time);
                 bool visible = value >= 0.5f;
                 if (meshIndex >= 0 && meshIndex < model.Meshes.Count) {
-                    model.Meshes[meshIndex].IsVisible = visible;
+                    // 一个 glTF mesh 可能被拆分为多个 ModelMesh（每个 primitive 一个），
+                    // 通过 ParentBone 查找所有同级 mesh
+                    ModelBone bone = model.Meshes[meshIndex].ParentBone;
+                    for (int i = 0; i < model.Meshes.Count; i++) {
+                        if (model.Meshes[i].ParentBone == bone) {
+                            model.Meshes[i].IsVisible = visible;
+                        }
+                    }
                 }
                 if (lightIndex >= 0 && lightIndex < model.Lights.Count) {
                     model.Lights[lightIndex].IsVisible = visible;

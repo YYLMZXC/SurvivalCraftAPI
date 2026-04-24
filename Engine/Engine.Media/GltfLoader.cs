@@ -521,6 +521,32 @@ namespace Engine.Media {
                 }
             }
 
+            // KHR_lights_punctual
+            if (node.PunctualLight != null && modelData.Lights.Count < ModelLight.MaxPunctualLights) {
+                var pl = node.PunctualLight;
+                var wm = node.WorldMatrix;
+                ModelLightData ld = new() {
+                    Color = new Vector3(pl.Color.X, pl.Color.Y, pl.Color.Z),
+                    Intensity = pl.Intensity,
+                    Range = pl.Range,
+                    Position = new Vector3(wm.M41, wm.M42, wm.M43),
+                    Direction = Vector3.Normalize(new Vector3(-wm.M31, -wm.M32, -wm.M33)),
+                    IsVisible = nodeVisible
+                };
+                switch (pl.LightType) {
+                    case PunctualLightType.Directional: ld.Type = ModelLightType.Directional; break;
+                    case PunctualLightType.Point: ld.Type = ModelLightType.Point; break;
+                    case PunctualLightType.Spot:
+                        ld.Type = ModelLightType.Spot;
+                        ld.InnerConeCos = MathF.Cos(pl.InnerConeAngle);
+                        ld.OuterConeCos = MathF.Cos(pl.OuterConeAngle);
+                        break;
+                }
+                modelData.Lights.Add(ld);
+                // 记录 node → light 索引映射（visibility 动画用）
+                modelData.GltfNodeToLightIndex[node.LogicalIndex] = modelData.Lights.Count - 1;
+            }
+
             foreach (Node child in node.VisualChildren) {
                 ProcessNodeForMesh(child, modelData, allNodes, nodeToIndex, ref bufferIndex, materialToIndex,
                     nodeVisible);
@@ -744,7 +770,7 @@ namespace Engine.Media {
                         // KHR_animation_pointer 通道
                         string path = channel.TargetPointerPath;
                         if (path != null && path.StartsWith("/nodes/")) {
-                            Action<float, Model> nodeTarget = CreateNodeVisibilityTarget(channel, modelData.GltfNodeToMeshIndex);
+                            Action<float, Model> nodeTarget = CreateNodeVisibilityTarget(channel, modelData.GltfNodeToMeshIndex, modelData.GltfNodeToLightIndex);
                             if (nodeTarget != null) {
                                 modelAnim.NodeVisibilityTargets.Add(nodeTarget);
                             }
@@ -1066,27 +1092,38 @@ namespace Engine.Media {
             return Math.Min(estimatedFrames, 300);
         }
 
-        static Action<float, Model> CreateNodeVisibilityTarget(AnimationChannel channel, Dictionary<int, int> nodeToMeshIndex) {
+        static Action<float, Model> CreateNodeVisibilityTarget(AnimationChannel channel,
+            Dictionary<int, int> nodeToMeshIndex, Dictionary<int, int> nodeToLightIndex) {
             string path = channel.TargetPointerPath;
             // Expected: /nodes/{index}/extensions/KHR_node_visibility/visible
             if (!path.StartsWith("/nodes/")) return null;
 
             string[] segments = path.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
-            // segments: ["nodes", "{index}", "extensions", "KHR_node_visibility", "visible"]
             if (segments.Length < 5 || segments[0] != "nodes" || segments[2] != "extensions")
                 return null;
 
             if (!int.TryParse(segments[1], out int nodeIndex)) return null;
-            if (!nodeToMeshIndex.TryGetValue(nodeIndex, out int meshIndex)) return null;
 
             var sampler = channel.GetSamplerOrNull<float>();
             if (sampler == null) return null;
             var curve = sampler.CreateCurveSampler(true);
 
+            // 查找此节点对应的 mesh 和/或 light
+            int meshIndex = nodeToMeshIndex.TryGetValue(nodeIndex, out int mi) ? mi : -1;
+            int lightIndex = nodeToLightIndex.TryGetValue(nodeIndex, out int li) ? li : -1;
+
+            if (meshIndex < 0 && lightIndex < 0) return null;
+
             return (time, model) => {
-                if (model == null || meshIndex < 0 || meshIndex >= model.Meshes.Count) return;
+                if (model == null) return;
                 float value = curve.GetPoint(time);
-                model.Meshes[meshIndex].IsVisible = value >= 0.5f;
+                bool visible = value >= 0.5f;
+                if (meshIndex >= 0 && meshIndex < model.Meshes.Count) {
+                    model.Meshes[meshIndex].IsVisible = visible;
+                }
+                if (lightIndex >= 0 && lightIndex < model.Lights.Count) {
+                    model.Lights[lightIndex].IsVisible = visible;
+                }
             };
         }
 

@@ -30,6 +30,11 @@ namespace Engine.Media {
         public List<ModelAnimation> Animations { get; set; } = [];
 
         /// <summary>
+        /// 灯光数据列表（KHR_lights_punctual，glTF 加载时填充）
+        /// </summary>
+        public List<ModelLightData> Lights = [];
+
+        /// <summary>
         /// glTF 纹理 LogicalIndex 到 Textures 列表索引的映射
         /// 仅在加载过程中有效
         /// </summary>
@@ -40,6 +45,12 @@ namespace Engine.Media {
         /// 仅在加载过程中有效
         /// </summary>
         internal Dictionary<int, int> GltfNodeToMeshIndex = new();
+
+        /// <summary>
+        /// glTF node LogicalIndex 到 Lights 列表索引的映射（KHR_node_visibility 用）
+        /// 仅在加载过程中有效
+        /// </summary>
+        internal Dictionary<int, int> GltfNodeToLightIndex = new();
 
         /// <summary>
         /// 获取纹理在 Textures 列表中的索引

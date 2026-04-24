@@ -76,6 +76,11 @@ namespace Engine.Graphics {
         public List<ModelAnimation> Animations { get; set; } = [];
 
         /// <summary>
+        /// 灯光列表（KHR_lights_punctual）
+        /// </summary>
+        public List<ModelLight> Lights { get; set; } = [];
+
+        /// <summary>
         /// 是否支持蒙皮
         /// </summary>
         public bool HasSkin => Skin != null;
@@ -396,6 +401,20 @@ namespace Engine.Graphics {
                         meshPart.MaterialIndex
                     );
                 }
+            }
+            // 转换灯光数据
+            foreach (ModelLightData ld in modelData.Lights) {
+                Lights.Add(new ModelLight {
+                    Type = ld.Type,
+                    Position = ld.Position,
+                    Direction = ld.Direction,
+                    Color = ld.Color,
+                    Intensity = ld.Intensity,
+                    Range = ld.Range,
+                    InnerConeCos = ld.InnerConeCos,
+                    OuterConeCos = ld.OuterConeCos,
+                    IsVisible = ld.IsVisible
+                });
             }
         }
 

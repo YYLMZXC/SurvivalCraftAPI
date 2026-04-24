@@ -564,6 +564,7 @@ namespace Engine.Media {
             var positions = posAccessor.AsVector3Array();
             var normals = primitive.GetVertexAccessor("NORMAL")?.AsVector3Array();
             var uv0 = primitive.GetVertexAccessor("TEXCOORD_0")?.AsVector2Array();
+            var uv1 = primitive.GetVertexAccessor("TEXCOORD_1")?.AsVector2Array();
             var joints = primitive.GetVertexAccessor("JOINTS_0")?.AsVector4Array();
             var weights = primitive.GetVertexAccessor("WEIGHTS_0")?.AsVector4Array();
 
@@ -597,6 +598,13 @@ namespace Engine.Media {
             bool hasUV0 = uv0 != null;
             elements.Add(new VertexElement(offset, VertexElementFormat.Vector2, VertexElementSemantic.TextureCoordinate));
             offset += 8;
+
+            // UV1 (Vector2) - 仅在有 TEXCOORD_1 数据时添加
+            bool hasUV1 = uv1 != null;
+            if (hasUV1) {
+                elements.Add(new VertexElement(offset, VertexElementFormat.Vector2, VertexElementSemantic.TextureCoordinate1));
+                offset += 8;
+            }
 
             // BlendIndices (Vector4 - 作为 4 个 float 存储)
             // BlendWeights (Vector4)
@@ -641,6 +649,13 @@ namespace Engine.Media {
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, 0f, 0f);
                 }
                 currentOffset += 8;
+
+                // UV1 - 仅在有 TEXCOORD_1 数据时写入
+                if (hasUV1) {
+                    var uv = uv1[i];
+                    WriteVector2(vertexBuffer, baseOffset + currentOffset, uv.X, uv.Y);
+                    currentOffset += 8;
+                }
 
                 // BlendIndices 和 BlendWeights
                 if (hasSkinning) {

@@ -579,6 +579,38 @@ namespace Engine.Media {
                 }
             }
 
+            // 无预计算切线时：先 unweld 再生成切线
+            // 共享顶点在 UV 缝合线处有冲突的切线方向，unweld 后每个三角形有独立顶点
+            System.Numerics.Vector4[] generatedTangents = null;
+            System.Numerics.Vector3[] uwPos = null, uwNrm = null;
+            System.Numerics.Vector2[] uwUv0 = null, uwUv1 = null;
+            System.Numerics.Vector4[] uwJoints = null, uwWeights = null;
+
+            if (tangents == null && normals != null && uv0 != null && indices != null) {
+                int idxCount = indices.Length;
+                uwPos = new System.Numerics.Vector3[idxCount];
+                uwNrm = new System.Numerics.Vector3[idxCount];
+                uwUv0 = new System.Numerics.Vector2[idxCount];
+                if (uv1 != null) uwUv1 = new System.Numerics.Vector2[idxCount];
+                if (joints != null) uwJoints = new System.Numerics.Vector4[idxCount];
+                if (weights != null) uwWeights = new System.Numerics.Vector4[idxCount];
+
+                for (int i = 0; i < idxCount; i++) {
+                    int idx = (int)indices[i];
+                    uwPos[i] = positions[idx];
+                    uwNrm[i] = normals[idx];
+                    uwUv0[i] = uv0[idx];
+                    if (uwUv1 != null) uwUv1[i] = uv1[idx];
+                    if (uwJoints != null) uwJoints[i] = joints[idx];
+                    if (uwWeights != null) uwWeights[i] = weights[idx];
+                }
+
+                indices = new uint[idxCount];
+                for (int i = 0; i < idxCount; i++) indices[i] = (uint)i;
+
+                generatedTangents = GenerateTangents(uwPos, uwNrm, uwUv0, indices);
+            }
+
             // 构建顶点声明
             // 注意：着色器期望 Position, Normal, TexCoord 都是必需的
             List<VertexElement> elements = new();
@@ -608,7 +640,7 @@ namespace Engine.Media {
             }
 
             // Tangent (Vector4) - 仅在有 TANGENT 数据时添加
-            bool hasTangents = tangents != null;
+            bool hasTangents = tangents != null || generatedTangents != null;
             if (hasTangents) {
                 elements.Add(new VertexElement(offset, VertexElementFormat.Vector4, VertexElementSemantic.Tangent));
                 offset += 16;
@@ -627,7 +659,7 @@ namespace Engine.Media {
             VertexDeclaration vertexDecl = new(elements.ToArray());
 
             // 构建顶点缓冲
-            int vertexCount = positions.Count;
+            int vertexCount = uwPos != null ? uwPos.Length : positions.Count;
             byte[] vertexBuffer = new byte[vertexCount * offset];
             int vertexStride = offset;
 
@@ -636,13 +668,13 @@ namespace Engine.Media {
                 int currentOffset = 0;
 
                 // Position
-                var pos = positions[i];
+                var pos = uwPos != null ? uwPos[i] : positions[i];
                 WriteVector3(vertexBuffer, baseOffset + currentOffset, pos.X, pos.Y, pos.Z);
                 currentOffset += 12;
 
                 // Normal - 始终写入，没有数据时使用默认向上法线
                 if (hasNormals) {
-                    var normal = normals[i];
+                    var normal = uwNrm != null ? uwNrm[i] : normals[i];
                     WriteVector3(vertexBuffer, baseOffset + currentOffset, normal.X, normal.Y, normal.Z);
                 } else {
                     WriteVector3(vertexBuffer, baseOffset + currentOffset, 0f, 1f, 0f);
@@ -651,7 +683,7 @@ namespace Engine.Media {
 
                 // UV0 - 始终写入，没有数据时使用默认值
                 if (hasUV0) {
-                    var uv = uv0[i];
+                    var uv = uwUv0 != null ? uwUv0[i] : uv0[i];
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, uv.X, uv.Y);
                 } else {
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, 0f, 0f);
@@ -660,22 +692,27 @@ namespace Engine.Media {
 
                 // UV1 - 仅在有 TEXCOORD_1 数据时写入
                 if (hasUV1) {
-                    var uv = uv1[i];
+                    var uv = uwUv1 != null ? uwUv1[i] : uv1[i];
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, uv.X, uv.Y);
                     currentOffset += 8;
                 }
 
-                // Tangent - 仅在有 TANGENT 数据时写入
+                // Tangent
                 if (hasTangents) {
-                    var t = tangents[i];
-                    WriteVector4(vertexBuffer, baseOffset + currentOffset, t.X, t.Y, t.Z, t.W);
+                    if (tangents != null) {
+                        var t = tangents[i];
+                        WriteVector4(vertexBuffer, baseOffset + currentOffset, t.X, t.Y, t.Z, t.W);
+                    } else {
+                        var t = generatedTangents[i];
+                        WriteVector4(vertexBuffer, baseOffset + currentOffset, t.X, t.Y, t.Z, t.W);
+                    }
                     currentOffset += 16;
                 }
 
                 // BlendIndices 和 BlendWeights
                 if (hasSkinning) {
-                    var joint = joints[i];
-                    var weight = weights[i];
+                    var joint = uwJoints != null ? uwJoints[i] : joints[i];
+                    var weight = uwWeights != null ? uwWeights[i] : weights[i];
 
                     // BlendIndices (存储为 float)
                     WriteVector4(buffer: vertexBuffer, baseOffset + currentOffset, joint.X, joint.Y, joint.Z, joint.W);
@@ -714,7 +751,22 @@ namespace Engine.Media {
             modelData.Buffers.Add(buffersData);
 
             // 计算包围盒
-            BoundingBox bbox = CalculateBoundingBoxFromPositions(positions, indices);
+            BoundingBox bbox;
+            if (uwPos != null) {
+                var min = new Vector3(float.MaxValue);
+                var max = new Vector3(float.MinValue);
+                for (int i = 0; i < uwPos.Length; i++) {
+                    min.X = Math.Min(min.X, uwPos[i].X);
+                    min.Y = Math.Min(min.Y, uwPos[i].Y);
+                    min.Z = Math.Min(min.Z, uwPos[i].Z);
+                    max.X = Math.Max(max.X, uwPos[i].X);
+                    max.Y = Math.Max(max.Y, uwPos[i].Y);
+                    max.Z = Math.Max(max.Z, uwPos[i].Z);
+                }
+                bbox = new BoundingBox(min, max);
+            } else {
+                bbox = CalculateBoundingBoxFromPositions(positions, indices);
+            }
 
             ModelMeshPartData meshPart = new() {
                 BuffersDataIndex = bufferIndex++,
@@ -1159,6 +1211,69 @@ namespace Engine.Media {
         }
 
         #endregion
+
+        static System.Numerics.Vector4[] GenerateTangents(
+            System.Numerics.Vector3[] positions,
+            System.Numerics.Vector3[] normals,
+            System.Numerics.Vector2[] uvs,
+            uint[] indices) {
+            if (positions == null || normals == null || uvs == null || indices == null) return null;
+            int vertexCount = positions.Length;
+            if (vertexCount == 0 || normals.Length < vertexCount || uvs.Length < vertexCount) return null;
+
+            var tan1 = new System.Numerics.Vector3[vertexCount];
+            var tan2 = new System.Numerics.Vector3[vertexCount];
+
+            for (int i = 0; i + 2 < indices.Length; i += 3) {
+                int i0 = (int)indices[i], i1 = (int)indices[i + 1], i2 = (int)indices[i + 2];
+                if ((uint)i0 >= vertexCount || (uint)i1 >= vertexCount || (uint)i2 >= vertexCount) continue;
+
+                var p0 = positions[i0]; var p1 = positions[i1]; var p2 = positions[i2];
+                var uv0 = uvs[i0]; var uv1 = uvs[i1]; var uv2 = uvs[i2];
+
+                var edge1 = p1 - p0; var edge2 = p2 - p0;
+                var duv1 = uv1 - uv0; var duv2 = uv2 - uv0;
+
+                float denom = duv1.X * duv2.Y - duv2.X * duv1.Y;
+                if (MathF.Abs(denom) < 1e-8f) continue;
+                float inv = 1f / denom;
+
+                var sdir = (edge1 * duv2.Y - edge2 * duv1.Y) * inv;
+                var tdir = (edge2 * duv1.X - edge1 * duv2.X) * inv;
+
+                tan1[i0] += sdir; tan1[i1] += sdir; tan1[i2] += sdir;
+                tan2[i0] += tdir; tan2[i1] += tdir; tan2[i2] += tdir;
+            }
+
+            var tangents = new System.Numerics.Vector4[vertexCount];
+            for (int i = 0; i < vertexCount; i++) {
+                var n = normals[i];
+                if (n.LengthSquared() < float.Epsilon) {
+                    tangents[i] = new System.Numerics.Vector4(1f, 0f, 0f, 1f);
+                    continue;
+                }
+                n = System.Numerics.Vector3.Normalize(n);
+                var t = tan1[i];
+
+                if (t.LengthSquared() < 1e-12f) {
+                    // 零切线退化：选一个垂直于法线的方向
+                    var axis = MathF.Abs(n.Y) < 0.999f
+                        ? System.Numerics.Vector3.UnitY
+                        : System.Numerics.Vector3.UnitX;
+                    t = System.Numerics.Vector3.Cross(axis, n);
+                    if (t.LengthSquared() < 1e-12f) t = System.Numerics.Vector3.UnitX;
+                    tangents[i] = new System.Numerics.Vector4(System.Numerics.Vector3.Normalize(t), 1f);
+                    continue;
+                }
+
+                t = System.Numerics.Vector3.Normalize(t - n * System.Numerics.Vector3.Dot(n, t));
+                var b = System.Numerics.Vector3.Cross(n, t);
+                // glTF 约定：bitangent = cross(N, T) * w，与 Lengyel 标准公式方向相反
+                float w = System.Numerics.Vector3.Dot(b, tan2[i]) < 0f ? 1f : -1f;
+                tangents[i] = new System.Numerics.Vector4(t, w);
+            }
+            return tangents;
+        }
 
         static unsafe void WriteFloat(byte[] buffer, int offset, float value) {
             // 使用指针直接写入，避免 BitConverter.GetBytes 的数组分配

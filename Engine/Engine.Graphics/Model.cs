@@ -413,6 +413,7 @@ namespace Engine.Graphics {
                     Range = ld.Range,
                     InnerConeCos = ld.InnerConeCos,
                     OuterConeCos = ld.OuterConeCos,
+                    BoneIndex = ld.BoneIndex,
                     IsVisible = ld.IsVisible
                 });
             }

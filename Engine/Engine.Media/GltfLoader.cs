@@ -531,7 +531,8 @@ namespace Engine.Media {
                     Range = pl.Range,
                     Position = new Vector3(wm.M41, wm.M42, wm.M43),
                     Direction = Vector3.Normalize(new Vector3(-wm.M31, -wm.M32, -wm.M33)),
-                    IsVisible = nodeVisible
+                    IsVisible = nodeVisible,
+                    BoneIndex = nodeToIndex.TryGetValue(node, out int bIdx) ? bIdx : -1
                 };
                 switch (pl.LightType) {
                     case PunctualLightType.Directional: ld.Type = ModelLightType.Directional; break;

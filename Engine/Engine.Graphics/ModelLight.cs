@@ -10,6 +10,7 @@ namespace Engine.Graphics {
         public float Range { get; set; } = float.PositiveInfinity;
         public float InnerConeCos { get; set; } = 1.0f; // cos(0°), KHR_lights_punctual default
         public float OuterConeCos { get; set; } = 0.70710678118f; // cos(PI/4), KHR_lights_punctual default
+        public int BoneIndex { get; set; } = -1;
         public bool IsVisible { get; set; } = true;
     }
 

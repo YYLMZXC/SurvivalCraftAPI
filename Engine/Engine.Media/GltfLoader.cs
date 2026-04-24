@@ -565,6 +565,7 @@ namespace Engine.Media {
             var normals = primitive.GetVertexAccessor("NORMAL")?.AsVector3Array();
             var uv0 = primitive.GetVertexAccessor("TEXCOORD_0")?.AsVector2Array();
             var uv1 = primitive.GetVertexAccessor("TEXCOORD_1")?.AsVector2Array();
+            var tangents = primitive.GetVertexAccessor("TANGENT")?.AsVector4Array();
             var joints = primitive.GetVertexAccessor("JOINTS_0")?.AsVector4Array();
             var weights = primitive.GetVertexAccessor("WEIGHTS_0")?.AsVector4Array();
 
@@ -604,6 +605,13 @@ namespace Engine.Media {
             if (hasUV1) {
                 elements.Add(new VertexElement(offset, VertexElementFormat.Vector2, VertexElementSemantic.TextureCoordinate1));
                 offset += 8;
+            }
+
+            // Tangent (Vector4) - 仅在有 TANGENT 数据时添加
+            bool hasTangents = tangents != null;
+            if (hasTangents) {
+                elements.Add(new VertexElement(offset, VertexElementFormat.Vector4, VertexElementSemantic.Tangent));
+                offset += 16;
             }
 
             // BlendIndices (Vector4 - 作为 4 个 float 存储)
@@ -655,6 +663,13 @@ namespace Engine.Media {
                     var uv = uv1[i];
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, uv.X, uv.Y);
                     currentOffset += 8;
+                }
+
+                // Tangent - 仅在有 TANGENT 数据时写入
+                if (hasTangents) {
+                    var t = tangents[i];
+                    WriteVector4(vertexBuffer, baseOffset + currentOffset, t.X, t.Y, t.Z, t.W);
+                    currentOffset += 16;
                 }
 
                 // BlendIndices 和 BlendWeights

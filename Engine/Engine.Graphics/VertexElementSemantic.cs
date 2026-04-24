@@ -3,6 +3,7 @@ namespace Engine.Graphics {
         Position,
         Color,
         Normal,
+        Tangent,
         TextureCoordinate,
         TextureCoordinate0,
         TextureCoordinate1,

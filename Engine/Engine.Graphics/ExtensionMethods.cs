@@ -13,6 +13,7 @@ namespace Engine.Graphics {
                 case VertexElementSemantic.Position: return "POSITION";
                 case VertexElementSemantic.Color: return "COLOR";
                 case VertexElementSemantic.Normal: return "NORMAL";
+                case VertexElementSemantic.Tangent: return "TANGENT";
                 case VertexElementSemantic.TextureCoordinate: return "TEXCOORD";
                 case VertexElementSemantic.TextureCoordinate0: return "TEXCOORD0";
                 case VertexElementSemantic.TextureCoordinate1: return "TEXCOORD1";

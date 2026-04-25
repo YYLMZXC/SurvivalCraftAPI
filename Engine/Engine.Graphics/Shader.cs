@@ -293,7 +293,8 @@ namespace Engine.Graphics {
                 ShaderParameter shaderParameter = new(this, stringBuilder2, shaderParameterType, size2) { Location = uniformLocation };
                 dictionary3.Add(shaderParameter.Name, shaderParameter);
                 list.Add(shaderParameter);
-                if (shaderParameterType == ShaderParameterType.Texture2D) {
+                if (shaderParameterType == ShaderParameterType.Texture2D
+                    || shaderParameterType == ShaderParameterType.Texture2DArray) {
                     if (!dictionary2.TryGetValue(shaderParameter.Name, out string value2)) {
                         throw new InvalidOperationException($"Texture \"{shaderParameter.Name}\" has no sampler defined in shader metadata.");
                     }

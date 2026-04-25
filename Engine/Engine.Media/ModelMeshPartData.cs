@@ -20,5 +20,10 @@ namespace Engine.Media {
         public int InstanceCount;
 
         public System.Numerics.Matrix4x4[] InstanceMatrices;
+
+        // Morph Target
+        public MorphTargetTexture MorphTargetTexture;
+        public int MorphTargetCount;
+        public float[] MorphWeights;
     }
 }

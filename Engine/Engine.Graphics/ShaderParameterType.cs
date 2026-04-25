@@ -13,6 +13,7 @@ namespace Engine.Graphics {
         Int = 10,
         IntVec2 = 11,
         IntVec3 = 12,
-        IntVec4 = 13
+        IntVec4 = 13,
+        Texture2DArray = 14
     }
 }

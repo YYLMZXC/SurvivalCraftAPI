@@ -392,7 +392,7 @@ namespace Engine.Graphics {
                 modelMesh.IsVisible = mesh.IsVisible;
                 m_meshes.Add(modelMesh);
                 foreach (ModelMeshPartData meshPart in mesh.MeshParts) {
-                    modelMesh.NewMeshPart(
+                    ModelMeshPart part = modelMesh.NewMeshPart(
                         array[meshPart.BuffersDataIndex],
                         array2[meshPart.BuffersDataIndex],
                         meshPart.StartIndex,
@@ -403,6 +403,11 @@ namespace Engine.Graphics {
                         meshPart.InstanceMatrices,
                         meshPart.InstanceCount
                     );
+                    if (meshPart.MorphTargetTexture != null) {
+                        part.MorphTargetTexture = meshPart.MorphTargetTexture;
+                        part.MorphTargetCount = meshPart.MorphTargetCount;
+                        part.MorphWeights = meshPart.MorphWeights;
+                    }
                 }
             }
             // 转换灯光数据

@@ -15,6 +15,13 @@ namespace Game {
             public float Ty;
         }
 
+        public struct SourceModelVertexWithTangent {
+            public float X, Y, Z;
+            public float Nx, Ny, Nz;
+            public float Tx, Ty;
+            public float Bx, By, Bz, Bw;
+        }
+
         public struct InstancedVertex {
             public float X;
             public float Y;
@@ -159,56 +166,73 @@ namespace Game {
 
                 ReadOnlyList<VertexElement> vertexElements = vertexBuffer.VertexDeclaration.VertexElements;
 
-                // 验证顶点格式：必须是 Position + Normal + TextureCoordinate 格式
-                // 且偏移量符合预期（与 SourceModelVertex 结构匹配）
-                if (vertexElements.Count < 3 ||
-                    vertexElements[0].Offset != 0 ||
-                    vertexElements[0].Semantic != VertexElementSemantic.Position.GetSemanticString() ||
-                    vertexElements[1].Offset != 12 ||
-                    vertexElements[1].Semantic != VertexElementSemantic.Normal.GetSemanticString() ||
-                    vertexElements[2].Offset != 24 ||
-                    vertexElements[2].Semantic != VertexElementSemantic.TextureCoordinate.GetSemanticString()) {
-                    // 不支持的顶点格式，跳过此 part
+                // 验证顶点格式：必须包含 Position + Normal + TextureCoordinate
+                bool hasPositionNormalTex = vertexElements.Count >= 3
+                    && vertexElements[0].Offset == 0
+                    && vertexElements[0].Semantic == VertexElementSemantic.Position.GetSemanticString()
+                    && vertexElements[1].Offset == 12
+                    && vertexElements[1].Semantic == VertexElementSemantic.Normal.GetSemanticString()
+                    && vertexElements[2].Offset == 24
+                    && vertexElements[2].Semantic == VertexElementSemantic.TextureCoordinate.GetSemanticString();
+
+                if (!hasPositionNormalTex) {
                     continue;
                 }
+
+                bool hasTangent = vertexElements.Count >= 4
+                    && vertexElements[3].Offset == 32
+                    && vertexElements[3].Semantic == VertexElementSemantic.Tangent.GetSemanticString();
 
                 int[] indexData = BlockMesh.GetIndexData<int>(indexBuffer);
-                SourceModelVertex[] vertexData = BlockMesh.GetVertexData<SourceModelVertex>(vertexBuffer);
-
-                if (vertexData == null || vertexData.Length == 0 || indexData == null) {
-                    continue;
-                }
+                if (indexData == null) continue;
 
                 Dictionary<int, int> vertexRemap = new();
 
-                for (int j = meshPart.StartIndex; j < meshPart.StartIndex + meshPart.IndicesCount; j++) {
-                    if (j >= indexData.Length) {
-                        continue; // 防止索引越界
-                    }
+                if (hasTangent) {
+                    SourceModelVertexWithTangent[] vertexData = BlockMesh.GetVertexData<SourceModelVertexWithTangent>(vertexBuffer);
+                    if (vertexData == null || vertexData.Length == 0) continue;
 
-                    int originalIndex = indexData[j];
-                    if (originalIndex < 0 || originalIndex >= vertexData.Length) {
-                        continue; // 防止顶点索引越界
-                    }
+                    for (int j = meshPart.StartIndex; j < meshPart.StartIndex + meshPart.IndicesCount; j++) {
+                        if (j >= indexData.Length) continue;
+                        int originalIndex = indexData[j];
+                        if (originalIndex < 0 || originalIndex >= vertexData.Length) continue;
 
-                    if (!vertexRemap.TryGetValue(originalIndex, out int newIndex)) {
-                        newIndex = vertices.Count;
-                        vertexRemap[originalIndex] = newIndex;
-
-                        InstancedVertex vertex = default;
-                        SourceModelVertex srcVertex = vertexData[originalIndex];
-                        vertex.X = srcVertex.X;
-                        vertex.Y = srcVertex.Y;
-                        vertex.Z = srcVertex.Z;
-                        vertex.Nx = srcVertex.Nx;
-                        vertex.Ny = srcVertex.Ny;
-                        vertex.Nz = srcVertex.Nz;
-                        vertex.Tx = srcVertex.Tx;
-                        vertex.Ty = srcVertex.Ty;
-                        vertex.Instance = modelMesh.ParentBone.Index;
-                        vertices.Add(vertex);
+                        if (!vertexRemap.TryGetValue(originalIndex, out int newIndex)) {
+                            newIndex = vertices.Count;
+                            vertexRemap[originalIndex] = newIndex;
+                            SourceModelVertexWithTangent src = vertexData[originalIndex];
+                            vertices.Add(new InstancedVertex {
+                                X = src.X, Y = src.Y, Z = src.Z,
+                                Nx = src.Nx, Ny = src.Ny, Nz = src.Nz,
+                                Tx = src.Tx, Ty = src.Ty,
+                                Instance = modelMesh.ParentBone.Index
+                            });
+                        }
+                        indices.Add(newIndex);
                     }
-                    indices.Add(newIndex);
+                }
+                else {
+                    SourceModelVertex[] vertexData = BlockMesh.GetVertexData<SourceModelVertex>(vertexBuffer);
+                    if (vertexData == null || vertexData.Length == 0) continue;
+
+                    for (int j = meshPart.StartIndex; j < meshPart.StartIndex + meshPart.IndicesCount; j++) {
+                        if (j >= indexData.Length) continue;
+                        int originalIndex = indexData[j];
+                        if (originalIndex < 0 || originalIndex >= vertexData.Length) continue;
+
+                        if (!vertexRemap.TryGetValue(originalIndex, out int newIndex)) {
+                            newIndex = vertices.Count;
+                            vertexRemap[originalIndex] = newIndex;
+                            SourceModelVertex src = vertexData[originalIndex];
+                            vertices.Add(new InstancedVertex {
+                                X = src.X, Y = src.Y, Z = src.Z,
+                                Nx = src.Nx, Ny = src.Ny, Nz = src.Nz,
+                                Tx = src.Tx, Ty = src.Ty,
+                                Instance = modelMesh.ParentBone.Index
+                            });
+                        }
+                        indices.Add(newIndex);
+                    }
                 }
             }
 

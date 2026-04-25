@@ -775,7 +775,8 @@ namespace Engine.Graphics {
                         default: throw new InvalidOperationException("Unsupported shader parameter type.");
                         case ShaderParameterType.Texture2D:
                         case ShaderParameterType.Sampler2D:
-                        case ShaderParameterType.SamplerCube: break;
+                        case ShaderParameterType.SamplerCube:
+                        case ShaderParameterType.Texture2DArray: break;
                     }
                 }
                 if (shaderParameter.Type == ShaderParameterType.Texture2D) {
@@ -964,6 +965,7 @@ namespace Engine.Graphics {
                 UniformType.IntVec2 => ShaderParameterType.IntVec2,
                 UniformType.IntVec3 => ShaderParameterType.IntVec3,
                 UniformType.IntVec4 => ShaderParameterType.IntVec4,
+                UniformType.Sampler2DArray => ShaderParameterType.Texture2DArray,
                 _ => throw new InvalidOperationException("Unsupported shader parameter type.")
             };
         }

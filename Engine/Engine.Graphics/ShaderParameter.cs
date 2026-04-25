@@ -24,6 +24,7 @@ namespace Engine.Graphics {
             Count = count;
             switch (type) {
                 case ShaderParameterType.Texture2D:
+                case ShaderParameterType.Texture2DArray:
                 case ShaderParameterType.Sampler2D:
                 case ShaderParameterType.SamplerCube: break;
                 case ShaderParameterType.Float: Value = new float[count]; break;

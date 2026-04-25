@@ -585,6 +585,23 @@ namespace Engine.Media {
             var joints = primitive.GetVertexAccessor("JOINTS_0")?.AsVector4Array();
             var weights = primitive.GetVertexAccessor("WEIGHTS_0")?.AsVector4Array();
 
+            // Morph Target 数据收集
+            int morphTargetCount = primitive.MorphTargetsCount;
+            System.Numerics.Vector3[][] morphPositions = null;
+            System.Numerics.Vector3[][] morphNormals = null;
+            System.Numerics.Vector4[][] morphTangentsArr = null;
+            if (morphTargetCount > 0) {
+                morphPositions = new System.Numerics.Vector3[morphTargetCount][];
+                morphNormals = new System.Numerics.Vector3[morphTargetCount][];
+                morphTangentsArr = new System.Numerics.Vector4[morphTargetCount][];
+                for (int t = 0; t < morphTargetCount; t++) {
+                    var ta = primitive.GetMorphTargetAccessors(t);
+                    morphPositions[t] = ta.TryGetValue("POSITION", out var mp) ? mp.AsVector3Array().ToArray() : null;
+                    morphNormals[t] = ta.TryGetValue("NORMAL", out var mn) ? mn.AsVector3Array().ToArray() : null;
+                    morphTangentsArr[t] = ta.TryGetValue("TANGENT", out var mt) ? mt.AsVector4Array().ToArray() : null;
+                }
+            }
+
             // 获取索引数据
             uint[] indices = primitive.GetIndices()?.ToArray();
             if (indices == null || indices.Length == 0) {
@@ -625,6 +642,27 @@ namespace Engine.Media {
                     if (uwColors != null) uwColors[i] = colors[idx];
                     if (uwJoints != null) uwJoints[i] = joints[idx];
                     if (uwWeights != null) uwWeights[i] = weights[idx];
+                }
+
+                // Unweld Morph Targets
+                if (morphTargetCount > 0) {
+                    for (int t = 0; t < morphTargetCount; t++) {
+                        if (morphPositions[t] != null) {
+                            var uw = new System.Numerics.Vector3[idxCount];
+                            for (int i = 0; i < idxCount; i++) uw[i] = morphPositions[t][(int)indices[i]];
+                            morphPositions[t] = uw;
+                        }
+                        if (morphNormals[t] != null) {
+                            var uw = new System.Numerics.Vector3[idxCount];
+                            for (int i = 0; i < idxCount; i++) uw[i] = morphNormals[t][(int)indices[i]];
+                            morphNormals[t] = uw;
+                        }
+                        if (morphTangentsArr[t] != null) {
+                            var uw = new System.Numerics.Vector4[idxCount];
+                            for (int i = 0; i < idxCount; i++) uw[i] = morphTangentsArr[t][(int)indices[i]];
+                            morphTangentsArr[t] = uw;
+                        }
+                    }
                 }
 
                 indices = new uint[idxCount];
@@ -824,7 +862,63 @@ namespace Engine.Media {
                 meshPart.MaterialIndex = matIndex;
             }
 
+            // Morph Target 纹理化
+            if (morphTargetCount > 0) {
+                HashSet<string> morphAttributes = new();
+                for (int t = 0; t < morphTargetCount; t++) {
+                    foreach (var attr in primitive.GetMorphTargetAccessors(t).Keys) {
+                        morphAttributes.Add(attr);
+                    }
+                }
+                int finalVertexCount = uwPos != null ? uwPos.Length : positions.Count;
+                var morphTex = new MorphTargetTexture(finalVertexCount, morphTargetCount, morphAttributes);
+                // 转为数组列表用于 UploadData
+                var mpList = ToEngineVector3List(morphPositions);
+                var mnList = ToEngineVector3List(morphNormals);
+                var mtList = ToEngineVector4List(morphTangentsArr);
+                morphTex.UploadData(mpList, mnList, mtList, null, null, null);
+                meshPart.MorphTargetTexture = morphTex;
+                meshPart.MorphTargetCount = morphTargetCount;
+                var meshWeights = primitive.LogicalParent.MorphWeights;
+                meshPart.MorphWeights = new float[morphTargetCount];
+                if (meshWeights != null) {
+                    for (int i = 0; i < Math.Min(meshWeights.Count, morphTargetCount); i++) {
+                        meshPart.MorphWeights[i] = meshWeights[i];
+                    }
+                }
+            }
+
             return meshPart;
+        }
+
+        static IReadOnlyList<Vector3>[] ToEngineVector3List(System.Numerics.Vector3[][] arrays) {
+            if (arrays == null) return null;
+            var result = new IReadOnlyList<Vector3>[arrays.Length];
+            for (int t = 0; t < arrays.Length; t++) {
+                if (arrays[t] == null) continue;
+                var converted = new Vector3[arrays[t].Length];
+                for (int i = 0; i < arrays[t].Length; i++) {
+                    var v = arrays[t][i];
+                    converted[i] = new Vector3(v.X, v.Y, v.Z);
+                }
+                result[t] = converted;
+            }
+            return result;
+        }
+
+        static IReadOnlyList<Vector4>[] ToEngineVector4List(System.Numerics.Vector4[][] arrays) {
+            if (arrays == null) return null;
+            var result = new IReadOnlyList<Vector4>[arrays.Length];
+            for (int t = 0; t < arrays.Length; t++) {
+                if (arrays[t] == null) continue;
+                var converted = new Vector4[arrays[t].Length];
+                for (int i = 0; i < arrays[t].Length; i++) {
+                    var v = arrays[t][i];
+                    converted[i] = new Vector4(v.X, v.Y, v.Z, v.W);
+                }
+                result[t] = converted;
+            }
+            return result;
         }
 
         static PrimitiveType MapPrimitiveType(GltfPrimitiveType type) => type switch {

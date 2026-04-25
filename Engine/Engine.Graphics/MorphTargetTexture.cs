@@ -12,7 +12,14 @@ namespace Engine.Graphics {
     /// </summary>
     public class MorphTargetTexture : GraphicsResource {
         bool _disposed;
-        readonly float[] _layerData;
+        float[] _layerData;
+        // 保留原始数据用于 device reset 后重新上传
+        IReadOnlyList<Vector3>[] _savedPositions;
+        IReadOnlyList<Vector3>[] _savedNormals;
+        IReadOnlyList<Vector4>[] _savedTangents;
+        IReadOnlyList<Vector2>[] _savedTexCoords0;
+        IReadOnlyList<Vector2>[] _savedTexCoords1;
+        IReadOnlyList<Vector4>[] _savedColors0;
 
         // 定义属性的规范顺序
         static readonly string[] CanonicalAttributeOrder = ["POSITION", "NORMAL", "TANGENT", "TEXCOORD_0", "TEXCOORD_1", "COLOR_0"];
@@ -221,6 +228,14 @@ namespace Engine.Graphics {
                 }
             }
             GLWrapper.GL.BindTexture(TextureTarget.Texture2DArray, 0);
+
+            // 保留原始数据用于 device reset 后重新上传
+            _savedPositions = positions;
+            _savedNormals = normals;
+            _savedTangents = tangents;
+            _savedTexCoords0 = texCoords0;
+            _savedTexCoords1 = texCoords1;
+            _savedColors0 = colors0;
         }
 
         unsafe void UploadAttributeLayer<T>(IReadOnlyList<T> attributeData, int layerIndex) where T : unmanaged {
@@ -282,8 +297,8 @@ namespace Engine.Graphics {
         /// 绑定 morph target 纹理到指定纹理单元
         /// </summary>
         public void Bind(TextureUnit unit) {
-            GLWrapper.GL.ActiveTexture(unit);
-            GLWrapper.GL.BindTexture(TextureTarget.Texture2DArray, (uint)TextureHandle);
+            GLWrapper.ActiveTexture(unit);
+            GLWrapper.BindTexture(TextureTarget.Texture2DArray, TextureHandle, true);
         }
 
         public override void Dispose() {
@@ -306,6 +321,10 @@ namespace Engine.Graphics {
 
         public override void HandleDeviceReset() {
             CreateTexture();
+            if (_savedPositions != null || _savedNormals != null || _savedTangents != null) {
+                UploadData(_savedPositions, _savedNormals, _savedTangents,
+                    _savedTexCoords0, _savedTexCoords1, _savedColors0);
+            }
         }
     }
 }

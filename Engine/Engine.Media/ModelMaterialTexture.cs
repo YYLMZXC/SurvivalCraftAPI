@@ -59,14 +59,18 @@ namespace Engine.Media {
         /// glTF 规范要求变换顺序：Scale -> Rotation -> Translation
         /// </summary>
         public static Matrix3x2 CreateUVTransform(Vector2 offset, Vector2 scale, float rotation) {
-            // glTF UV transform 变换顺序：Scale -> Rotation -> Translation
-            // 参考：https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_texture_transform
-            Matrix3x2 scaleMatrix = Matrix3x2.CreateScale(scale.X, scale.Y);
-            Matrix3x2 rotationMatrix = Matrix3x2.CreateRotation(rotation);
-            Matrix3x2 translationMatrix = Matrix3x2.CreateTranslation(offset.X, offset.Y);
-
-            // 对于行向量约定，矩阵乘法顺序是：translationMatrix * rotationMatrix * scaleMatrix
-            return translationMatrix * rotationMatrix * scaleMatrix;
+            // 直接构造 Matrix3x2 匹配参考渲染器的列主序 UV 变换矩阵
+            // glTF 变换顺序：Scale -> Rotation -> Translation
+            // 参考 glTF-Sample-Viewer textureTransform.rs:
+            //   col0 = (sx*cos, sx*sin, 0), col1 = (-sy*sin, sy*cos, 0), col2 = (tx, ty, 1)
+            // .NET Matrix3x2 行主序: M11,M12 = row0, M21,M22 = row1, M31,M32 = row2
+            // 转置后: M11=sx*cos, M12=sx*sin, M21=-sy*sin, M22=sy*cos, M31=tx, M32=ty
+            float cos = MathF.Cos(rotation);
+            float sin = MathF.Sin(rotation);
+            return new Matrix3x2(
+                scale.X * cos, -scale.X * sin,
+                scale.Y * sin, scale.Y * cos,
+                offset.X, offset.Y);
         }
 
         /// <summary>

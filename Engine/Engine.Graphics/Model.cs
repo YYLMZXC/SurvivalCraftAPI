@@ -398,7 +398,8 @@ namespace Engine.Graphics {
                         meshPart.StartIndex,
                         meshPart.IndicesCount,
                         meshPart.BoundingBox,
-                        meshPart.MaterialIndex
+                        meshPart.MaterialIndex,
+                        meshPart.PrimitiveType
                     );
                 }
             }

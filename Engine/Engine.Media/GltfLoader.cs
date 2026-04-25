@@ -9,7 +9,7 @@ using Engine.Graphics;
 using SharpGLTF.Schema2;
 using SharpGLTF.Validation;
 using GltfPrimitiveType = SharpGLTF.Schema2.PrimitiveType;
-using SharpGLTF.Memory;
+using PrimitiveType = Engine.Graphics.PrimitiveType;
 using GltfImage = SharpGLTF.Schema2.Image;
 using GltfTexture = SharpGLTF.Schema2.Texture;
 using GltfMaterial = SharpGLTF.Schema2.Material;
@@ -497,10 +497,6 @@ namespace Engine.Media {
 
                 // 每个 primitive 创建独立 ModelMeshData，避免同一 mesh 内不同材质的 parts 被错误地一起绘制
                 foreach (MeshPrimitive primitive in node.Mesh.Primitives) {
-                    if (primitive.DrawPrimitiveType != GltfPrimitiveType.TRIANGLES) {
-                        continue;
-                    }
-
                     ModelMeshPartData meshPart = ProcessPrimitive(primitive, modelData, ref bufferIndex, materialToIndex);
                     if (meshPart == null) continue;
 
@@ -569,6 +565,7 @@ namespace Engine.Media {
             var uv0 = primitive.GetVertexAccessor("TEXCOORD_0")?.AsVector2Array();
             var uv1 = primitive.GetVertexAccessor("TEXCOORD_1")?.AsVector2Array();
             var tangents = primitive.GetVertexAccessor("TANGENT")?.AsVector4Array();
+            var colors = primitive.GetVertexAccessor("COLOR_0")?.AsVector4Array();
             var joints = primitive.GetVertexAccessor("JOINTS_0")?.AsVector4Array();
             var weights = primitive.GetVertexAccessor("WEIGHTS_0")?.AsVector4Array();
 
@@ -582,19 +579,24 @@ namespace Engine.Media {
                 }
             }
 
-            // 无预计算切线时：先 unweld 再生成切线
+            // 无预计算切线时：先 unweld 再生成切线（仅 TRIANGLES，STRIP/FAN 索引不是三元组）
             // 共享顶点在 UV 缝合线处有冲突的切线方向，unweld 后每个三角形有独立顶点
+            bool isTriangle = primitive.DrawPrimitiveType is GltfPrimitiveType.TRIANGLES
+                or GltfPrimitiveType.TRIANGLE_STRIP
+                or GltfPrimitiveType.TRIANGLE_FAN;
+            bool isTrianglesOnly = primitive.DrawPrimitiveType == GltfPrimitiveType.TRIANGLES;
             System.Numerics.Vector4[] generatedTangents = null;
             System.Numerics.Vector3[] uwPos = null, uwNrm = null;
             System.Numerics.Vector2[] uwUv0 = null, uwUv1 = null;
-            System.Numerics.Vector4[] uwJoints = null, uwWeights = null;
+            System.Numerics.Vector4[] uwJoints = null, uwWeights = null, uwColors = null;
 
-            if (tangents == null && normals != null && uv0 != null && indices != null) {
+            if (isTrianglesOnly && tangents == null && normals != null && uv0 != null && indices != null) {
                 int idxCount = indices.Length;
                 uwPos = new System.Numerics.Vector3[idxCount];
                 uwNrm = new System.Numerics.Vector3[idxCount];
                 uwUv0 = new System.Numerics.Vector2[idxCount];
                 if (uv1 != null) uwUv1 = new System.Numerics.Vector2[idxCount];
+                if (colors != null) uwColors = new System.Numerics.Vector4[idxCount];
                 if (joints != null) uwJoints = new System.Numerics.Vector4[idxCount];
                 if (weights != null) uwWeights = new System.Numerics.Vector4[idxCount];
 
@@ -604,6 +606,7 @@ namespace Engine.Media {
                     uwNrm[i] = normals[idx];
                     uwUv0[i] = uv0[idx];
                     if (uwUv1 != null) uwUv1[i] = uv1[idx];
+                    if (uwColors != null) uwColors[i] = colors[idx];
                     if (uwJoints != null) uwJoints[i] = joints[idx];
                     if (uwWeights != null) uwWeights[i] = weights[idx];
                 }
@@ -646,6 +649,13 @@ namespace Engine.Media {
             bool hasTangents = tangents != null || generatedTangents != null;
             if (hasTangents) {
                 elements.Add(new VertexElement(offset, VertexElementFormat.Vector4, VertexElementSemantic.Tangent));
+                offset += 16;
+            }
+
+            // Color (Vector4) - 顶点颜色
+            bool hasColors = colors != null;
+            if (hasColors) {
+                elements.Add(new VertexElement(offset, VertexElementFormat.Vector4, VertexElementSemantic.Color));
                 offset += 16;
             }
 
@@ -712,6 +722,13 @@ namespace Engine.Media {
                     currentOffset += 16;
                 }
 
+                // Color - 顶点颜色
+                if (hasColors) {
+                    var c = uwColors != null ? uwColors[i] : colors[i];
+                    WriteVector4(vertexBuffer, baseOffset + currentOffset, c.X, c.Y, c.Z, c.W);
+                    currentOffset += 16;
+                }
+
                 // BlendIndices 和 BlendWeights
                 if (hasSkinning) {
                     var joint = uwJoints != null ? uwJoints[i] : joints[i];
@@ -728,20 +745,27 @@ namespace Engine.Media {
             }
 
             // 构建索引缓冲（统一使用 32 位索引，与 Collada 加载器保持一致）
-            // glTF 使用逆时针绕序 (CCW)，引擎使用 CullCounterClockwise，需要翻转绕序
-            System.Diagnostics.Debug.Assert(indices.Length % 3 == 0,
-                $"Index count {indices.Length} is not divisible by 3 - malformed triangle data");
             byte[] indexBuffer = new byte[indices.Length * 4];
-            for (int triangle = 0; triangle < indices.Length / 3; triangle++) {
-                int baseIdx = triangle * 3;
-                // 翻转绕序：交换 v1 和 v2 (0,1,2 -> 0,2,1)
-                uint idx0 = indices[baseIdx];
-                uint idx1 = indices[baseIdx + 2]; // 交换
-                uint idx2 = indices[baseIdx + 1]; // 交换
+            if (isTrianglesOnly) {
+                // glTF 使用逆时针绕序 (CCW)，引擎使用 CullCounterClockwise，需要翻转绕序
+                // 仅 TRIANGLES 图元的索引是三元组，STRIP/FAN 索引结构不同
+                for (int triangle = 0; triangle < indices.Length / 3; triangle++) {
+                    int baseIdx = triangle * 3;
+                    // 翻转绕序：交换 v1 和 v2 (0,1,2 -> 0,2,1)
+                    uint idx0 = indices[baseIdx];
+                    uint idx1 = indices[baseIdx + 2]; // 交换
+                    uint idx2 = indices[baseIdx + 1]; // 交换
 
-                WriteIndex32(indexBuffer, baseIdx, idx0);
-                WriteIndex32(indexBuffer, baseIdx + 1, idx1);
-                WriteIndex32(indexBuffer, baseIdx + 2, idx2);
+                    WriteIndex32(indexBuffer, baseIdx, idx0);
+                    WriteIndex32(indexBuffer, baseIdx + 1, idx1);
+                    WriteIndex32(indexBuffer, baseIdx + 2, idx2);
+                }
+            }
+            else {
+                // 非三角形图元直接写入索引，不需要翻转绕序
+                for (int i = 0; i < indices.Length; i++) {
+                    WriteIndex32(indexBuffer, i, indices[i]);
+                }
             }
 
             // 创建缓冲数据
@@ -775,7 +799,8 @@ namespace Engine.Media {
                 BuffersDataIndex = bufferIndex++,
                 StartIndex = 0,
                 IndicesCount = indices.Length,
-                BoundingBox = bbox
+                BoundingBox = bbox,
+                PrimitiveType = MapPrimitiveType(primitive.DrawPrimitiveType)
             };
 
             // 设置材质索引
@@ -785,6 +810,17 @@ namespace Engine.Media {
 
             return meshPart;
         }
+
+        static PrimitiveType MapPrimitiveType(GltfPrimitiveType type) => type switch {
+            GltfPrimitiveType.POINTS => PrimitiveType.Points,
+            GltfPrimitiveType.LINES => PrimitiveType.LineList,
+            GltfPrimitiveType.LINE_LOOP => PrimitiveType.LineLoop,
+            GltfPrimitiveType.LINE_STRIP => PrimitiveType.LineStrip,
+            GltfPrimitiveType.TRIANGLES => PrimitiveType.TriangleList,
+            GltfPrimitiveType.TRIANGLE_STRIP => PrimitiveType.TriangleStrip,
+            GltfPrimitiveType.TRIANGLE_FAN => PrimitiveType.TriangleFan,
+            _ => PrimitiveType.TriangleList
+        };
 
         static void ConvertSkins(ModelRoot modelRoot, ModelData modelData, Dictionary<Node, int> nodeToIndex) {
             // 查找第一个有 Skin 的节点

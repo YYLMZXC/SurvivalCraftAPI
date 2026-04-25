@@ -389,6 +389,10 @@ namespace Engine.Graphics {
                 defines.Add("USE_INSTANCING");
             }
 
+            if (!IsTrianglePrimitive(meshPart.PrimitiveType)) {
+                defines.Add("NOT_TRIANGLE");
+            }
+
             if (enableMorphing && meshPart.HasMorphTargets) {
                 defines.SetMorphTargetDefines(
                     meshPart.MorphTargetCount,
@@ -409,6 +413,10 @@ namespace Engine.Graphics {
 
             return defines;
         }
+
+        static bool IsTrianglePrimitive(PrimitiveType type) => type is PrimitiveType.TriangleList
+            or PrimitiveType.TriangleStrip
+            or PrimitiveType.TriangleFan;
 
         #endregion
     }

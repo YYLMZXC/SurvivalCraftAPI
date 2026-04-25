@@ -18,6 +18,8 @@ namespace Engine.Graphics {
         /// </summary>
         public int MaterialIndex { get; set; } = -1;
 
+        public PrimitiveType PrimitiveType { get; set; } = PrimitiveType.TriangleList;
+
         public BoundingBox BoundingBox {
             get => m_boundingBox;
             set => m_boundingBox = value;

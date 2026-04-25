@@ -22,6 +22,47 @@ namespace Game {
             public float Bx, By, Bz, Bw;
         }
 
+        /// <summary>
+        /// 从任意 stride 的顶点缓冲中提取 Position+Normal+UV 到 InstancedVertex
+        /// </summary>
+        static void ExtractVertices(byte[] rawData, int stride, int positionOffset, int normalOffset, int uvOffset,
+            DynamicArray<InstancedVertex> vertices, DynamicArray<int> indices, int[] indexData,
+            int startIndex, int indicesCount, int instanceIndex) {
+            int vertexCount = rawData.Length / stride;
+            Dictionary<int, int> vertexRemap = new();
+
+            for (int j = startIndex; j < startIndex + indicesCount; j++) {
+                if (j >= indexData.Length) continue;
+                int originalIndex = indexData[j];
+                if (originalIndex < 0 || originalIndex >= vertexCount) continue;
+
+                if (!vertexRemap.TryGetValue(originalIndex, out int newIndex)) {
+                    int baseOff = originalIndex * stride;
+                    // Bounds check: ensure all reads stay within rawData
+                    int maxReadEnd = baseOff + Math.Max(
+                        positionOffset + 12,
+                        Math.Max(normalOffset + 12, uvOffset + 8));
+                    if (maxReadEnd > rawData.Length) {
+                        continue;
+                    }
+                    newIndex = vertices.Count;
+                    vertexRemap[originalIndex] = newIndex;
+                    InstancedVertex v = default;
+                    v.X = BitConverter.ToSingle(rawData, baseOff + positionOffset);
+                    v.Y = BitConverter.ToSingle(rawData, baseOff + positionOffset + 4);
+                    v.Z = BitConverter.ToSingle(rawData, baseOff + positionOffset + 8);
+                    v.Nx = BitConverter.ToSingle(rawData, baseOff + normalOffset);
+                    v.Ny = BitConverter.ToSingle(rawData, baseOff + normalOffset + 4);
+                    v.Nz = BitConverter.ToSingle(rawData, baseOff + normalOffset + 8);
+                    v.Tx = BitConverter.ToSingle(rawData, baseOff + uvOffset);
+                    v.Ty = BitConverter.ToSingle(rawData, baseOff + uvOffset + 4);
+                    v.Instance = instanceIndex;
+                    vertices.Add(v);
+                }
+                indices.Add(newIndex);
+            }
+        }
+
         public struct InstancedVertex {
             public float X;
             public float Y;
@@ -166,74 +207,31 @@ namespace Game {
 
                 ReadOnlyList<VertexElement> vertexElements = vertexBuffer.VertexDeclaration.VertexElements;
 
-                // 验证顶点格式：必须包含 Position + Normal + TextureCoordinate
-                bool hasPositionNormalTex = vertexElements.Count >= 3
-                    && vertexElements[0].Offset == 0
-                    && vertexElements[0].Semantic == VertexElementSemantic.Position.GetSemanticString()
-                    && vertexElements[1].Offset == 12
-                    && vertexElements[1].Semantic == VertexElementSemantic.Normal.GetSemanticString()
-                    && vertexElements[2].Offset == 24
-                    && vertexElements[2].Semantic == VertexElementSemantic.TextureCoordinate.GetSemanticString();
-
-                if (!hasPositionNormalTex) {
-                    continue;
+                // 查找 Position、Normal、TexCoord 的偏移量
+                int positionOffset = -1, normalOffset = -1, uvOffset = -1;
+                string texCoordSemantic = VertexElementSemantic.TextureCoordinate.GetSemanticString();
+                foreach (VertexElement elem in vertexElements) {
+                    if (elem.Semantic == VertexElementSemantic.Position.GetSemanticString()) positionOffset = elem.Offset;
+                    else if (elem.Semantic == VertexElementSemantic.Normal.GetSemanticString()) normalOffset = elem.Offset;
+                    else if (uvOffset < 0 && elem.SemanticName == texCoordSemantic) uvOffset = elem.Offset;
                 }
 
-                bool hasTangent = vertexElements.Count >= 4
-                    && vertexElements[3].Offset == 32
-                    && vertexElements[3].Semantic == VertexElementSemantic.Tangent.GetSemanticString();
+                if (positionOffset < 0 || normalOffset < 0 || uvOffset < 0) {
+                    continue;
+                }
 
                 int[] indexData = BlockMesh.GetIndexData<int>(indexBuffer);
                 if (indexData == null) continue;
 
-                Dictionary<int, int> vertexRemap = new();
-
-                if (hasTangent) {
-                    SourceModelVertexWithTangent[] vertexData = BlockMesh.GetVertexData<SourceModelVertexWithTangent>(vertexBuffer);
-                    if (vertexData == null || vertexData.Length == 0) continue;
-
-                    for (int j = meshPart.StartIndex; j < meshPart.StartIndex + meshPart.IndicesCount; j++) {
-                        if (j >= indexData.Length) continue;
-                        int originalIndex = indexData[j];
-                        if (originalIndex < 0 || originalIndex >= vertexData.Length) continue;
-
-                        if (!vertexRemap.TryGetValue(originalIndex, out int newIndex)) {
-                            newIndex = vertices.Count;
-                            vertexRemap[originalIndex] = newIndex;
-                            SourceModelVertexWithTangent src = vertexData[originalIndex];
-                            vertices.Add(new InstancedVertex {
-                                X = src.X, Y = src.Y, Z = src.Z,
-                                Nx = src.Nx, Ny = src.Ny, Nz = src.Nz,
-                                Tx = src.Tx, Ty = src.Ty,
-                                Instance = modelMesh.ParentBone.Index
-                            });
-                        }
-                        indices.Add(newIndex);
-                    }
+                // 从 Tag 读取原始字节数据，按实际 stride 提取
+                if (vertexBuffer.Tag is not byte[] rawData) {
+                    continue;
                 }
-                else {
-                    SourceModelVertex[] vertexData = BlockMesh.GetVertexData<SourceModelVertex>(vertexBuffer);
-                    if (vertexData == null || vertexData.Length == 0) continue;
 
-                    for (int j = meshPart.StartIndex; j < meshPart.StartIndex + meshPart.IndicesCount; j++) {
-                        if (j >= indexData.Length) continue;
-                        int originalIndex = indexData[j];
-                        if (originalIndex < 0 || originalIndex >= vertexData.Length) continue;
-
-                        if (!vertexRemap.TryGetValue(originalIndex, out int newIndex)) {
-                            newIndex = vertices.Count;
-                            vertexRemap[originalIndex] = newIndex;
-                            SourceModelVertex src = vertexData[originalIndex];
-                            vertices.Add(new InstancedVertex {
-                                X = src.X, Y = src.Y, Z = src.Z,
-                                Nx = src.Nx, Ny = src.Ny, Nz = src.Nz,
-                                Tx = src.Tx, Ty = src.Ty,
-                                Instance = modelMesh.ParentBone.Index
-                            });
-                        }
-                        indices.Add(newIndex);
-                    }
-                }
+                int stride = vertexBuffer.VertexDeclaration.VertexStride;
+                ExtractVertices(rawData, stride, positionOffset, normalOffset, uvOffset,
+                    vertices, indices, indexData,
+                    meshPart.StartIndex, meshPart.IndicesCount, modelMesh.ParentBone.Index);
             }
 
             // 如果没有有效的顶点数据，返回 null
@@ -253,7 +251,10 @@ namespace Game {
 
         /// <summary>
         /// 旧方法：创建合并的实例化数据（保持向后兼容）
+        /// 仅支持固定 3 元素 (Position+Normal+UV) 顶点格式，不支持 glTF 等带额外属性的模型。
+        /// 推荐使用 <see cref="GetInstancedModelDataByMaterial"/> 或 <see cref="GetInstancedModelData"/>。
         /// </summary>
+        [System.Obsolete("Use GetInstancedModelData or GetInstancedModelDataByMaterial instead.")]
         public static InstancedModelData CreateInstancedModelData(Model model, int[] meshDrawOrders) {
             DynamicArray<InstancedVertex> dynamicArray = new();
             DynamicArray<int> dynamicArray2 = new();

@@ -16,5 +16,9 @@ namespace Engine.Media {
         public int MaterialIndex = -1;
 
         public PrimitiveType PrimitiveType = PrimitiveType.TriangleList;
+
+        public int InstanceCount;
+
+        public System.Numerics.Matrix4x4[] InstanceMatrices;
     }
 }

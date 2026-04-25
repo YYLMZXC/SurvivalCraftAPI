@@ -496,9 +496,25 @@ namespace Engine.Media {
                 int boneIndex = nodeToIndex.TryGetValue(node, out int idx) ? idx : 0;
 
                 // 每个 primitive 创建独立 ModelMeshData，避免同一 mesh 内不同材质的 parts 被错误地一起绘制
+                // EXT_mesh_gpu_instancing：读取实例变换矩阵
+                MeshGpuInstancing gpuInstancing = node.GetGpuInstancing();
+                System.Numerics.Matrix4x4[] instanceMatrices = null;
+                int instanceCount = 0;
+                if (gpuInstancing != null && gpuInstancing.Count > 0) {
+                    instanceCount = gpuInstancing.Count;
+                    instanceMatrices = new System.Numerics.Matrix4x4[instanceCount];
+                    for (int i = 0; i < instanceCount; i++) {
+                        instanceMatrices[i] = gpuInstancing.GetLocalMatrix(i);
+                    }
+                }
+
                 foreach (MeshPrimitive primitive in node.Mesh.Primitives) {
                     ModelMeshPartData meshPart = ProcessPrimitive(primitive, modelData, ref bufferIndex, materialToIndex);
                     if (meshPart == null) continue;
+
+                    // 设置实例化数据（同节点所有 primitive 共享同一数组引用，请勿修改数组内容）
+                    meshPart.InstanceCount = instanceCount;
+                    meshPart.InstanceMatrices = instanceMatrices;
 
                     ModelMeshData meshData = new() {
                         Name = node.Mesh.Name ?? $"Mesh{node.Mesh.LogicalIndex}",

@@ -87,6 +87,11 @@ namespace Engine.Graphics {
         /// </summary>
         public bool UseInstancing => InstanceCount > 0;
 
+        /// <summary>
+        /// glTF EXT_mesh_gpu_instancing 实例局部矩阵
+        /// </summary>
+        public System.Numerics.Matrix4x4[] InstanceMatrices { get; set; }
+
         #endregion
 
         public void Dispose() {

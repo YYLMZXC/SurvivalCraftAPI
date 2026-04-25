@@ -399,7 +399,9 @@ namespace Engine.Graphics {
                         meshPart.IndicesCount,
                         meshPart.BoundingBox,
                         meshPart.MaterialIndex,
-                        meshPart.PrimitiveType
+                        meshPart.PrimitiveType,
+                        meshPart.InstanceMatrices,
+                        meshPart.InstanceCount
                     );
                 }
             }

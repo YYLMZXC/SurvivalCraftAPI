@@ -27,7 +27,9 @@ namespace Engine.Graphics {
             int indicesCount,
             BoundingBox boundingBox,
             int materialIndex = -1,
-            PrimitiveType primitiveType = PrimitiveType.TriangleList) {
+            PrimitiveType primitiveType = PrimitiveType.TriangleList,
+            System.Numerics.Matrix4x4[] instanceMatrices = null,
+            int instanceCount = 0) {
             ArgumentNullException.ThrowIfNull(vertexBuffer);
             ArgumentNullException.ThrowIfNull(indexBuffer);
             if (startIndex < 0
@@ -44,6 +46,8 @@ namespace Engine.Graphics {
             modelMeshPart.BoundingBox = boundingBox;
             modelMeshPart.MaterialIndex = materialIndex;
             modelMeshPart.PrimitiveType = primitiveType;
+            modelMeshPart.InstanceCount = instanceCount;
+            modelMeshPart.InstanceMatrices = instanceMatrices;
             return modelMeshPart;
         }
     }

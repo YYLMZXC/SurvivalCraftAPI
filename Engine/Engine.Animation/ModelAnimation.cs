@@ -44,6 +44,10 @@ namespace Engine.Animation {
             public Vector3[] Translations { get; set; } = [];
             public Quaternion[] Rotations { get; set; } = [];
             public Vector3[] Scales { get; set; } = [];
+            /// <summary>
+            /// Morph target weights per keyframe. Weights[i] is a float[] with one weight per morph target.
+            /// </summary>
+            public float[][] Weights { get; set; } = [];
             public InterpolationType Interpolation { get; set; }
         }
 

@@ -56,6 +56,7 @@ namespace Engine.Animation {
         bool _preservePose = false;
         float _wrapOvershoot = 0f; // For loop boundary interpolation
         float _keyInterval = 0f;   // Cached keyframe interval for boundary interpolation
+        float[] _weightBuffer;     // Reusable buffer for morph weight interpolation
 
         /// <summary>
         /// 当前动画
@@ -402,6 +403,67 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 采样 morph target 权重并写入 Model 的 MeshParts
+        /// </summary>
+        public void SampleMorphWeights(Model model) {
+            if (_animation == null || model == null) return;
+            float time = _time;
+
+            foreach (var channel in _animation.Channels) {
+                if (channel.Property != ModelAnimation.AnimationProperty.Weights) continue;
+
+                var sampler = channel.Sampler;
+                if (sampler?.Weights == null || sampler.Weights.Length == 0) continue;
+                if (sampler.KeyTimes == null || sampler.KeyTimes.Length == 0) continue;
+
+                float[] interpolated = SampleWeightArrays(sampler.Weights, sampler.KeyTimes, time, sampler.Interpolation);
+                if (interpolated == null) continue;
+
+                foreach (ModelMesh mesh in model.Meshes) {
+                    if (mesh.ParentBone?.Name != channel.TargetBoneName) continue;
+                    foreach (ModelMeshPart part in mesh.MeshParts) {
+                        if (part.MorphWeights == null) continue;
+                        int copyLen = Math.Min(part.MorphWeights.Length, interpolated.Length);
+                        if (copyLen > 0)
+                            Array.Copy(interpolated, part.MorphWeights, copyLen);
+                    }
+                }
+            }
+        }
+
+        float[] SampleWeightArrays(float[][] weights, float[] times, float time, ModelAnimation.InterpolationType interpolation) {
+            if (weights == null || weights.Length == 0) return null;
+
+            int len = weights[0]?.Length ?? 0;
+            if (len == 0) return null;
+
+            // Ensure buffer
+            if (_weightBuffer == null || _weightBuffer.Length < len)
+                _weightBuffer = new float[len];
+
+            int idx = FindKeyIndex(times, time);
+            if (idx < 0) idx = 0;
+            if (idx >= weights.Length - 1) {
+                Array.Copy(weights[weights.Length - 1], _weightBuffer, len);
+                return _weightBuffer;
+            }
+
+            if (interpolation == ModelAnimation.InterpolationType.Step) {
+                Array.Copy(weights[idx], _weightBuffer, len);
+                return _weightBuffer;
+            }
+
+            float t0 = times[idx];
+            float t1 = times[idx + 1];
+            float alpha = (time - t0) / (t1 - t0);
+
+            for (int i = 0; i < len; i++) {
+                _weightBuffer[i] = weights[idx][i] + (weights[idx + 1][i] - weights[idx][i]) * alpha;
+            }
+            return _weightBuffer;
+        }
+
+        /// <summary>
         /// 内部采样方法
         /// </summary>
         void SampleAtTimeInternal(float time, Matrix?[] boneTransforms) {
@@ -424,6 +486,8 @@ namespace Engine.Animation {
                 }
 
                 switch (channel.Property) {
+                    case ModelAnimation.AnimationProperty.Weights:
+                        continue; // Handled by SampleMorphWeights
                     case ModelAnimation.AnimationProperty.Translation:
                         if (sampler.Translations != null && sampler.Translations.Length > 0) {
                             data.translation = SampleVector3(sampler.Translations, sampler.KeyTimes, time, sampler.Interpolation);

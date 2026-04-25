@@ -1056,6 +1056,7 @@ namespace Engine.Media {
                 List<Vector3> translations = new();
                 List<Quaternion> rotations = new();
                 List<Vector3> scales = new();
+                List<float[]> weights = new();
 
                 for (int i = 0; i <= keyCount; i++) {
                     float t = (duration * i) / keyCount;
@@ -1082,6 +1083,13 @@ namespace Engine.Media {
                             var value = curveSampler.GetPoint(t);
                             scales.Add(new Vector3(value.X, value.Y, value.Z));
                         }
+                    } else if (path == PropertyPath.weights) {
+                        var sampler = channel.GetSamplerOrNull<float[]>();
+                        if (sampler != null) {
+                            var curveSampler = sampler.CreateCurveSampler(true);
+                            var value = curveSampler.GetPoint(t);
+                            weights.Add(value);
+                        }
                     }
                 }
 
@@ -1089,6 +1097,7 @@ namespace Engine.Media {
                 result.Translations = translations.ToArray();
                 result.Rotations = rotations.ToArray();
                 result.Scales = scales.ToArray();
+                result.Weights = weights.ToArray();
                 result.Interpolation = ModelAnimation.InterpolationType.Linear;
             } catch (Exception ex) {
                 // 动画转换失败时记录错误，但继续处理其他动画

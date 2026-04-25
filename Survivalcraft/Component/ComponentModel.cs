@@ -184,6 +184,7 @@ namespace Game {
                 m_animationPlayer.Update(Time.FrameDuration);
                 m_animationPlayer.SampleBoneTransforms(m_boneTransforms);
                 m_animationPlayer.SamplePointerTargets(Model);
+                m_animationPlayer.SampleMorphWeights(Model);
 
                 // 标记动画已处理
                 Animated = true;

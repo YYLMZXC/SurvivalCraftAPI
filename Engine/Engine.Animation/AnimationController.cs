@@ -970,10 +970,17 @@ namespace Engine.Animation
             for (int i = 0; i < _layers.Length; i++)
             {
                 if (_layers[i].IsActive)
-                    _layers[i].Player?.SamplePointerTargets(_model);
+                    _layers[i].AnimationPlayer?.SamplePointerTargets(_model);
             }
 
-            // 3. IK 后处理（在层混合后应用）
+            // 3. Morph target 权重采样
+            for (int i = 0; i < _layers.Length; i++)
+            {
+                if (_layers[i].IsActive)
+                    _layers[i].AnimationPlayer?.SampleMorphWeights(_model);
+            }
+
+            // 4. IK 后处理（在层混合后应用）
             _ikSolver?.Solve(boneTransforms, _model);
         }
 

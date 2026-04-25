@@ -40,6 +40,11 @@ namespace Engine.Animation {
     /// 支持相位范围播放（StartPhase, EndPhase）和循环边界插值
     /// </summary>
     public class AnimationPlayer {
+        /// <summary>
+        /// 当前渲染器是否支持 morph target 动画。由渲染器设置。
+        /// </summary>
+        public static bool MorphWeightAnimationEnabled;
+
         Model _model;
         ModelAnimation _animation;
         float _time;
@@ -406,7 +411,7 @@ namespace Engine.Animation {
         /// 采样 morph target 权重并写入 Model 的 MeshParts
         /// </summary>
         public void SampleMorphWeights(Model model) {
-            if (_animation == null || model == null) return;
+            if (_animation == null || model == null || !MorphWeightAnimationEnabled) return;
             float time = _time;
 
             foreach (var channel in _animation.Channels) {

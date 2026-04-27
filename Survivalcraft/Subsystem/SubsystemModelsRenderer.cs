@@ -79,9 +79,6 @@ namespace Game {
         readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
         readonly List<ModelData> m_skinnedModelsBuffer = [];
 
-        // JointTexture for skinned models (reused across frames)
-        public JointTexture m_jointTexture;
-
         public static bool DisableDrawingModels = false;
 
         public int ModelsDrawn;
@@ -660,12 +657,6 @@ namespace Game {
                     }
                 }
             }
-        }
-
-        public override void Dispose() {
-            m_jointTexture?.Dispose();
-            m_jointTexture = null;
-            base.Dispose();
         }
     }
 }

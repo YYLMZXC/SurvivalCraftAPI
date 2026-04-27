@@ -81,7 +81,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 从已链接的 program handle 创建 Shader（供 ShaderCache 使用）
         /// </summary>
-        internal Shader(uint programHandle) {
+        public Shader(uint programHandle) {
             m_program = (int)programHandle;
             m_vertexShader = 0;
             m_pixelShader = 0;

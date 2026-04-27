@@ -6,7 +6,7 @@ namespace Engine.Media {
     /// 材质扩展注册表，支持自动发现和加载扩展
     /// </summary>
     public static class MaterialExtensionRegistry {
-        static readonly Dictionary<string, Func<MaterialExtension>> _factories = new() {
+        public static readonly Dictionary<string, Func<MaterialExtension>> _factories = new() {
             { "KHR_materials_clearcoat", () => new ClearCoatExtension() },
             { "KHR_materials_iridescence", () => new IridescenceExtension() },
             { "KHR_materials_transmission", () => new TransmissionExtension() },

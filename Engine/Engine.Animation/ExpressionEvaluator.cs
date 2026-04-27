@@ -11,18 +11,18 @@ namespace Engine.Animation
         /// <summary>
         /// Cache of compiled expressions.
         /// </summary>
-        private readonly Dictionary<string, Expression> _compiledExpressions = new();
+        public readonly Dictionary<string, Expression> m_compiledExpressions = new();
 
         /// <summary>
         /// Cache of required parameter names per expression to avoid re-extraction.
         /// </summary>
-        private readonly Dictionary<string, string[]> _requiredParameters = new();
+        public readonly Dictionary<string, string[]> m_requiredParameters = new();
 
         /// <summary>
         /// Reusable parameter dictionary (avoid allocation per evaluation).
         /// Note: Must be used in single-threaded context.
         /// </summary>
-        private readonly Dictionary<string, object> _reusableParameters = new();
+        public readonly Dictionary<string, object> m_reusableParameters = new();
 
         /// <summary>
         /// Evaluate a boolean expression (for state conditions).
@@ -157,7 +157,7 @@ namespace Engine.Animation
                 return Array.Empty<string>();
 
             GetOrCompileExpression(expression);
-            return _requiredParameters.TryGetValue(expression, out var params_)
+            return m_requiredParameters.TryGetValue(expression, out var params_)
                 ? params_
                 : Array.Empty<string>();
         }
@@ -168,33 +168,33 @@ namespace Engine.Animation
         public void ClearCache()
         {
             // Remove event handlers to avoid memory leaks
-            foreach (var kvp in _compiledExpressions)
+            foreach (var kvp in m_compiledExpressions)
             {
                 AnimationExpressionFunctions.UnregisterFunctions(kvp.Value);
             }
 
-            _compiledExpressions.Clear();
-            _requiredParameters.Clear();
-            _reusableParameters.Clear();
+            m_compiledExpressions.Clear();
+            m_requiredParameters.Clear();
+            m_reusableParameters.Clear();
         }
 
         /// <summary>
         /// Get or compile an expression.
         /// </summary>
-        private Expression GetOrCompileExpression(string expression)
+        public Expression GetOrCompileExpression(string expression)
         {
             // Strip expr: prefix if present
             string normalizedExpr = StripPrefix(expression);
             string cacheKey = normalizedExpr;
 
-            if (!_compiledExpressions.TryGetValue(cacheKey, out var expr))
+            if (!m_compiledExpressions.TryGetValue(cacheKey, out var expr))
             {
                 expr = new Expression(normalizedExpr);
-                _compiledExpressions[cacheKey] = expr;
+                m_compiledExpressions[cacheKey] = expr;
 
                 // Extract and cache parameter names
                 var paramNames = expr.GetParameterNames();
-                _requiredParameters[cacheKey] = paramNames?.ToArray() ?? Array.Empty<string>();
+                m_requiredParameters[cacheKey] = paramNames?.ToArray() ?? Array.Empty<string>();
             }
 
             return expr;
@@ -203,12 +203,12 @@ namespace Engine.Animation
         /// <summary>
         /// Bind parameters to an expression.
         /// </summary>
-        private void BindParameters(string expression, Expression expr, AnimationParameters parameters)
+        public void BindParameters(string expression, Expression expr, AnimationParameters parameters)
         {
             string normalizedExpr = StripPrefix(expression);
             string cacheKey = normalizedExpr;
 
-            var requiredParams = _requiredParameters.TryGetValue(cacheKey, out var params_)
+            var requiredParams = m_requiredParameters.TryGetValue(cacheKey, out var params_)
                 ? params_
                 : Array.Empty<string>();
 
@@ -219,18 +219,18 @@ namespace Engine.Animation
             }
 
             // Reuse parameter dictionary: clear and refill
-            _reusableParameters.Clear();
+            m_reusableParameters.Clear();
             foreach (var paramName in requiredParams)
             {
-                _reusableParameters[paramName] = parameters.GetValue(paramName);
+                m_reusableParameters[paramName] = parameters.GetValue(paramName);
             }
-            expr.Parameters = _reusableParameters;
+            expr.Parameters = m_reusableParameters;
         }
 
         /// <summary>
         /// Convert result to target type.
         /// </summary>
-        private static T ConvertResult<T>(object result)
+        public static T ConvertResult<T>(object result)
         {
             var targetType = typeof(T);
 

@@ -9,9 +9,9 @@ namespace Engine.Graphics {
     /// 使用 RGBA32F 纹理存储 mat4 矩阵数组，无骨骼数量限制
     /// </summary>
     public class JointTexture : IDisposable {
-        bool _disposed;
-        readonly float[] _textureData;
-        readonly Matrix[] _normalMatrices;
+        public bool m_disposed;
+        public readonly float[] m_textureData;
+        public readonly Matrix[] m_normalMatrices;
 
         /// <summary>
         /// 纹理句柄
@@ -40,12 +40,12 @@ namespace Engine.Graphics {
             // 所以每个关节需要 8 个像素
             TextureSize = (int)Math.Ceiling(Math.Sqrt(maxJoints * 8));
 
-            _textureData = new float[TextureSize * TextureSize * 4];
-            _normalMatrices = new Matrix[maxJoints];
+            m_textureData = new float[TextureSize * TextureSize * 4];
+            m_normalMatrices = new Matrix[maxJoints];
             CreateTexture();
         }
 
-        unsafe void CreateTexture() {
+        public unsafe void CreateTexture() {
             TextureHandle = GLWrapper.GL.GenTexture();
             GLWrapper.ActiveTexture(TextureUnit.Texture0);
             GLWrapper.BindTexture(TextureTarget.Texture2D, (int)TextureHandle, true);
@@ -91,7 +91,7 @@ namespace Engine.Graphics {
             }
         }
 
-        unsafe void UpdateCore(Matrix* matricesPtr, int count) {
+        public unsafe void UpdateCore(Matrix* matricesPtr, int count) {
             GLWrapper.ActiveTexture(TextureUnit.Texture0);
             GLWrapper.BindTexture(TextureTarget.Texture2D, (int)TextureHandle, true);
 
@@ -99,17 +99,17 @@ namespace Engine.Graphics {
                 Matrix jointMatrix = matricesPtr[i];
 
                 // 计算法线矩阵（逆转置）
-                _normalMatrices[i] = Matrix.Transpose(Matrix.Invert(jointMatrix));
+                m_normalMatrices[i] = Matrix.Transpose(Matrix.Invert(jointMatrix));
 
                 // 写入 jointMatrix（offset = i * 32 floats）
                 int offset = i * 32;
-                WriteMatrixToTextureData(_textureData, offset, jointMatrix);
+                WriteMatrixToTextureData(m_textureData, offset, jointMatrix);
 
                 // 写入 normalMatrix（offset = i * 32 + 16 floats）
-                WriteMatrixToTextureData(_textureData, offset + 16, _normalMatrices[i]);
+                WriteMatrixToTextureData(m_textureData, offset + 16, m_normalMatrices[i]);
             }
 
-            fixed (float* ptr = _textureData) {
+            fixed (float* ptr = m_textureData) {
                 GLWrapper.GL.TexSubImage2D(
                     TextureTarget.Texture2D,
                     0,
@@ -125,7 +125,7 @@ namespace Engine.Graphics {
             GLWrapper.BindTexture(TextureTarget.Texture2D, 0, true);
         }
 
-        static void WriteMatrixToTextureData(float[] data, int offset, Matrix matrix) {
+        public static void WriteMatrixToTextureData(float[] data, int offset, Matrix matrix) {
             data[offset + 0] = matrix.M11;
             data[offset + 1] = matrix.M12;
             data[offset + 2] = matrix.M13;
@@ -155,13 +155,13 @@ namespace Engine.Graphics {
         }
 
         public void Dispose() {
-            if (_disposed) return;
+            if (m_disposed) return;
 
             if (TextureHandle != 0) {
                 GLWrapper.GL.DeleteTexture(TextureHandle);
                 TextureHandle = 0;
             }
-            _disposed = true;
+            m_disposed = true;
         }
     }
 }

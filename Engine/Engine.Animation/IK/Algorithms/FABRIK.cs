@@ -14,9 +14,9 @@ namespace Engine.Animation
         public bool SupportsAim => false;
 
         // 位置缓存
-        private Vector3[] _positionsCache;
+        public Vector3[] m_positionsCache;
         // 骨骼长度缓存
-        private float[] _boneLengthsCache;
+        public float[] m_boneLengthsCache;
 
         public void Solve(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
@@ -36,15 +36,15 @@ namespace Engine.Animation
             Vector3 rootPos = worldPositions[indices[0]];
 
             // 确保缓存足够大
-            if (_positionsCache == null || _positionsCache.Length < n)
-                _positionsCache = new Vector3[n];
-            if (_boneLengthsCache == null || _boneLengthsCache.Length < n - 1)
-                _boneLengthsCache = new float[n - 1];
+            if (m_positionsCache == null || m_positionsCache.Length < n)
+                m_positionsCache = new Vector3[n];
+            if (m_boneLengthsCache == null || m_boneLengthsCache.Length < n - 1)
+                m_boneLengthsCache = new float[n - 1];
 
             // 计算骨骼长度
             for (int i = 0; i < n - 1; i++)
             {
-                _boneLengthsCache[i] = Vector3.Distance(
+                m_boneLengthsCache[i] = Vector3.Distance(
                     worldPositions[indices[i]],
                     worldPositions[indices[i + 1]]);
             }
@@ -52,7 +52,7 @@ namespace Engine.Animation
             // 计算总链长度
             float totalLength = 0;
             for (int i = 0; i < n - 1; i++)
-                totalLength += _boneLengthsCache[i];
+                totalLength += m_boneLengthsCache[i];
 
             // 检查目标是否可达
             float distToTarget = Vector3.Distance(rootPos, targetPos);
@@ -60,7 +60,7 @@ namespace Engine.Animation
             // 初始化位置数组
             for (int i = 0; i < n; i++)
             {
-                _positionsCache[i] = worldPositions[indices[i]];
+                m_positionsCache[i] = worldPositions[indices[i]];
             }
 
             // 如果目标不可达，伸展到最大
@@ -69,7 +69,7 @@ namespace Engine.Animation
                 Vector3 dir = Vector3.Normalize(targetPos - rootPos);
                 for (int i = 1; i < n; i++)
                 {
-                    _positionsCache[i] = _positionsCache[i - 1] + dir * _boneLengthsCache[i - 1];
+                    m_positionsCache[i] = m_positionsCache[i - 1] + dir * m_boneLengthsCache[i - 1];
                 }
             }
             else
@@ -78,48 +78,48 @@ namespace Engine.Animation
                 for (int iter = 0; iter < maxIterations; iter++)
                 {
                     // 前向阶段：从末端向根
-                    _positionsCache[n - 1] = targetPos;
+                    m_positionsCache[n - 1] = targetPos;
                     for (int i = n - 2; i >= 0; i--)
                     {
-                        Vector3 diff = _positionsCache[i] - _positionsCache[i + 1];
+                        Vector3 diff = m_positionsCache[i] - m_positionsCache[i + 1];
                         float dist = diff.Length();
                         if (dist < 0.0001f)
                         {
-                            _positionsCache[i] = _positionsCache[i + 1];
+                            m_positionsCache[i] = m_positionsCache[i + 1];
                         }
                         else
                         {
                             Vector3 dir = diff / dist;
-                            _positionsCache[i] = _positionsCache[i + 1] + dir * _boneLengthsCache[i];
+                            m_positionsCache[i] = m_positionsCache[i + 1] + dir * m_boneLengthsCache[i];
                         }
                     }
 
                     // 后向阶段：从根向末端
-                    _positionsCache[0] = rootPos;
+                    m_positionsCache[0] = rootPos;
                     for (int i = 1; i < n; i++)
                     {
-                        Vector3 diff = _positionsCache[i] - _positionsCache[i - 1];
+                        Vector3 diff = m_positionsCache[i] - m_positionsCache[i - 1];
                         float dist = diff.Length();
                         if (dist < 0.0001f)
                         {
-                            _positionsCache[i] = _positionsCache[i - 1];
+                            m_positionsCache[i] = m_positionsCache[i - 1];
                         }
                         else
                         {
                             Vector3 dir = diff / dist;
-                            _positionsCache[i] = _positionsCache[i - 1] + dir * _boneLengthsCache[i - 1];
+                            m_positionsCache[i] = m_positionsCache[i - 1] + dir * m_boneLengthsCache[i - 1];
                         }
                     }
 
                     // 检查收敛
-                    float error = Vector3.Distance(_positionsCache[n - 1], targetPos);
+                    float error = Vector3.Distance(m_positionsCache[n - 1], targetPos);
                     if (error < tolerance)
                         break;
                 }
             }
 
             // 从位置计算骨骼旋转
-            CalculateBoneRotations(chain, _positionsCache, boneTransforms, worldPositions, model);
+            CalculateBoneRotations(chain, m_positionsCache, boneTransforms, worldPositions, model);
 
             // 应用关节限制
             ApplyJointLimits(chain, boneTransforms, model);
@@ -128,7 +128,7 @@ namespace Engine.Animation
         /// <summary>
         /// 从位置数组计算骨骼旋转
         /// </summary>
-        private void CalculateBoneRotations(IKChain chain, Vector3[] positions,
+        public void CalculateBoneRotations(IKChain chain, Vector3[] positions,
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model)
         {
             int[] indices = chain.BoneIndices;
@@ -164,7 +164,7 @@ namespace Engine.Animation
         /// <summary>
         /// 应用关节限制
         /// </summary>
-        private void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model)
+        public void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model)
         {
             if (chain.JointLimits == null || model == null)
                 return;

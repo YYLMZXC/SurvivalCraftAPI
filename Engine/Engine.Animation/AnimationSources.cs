@@ -10,33 +10,33 @@ namespace Engine.Animation
     /// </summary>
     public class ClipAnimationSource : IAnimationSource
     {
-        private readonly AnimationPlayer _player;
-        private readonly Model _model;
-        private readonly ModelAnimation _animation;
-        private readonly AnimationSourceConfig _config;
-        private List<AnimationEventConfig> _events;
-        private readonly Dictionary<string, string> _boneRemapping;
+        public readonly AnimationPlayer m_player;
+        public readonly Model m_model;
+        public readonly ModelAnimation m_animation;
+        public readonly AnimationSourceConfig m_config;
+        public List<AnimationEventConfig> m_events;
+        public readonly Dictionary<string, string> m_boneRemapping;
 
         // Dynamic properties
-        private readonly DynamicProperty<float> _speedProperty;
-        private readonly DynamicProperty<bool> _loopProperty;
-        private readonly DynamicProperty<float> _startPhaseProperty;
-        private readonly DynamicProperty<float> _endPhaseProperty;
+        public readonly DynamicProperty<float> m_speedProperty;
+        public readonly DynamicProperty<bool> m_loopProperty;
+        public readonly DynamicProperty<float> m_startPhaseProperty;
+        public readonly DynamicProperty<float> m_endPhaseProperty;
 
         // Cached evaluator reference
-        private ExpressionEvaluator _evaluator;
+        public ExpressionEvaluator m_evaluator;
 
         // Cached last loop state to avoid unnecessary updates
-        private bool _lastLoopState = true;
+        public bool m_lastLoopState = true;
 
         // Flag to track if phase range has been applied (for delayed expression evaluation)
-        private bool _phaseRangeApplied = false;
+        public bool m_phaseRangeApplied = false;
 
         public string Name { get; }
 
-        public AnimationPlayer Player => _player;
-        public bool IsPlaying => _player?.IsPlaying ?? false;
-        public bool IsComplete => !_lastLoopState && _player != null && _player.NormalizedTime >= 1.0f;
+        public AnimationPlayer Player => m_player;
+        public bool IsPlaying => m_player?.IsPlaying ?? false;
+        public bool IsComplete => !m_lastLoopState && m_player != null && m_player.NormalizedTime >= 1.0f;
 
         /// <summary>
         /// 动画事件
@@ -48,15 +48,15 @@ namespace Engine.Animation
         /// </summary>
         public bool ExtractRootMotion { get; set; }
         public string RootBoneName { get; set; } = "Root";
-        public Vector3 RootMotionDelta { get; private set; }
-        private Vector3 _lastRootPosition;
-        private bool _rootMotionInitialized;
-        private Matrix?[] _rootMotionTransforms;
+        public Vector3 RootMotionDelta { get; set; }
+        public Vector3 _lastRootPosition;
+        public bool _rootMotionInitialized;
+        public Matrix?[] _rootMotionTransforms;
 
         /// <summary>
         /// 根运动配置
         /// </summary>
-        public RootMotionConfig RootMotionConfig => _config?.RootMotion;
+        public RootMotionConfig RootMotionConfig => m_config?.RootMotion;
 
         /// <summary>
         /// 创建关键帧动画来源
@@ -67,58 +67,58 @@ namespace Engine.Animation
         /// <param name="evaluator">表达式求值器（可选，用于动态属性）</param>
         public ClipAnimationSource(Model model, ModelAnimation animation, AnimationSourceConfig config = null, ExpressionEvaluator evaluator = null)
         {
-            _model = model;
-            _animation = animation;
-            _config = config ?? new AnimationSourceConfig();
-            _evaluator = evaluator;
+            m_model = model;
+            m_animation = animation;
+            m_config = config ?? new AnimationSourceConfig();
+            m_evaluator = evaluator;
             Name = animation?.Name ?? "Unknown";
 
             // Create dynamic properties from config
-            _speedProperty = _config.GetSpeedProperty();
-            _loopProperty = _config.GetLoopProperty();
-            _startPhaseProperty = _config.GetStartPhaseProperty();
-            _endPhaseProperty = _config.GetEndPhaseProperty();
-            _boneRemapping = _config.BoneRemapping;
+            m_speedProperty = m_config.GetSpeedProperty();
+            m_loopProperty = m_config.GetLoopProperty();
+            m_startPhaseProperty = m_config.GetStartPhaseProperty();
+            m_endPhaseProperty = m_config.GetEndPhaseProperty();
+            m_boneRemapping = m_config.BoneRemapping;
 
-            _player = new AnimationPlayer();
-            _player.SetAnimation(model, animation);
+            m_player = new AnimationPlayer();
+            m_player.SetAnimation(model, animation);
 
             // Get initial static values
-            float speed = _speedProperty.IsExpression ? 1.0f : _speedProperty.StaticValue;
-            bool loop = _loopProperty.IsExpression ? true : _loopProperty.StaticValue;
+            float speed = m_speedProperty.IsExpression ? 1.0f : m_speedProperty.StaticValue;
+            bool loop = m_loopProperty.IsExpression ? true : m_loopProperty.StaticValue;
 
-            _player.Speed = speed;
-            _player.Play(loop);
-            _lastLoopState = loop;
+            m_player.Speed = speed;
+            m_player.Play(loop);
+            m_lastLoopState = loop;
 
             // Apply phase range: static values immediately, expressions will be evaluated in Update()
-            bool startPhaseIsStatic = !_startPhaseProperty.IsExpression;
-            bool endPhaseIsStatic = !_endPhaseProperty.IsExpression;
+            bool startPhaseIsStatic = !m_startPhaseProperty.IsExpression;
+            bool endPhaseIsStatic = !m_endPhaseProperty.IsExpression;
 
             if (startPhaseIsStatic && endPhaseIsStatic)
             {
                 // Both are static - apply immediately
-                float startPhase = _startPhaseProperty.StaticValue;
-                float endPhase = _endPhaseProperty.StaticValue;
-                _player.SetPhaseRange(startPhase, endPhase);
+                float startPhase = m_startPhaseProperty.StaticValue;
+                float endPhase = m_endPhaseProperty.StaticValue;
+                m_player.SetPhaseRange(startPhase, endPhase);
 
                 // Initialize time to start position
-                if (_animation != null && _animation.Duration > 0)
+                if (m_animation != null && m_animation.Duration > 0)
                 {
-                    _player.Time = startPhase * _animation.Duration;
+                    m_player.Time = startPhase * m_animation.Duration;
                 }
 
-                _phaseRangeApplied = true;
+                m_phaseRangeApplied = true;
             }
             else
             {
                 // At least one is an expression - delay evaluation until Update()
                 // Apply default phase range for now
-                _player.SetPhaseRange(0f, 1f);
-                _phaseRangeApplied = false;
+                m_player.SetPhaseRange(0f, 1f);
+                m_phaseRangeApplied = false;
             }
 
-            _events = _config.Events;
+            m_events = m_config.Events;
 
             // 预分配根运动变换数组，避免每帧分配
             if (model?.Bones != null)
@@ -134,14 +134,14 @@ namespace Engine.Animation
         /// 初始化根运动设置（根骨骼检测和标志设置）
         /// 注意：缓存由 AnimationController 统一管理，避免重复存储
         /// </summary>
-        private void InitializeRootMotionCache()
+        public void InitializeRootMotionCache()
         {
-            var rootMotionConfig = _config?.RootMotion;
-            if (rootMotionConfig == null || _animation == null || _model == null)
+            var rootMotionConfig = m_config?.RootMotion;
+            if (rootMotionConfig == null || m_animation == null || m_model == null)
                 return;
 
             // 自动检测根骨骼名称
-            var detectedName = RootMotionCache.DetectRootBoneName(_model, RootBoneName);
+            var detectedName = RootMotionCache.DetectRootBoneName(m_model, RootBoneName);
             if (!string.IsNullOrEmpty(detectedName))
                 RootBoneName = detectedName;
 
@@ -156,50 +156,50 @@ namespace Engine.Animation
         /// <param name="evaluator">表达式求值器</param>
         public void SetEvaluator(ExpressionEvaluator evaluator)
         {
-            _evaluator = evaluator;
+            m_evaluator = evaluator;
         }
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
-            if (_player == null) return;
+            if (m_player == null) return;
 
             // Apply phase range expressions once at playback start
-            if (!_phaseRangeApplied && _evaluator != null && parameters != null)
+            if (!m_phaseRangeApplied && m_evaluator != null && parameters != null)
             {
-                float startPhase = _startPhaseProperty.IsExpression
-                    ? _startPhaseProperty.GetValue(parameters, _evaluator)
-                    : _startPhaseProperty.StaticValue;
-                float endPhase = _endPhaseProperty.IsExpression
-                    ? _endPhaseProperty.GetValue(parameters, _evaluator)
-                    : _endPhaseProperty.StaticValue;
+                float startPhase = m_startPhaseProperty.IsExpression
+                    ? m_startPhaseProperty.GetValue(parameters, m_evaluator)
+                    : m_startPhaseProperty.StaticValue;
+                float endPhase = m_endPhaseProperty.IsExpression
+                    ? m_endPhaseProperty.GetValue(parameters, m_evaluator)
+                    : m_endPhaseProperty.StaticValue;
 
                 // Clamp to valid range
                 startPhase = Math.Clamp(startPhase, 0f, 1f);
                 endPhase = Math.Clamp(endPhase, 0f, 1f);
 
-                _player.SetPhaseRange(startPhase, endPhase);
+                m_player.SetPhaseRange(startPhase, endPhase);
 
                 // Initialize time to start position
-                if (_animation != null && _animation.Duration > 0)
+                if (m_animation != null && m_animation.Duration > 0)
                 {
-                    _player.Time = startPhase * _animation.Duration;
+                    m_player.Time = startPhase * m_animation.Duration;
                 }
 
-                _phaseRangeApplied = true;
+                m_phaseRangeApplied = true;
             }
 
             // Update dynamic properties
             UpdateDynamicProperties(parameters);
 
-            float prevTime = _player.NormalizedTime;
-            _player.Update(deltaTime);
+            float prevTime = m_player.NormalizedTime;
+            m_player.Update(deltaTime);
 
             // 检查事件触发
-            if (_events != null && _player.IsPlaying)
+            if (m_events != null && m_player.IsPlaying)
             {
-                foreach (var evt in _events)
+                foreach (var evt in m_events)
                 {
-                    bool crossed = CrossedEventPoint(prevTime, _player.NormalizedTime, evt.Time);
+                    bool crossed = CrossedEventPoint(prevTime, m_player.NormalizedTime, evt.Time);
                     if (crossed)
                     {
                         OnAnimationEvent?.Invoke(evt.Name, evt.Data);
@@ -217,34 +217,34 @@ namespace Engine.Animation
         /// <summary>
         /// 更新动态属性（速度、循环状态等）
         /// </summary>
-        private void UpdateDynamicProperties(AnimationParameters parameters)
+        public void UpdateDynamicProperties(AnimationParameters parameters)
         {
             // 如果没有求值器或参数，使用静态值
-            if (_evaluator == null || parameters == null)
+            if (m_evaluator == null || parameters == null)
                 return;
 
             // 动态速度
-            if (_speedProperty.IsExpression)
+            if (m_speedProperty.IsExpression)
             {
-                float speed = _speedProperty.GetValue(parameters, _evaluator);
-                _player.Speed = speed;
+                float speed = m_speedProperty.GetValue(parameters, m_evaluator);
+                m_player.Speed = speed;
             }
 
             // 动态循环状态
-            if (_loopProperty.IsExpression)
+            if (m_loopProperty.IsExpression)
             {
-                bool loop = _loopProperty.GetValue(parameters, _evaluator);
-                if (_lastLoopState != loop)
+                bool loop = m_loopProperty.GetValue(parameters, m_evaluator);
+                if (m_lastLoopState != loop)
                 {
-                    _player.Loop = loop;
-                    _lastLoopState = loop;
+                    m_player.Loop = loop;
+                    m_lastLoopState = loop;
                 }
             }
         }
 
-        private bool CrossedEventPoint(float prev, float current, float eventTime)
+        public bool CrossedEventPoint(float prev, float current, float eventTime)
         {
-            bool isLooping = _lastLoopState;
+            bool isLooping = m_lastLoopState;
             if (!isLooping)
             {
                 return prev < eventTime && current >= eventTime;
@@ -262,12 +262,12 @@ namespace Engine.Animation
             }
         }
 
-        private void ExtractRootMotionDelta()
+        public void ExtractRootMotionDelta()
         {
-            var rootBone = _model.FindBone(RootBoneName);
+            var rootBone = m_model.FindBone(RootBoneName);
             if (rootBone == null || _rootMotionTransforms == null) return;
 
-            _player.SampleBoneTransforms(_rootMotionTransforms);
+            m_player.SampleBoneTransforms(_rootMotionTransforms);
 
             if (_rootMotionTransforms[rootBone.Index].HasValue)
             {
@@ -289,18 +289,18 @@ namespace Engine.Animation
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
-            if (_player == null) return;
+            if (m_player == null) return;
 
-            _player.SampleBoneTransforms(boneTransforms);
+            m_player.SampleBoneTransforms(boneTransforms);
 
             // 镜像处理
-            if (_config.Mirror)
+            if (m_config.Mirror)
             {
                 ApplyMirror(boneTransforms, model);
             }
 
             // 骨骼重映射处理
-            if (_boneRemapping != null && _boneRemapping.Count > 0)
+            if (m_boneRemapping != null && m_boneRemapping.Count > 0)
             {
                 ApplyBoneRemapping(boneTransforms, model);
             }
@@ -319,7 +319,7 @@ namespace Engine.Animation
             }
         }
 
-        private void ApplyMirror(Matrix?[] boneTransforms, Model model)
+        public void ApplyMirror(Matrix?[] boneTransforms, Model model)
         {
             for (int i = 0; i < boneTransforms.Length; i++)
             {
@@ -341,12 +341,12 @@ namespace Engine.Animation
         /// <summary>
         /// 应用骨骼重映射 - 交换骨骼变换
         /// </summary>
-        private void ApplyBoneRemapping(Matrix?[] boneTransforms, Model model)
+        public void ApplyBoneRemapping(Matrix?[] boneTransforms, Model model)
         {
             // 收集需要交换的骨骼变换
             var swapped = new Dictionary<int, Matrix?>();
 
-            foreach (var (boneA, boneB) in _boneRemapping)
+            foreach (var (boneA, boneB) in m_boneRemapping)
             {
                 var boneAInfo = model.FindBone(boneA);
                 var boneBInfo = model.FindBone(boneB);
@@ -368,15 +368,15 @@ namespace Engine.Animation
 
         public void Reset()
         {
-            _player?.Stop();
+            m_player?.Stop();
             _rootMotionInitialized = false;
             RootMotionDelta = Vector3.Zero;
-            _phaseRangeApplied = false;
+            m_phaseRangeApplied = false;
 
             // Reset time to start position if we have static phase values
-            if (_startPhaseProperty != null && !_startPhaseProperty.IsExpression && _animation != null && _animation.Duration > 0)
+            if (m_startPhaseProperty != null && !m_startPhaseProperty.IsExpression && m_animation != null && m_animation.Duration > 0)
             {
-                _player.Time = _startPhaseProperty.StaticValue * _animation.Duration;
+                m_player.Time = m_startPhaseProperty.StaticValue * m_animation.Duration;
             }
         }
     }
@@ -386,7 +386,7 @@ namespace Engine.Animation
     /// </summary>
     public class DriverAnimationSource : IAnimationSource
     {
-        private readonly IAnimationDriver _driver;
+        public readonly IAnimationDriver _driver;
 
         public string Name => _driver?.Name ?? "Driver";
         public IAnimationDriver Driver => _driver;

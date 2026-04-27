@@ -76,8 +76,8 @@ namespace Game {
 
         // Pre-allocated buffers for skinning (avoid GC pressure)
         public readonly Matrix[] m_jointMatricesBuffer = new Matrix[MaxJointsCount];
-        readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
-        readonly List<ModelData> m_skinnedModelsBuffer = [];
+        public readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
+        public readonly List<ModelData> m_skinnedModelsBuffer = [];
 
         public static bool DisableDrawingModels = false;
 

@@ -9,8 +9,8 @@ namespace Engine.Graphics {
     /// 使用 std140 布局
     /// </summary>
     public class UniformBuffer<T> : IDisposable where T : unmanaged {
-        readonly uint _handle;
-        readonly int _size;
+        public readonly uint m_handle;
+        public readonly int m_size;
 
         /// <summary>
         /// UBO 绑定点
@@ -19,20 +19,20 @@ namespace Engine.Graphics {
 
         public unsafe UniformBuffer(int bindingPoint) {
             BindingPoint = bindingPoint;
-            _size = Marshal.SizeOf<T>();
-            _handle = GLWrapper.GL.GenBuffer();
-            GLWrapper.GL.BindBuffer(BufferTargetARB.UniformBuffer, _handle);
-            GLWrapper.GL.BufferData(BufferTargetARB.UniformBuffer, (nuint)_size, null, BufferUsageARB.DynamicDraw);
-            GLWrapper.GL.BindBufferBase(BufferTargetARB.UniformBuffer, (uint)BindingPoint, _handle);
+            m_size = Marshal.SizeOf<T>();
+            m_handle = GLWrapper.GL.GenBuffer();
+            GLWrapper.GL.BindBuffer(BufferTargetARB.UniformBuffer, m_handle);
+            GLWrapper.GL.BufferData(BufferTargetARB.UniformBuffer, (nuint)m_size, null, BufferUsageARB.DynamicDraw);
+            GLWrapper.GL.BindBufferBase(BufferTargetARB.UniformBuffer, (uint)BindingPoint, m_handle);
         }
 
         /// <summary>
         /// 更新 UBO 数据
         /// </summary>
         public unsafe void Update(ref T data) {
-            GLWrapper.GL.BindBuffer(BufferTargetARB.UniformBuffer, _handle);
+            GLWrapper.GL.BindBuffer(BufferTargetARB.UniformBuffer, m_handle);
             fixed (T* ptr = &data) {
-                GLWrapper.GL.BufferSubData(BufferTargetARB.UniformBuffer, 0, (nuint)_size, ptr);
+                GLWrapper.GL.BufferSubData(BufferTargetARB.UniformBuffer, 0, (nuint)m_size, ptr);
             }
         }
 
@@ -47,7 +47,7 @@ namespace Engine.Graphics {
         }
 
         public void Dispose() {
-            GLWrapper.GL.DeleteBuffer(_handle);
+            GLWrapper.GL.DeleteBuffer(m_handle);
         }
     }
 }

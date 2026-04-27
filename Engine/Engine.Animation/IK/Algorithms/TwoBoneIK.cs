@@ -161,7 +161,7 @@ namespace Engine.Animation
         /// <summary>
         /// 计算弯曲方向
         /// </summary>
-        private Vector3 CalculateBendDirection(Vector3 root, Vector3 mid, Vector3 target, Vector3? hint)
+        public Vector3 CalculateBendDirection(Vector3 root, Vector3 mid, Vector3 target, Vector3? hint)
         {
             if (hint.HasValue)
             {
@@ -189,7 +189,7 @@ namespace Engine.Animation
         /// <summary>
         /// 应用关节限制
         /// </summary>
-        private void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model)
+        public void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model)
         {
             if (chain.JointLimits == null || model == null)
                 return;
@@ -208,7 +208,7 @@ namespace Engine.Animation
         /// <summary>
         /// 应用瞄准约束（方向约束）
         /// </summary>
-        private void ApplyAimConstraint(IKChain chain, IKTarget target,
+        public void ApplyAimConstraint(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model, int[] indices)
         {
             if (!target.AimDirection.HasValue)

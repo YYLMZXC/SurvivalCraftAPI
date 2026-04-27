@@ -54,7 +54,7 @@ namespace Engine.Media {
             return $"MATERIAL_{shortName}";
         }
 
-        protected static float GetChannelFactor(MaterialChannel? channel, string factorName, float defaultValue) {
+        public static float GetChannelFactor(MaterialChannel? channel, string factorName, float defaultValue) {
             if (channel == null) {
                 return defaultValue;
             }
@@ -69,7 +69,7 @@ namespace Engine.Media {
         /// <summary>
         /// 从材质通道加载纹理（使用 ModelData 的纹理索引映射）
         /// </summary>
-        protected static ModelMaterialTexture LoadTextureFromChannel(ModelData modelData, MaterialChannel? channel) {
+        public static ModelMaterialTexture LoadTextureFromChannel(ModelData modelData, MaterialChannel? channel) {
             if (channel?.Texture == null) {
                 return null;
             }
@@ -99,7 +99,7 @@ namespace Engine.Media {
         /// 通过反射获取未知扩展对象（用于 SharpGLTF 不支持的扩展）
         /// 使用 PropertyInfo 缓存优化性能
         /// </summary>
-        protected static object GetUnknownExtension(IExtraProperties target, string extensionName) {
+        public static object GetUnknownExtension(IExtraProperties target, string extensionName) {
             // 懒加载 UnknownNode 类型
             _unknownNodeType ??= AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(a => a.GetTypes())
@@ -129,7 +129,7 @@ namespace Engine.Media {
         /// 从未知扩展对象中获取属性值
         /// 使用 PropertyInfo 缓存优化性能
         /// </summary>
-        protected static object GetExtensionProperty(object unknownExtension, string propertyName) {
+        public static object GetExtensionProperty(object unknownExtension, string propertyName) {
             if (unknownExtension == null) {
                 return null;
             }
@@ -151,7 +151,7 @@ namespace Engine.Media {
         /// <summary>
         /// 获取扩展的浮点属性值
         /// </summary>
-        protected static float GetExtensionFloat(object extension, string propertyName, float defaultValue = 0f) {
+        public static float GetExtensionFloat(object extension, string propertyName, float defaultValue = 0f) {
             object value = GetExtensionProperty(extension, propertyName);
             if (value is JsonValue jsonValue
                 && jsonValue.TryGetValue(out float f)) {
@@ -171,7 +171,7 @@ namespace Engine.Media {
         /// <summary>
         /// 获取扩展的颜色属性值（RGB 数组）
         /// </summary>
-        protected static Vector3 GetExtensionColor(object extension, string propertyName, Vector3? defaultValue = null) {
+        public static Vector3 GetExtensionColor(object extension, string propertyName, Vector3? defaultValue = null) {
             object value = GetExtensionProperty(extension, propertyName);
             if (value is JsonArray array
                 && array.Count >= 3) {
@@ -186,7 +186,7 @@ namespace Engine.Media {
         /// <summary>
         /// 获取扩展的纹理索引和 UV 集
         /// </summary>
-        protected static (int? textureIndex, int? texCoord) GetExtensionTextureInfo(object extension, string propertyName) {
+        public static (int? textureIndex, int? texCoord) GetExtensionTextureInfo(object extension, string propertyName) {
             object value = GetExtensionProperty(extension, propertyName);
             if (value is JsonObject obj) {
                 int? textureIndex = obj["index"]?.GetValue<int>();

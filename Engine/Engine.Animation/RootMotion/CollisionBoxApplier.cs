@@ -9,28 +9,28 @@ namespace Engine.Animation.RootMotion
     /// </summary>
     public class CollisionBoxApplier
     {
-        private Vector3 _currentSize;
-        private Vector3 _targetSize;
-        private Vector3 _defaultSize;
+        public Vector3 m_currentSize;
+        public Vector3 m_targetSize;
+        public Vector3 m_defaultSize;
 
         /// <summary>
         /// 默认碰撞体尺寸
         /// </summary>
         public Vector3 DefaultSize
         {
-            get => _defaultSize;
+            get => m_defaultSize;
             set
             {
-                _defaultSize = value;
-                _currentSize = value;
-                _targetSize = value;
+                m_defaultSize = value;
+                m_currentSize = value;
+                m_targetSize = value;
             }
         }
 
         /// <summary>
         /// 当前碰撞体尺寸
         /// </summary>
-        public Vector3 CurrentSize => _currentSize;
+        public Vector3 CurrentSize => m_currentSize;
 
         /// <summary>
         /// 应用缩放到碰撞体
@@ -66,27 +66,27 @@ namespace Engine.Animation.RootMotion
             // 边界处理：限制最小缩放值
             targetScale = ClampScale(targetScale, config.MinScale);
 
-            _targetSize = _defaultSize * targetScale;
+            m_targetSize = m_defaultSize * targetScale;
 
             // 平滑过渡（指数衰减）
             if (config.BlendDuration > 0 && deltaTime > 0)
             {
                 // 指数衰减：每秒完成约 1/blendDuration 的剩余距离
                 float decay = MathF.Exp(-deltaTime / config.BlendDuration);
-                _currentSize = Vector3.Lerp(_targetSize, _currentSize, decay);
+                m_currentSize = Vector3.Lerp(m_targetSize, m_currentSize, decay);
             }
             else
             {
-                _currentSize = _targetSize;
+                m_currentSize = m_targetSize;
             }
 
-            setCollisionBox?.Invoke(_currentSize);
+            setCollisionBox?.Invoke(m_currentSize);
         }
 
         /// <summary>
         /// 缩放值边界处理
         /// </summary>
-        private static Vector3 ClampScale(Vector3 scale, Vector3? minScale)
+        public static Vector3 ClampScale(Vector3 scale, Vector3? minScale)
         {
             Vector3 min = minScale ?? new Vector3(0.01f, 0.01f, 0.01f);
             return Vector3.Max(scale, min);
@@ -97,7 +97,7 @@ namespace Engine.Animation.RootMotion
         /// </summary>
         public void ResetToDefault()
         {
-            _targetSize = _defaultSize;
+            m_targetSize = m_defaultSize;
         }
 
         /// <summary>
@@ -111,12 +111,12 @@ namespace Engine.Animation.RootMotion
             float deltaTime,
             float blendDuration = 0.2f)
         {
-            if (_currentSize != _targetSize && blendDuration > 0 && deltaTime > 0)
+            if (m_currentSize != m_targetSize && blendDuration > 0 && deltaTime > 0)
             {
                 // 指数衰减：每秒完成约 1/blendDuration 的剩余距离
                 float decay = MathF.Exp(-deltaTime / blendDuration);
-                _currentSize = Vector3.Lerp(_targetSize, _currentSize, decay);
-                setCollisionBox?.Invoke(_currentSize);
+                m_currentSize = Vector3.Lerp(m_targetSize, m_currentSize, decay);
+                setCollisionBox?.Invoke(m_currentSize);
             }
         }
     }

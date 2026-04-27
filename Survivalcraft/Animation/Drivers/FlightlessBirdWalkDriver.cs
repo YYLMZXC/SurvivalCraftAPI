@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "FlightlessBirdWalk";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Body", "Leg1", "Leg2", "Head", "Neck" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Body", "Leg1", "Leg2", "Head", "Neck" };
 
         // 参数名称
         public string PhaseParam { get; set; } = "MovementPhase";

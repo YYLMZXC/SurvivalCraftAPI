@@ -48,7 +48,7 @@ namespace Engine.Animation
         /// <param name="info">The object that holds the serialized object data.</param>
         /// <param name="context">The contextual information about the source or destination.</param>
         [Obsolete("Obsolete")]
-        protected JsonInheritanceException(SerializationInfo info, StreamingContext context)
+        public JsonInheritanceException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             InheritanceChain = info.GetString(nameof(InheritanceChain));

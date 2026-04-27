@@ -13,23 +13,23 @@ namespace Engine.Animation
         /// <summary>
         /// 来源名称
         /// </summary>
-        string Name { get; }
+        public string Name { get; }
 
         /// <summary>
         /// 更新动画状态
         /// </summary>
-        void Update(float deltaTime, AnimationParameters parameters);
+        public void Update(float deltaTime, AnimationParameters parameters);
 
         /// <summary>
         /// 采样骨骼变换
         /// </summary>
-        void SampleTransforms(Matrix?[] boneTransforms, Model model);
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model);
 
         /// <summary>
         /// 获取根运动数据（可选实现）
         /// </summary>
         /// <returns>速度、冲量、缩放三元组</returns>
-        (Vector3 velocity, Vector3? impulse, Vector3? scale) GetRootMotionDelta() => (Vector3.Zero, null, null);
+        public (Vector3 velocity, Vector3? impulse, Vector3? scale) GetRootMotionDelta() => (Vector3.Zero, null, null);
     }
 
     /// <summary>
@@ -85,20 +85,20 @@ namespace Engine.Animation
         public RootMotionConfig RootMotion { get; set; }
 
         // Cached dynamic properties (avoid repeated allocations)
-        private DynamicProperty<float> _cachedSpeedProperty;
-        private DynamicProperty<bool> _cachedLoopProperty;
-        private DynamicProperty<float> _cachedStartPhaseProperty;
-        private DynamicProperty<float> _cachedEndPhaseProperty;
-        private DynamicProperty<float> _cachedBlendDurationProperty;
+        public DynamicProperty<float> m_cachedSpeedProperty;
+        public DynamicProperty<bool> m_cachedLoopProperty;
+        public DynamicProperty<float> m_cachedStartPhaseProperty;
+        public DynamicProperty<float> m_cachedEndPhaseProperty;
+        public DynamicProperty<float> m_cachedBlendDurationProperty;
 
         /// <summary>
         /// 创建动态属性包装器（缓存实例）
         /// </summary>
-        public DynamicProperty<float> GetSpeedProperty() => _cachedSpeedProperty ??= new DynamicProperty<float>(SpeedValue);
-        public DynamicProperty<bool> GetLoopProperty() => _cachedLoopProperty ??= new DynamicProperty<bool>(LoopValue);
-        public DynamicProperty<float> GetStartPhaseProperty() => _cachedStartPhaseProperty ??= new DynamicProperty<float>(StartPhaseValue);
-        public DynamicProperty<float> GetEndPhaseProperty() => _cachedEndPhaseProperty ??= new DynamicProperty<float>(EndPhaseValue);
-        public DynamicProperty<float> GetBlendDurationProperty() => _cachedBlendDurationProperty ??= new DynamicProperty<float>(BlendDurationValue);
+        public DynamicProperty<float> GetSpeedProperty() => m_cachedSpeedProperty ??= new DynamicProperty<float>(SpeedValue);
+        public DynamicProperty<bool> GetLoopProperty() => m_cachedLoopProperty ??= new DynamicProperty<bool>(LoopValue);
+        public DynamicProperty<float> GetStartPhaseProperty() => m_cachedStartPhaseProperty ??= new DynamicProperty<float>(StartPhaseValue);
+        public DynamicProperty<float> GetEndPhaseProperty() => m_cachedEndPhaseProperty ??= new DynamicProperty<float>(EndPhaseValue);
+        public DynamicProperty<float> GetBlendDurationProperty() => m_cachedBlendDurationProperty ??= new DynamicProperty<float>(BlendDurationValue);
     }
 
     /// <summary>

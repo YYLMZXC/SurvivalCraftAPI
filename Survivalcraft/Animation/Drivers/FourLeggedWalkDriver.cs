@@ -17,8 +17,8 @@ namespace Game.Animation.Drivers
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         // 目标骨骼 - 行走时需要控制的所有骨骼
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Body", "Leg1", "Leg2", "Leg3", "Leg4", "Head", "Neck" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Body", "Leg1", "Leg2", "Leg3", "Leg4", "Head", "Neck" };
 
         // 输入参数名称
         public string SpeedParam { get; set; } = "Speed";

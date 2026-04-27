@@ -129,7 +129,7 @@ namespace Engine.Animation
             writer.WriteEndObject();
         }
 
-        private object ReadDynamicValue(ref Utf8JsonReader reader)
+        public object ReadDynamicValue(ref Utf8JsonReader reader)
         {
             return reader.TokenType switch
             {
@@ -142,7 +142,7 @@ namespace Engine.Animation
             };
         }
 
-        private void WriteDynamicValue(Utf8JsonWriter writer, string propertyName, object value)
+        public void WriteDynamicValue(Utf8JsonWriter writer, string propertyName, object value)
         {
             if (value == null) return;
 
@@ -171,7 +171,7 @@ namespace Engine.Animation
             }
         }
 
-        private Dictionary<string, object> ReadDriverArgs(ref Utf8JsonReader reader, JsonSerializerOptions options)
+        public Dictionary<string, object> ReadDriverArgs(ref Utf8JsonReader reader, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
             {

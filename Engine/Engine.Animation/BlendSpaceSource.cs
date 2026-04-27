@@ -116,58 +116,58 @@ namespace Engine.Animation
     {
         public string Name { get; }
 
-        private readonly AnimationBlendSpaceDefinition _definition1D;
-        private readonly AnimationBlendSpaceDefinition2D _definition2D;
-        private readonly ClipAnimationSource[] _sources;
-        private readonly Model _model;
-        private readonly bool _is2D;
+        public readonly AnimationBlendSpaceDefinition m_definition1D;
+        public readonly AnimationBlendSpaceDefinition2D m_definition2D;
+        public readonly ClipAnimationSource[] m_sources;
+        public readonly Model m_model;
+        public readonly bool m_is2D;
 
         // 预分配缓冲区，避免每帧 GC
-        private Matrix?[] _tempTransformsBuffer1;
-        private Matrix?[] _tempTransformsBuffer2;
-        private int _bufferSize;
+        public Matrix?[] m_tempTransformsBuffer1;
+        public Matrix?[] m_tempTransformsBuffer2;
+        public int m_bufferSize;
 
         // 时间同步相关
-        private float _syncedNormalizedTime;
-        private readonly bool _syncTime;
+        public float m_syncedNormalizedTime;
+        public readonly bool m_syncTime;
 
         // 缓存的参数值（用于 SampleTransforms）
-        private float _cachedParamValue;
-        private float _cachedParamX;
-        private float _cachedParamY;
+        public float m_cachedParamValue;
+        public float m_cachedParamX;
+        public float m_cachedParamY;
 
         // 预分配的二维混合缓冲区（避免每帧 GC）
-        private float[] _blend2DDistances;
-        private int[] _blend2DSortedIndices;
-        private float[] _blend2DWeights;
-        private int _blend2DMaxSamples;
+        public float[] m_blend2DDistances;
+        public int[] m_blend2DSortedIndices;
+        public float[] m_blend2DWeights;
+        public int m_blend2DMaxSamples;
 
         // 有效源索引（过滤掉 null）
-        private int[] _validSourceIndices;
+        public int[] m_validSourceIndices;
 
         /// <summary>
         /// 创建一维混合空间
         /// </summary>
         public BlendSpaceSource(AnimationBlendSpaceDefinition definition, Model model)
         {
-            _definition1D = definition ?? throw new ArgumentNullException(nameof(definition));
-            _model = model ?? throw new ArgumentNullException(nameof(model));
-            _is2D = false;
-            _syncTime = definition.SyncTime;
+            m_definition1D = definition ?? throw new ArgumentNullException(nameof(definition));
+            m_model = model ?? throw new ArgumentNullException(nameof(model));
+            m_is2D = false;
+            m_syncTime = definition.SyncTime;
 
             Name = definition.Name ?? "BlendSpace1D";
 
             if (definition.Samples == null || definition.Samples.Length == 0)
             {
-                _sources = Array.Empty<ClipAnimationSource>();
-                _validSourceIndices = Array.Empty<int>();
+                m_sources = Array.Empty<ClipAnimationSource>();
+                m_validSourceIndices = Array.Empty<int>();
                 return;
             }
 
             // 按值排序采样点，并更新定义
             definition.Samples = definition.Samples.OrderBy(s => s.Value).ToArray();
 
-            _sources = new ClipAnimationSource[definition.Samples.Length];
+            m_sources = new ClipAnimationSource[definition.Samples.Length];
             var validIndices = new List<int>();
             for (int i = 0; i < definition.Samples.Length; i++)
             {
@@ -177,20 +177,20 @@ namespace Engine.Animation
                 {
                     var config = sample.AnimationConfig ?? new AnimationSourceConfig { LoopValue = true };
                     config.LoopValue = true; // 混合空间中的动画必须循环
-                    _sources[i] = new ClipAnimationSource(model, anim, config);
+                    m_sources[i] = new ClipAnimationSource(model, anim, config);
                     validIndices.Add(i);
                 }
             }
 
             // 记录有效源索引（过滤掉 null）
-            _validSourceIndices = validIndices.ToArray();
+            m_validSourceIndices = validIndices.ToArray();
 
             // 预分配缓冲区
             if (model.Bones.Count > 0)
             {
-                _bufferSize = model.Bones.Count;
-                _tempTransformsBuffer1 = new Matrix?[_bufferSize];
-                _tempTransformsBuffer2 = new Matrix?[_bufferSize];
+                m_bufferSize = model.Bones.Count;
+                m_tempTransformsBuffer1 = new Matrix?[m_bufferSize];
+                m_tempTransformsBuffer2 = new Matrix?[m_bufferSize];
             }
 
             // 预分配二维混合缓冲区
@@ -202,21 +202,21 @@ namespace Engine.Animation
         /// </summary>
         public BlendSpaceSource(AnimationBlendSpaceDefinition2D definition, Model model)
         {
-            _definition2D = definition ?? throw new ArgumentNullException(nameof(definition));
-            _model = model ?? throw new ArgumentNullException(nameof(model));
-            _is2D = true;
-            _syncTime = definition.SyncTime;
+            m_definition2D = definition ?? throw new ArgumentNullException(nameof(definition));
+            m_model = model ?? throw new ArgumentNullException(nameof(model));
+            m_is2D = true;
+            m_syncTime = definition.SyncTime;
 
             Name = definition.Name ?? "BlendSpace2D";
 
             if (definition.Samples == null || definition.Samples.Length == 0)
             {
-                _sources = Array.Empty<ClipAnimationSource>();
-                _validSourceIndices = Array.Empty<int>();
+                m_sources = Array.Empty<ClipAnimationSource>();
+                m_validSourceIndices = Array.Empty<int>();
                 return;
             }
 
-            _sources = new ClipAnimationSource[definition.Samples.Length];
+            m_sources = new ClipAnimationSource[definition.Samples.Length];
             var validIndices = new List<int>();
             for (int i = 0; i < definition.Samples.Length; i++)
             {
@@ -226,20 +226,20 @@ namespace Engine.Animation
                 {
                     var config = sample.AnimationConfig ?? new AnimationSourceConfig { LoopValue = true };
                     config.LoopValue = true;
-                    _sources[i] = new ClipAnimationSource(model, anim, config);
+                    m_sources[i] = new ClipAnimationSource(model, anim, config);
                     validIndices.Add(i);
                 }
             }
 
             // 记录有效源索引（过滤掉 null）
-            _validSourceIndices = validIndices.ToArray();
+            m_validSourceIndices = validIndices.ToArray();
 
             // 预分配缓冲区
             if (model.Bones.Count > 0)
             {
-                _bufferSize = model.Bones.Count;
-                _tempTransformsBuffer1 = new Matrix?[_bufferSize];
-                _tempTransformsBuffer2 = new Matrix?[_bufferSize];
+                m_bufferSize = model.Bones.Count;
+                m_tempTransformsBuffer1 = new Matrix?[m_bufferSize];
+                m_tempTransformsBuffer2 = new Matrix?[m_bufferSize];
             }
 
             // 预分配二维混合缓冲区
@@ -248,66 +248,66 @@ namespace Engine.Animation
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
-            if (_sources == null || _sources.Length == 0) return;
+            if (m_sources == null || m_sources.Length == 0) return;
 
             // 缓存参数值，供 SampleTransforms 使用
             if (parameters != null)
             {
-                if (_is2D)
+                if (m_is2D)
                 {
-                    if (!string.IsNullOrEmpty(_definition2D.ParameterNameX))
-                        _cachedParamX = parameters.GetFloat(_definition2D.ParameterNameX);
-                    if (!string.IsNullOrEmpty(_definition2D.ParameterNameY))
-                        _cachedParamY = parameters.GetFloat(_definition2D.ParameterNameY);
+                    if (!string.IsNullOrEmpty(m_definition2D.ParameterNameX))
+                        m_cachedParamX = parameters.GetFloat(m_definition2D.ParameterNameX);
+                    if (!string.IsNullOrEmpty(m_definition2D.ParameterNameY))
+                        m_cachedParamY = parameters.GetFloat(m_definition2D.ParameterNameY);
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(_definition1D.ParameterName))
-                        _cachedParamValue = parameters.GetFloat(_definition1D.ParameterName);
+                    if (!string.IsNullOrEmpty(m_definition1D.ParameterName))
+                        m_cachedParamValue = parameters.GetFloat(m_definition1D.ParameterName);
                 }
             }
 
             // 时间同步模式：所有动画使用相同的归一化时间
-            if (_syncTime)
+            if (m_syncTime)
             {
                 // 更新同步时间
-                _syncedNormalizedTime += deltaTime * GetFirstValidAnimationSpeed();
-                if (_syncedNormalizedTime >= 1f) _syncedNormalizedTime -= 1f;
-                else if (_syncedNormalizedTime < 0f) _syncedNormalizedTime += 1f;
+                m_syncedNormalizedTime += deltaTime * GetFirstValidAnimationSpeed();
+                if (m_syncedNormalizedTime >= 1f) m_syncedNormalizedTime -= 1f;
+                else if (m_syncedNormalizedTime < 0f) m_syncedNormalizedTime += 1f;
 
                 // 同步所有有效动画
-                foreach (var idx in _validSourceIndices)
+                foreach (var idx in m_validSourceIndices)
                 {
-                    _sources[idx].Player.SetNormalizedTime(_syncedNormalizedTime);
+                    m_sources[idx].Player.SetNormalizedTime(m_syncedNormalizedTime);
                 }
             }
             else
             {
                 // 独立更新每个动画
-                foreach (var idx in _validSourceIndices)
+                foreach (var idx in m_validSourceIndices)
                 {
-                    _sources[idx].Update(deltaTime, parameters);
+                    m_sources[idx].Update(deltaTime, parameters);
                 }
             }
         }
 
-        private float GetFirstValidAnimationSpeed()
+        public float GetFirstValidAnimationSpeed()
         {
-            if (_validSourceIndices.Length > 0 && _sources[_validSourceIndices[0]] != null)
+            if (m_validSourceIndices.Length > 0 && m_sources[m_validSourceIndices[0]] != null)
             {
-                return _sources[_validSourceIndices[0]].Player.Speed;
+                return m_sources[m_validSourceIndices[0]].Player.Speed;
             }
             return 1f;
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
-            if (_sources == null || _sources.Length == 0 || boneTransforms == null) return;
+            if (m_sources == null || m_sources.Length == 0 || boneTransforms == null) return;
 
             // 确保缓冲区大小足够
             EnsureBufferSize(boneTransforms.Length);
 
-            if (_is2D)
+            if (m_is2D)
             {
                 SampleTransforms2D(boneTransforms, model);
             }
@@ -317,15 +317,15 @@ namespace Engine.Animation
             }
         }
 
-        private void SampleTransforms1D(Matrix?[] boneTransforms, Model model)
+        public void SampleTransforms1D(Matrix?[] boneTransforms, Model model)
         {
             // 使用缓存的参数值
-            float paramValue = _cachedParamValue;
+            float paramValue = m_cachedParamValue;
 
             // 找到相邻的两个采样点
             var (lowerIdx, upperIdx, t) = FindBlendSamples1D(paramValue);
 
-            if (lowerIdx < 0 || _sources[lowerIdx] == null)
+            if (lowerIdx < 0 || m_sources[lowerIdx] == null)
             {
                 // 没有有效的动画
                 return;
@@ -334,67 +334,67 @@ namespace Engine.Animation
             if (lowerIdx == upperIdx || t <= 0.001f)
             {
                 // 只使用一个动画
-                _sources[lowerIdx].SampleTransforms(boneTransforms, model);
+                m_sources[lowerIdx].SampleTransforms(boneTransforms, model);
             }
             else if (t >= 0.999f)
             {
                 // 只使用另一个动画
-                if (_sources[upperIdx] != null)
-                    _sources[upperIdx].SampleTransforms(boneTransforms, model);
+                if (m_sources[upperIdx] != null)
+                    m_sources[upperIdx].SampleTransforms(boneTransforms, model);
                 else
-                    _sources[lowerIdx].SampleTransforms(boneTransforms, model);
+                    m_sources[lowerIdx].SampleTransforms(boneTransforms, model);
             }
             else
             {
                 // 混合两个动画
-                Array.Clear(_tempTransformsBuffer1, 0, _bufferSize);
-                Array.Clear(_tempTransformsBuffer2, 0, _bufferSize);
+                Array.Clear(m_tempTransformsBuffer1, 0, m_bufferSize);
+                Array.Clear(m_tempTransformsBuffer2, 0, m_bufferSize);
 
-                _sources[lowerIdx].SampleTransforms(_tempTransformsBuffer1, model);
-                _sources[upperIdx].SampleTransforms(_tempTransformsBuffer2, model);
+                m_sources[lowerIdx].SampleTransforms(m_tempTransformsBuffer1, model);
+                m_sources[upperIdx].SampleTransforms(m_tempTransformsBuffer2, model);
 
-                BlendTransforms(boneTransforms, _tempTransformsBuffer1, _tempTransformsBuffer2, t);
+                BlendTransforms(boneTransforms, m_tempTransformsBuffer1, m_tempTransformsBuffer2, t);
             }
         }
 
-        private void SampleTransforms2D(Matrix?[] boneTransforms, Model model)
+        public void SampleTransforms2D(Matrix?[] boneTransforms, Model model)
         {
             // 使用缓存的参数值
-            var (indices, weights) = FindBlendSamples2D(_cachedParamX, _cachedParamY);
+            var (indices, weights) = FindBlendSamples2D(m_cachedParamX, m_cachedParamY);
 
             if (indices == null || weights == null || indices.Length == 0)
                 return;
 
             // 只有一个有效采样点
-            if (indices.Length == 1 && _sources[indices[0]] != null)
+            if (indices.Length == 1 && m_sources[indices[0]] != null)
             {
-                _sources[indices[0]].SampleTransforms(boneTransforms, model);
+                m_sources[indices[0]].SampleTransforms(boneTransforms, model);
                 return;
             }
 
             // 多个采样点加权混合
             // 先混合前两个
-            if (indices.Length >= 2 && _sources[indices[0]] != null && _sources[indices[1]] != null)
+            if (indices.Length >= 2 && m_sources[indices[0]] != null && m_sources[indices[1]] != null)
             {
-                Array.Clear(_tempTransformsBuffer1, 0, _bufferSize);
-                Array.Clear(_tempTransformsBuffer2, 0, _bufferSize);
+                Array.Clear(m_tempTransformsBuffer1, 0, m_bufferSize);
+                Array.Clear(m_tempTransformsBuffer2, 0, m_bufferSize);
 
-                _sources[indices[0]].SampleTransforms(_tempTransformsBuffer1, model);
-                _sources[indices[1]].SampleTransforms(_tempTransformsBuffer2, model);
+                m_sources[indices[0]].SampleTransforms(m_tempTransformsBuffer1, model);
+                m_sources[indices[1]].SampleTransforms(m_tempTransformsBuffer2, model);
 
                 // 归一化权重
                 float totalWeight = weights[0] + weights[1];
                 float t = totalWeight > 0 ? weights[1] / totalWeight : 0f;
 
-                BlendTransforms(boneTransforms, _tempTransformsBuffer1, _tempTransformsBuffer2, t);
+                BlendTransforms(boneTransforms, m_tempTransformsBuffer1, m_tempTransformsBuffer2, t);
 
                 // 继续混合剩余的采样点
                 for (int i = 2; i < indices.Length; i++)
                 {
-                    if (_sources[indices[i]] == null) continue;
+                    if (m_sources[indices[i]] == null) continue;
 
-                    Array.Clear(_tempTransformsBuffer1, 0, _bufferSize);
-                    _sources[indices[i]].SampleTransforms(_tempTransformsBuffer1, model);
+                    Array.Clear(m_tempTransformsBuffer1, 0, m_bufferSize);
+                    m_sources[indices[i]].SampleTransforms(m_tempTransformsBuffer1, model);
 
                     // 计算新的混合权重（使用 for 循环替代 LINQ）
                     float prevTotal = 0f;
@@ -406,9 +406,9 @@ namespace Engine.Animation
                     t = totalWeight > 0 ? weights[i] / totalWeight : 0f;
 
                     // 复制当前结果到 buffer2
-                    Array.Copy(boneTransforms, _tempTransformsBuffer2, boneTransforms.Length);
+                    Array.Copy(boneTransforms, m_tempTransformsBuffer2, boneTransforms.Length);
 
-                    BlendTransforms(boneTransforms, _tempTransformsBuffer2, _tempTransformsBuffer1, t);
+                    BlendTransforms(boneTransforms, m_tempTransformsBuffer2, m_tempTransformsBuffer1, t);
                 }
             }
         }
@@ -418,11 +418,11 @@ namespace Engine.Animation
         /// </summary>
         public void SampleTransformsWithParam(Matrix?[] boneTransforms, Model model, float paramValue)
         {
-            if (_sources == null || _sources.Length == 0 || boneTransforms == null) return;
+            if (m_sources == null || m_sources.Length == 0 || boneTransforms == null) return;
 
             EnsureBufferSize(boneTransforms.Length);
 
-            if (_is2D)
+            if (m_is2D)
             {
                 SampleTransforms2D(boneTransforms, model);
             }
@@ -432,33 +432,33 @@ namespace Engine.Animation
             }
         }
 
-        private void SampleTransforms1DWithParam(Matrix?[] boneTransforms, Model model, float paramValue)
+        public void SampleTransforms1DWithParam(Matrix?[] boneTransforms, Model model, float paramValue)
         {
             var (lowerIdx, upperIdx, t) = FindBlendSamples1D(paramValue);
 
-            if (lowerIdx < 0 || _sources[lowerIdx] == null)
+            if (lowerIdx < 0 || m_sources[lowerIdx] == null)
                 return;
 
             if (lowerIdx == upperIdx || t <= 0.001f)
             {
-                _sources[lowerIdx].SampleTransforms(boneTransforms, model);
+                m_sources[lowerIdx].SampleTransforms(boneTransforms, model);
             }
             else if (t >= 0.999f)
             {
-                if (_sources[upperIdx] != null)
-                    _sources[upperIdx].SampleTransforms(boneTransforms, model);
+                if (m_sources[upperIdx] != null)
+                    m_sources[upperIdx].SampleTransforms(boneTransforms, model);
                 else
-                    _sources[lowerIdx].SampleTransforms(boneTransforms, model);
+                    m_sources[lowerIdx].SampleTransforms(boneTransforms, model);
             }
             else
             {
-                Array.Clear(_tempTransformsBuffer1, 0, _bufferSize);
-                Array.Clear(_tempTransformsBuffer2, 0, _bufferSize);
+                Array.Clear(m_tempTransformsBuffer1, 0, m_bufferSize);
+                Array.Clear(m_tempTransformsBuffer2, 0, m_bufferSize);
 
-                _sources[lowerIdx].SampleTransforms(_tempTransformsBuffer1, model);
-                _sources[upperIdx].SampleTransforms(_tempTransformsBuffer2, model);
+                m_sources[lowerIdx].SampleTransforms(m_tempTransformsBuffer1, model);
+                m_sources[upperIdx].SampleTransforms(m_tempTransformsBuffer2, model);
 
-                BlendTransforms(boneTransforms, _tempTransformsBuffer1, _tempTransformsBuffer2, t);
+                BlendTransforms(boneTransforms, m_tempTransformsBuffer1, m_tempTransformsBuffer2, t);
             }
         }
 
@@ -467,7 +467,7 @@ namespace Engine.Animation
         /// </summary>
         public void SampleTransformsWithParam2D(Matrix?[] boneTransforms, Model model, float paramX, float paramY)
         {
-            if (_sources == null || _sources.Length == 0 || boneTransforms == null) return;
+            if (m_sources == null || m_sources.Length == 0 || boneTransforms == null) return;
 
             EnsureBufferSize(boneTransforms.Length);
 
@@ -476,32 +476,32 @@ namespace Engine.Animation
             if (indices == null || weights == null || indices.Length == 0)
                 return;
 
-            if (indices.Length == 1 && _sources[indices[0]] != null)
+            if (indices.Length == 1 && m_sources[indices[0]] != null)
             {
-                _sources[indices[0]].SampleTransforms(boneTransforms, model);
+                m_sources[indices[0]].SampleTransforms(boneTransforms, model);
                 return;
             }
 
             // 累积混合
-            if (indices.Length >= 2 && _sources[indices[0]] != null && _sources[indices[1]] != null)
+            if (indices.Length >= 2 && m_sources[indices[0]] != null && m_sources[indices[1]] != null)
             {
-                Array.Clear(_tempTransformsBuffer1, 0, _bufferSize);
-                Array.Clear(_tempTransformsBuffer2, 0, _bufferSize);
+                Array.Clear(m_tempTransformsBuffer1, 0, m_bufferSize);
+                Array.Clear(m_tempTransformsBuffer2, 0, m_bufferSize);
 
-                _sources[indices[0]].SampleTransforms(_tempTransformsBuffer1, model);
-                _sources[indices[1]].SampleTransforms(_tempTransformsBuffer2, model);
+                m_sources[indices[0]].SampleTransforms(m_tempTransformsBuffer1, model);
+                m_sources[indices[1]].SampleTransforms(m_tempTransformsBuffer2, model);
 
                 float totalWeight = weights[0] + weights[1];
                 float t = totalWeight > 0 ? weights[1] / totalWeight : 0f;
 
-                BlendTransforms(boneTransforms, _tempTransformsBuffer1, _tempTransformsBuffer2, t);
+                BlendTransforms(boneTransforms, m_tempTransformsBuffer1, m_tempTransformsBuffer2, t);
 
                 for (int i = 2; i < indices.Length; i++)
                 {
-                    if (_sources[indices[i]] == null) continue;
+                    if (m_sources[indices[i]] == null) continue;
 
-                    Array.Clear(_tempTransformsBuffer1, 0, _bufferSize);
-                    _sources[indices[i]].SampleTransforms(_tempTransformsBuffer1, model);
+                    Array.Clear(m_tempTransformsBuffer1, 0, m_bufferSize);
+                    m_sources[indices[i]].SampleTransforms(m_tempTransformsBuffer1, model);
 
                     // 计算新的混合权重（使用 for 循环替代 LINQ）
                     float prevTotal = 0f;
@@ -512,8 +512,8 @@ namespace Engine.Animation
                     totalWeight = prevTotal + weights[i];
                     t = totalWeight > 0 ? weights[i] / totalWeight : 0f;
 
-                    Array.Copy(boneTransforms, _tempTransformsBuffer2, boneTransforms.Length);
-                    BlendTransforms(boneTransforms, _tempTransformsBuffer2, _tempTransformsBuffer1, t);
+                    Array.Copy(boneTransforms, m_tempTransformsBuffer2, boneTransforms.Length);
+                    BlendTransforms(boneTransforms, m_tempTransformsBuffer2, m_tempTransformsBuffer1, t);
                 }
             }
         }
@@ -521,12 +521,12 @@ namespace Engine.Animation
         /// <summary>
         /// 查找一维混合采样点
         /// </summary>
-        private (int lowerIdx, int upperIdx, float t) FindBlendSamples1D(float value)
+        public (int lowerIdx, int upperIdx, float t) FindBlendSamples1D(float value)
         {
-            if (_definition1D?.Samples == null || _sources == null)
+            if (m_definition1D?.Samples == null || m_sources == null)
                 return (-1, -1, 0f);
 
-            var samples = _definition1D.Samples;
+            var samples = m_definition1D.Samples;
 
             // 边界情况
             if (value <= samples[0].Value)
@@ -552,12 +552,12 @@ namespace Engine.Animation
         /// <summary>
         /// 查找二维混合采样点 - 返回最近的采样点及其权重
         /// </summary>
-        private (int[] indices, float[] weights) FindBlendSamples2D(float paramX, float paramY)
+        public (int[] indices, float[] weights) FindBlendSamples2D(float paramX, float paramY)
         {
-            if (_definition2D?.Samples == null || _sources == null)
+            if (m_definition2D?.Samples == null || m_sources == null)
                 return (null, null);
 
-            var samples = _definition2D.Samples;
+            var samples = m_definition2D.Samples;
             int sampleCount = samples.Length;
 
             // 确保缓冲区足够大
@@ -568,13 +568,13 @@ namespace Engine.Animation
             {
                 float dx = paramX - samples[i].ValueX;
                 float dy = paramY - samples[i].ValueY;
-                _blend2DDistances[i] = dx * dx + dy * dy; // 使用距离平方
+                m_blend2DDistances[i] = dx * dx + dy * dy; // 使用距离平方
             }
 
             // 初始化排序索引
             for (int i = 0; i < sampleCount; i++)
             {
-                _blend2DSortedIndices[i] = i;
+                m_blend2DSortedIndices[i] = i;
             }
 
             // 部分排序：只找出最近的 4 个（使用简单的选择排序）
@@ -584,16 +584,16 @@ namespace Engine.Animation
                 int minIdx = i;
                 for (int j = i + 1; j < sampleCount; j++)
                 {
-                    if (_blend2DDistances[_blend2DSortedIndices[j]] < _blend2DDistances[_blend2DSortedIndices[minIdx]])
+                    if (m_blend2DDistances[m_blend2DSortedIndices[j]] < m_blend2DDistances[m_blend2DSortedIndices[minIdx]])
                     {
                         minIdx = j;
                     }
                 }
                 if (minIdx != i)
                 {
-                    int temp = _blend2DSortedIndices[i];
-                    _blend2DSortedIndices[i] = _blend2DSortedIndices[minIdx];
-                    _blend2DSortedIndices[minIdx] = temp;
+                    int temp = m_blend2DSortedIndices[i];
+                    m_blend2DSortedIndices[i] = m_blend2DSortedIndices[minIdx];
+                    m_blend2DSortedIndices[minIdx] = temp;
                 }
             }
 
@@ -601,22 +601,22 @@ namespace Engine.Animation
             float totalWeight = 0f;
             for (int i = 0; i < maxCount; i++)
             {
-                float dist = _blend2DDistances[_blend2DSortedIndices[i]];
+                float dist = m_blend2DDistances[m_blend2DSortedIndices[i]];
                 if (dist < 0.0001f)
                 {
                     // 非常接近某个采样点，只使用该点
-                    _blend2DWeights[i] = 1f;
+                    m_blend2DWeights[i] = 1f;
                     for (int j = 0; j < i; j++)
                     {
-                        _blend2DWeights[j] = 0f;
+                        m_blend2DWeights[j] = 0f;
                     }
                     totalWeight = 1f;
                     // 返回子数组
-                    return (CreateResultArray(_blend2DSortedIndices, i + 1),
-                            CreateResultArray(_blend2DWeights, i + 1));
+                    return (CreateResultArray(m_blend2DSortedIndices, i + 1),
+                            CreateResultArray(m_blend2DWeights, i + 1));
                 }
-                _blend2DWeights[i] = 1f / dist;
-                totalWeight += _blend2DWeights[i];
+                m_blend2DWeights[i] = 1f / dist;
+                totalWeight += m_blend2DWeights[i];
             }
 
             // 归一化权重
@@ -624,35 +624,35 @@ namespace Engine.Animation
             {
                 for (int i = 0; i < maxCount; i++)
                 {
-                    _blend2DWeights[i] /= totalWeight;
+                    m_blend2DWeights[i] /= totalWeight;
                 }
             }
 
             // 返回子数组
-            return (CreateResultArray(_blend2DSortedIndices, maxCount),
-                    CreateResultArray(_blend2DWeights, maxCount));
+            return (CreateResultArray(m_blend2DSortedIndices, maxCount),
+                    CreateResultArray(m_blend2DWeights, maxCount));
         }
 
-        private void EnsureBlend2DBuffers(int requiredSize)
+        public void EnsureBlend2DBuffers(int requiredSize)
         {
-            if (_blend2DMaxSamples < requiredSize)
+            if (m_blend2DMaxSamples < requiredSize)
             {
-                _blend2DMaxSamples = requiredSize;
-                _blend2DDistances = new float[requiredSize];
-                _blend2DSortedIndices = new int[requiredSize];
-                _blend2DWeights = new float[requiredSize];
+                m_blend2DMaxSamples = requiredSize;
+                m_blend2DDistances = new float[requiredSize];
+                m_blend2DSortedIndices = new int[requiredSize];
+                m_blend2DWeights = new float[requiredSize];
             }
         }
 
-        private void AllocateBlend2DBuffers(int initialSize)
+        public void AllocateBlend2DBuffers(int initialSize)
         {
-            _blend2DMaxSamples = initialSize;
-            _blend2DDistances = new float[initialSize];
-            _blend2DSortedIndices = new int[initialSize];
-            _blend2DWeights = new float[initialSize];
+            m_blend2DMaxSamples = initialSize;
+            m_blend2DDistances = new float[initialSize];
+            m_blend2DSortedIndices = new int[initialSize];
+            m_blend2DWeights = new float[initialSize];
         }
 
-        private static T[] CreateResultArray<T>(T[] source, int count)
+        public static T[] CreateResultArray<T>(T[] source, int count)
         {
             T[] result = new T[count];
             Array.Copy(source, result, count);
@@ -662,7 +662,7 @@ namespace Engine.Animation
         /// <summary>
         /// 混合两组骨骼变换
         /// </summary>
-        private void BlendTransforms(Matrix?[] output, Matrix?[] a, Matrix?[] b, float t)
+        public void BlendTransforms(Matrix?[] output, Matrix?[] a, Matrix?[] b, float t)
         {
             int count = Math.Min(output.Length, Math.Min(a.Length, b.Length));
 
@@ -690,7 +690,7 @@ namespace Engine.Animation
         /// <summary>
         /// 混合两个矩阵（分解为 T、R、S 分别插值）
         /// </summary>
-        private Matrix BlendMatrix(Matrix a, Matrix b, float t)
+        public Matrix BlendMatrix(Matrix a, Matrix b, float t)
         {
             DecomposeMatrix(a, out var tA, out var rA, out var sA);
             DecomposeMatrix(b, out var tB, out var rB, out var sB);
@@ -700,7 +700,7 @@ namespace Engine.Animation
                  * Matrix.CreateTranslation(Vector3.Lerp(tA, tB, t));
         }
 
-        private void DecomposeMatrix(Matrix m, out Vector3 translation, out Quaternion rotation, out Vector3 scale)
+        public void DecomposeMatrix(Matrix m, out Vector3 translation, out Quaternion rotation, out Vector3 scale)
         {
             translation = m.Translation;
 
@@ -731,13 +731,13 @@ namespace Engine.Animation
             }
         }
 
-        private void EnsureBufferSize(int requiredSize)
+        public void EnsureBufferSize(int requiredSize)
         {
-            if (_bufferSize < requiredSize)
+            if (m_bufferSize < requiredSize)
             {
-                _bufferSize = requiredSize;
-                _tempTransformsBuffer1 = new Matrix?[_bufferSize];
-                _tempTransformsBuffer2 = new Matrix?[_bufferSize];
+                m_bufferSize = requiredSize;
+                m_tempTransformsBuffer1 = new Matrix?[m_bufferSize];
+                m_tempTransformsBuffer2 = new Matrix?[m_bufferSize];
             }
         }
 
@@ -746,9 +746,9 @@ namespace Engine.Animation
         /// </summary>
         public float GetCurrentParameterValue(AnimationParameters parameters)
         {
-            if (!_is2D && _definition1D != null && !string.IsNullOrEmpty(_definition1D.ParameterName))
+            if (!m_is2D && m_definition1D != null && !string.IsNullOrEmpty(m_definition1D.ParameterName))
             {
-                return parameters?.GetFloat(_definition1D.ParameterName) ?? 0f;
+                return parameters?.GetFloat(m_definition1D.ParameterName) ?? 0f;
             }
             return 0f;
         }
@@ -758,12 +758,12 @@ namespace Engine.Animation
         /// </summary>
         public (float x, float y) GetCurrentParameterValues2D(AnimationParameters parameters)
         {
-            if (_is2D && _definition2D != null)
+            if (m_is2D && m_definition2D != null)
             {
-                float x = !string.IsNullOrEmpty(_definition2D.ParameterNameX)
-                    ? parameters?.GetFloat(_definition2D.ParameterNameX) ?? 0f : 0f;
-                float y = !string.IsNullOrEmpty(_definition2D.ParameterNameY)
-                    ? parameters?.GetFloat(_definition2D.ParameterNameY) ?? 0f : 0f;
+                float x = !string.IsNullOrEmpty(m_definition2D.ParameterNameX)
+                    ? parameters?.GetFloat(m_definition2D.ParameterNameX) ?? 0f : 0f;
+                float y = !string.IsNullOrEmpty(m_definition2D.ParameterNameY)
+                    ? parameters?.GetFloat(m_definition2D.ParameterNameY) ?? 0f : 0f;
                 return (x, y);
             }
             return (0f, 0f);
@@ -772,15 +772,15 @@ namespace Engine.Animation
         /// <summary>
         /// 获取同步的归一化时间
         /// </summary>
-        public float GetSyncedNormalizedTime() => _syncedNormalizedTime;
+        public float GetSyncedNormalizedTime() => m_syncedNormalizedTime;
 
         /// <summary>
         /// 设置所有动画的归一化时间
         /// </summary>
         public void SetNormalizedTime(float normalizedTime)
         {
-            _syncedNormalizedTime = normalizedTime;
-            foreach (var source in _sources)
+            m_syncedNormalizedTime = normalizedTime;
+            foreach (var source in m_sources)
             {
                 source?.Player?.SetNormalizedTime(normalizedTime);
             }

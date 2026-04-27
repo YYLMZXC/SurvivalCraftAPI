@@ -71,19 +71,19 @@ namespace Engine.Animation.Drivers
         public AnimationBlendMode BlendMode { get; set; } = AnimationBlendMode.Override;
 
         // 骨骼配置列表
-        private readonly List<BoneExpressionConfig> _boneConfigs = new();
+        public readonly List<BoneExpressionConfig> m_boneConfigs = new();
 
         // 编译后的表达式缓存
-        private readonly Dictionary<string, Expression> _expressionCache = new();
+        public readonly Dictionary<string, Expression> m_expressionCache = new();
 
         // 缓存每个表达式需要的参数名，避免每次求值时重新提取
-        private readonly Dictionary<string, string[]> _requiredParameters = new();
+        public readonly Dictionary<string, string[]> m_requiredParameters = new();
 
         // 可复用的参数字典（避免每次求值分配新字典）
-        private readonly Dictionary<string, object> _reusableParams = new();
+        public readonly Dictionary<string, object> m_reusableParams = new();
 
         // 目标骨骼列表缓存
-        private string[] _cachedTargetBones;
+        public string[] m_cachedTargetBones;
 
         /// <summary>
         /// 添加骨骼表达式配置
@@ -93,8 +93,8 @@ namespace Engine.Animation.Drivers
             if (config == null || string.IsNullOrEmpty(config.BoneName))
                 return;
 
-            _boneConfigs.Add(config);
-            _cachedTargetBones = null;
+            m_boneConfigs.Add(config);
+            m_cachedTargetBones = null;
 
             // 预编译表达式
             PrecompileExpression(config.PositionX);
@@ -113,32 +113,32 @@ namespace Engine.Animation.Drivers
         /// </summary>
         public void ClearBoneConfigs()
         {
-            _boneConfigs.Clear();
-            _cachedTargetBones = null;
+            m_boneConfigs.Clear();
+            m_cachedTargetBones = null;
         }
 
         /// <summary>
         /// 获取骨骼配置列表（只读）
         /// </summary>
-        public IReadOnlyList<BoneExpressionConfig> BoneConfigs => _boneConfigs;
+        public IReadOnlyList<BoneExpressionConfig> BoneConfigs => m_boneConfigs;
 
         // IAnimationDriver 接口实现
         public string[] TargetBones
         {
             get
             {
-                if (_cachedTargetBones == null)
+                if (m_cachedTargetBones == null)
                 {
-                    _cachedTargetBones = _boneConfigs
+                    m_cachedTargetBones = m_boneConfigs
                         .Select(c => c.BoneName)
                         .ToArray();
                 }
-                return _cachedTargetBones;
+                return m_cachedTargetBones;
             }
         }
 
         // 当前参数（用于表达式求值）
-        private AnimationParameters _currentParameters;
+        public AnimationParameters _currentParameters;
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
@@ -150,7 +150,7 @@ namespace Engine.Animation.Drivers
             if (_currentParameters == null)
                 return;
 
-            foreach (var config in _boneConfigs)
+            foreach (var config in m_boneConfigs)
             {
                 var bone = model.FindBone(config.BoneName, throwIfNotFound: false);
                 if (bone == null)
@@ -191,22 +191,22 @@ namespace Engine.Animation.Drivers
         /// <summary>
         /// 预编译表达式
         /// </summary>
-        private void PrecompileExpression(string expression)
+        public void PrecompileExpression(string expression)
         {
             if (string.IsNullOrEmpty(expression))
                 return;
 
-            if (!_expressionCache.ContainsKey(expression))
+            if (!m_expressionCache.ContainsKey(expression))
             {
                 try
                 {
                     var expr = new Expression(expression);
                     expr.Options = ExpressionOptions.NoCache;
-                    _expressionCache[expression] = expr;
+                    m_expressionCache[expression] = expr;
 
                     // 提取并缓存参数名
                     var paramNames = expr.GetParameterNames();
-                    _requiredParameters[expression] = paramNames?.ToArray() ?? Array.Empty<string>();
+                    m_requiredParameters[expression] = paramNames?.ToArray() ?? Array.Empty<string>();
 
                     // 预注册自定义函数（只注册一次）
                     AnimationExpressionFunctions.RegisterFunctions(expr);
@@ -221,7 +221,7 @@ namespace Engine.Animation.Drivers
         /// <summary>
         /// 计算浮点表达式
         /// </summary>
-        private float EvaluateFloat(string expression)
+        public float EvaluateFloat(string expression)
         {
             if (string.IsNullOrEmpty(expression))
                 return 0f;
@@ -230,21 +230,21 @@ namespace Engine.Animation.Drivers
             if (float.TryParse(expression, out float constant))
                 return constant;
 
-            if (!_expressionCache.TryGetValue(expression, out var expr))
+            if (!m_expressionCache.TryGetValue(expression, out var expr))
                 return 0f;
 
             try
             {
                 // 绑定参数 - 使用可复用字典
-                var requiredParams = _requiredParameters.TryGetValue(expression, out var params2) ? params2 : null;
+                var requiredParams = m_requiredParameters.TryGetValue(expression, out var params2) ? params2 : null;
                 if (requiredParams != null && requiredParams.Length > 0)
                 {
-                    _reusableParams.Clear();
+                    m_reusableParams.Clear();
                     foreach (var paramName in requiredParams)
                     {
-                        _reusableParams[paramName] = _currentParameters.GetValue(paramName);
+                        m_reusableParams[paramName] = _currentParameters.GetValue(paramName);
                     }
-                    expr.Parameters = _reusableParams;
+                    expr.Parameters = m_reusableParams;
                 }
                 else
                 {
@@ -267,14 +267,14 @@ namespace Engine.Animation.Drivers
         public void ClearCache()
         {
             // 移除事件处理器以避免内存泄漏
-            foreach (var kvp in _expressionCache)
+            foreach (var kvp in m_expressionCache)
             {
                 AnimationExpressionFunctions.UnregisterFunctions(kvp.Value);
             }
 
-            _expressionCache.Clear();
-            _requiredParameters.Clear();
-            _reusableParams.Clear();
+            m_expressionCache.Clear();
+            m_requiredParameters.Clear();
+            m_reusableParams.Clear();
         }
     }
 }

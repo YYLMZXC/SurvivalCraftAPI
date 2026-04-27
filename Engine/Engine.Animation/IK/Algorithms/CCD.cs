@@ -14,7 +14,7 @@ namespace Engine.Animation
         public bool SupportsAim => false;
 
         // 世界位置缓存
-        private Vector3[] _worldPosCache;
+        public Vector3[] m_worldPosCache;
 
         public void Solve(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
@@ -34,11 +34,11 @@ namespace Engine.Animation
 
             // 初始化世界位置缓存
             int boneCount = model.m_bones.Count;
-            if (_worldPosCache == null || _worldPosCache.Length != boneCount)
-                _worldPosCache = new Vector3[boneCount];
+            if (m_worldPosCache == null || m_worldPosCache.Length != boneCount)
+                m_worldPosCache = new Vector3[boneCount];
 
             // 复制初始世界位置
-            Array.Copy(worldPositions, _worldPosCache, boneCount);
+            Array.Copy(worldPositions, m_worldPosCache, boneCount);
 
             // 迭代求解
             for (int iter = 0; iter < maxIterations; iter++)
@@ -51,8 +51,8 @@ namespace Engine.Animation
                     // 更新世界位置缓存
                     UpdateWorldPositions(boneTransforms, model);
 
-                    Vector3 bonePos = _worldPosCache[boneIdx];
-                    Vector3 endPos = _worldPosCache[endIdx];
+                    Vector3 bonePos = m_worldPosCache[boneIdx];
+                    Vector3 endPos = m_worldPosCache[endIdx];
 
                     // 当前末端到目标的误差
                     Vector3 toEnd = endPos - bonePos;
@@ -98,7 +98,7 @@ namespace Engine.Animation
                 UpdateWorldPositions(boneTransforms, model);
 
                 // 检查收敛
-                float error = Vector3.Distance(_worldPosCache[endIdx], targetPos);
+                float error = Vector3.Distance(m_worldPosCache[endIdx], targetPos);
 
                 if (error < tolerance)
                     break;
@@ -108,7 +108,7 @@ namespace Engine.Animation
         /// <summary>
         /// 更新所有骨骼的世界位置（基于当前局部变换）
         /// </summary>
-        private void UpdateWorldPositions(Matrix?[] boneTransforms, Model model)
+        public void UpdateWorldPositions(Matrix?[] boneTransforms, Model model)
         {
             if (model.m_rootBone == null)
                 return;
@@ -117,7 +117,7 @@ namespace Engine.Animation
             {
                 var local = boneTransforms[bone.Index] ?? bone.Transform;
                 var world = local * parentWorld;
-                _worldPosCache[bone.Index] = world.Translation;
+                m_worldPosCache[bone.Index] = world.Translation;
 
                 foreach (var child in bone.m_childBones)
                 {
@@ -131,7 +131,7 @@ namespace Engine.Animation
         /// <summary>
         /// 应用关节限制
         /// </summary>
-        private void ApplyJointLimit(IKChain chain, Matrix?[] boneTransforms, int boneIndex, Model model)
+        public void ApplyJointLimit(IKChain chain, Matrix?[] boneTransforms, int boneIndex, Model model)
         {
             var limit = chain.GetJointLimit(boneIndex, model);
             if (limit != null && boneTransforms[boneIndex].HasValue)

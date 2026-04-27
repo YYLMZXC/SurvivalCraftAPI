@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "FishDeath";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Body", "Tail1", "Tail2", "Jaw" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Body", "Tail1", "Tail2", "Jaw" };
 
         // 参数名称
         public string DeathPhaseParam { get; set; } = "DeathPhase";

@@ -91,20 +91,20 @@ namespace Engine.Animation
         public OnCompleteAction OnComplete { get; set; }
 
         // Cached dynamic properties (avoid repeated allocations)
-        private DynamicProperty<float> _cachedSpeedProperty;
-        private DynamicProperty<bool> _cachedLoopProperty;
-        private DynamicProperty<float> _cachedStartPhaseProperty;
-        private DynamicProperty<float> _cachedEndPhaseProperty;
-        private DynamicProperty<float> _cachedBlendDurationProperty;
+        public DynamicProperty<float> m_cachedSpeedProperty;
+        public DynamicProperty<bool> m_cachedLoopProperty;
+        public DynamicProperty<float> m_cachedStartPhaseProperty;
+        public DynamicProperty<float> m_cachedEndPhaseProperty;
+        public DynamicProperty<float> m_cachedBlendDurationProperty;
 
         /// <summary>
         /// 创建动态属性包装器（缓存实例）
         /// </summary>
-        public DynamicProperty<float> GetSpeedProperty() => _cachedSpeedProperty ??= new DynamicProperty<float>(SpeedValue);
-        public DynamicProperty<bool> GetLoopProperty() => _cachedLoopProperty ??= new DynamicProperty<bool>(LoopValue);
-        public DynamicProperty<float> GetStartPhaseProperty() => _cachedStartPhaseProperty ??= new DynamicProperty<float>(StartPhaseValue);
-        public DynamicProperty<float> GetEndPhaseProperty() => _cachedEndPhaseProperty ??= new DynamicProperty<float>(EndPhaseValue);
-        public DynamicProperty<float> GetBlendDurationProperty() => _cachedBlendDurationProperty ??= new DynamicProperty<float>(BlendDurationValue);
+        public DynamicProperty<float> GetSpeedProperty() => m_cachedSpeedProperty ??= new DynamicProperty<float>(SpeedValue);
+        public DynamicProperty<bool> GetLoopProperty() => m_cachedLoopProperty ??= new DynamicProperty<bool>(LoopValue);
+        public DynamicProperty<float> GetStartPhaseProperty() => m_cachedStartPhaseProperty ??= new DynamicProperty<float>(StartPhaseValue);
+        public DynamicProperty<float> GetEndPhaseProperty() => m_cachedEndPhaseProperty ??= new DynamicProperty<float>(EndPhaseValue);
+        public DynamicProperty<float> GetBlendDurationProperty() => m_cachedBlendDurationProperty ??= new DynamicProperty<float>(BlendDurationValue);
     }
 
     /// <summary>

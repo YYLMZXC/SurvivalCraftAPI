@@ -21,9 +21,9 @@ namespace Engine.Graphics {
 
         public ModelData ModelData { get; set; }
 
-        bool _hasTransmission;
-        bool _hasScatter;
-        bool _materialCacheComputed;
+        public bool m_hasTransmission;
+        public bool m_hasScatter;
+        public bool m_materialCacheComputed;
 
         /// <summary>
         /// 模型是否包含 transmission 材质（缓存，惰性计算）
@@ -31,7 +31,7 @@ namespace Engine.Graphics {
         public bool HasTransmission {
             get {
                 EnsureMaterialCache();
-                return _hasTransmission;
+                return m_hasTransmission;
             }
         }
 
@@ -41,21 +41,21 @@ namespace Engine.Graphics {
         public bool HasScatter {
             get {
                 EnsureMaterialCache();
-                return _hasScatter;
+                return m_hasScatter;
             }
         }
 
-        void EnsureMaterialCache() {
-            if (_materialCacheComputed) return;
-            _materialCacheComputed = true;
+        public void EnsureMaterialCache() {
+            if (m_materialCacheComputed) return;
+            m_materialCacheComputed = true;
             if (ModelData?.Materials == null) return;
             foreach (ModelMesh mesh in m_meshes) {
                 if (mesh?.MeshParts == null) continue;
                 foreach (ModelMeshPart part in mesh.MeshParts) {
                     ModelMaterial mat = GetMaterial(part.MaterialIndex);
-                    if (!_hasTransmission && mat?.Transmission?.IsEnabled == true) _hasTransmission = true;
-                    if (!_hasScatter && mat?.VolumeScatter?.IsEnabled == true) _hasScatter = true;
-                    if (_hasTransmission && _hasScatter) return;
+                    if (!m_hasTransmission && mat?.Transmission?.IsEnabled == true) m_hasTransmission = true;
+                    if (!m_hasScatter && mat?.VolumeScatter?.IsEnabled == true) m_hasScatter = true;
+                    if (m_hasTransmission && m_hasScatter) return;
                 }
             }
         }
@@ -63,7 +63,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 材质变更后调用，使缓存失效
         /// </summary>
-        public void InvalidateMaterialCache() => _materialCacheComputed = false;
+        public void InvalidateMaterialCache() => m_materialCacheComputed = false;
 
         /// <summary>
         /// 蒙皮数据（如果有骨骼蒙皮）
@@ -94,35 +94,32 @@ namespace Engine.Graphics {
         Dictionary<int, Texture2D> m_loadedTextures = new();
 
         // 默认白色纹理（用于无纹理模型）
-        static Texture2D s_defaultWhiteTexture;
 
         /// <summary>
         /// 获取默认白色纹理（用于无纹理模型）
         /// </summary>
         public static Texture2D DefaultWhiteTexture {
             get {
-                if (s_defaultWhiteTexture == null) {
-                    s_defaultWhiteTexture = CreateColorTexture(Color.White);
+                if (field == null) {
+                    field = CreateColorTexture(Color.White);
                 }
-                return s_defaultWhiteTexture;
+                return field;
             }
         }
 
-        static Texture2D s_defaultTransparentTexture;
-
         public static Texture2D DefaultTransparentTexture {
             get {
-                if (s_defaultTransparentTexture == null) {
-                    s_defaultTransparentTexture = CreateColorTexture(Color.Transparent);
+                if (field == null) {
+                    field = CreateColorTexture(Color.Transparent);
                 }
-                return s_defaultTransparentTexture;
+                return field;
             }
         }
 
         /// <summary>
         /// 创建一个 1x1 的白色纹理
         /// </summary>
-        static Texture2D CreateColorTexture(Color color) {
+        public static Texture2D CreateColorTexture(Color color) {
             return Texture2D.Load(Image.LoadPixelData([new Rgba32(color.PackedValue)], 1, 1));
         }
 
@@ -359,7 +356,7 @@ namespace Engine.Graphics {
         public static Model Load(string fileName, bool keepSourceVertexDataInTags = false) =>
             Load(ModelData.Load(fileName), keepSourceVertexDataInTags);
 
-        internal void Initialize(ModelData modelData, bool keepSourceVertexDataInTags) {
+        public void Initialize(ModelData modelData, bool keepSourceVertexDataInTags) {
             ModelData = modelData;
             Skin = modelData.Skin;
             Animations = modelData.Animations;
@@ -427,7 +424,7 @@ namespace Engine.Graphics {
             }
         }
 
-        void InternalDispose() {
+        public void InternalDispose() {
             m_rootBone = null;
             m_bones.Clear();
             Utilities.DisposeCollection(m_meshes);

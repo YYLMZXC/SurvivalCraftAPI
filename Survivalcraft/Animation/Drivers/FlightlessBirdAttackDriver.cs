@@ -16,8 +16,8 @@ namespace Game.Animation.Drivers
         public string Name => "FlightlessBirdAttack";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = System.Array.Empty<string>();
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = System.Array.Empty<string>();
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {

@@ -13,20 +13,17 @@ namespace Engine.Animation.Drivers
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         // 可配置的目标骨骼名称
-        private string _targetBoneName = "Head";
-        public string TargetBoneName
-        {
-            get => _targetBoneName;
-            set
-            {
-                _targetBoneName = value;
-                _cachedTargetBones = null;
+        public string TargetBoneName {
+            get;
+            set {
+                field = value;
+                m_cachedTargetBones = null;
             }
-        }
+        } = "Head";
 
         // IAnimationDriver 接口实现
-        public string[] TargetBones => _cachedTargetBones ??= new[] { TargetBoneName };
-        private string[] _cachedTargetBones;
+        public string[] TargetBones => m_cachedTargetBones ??= new[] { TargetBoneName };
+        public string[] m_cachedTargetBones;
 
         // 配置参数
         public string LookAngleXParam { get; set; } = "LookAngleX";
@@ -53,14 +50,14 @@ namespace Engine.Animation.Drivers
         public bool InvertPitch { get; set; } = false;
         public bool InvertYaw { get; set; } = false;
 
-        private float _lookAngleX;  // 弧度
-        private float _lookAngleY;  // 弧度
+        public float m_lookAngleX;  // 弧度
+        public float m_lookAngleY;  // 弧度
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
             // 参数是弧度
-            _lookAngleX = Math.Clamp(parameters.GetFloat(LookAngleXParam), -MaxAngleX, MaxAngleX);
-            _lookAngleY = Math.Clamp(parameters.GetFloat(LookAngleYParam), -MaxAngleY, MaxAngleY);
+            m_lookAngleX = Math.Clamp(parameters.GetFloat(LookAngleXParam), -MaxAngleX, MaxAngleX);
+            m_lookAngleY = Math.Clamp(parameters.GetFloat(LookAngleYParam), -MaxAngleY, MaxAngleY);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
@@ -69,8 +66,8 @@ namespace Engine.Animation.Drivers
             if (targetBone == null) return;
 
             // 应用方向反转
-            float pitch = InvertPitch ? -_lookAngleY : _lookAngleY;
-            float yaw = InvertYaw ? _lookAngleX : -_lookAngleX;
+            float pitch = InvertPitch ? -m_lookAngleY : m_lookAngleY;
+            float yaw = InvertYaw ? m_lookAngleX : -m_lookAngleX;
 
             // 根据配置的轴创建旋转
             Matrix pitchRotation = CreateRotationForAxis(PitchAxis, pitch);
@@ -80,7 +77,7 @@ namespace Engine.Animation.Drivers
             boneTransforms[targetBone.Index] = pitchRotation * yawRotation;
         }
 
-        private Matrix CreateRotationForAxis(string axis, float angle)
+        public Matrix CreateRotationForAxis(string axis, float angle)
         {
             return axis?.ToUpperInvariant() switch
             {

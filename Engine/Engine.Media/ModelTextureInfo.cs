@@ -72,7 +72,7 @@ namespace Engine.Media {
             SamplerState = CreateSamplerState(sampler);
         }
 
-        static TextureFilterMode TranslateFilterMode(TextureMipMapFilter minFilter, TextureInterpolationFilter magFilter) {
+        public static TextureFilterMode TranslateFilterMode(TextureMipMapFilter minFilter, TextureInterpolationFilter magFilter) {
             // glTF 默认：LINEAR (minFilter) 和 LINEAR (magFilter)
             return (minFilter, magFilter) switch {
                 (TextureMipMapFilter.NEAREST, TextureInterpolationFilter.NEAREST) => TextureFilterMode.Point,
@@ -91,7 +91,7 @@ namespace Engine.Media {
             };
         }
 
-        static TextureAddressMode TranslateAddressMode(TextureWrapMode wrapMode) {
+        public static TextureAddressMode TranslateAddressMode(TextureWrapMode wrapMode) {
             return wrapMode switch {
                 TextureWrapMode.CLAMP_TO_EDGE => TextureAddressMode.Clamp,
                 TextureWrapMode.MIRRORED_REPEAT => TextureAddressMode.MirrorWrap,

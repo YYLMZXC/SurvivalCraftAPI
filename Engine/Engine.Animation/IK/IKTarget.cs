@@ -62,11 +62,11 @@ namespace Engine.Animation
         public bool IsActive => Position.HasValue || AimDirection.HasValue;
 
         // 内部平滑状态（由 IKSolver 维护）
-        internal Vector3 _smoothedPosition;
-        internal Vector3 _positionVelocity;
-        internal Vector3 _smoothedAimDirection;
-        internal Vector3 _aimVelocity;
-        internal bool _smoothInitialized;
+        public Vector3 m_smoothedPosition;
+        public Vector3 m_positionVelocity;
+        public Vector3 m_smoothedAimDirection;
+        public Vector3 m_aimVelocity;
+        public bool m_smoothInitialized;
 
         /// <summary>
         /// 创建位置目标

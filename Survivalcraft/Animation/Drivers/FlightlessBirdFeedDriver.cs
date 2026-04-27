@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "FlightlessBirdFeed";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Head", "Neck" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Head", "Neck" };
 
         // 参数名称
         public string FeedFactorParam { get; set; } = "FeedFactor";

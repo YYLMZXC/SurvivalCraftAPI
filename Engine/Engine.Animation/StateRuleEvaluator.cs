@@ -12,12 +12,12 @@ namespace Engine.Animation
         /// <summary>
         /// 内部表达式求值器
         /// </summary>
-        private readonly ExpressionEvaluator _evaluator = new();
+        public readonly ExpressionEvaluator m_evaluator = new();
 
         /// <summary>
         /// 暴露内部求值器供动态属性使用
         /// </summary>
-        public ExpressionEvaluator Evaluator => _evaluator;
+        public ExpressionEvaluator Evaluator => m_evaluator;
 
         /// <summary>
         /// 评估单个条件表达式。
@@ -27,7 +27,7 @@ namespace Engine.Animation
         /// <returns>表达式求值结果</returns>
         public bool EvaluateCondition(string condition, AnimationParameters parameters)
         {
-            return _evaluator.EvaluateBool(condition, parameters, false);
+            return m_evaluator.EvaluateBool(condition, parameters, false);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Engine.Animation
         /// </summary>
         public void ClearCache()
         {
-            _evaluator.ClearCache();
+            m_evaluator.ClearCache();
         }
     }
 }

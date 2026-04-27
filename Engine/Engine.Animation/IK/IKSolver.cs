@@ -10,22 +10,22 @@ namespace Engine.Animation
     public class IKSolver
     {
         // IK 链注册表（按名称索引）
-        private readonly Dictionary<string, IKChain> _chains = new();
+        public readonly Dictionary<string, IKChain> m_chains = new();
 
         // 运行时目标
-        private readonly Dictionary<string, IKTarget> _targets = new();
+        public readonly Dictionary<string, IKTarget> m_targets = new();
 
         // 算法工厂
-        private readonly Dictionary<string, IIKAlgorithm> _algorithms = new();
+        public readonly Dictionary<string, IIKAlgorithm> m_algorithms = new();
 
         // 骨骼世界位置缓存
-        private Vector3[] _worldPositions;
+        public Vector3[] m_worldPositions;
 
         // 上一次有效的变换结果（用于 UseLastValidResult 策略）
-        private readonly Dictionary<string, Matrix?[]> _lastValidTransforms = new();
+        public readonly Dictionary<string, Matrix?[]> m_lastValidTransforms = new();
 
         // 默认算法配置
-        private readonly IKAlgorithmConfig _defaultConfig = new();
+        public readonly IKAlgorithmConfig m_defaultConfig = new();
 
         /// <summary>
         /// 是否启用调试日志
@@ -48,7 +48,7 @@ namespace Engine.Animation
         {
             if (algorithm != null)
             {
-                _algorithms[algorithm.Name] = algorithm;
+                m_algorithms[algorithm.Name] = algorithm;
             }
         }
 
@@ -91,16 +91,16 @@ namespace Engine.Animation
             IIKAlgorithm algorithm = null;
             if (!string.IsNullOrEmpty(algorithmName))
             {
-                _algorithms.TryGetValue(algorithmName, out algorithm);
+                m_algorithms.TryGetValue(algorithmName, out algorithm);
             }
 
             RegisterChain(name, endBoneName, algorithm, maxChainLength);
         }
 
         // 待构建的链信息
-        private readonly Dictionary<string, PendingChainInfo> _pendingChains = new();
+        public readonly Dictionary<string, PendingChainInfo> _pendingChains = new();
 
-        private class PendingChainInfo
+        public class PendingChainInfo
         {
             public string Name;
             public string EndBoneName;
@@ -111,7 +111,7 @@ namespace Engine.Animation
         /// <summary>
         /// 构建 IK 链（从末端骨骼向上遍历）
         /// </summary>
-        private IKChain BuildChainFromEndBone(string name, string endBoneName, int maxLength, Model model)
+        public IKChain BuildChainFromEndBone(string name, string endBoneName, int maxLength, Model model)
         {
             var endBone = model.FindBone(endBoneName, false);
             if (endBone == null)
@@ -153,10 +153,10 @@ namespace Engine.Animation
                 return;
             }
 
-            if (!_targets.TryGetValue(chainName, out var target))
+            if (!m_targets.TryGetValue(chainName, out var target))
             {
                 target = new IKTarget();
-                _targets[chainName] = target;
+                m_targets[chainName] = target;
             }
 
             target.Position = targetPosition;
@@ -173,17 +173,17 @@ namespace Engine.Animation
 
             if (!aimDirection.HasValue)
             {
-                if (_targets.TryGetValue(chainName, out var target))
+                if (m_targets.TryGetValue(chainName, out var target))
                 {
                     target.AimDirection = null;
                 }
                 return;
             }
 
-            if (!_targets.TryGetValue(chainName, out var existingTarget))
+            if (!m_targets.TryGetValue(chainName, out var existingTarget))
             {
                 existingTarget = new IKTarget();
-                _targets[chainName] = existingTarget;
+                m_targets[chainName] = existingTarget;
             }
 
             existingTarget.AimDirection = aimDirection;
@@ -204,7 +204,7 @@ namespace Engine.Animation
                 return;
             }
 
-            _targets[chainName] = target;
+            m_targets[chainName] = target;
         }
 
         /// <summary>
@@ -215,7 +215,7 @@ namespace Engine.Animation
             if (string.IsNullOrEmpty(chainName))
                 return;
 
-            _targets.Remove(chainName);
+            m_targets.Remove(chainName);
         }
 
         /// <summary>
@@ -223,7 +223,7 @@ namespace Engine.Animation
         /// </summary>
         public IKChain GetChain(string chainName)
         {
-            return _chains.TryGetValue(chainName, out var chain) ? chain : null;
+            return m_chains.TryGetValue(chainName, out var chain) ? chain : null;
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace Engine.Animation
         /// </summary>
         public IKTarget GetTarget(string chainName)
         {
-            return _targets.TryGetValue(chainName, out var target) ? target : null;
+            return m_targets.TryGetValue(chainName, out var target) ? target : null;
         }
 
         /// <summary>
@@ -239,7 +239,7 @@ namespace Engine.Animation
         /// </summary>
         public IIKAlgorithm GetAlgorithm(string algorithmName)
         {
-            return _algorithms.TryGetValue(algorithmName, out var algorithm) ? algorithm : null;
+            return m_algorithms.TryGetValue(algorithmName, out var algorithm) ? algorithm : null;
         }
 
         /// <summary>
@@ -257,12 +257,12 @@ namespace Engine.Animation
             var worldPositions = ComputeBoneWorldPositions(boneTransforms, model);
 
             // 3. 对每个活动链求解
-            foreach (var (name, target) in _targets)
+            foreach (var (name, target) in m_targets)
             {
                 if (!target.IsActive)
                     continue;
 
-                if (!_chains.TryGetValue(name, out var chain))
+                if (!m_chains.TryGetValue(name, out var chain))
                     continue;
 
                 // 获取算法
@@ -301,9 +301,9 @@ namespace Engine.Animation
                             AimWeight = target.AimWeight,
                             PositionSmoothTime = target.PositionSmoothTime,
                             AimSmoothTime = target.AimSmoothTime,
-                            _smoothInitialized = true,
-                            _smoothedPosition = generatedPos,
-                            _smoothedAimDirection = target.AimDirection.Value
+                            m_smoothInitialized = true,
+                            m_smoothedPosition = generatedPos,
+                            m_smoothedAimDirection = target.AimDirection.Value
                         };
                     }
                 }
@@ -322,7 +322,7 @@ namespace Engine.Animation
                 {
                     // 求解
                     algorithm.Solve(chain, smoothedTarget, boneTransforms, worldPositions, model,
-                        chain.AlgorithmConfig ?? _defaultConfig);
+                        chain.AlgorithmConfig ?? m_defaultConfig);
 
                     // 保存有效结果
                     SaveLastValidResult(chain, boneTransforms);
@@ -337,14 +337,14 @@ namespace Engine.Animation
         /// <summary>
         /// 构建待构建的链
         /// </summary>
-        private void BuildPendingChains(Model model)
+        public void BuildPendingChains(Model model)
         {
             // 记录成功构建的链，构建后从待构建列表移除
             var builtChains = new List<string>();
 
             foreach (var (name, info) in _pendingChains)
             {
-                if (_chains.ContainsKey(name))
+                if (m_chains.ContainsKey(name))
                 {
                     // 已存在，从待构建列表移除
                     builtChains.Add(name);
@@ -355,7 +355,7 @@ namespace Engine.Animation
                 if (chain != null)
                 {
                     chain.Algorithm = info.Algorithm ?? GetDefaultAlgorithm(chain);
-                    _chains[name] = chain;
+                    m_chains[name] = chain;
                     builtChains.Add(name);
                 }
             }
@@ -379,7 +379,7 @@ namespace Engine.Animation
             if (chain != null)
             {
                 chain.Algorithm = info.Algorithm ?? GetDefaultAlgorithm(chain);
-                _chains[name] = chain;
+                m_chains[name] = chain;
                 _pendingChains.Remove(name);
             }
 
@@ -389,25 +389,25 @@ namespace Engine.Animation
         /// <summary>
         /// 获取默认算法
         /// </summary>
-        private IIKAlgorithm GetDefaultAlgorithm(IKChain chain)
+        public IIKAlgorithm GetDefaultAlgorithm(IKChain chain)
         {
             switch (chain.Length) {
                 case <= 1: return null;
-                case 2: return _algorithms.TryGetValue("SingleBoneIK", out var algo1) ? algo1 : null;
-                case 3: return _algorithms.TryGetValue("TwoBoneIK", out var algo2) ? algo2 : null;
-                default: return _algorithms.TryGetValue("CCD", out var algo3) ? algo3 : null;
+                case 2: return m_algorithms.TryGetValue("SingleBoneIK", out var algo1) ? algo1 : null;
+                case 3: return m_algorithms.TryGetValue("TwoBoneIK", out var algo2) ? algo2 : null;
+                default: return m_algorithms.TryGetValue("CCD", out var algo3) ? algo3 : null;
             }
         }
 
         /// <summary>
         /// 计算骨骼世界位置
         /// </summary>
-        private Vector3[] ComputeBoneWorldPositions(Matrix?[] localTransforms, Model model)
+        public Vector3[] ComputeBoneWorldPositions(Matrix?[] localTransforms, Model model)
         {
             int boneCount = model.m_bones.Count;
-            if (_worldPositions == null || _worldPositions.Length != boneCount)
+            if (m_worldPositions == null || m_worldPositions.Length != boneCount)
             {
-                _worldPositions = new Vector3[boneCount];
+                m_worldPositions = new Vector3[boneCount];
             }
 
             // 递归计算世界位置
@@ -415,7 +415,7 @@ namespace Engine.Animation
             {
                 var local = localTransforms[bone.Index] ?? bone.Transform;
                 var world = local * parentWorld;
-                _worldPositions[bone.Index] = world.Translation;
+                m_worldPositions[bone.Index] = world.Translation;
 
                 foreach (var child in bone.m_childBones)
                 {
@@ -428,7 +428,7 @@ namespace Engine.Animation
                 ComputeRecursive(model.m_rootBone, Matrix.Identity);
             }
 
-            return _worldPositions;
+            return m_worldPositions;
         }
 
         /// <summary>
@@ -438,14 +438,14 @@ namespace Engine.Animation
         /// 此方法会修改原始 target 的平滑状态（_smoothedPosition、_positionVelocity 等），
         /// 以便在下一帧保持平滑连续性。返回的 smoothedTarget 包含平滑后的值。
         /// </remarks>
-        private IKTarget ApplySmoothing(IKChain chain, IKTarget target, Vector3[] worldPositions)
+        public IKTarget ApplySmoothing(IKChain chain, IKTarget target, Vector3[] worldPositions)
         {
-            if (!target._smoothInitialized)
+            if (!target.m_smoothInitialized)
             {
                 // 首次求解，初始化平滑状态
-                target._smoothedPosition = target.Position ?? Vector3.Zero;
-                target._smoothedAimDirection = target.AimDirection ?? Vector3.UnitZ;
-                target._smoothInitialized = true;
+                target.m_smoothedPosition = target.Position ?? Vector3.Zero;
+                target.m_smoothedAimDirection = target.AimDirection ?? Vector3.UnitZ;
+                target.m_smoothInitialized = true;
                 return target;
             }
 
@@ -457,26 +457,26 @@ namespace Engine.Animation
                 Hint = target.Hint,
                 PositionSmoothTime = target.PositionSmoothTime,
                 AimSmoothTime = target.AimSmoothTime,
-                _smoothInitialized = true,
-                _smoothedPosition = target._smoothedPosition,
-                _positionVelocity = target._positionVelocity,
-                _smoothedAimDirection = target._smoothedAimDirection,
-                _aimVelocity = target._aimVelocity
+                m_smoothInitialized = true,
+                m_smoothedPosition = target.m_smoothedPosition,
+                m_positionVelocity = target.m_positionVelocity,
+                m_smoothedAimDirection = target.m_smoothedAimDirection,
+                m_aimVelocity = target.m_aimVelocity
             };
 
             // 位置平滑
             if (target.Position.HasValue && target.PositionSmoothTime > 0)
             {
-                smoothedTarget._smoothedPosition = SmoothDampVector3(
-                    smoothedTarget._smoothedPosition,
+                smoothedTarget.m_smoothedPosition = SmoothDampVector3(
+                    smoothedTarget.m_smoothedPosition,
                     target.Position.Value,
-                    ref smoothedTarget._positionVelocity,
+                    ref smoothedTarget.m_positionVelocity,
                     target.PositionSmoothTime);
-                smoothedTarget.Position = smoothedTarget._smoothedPosition;
+                smoothedTarget.Position = smoothedTarget.m_smoothedPosition;
 
                 // 更新原始目标的平滑状态（用于下一帧）
-                target._smoothedPosition = smoothedTarget._smoothedPosition;
-                target._positionVelocity = smoothedTarget._positionVelocity;
+                target.m_smoothedPosition = smoothedTarget.m_smoothedPosition;
+                target.m_positionVelocity = smoothedTarget.m_positionVelocity;
             }
             else
             {
@@ -487,16 +487,16 @@ namespace Engine.Animation
             if (target.AimDirection.HasValue && target.AimSmoothTime > 0)
             {
                 var smoothedDir = SmoothDampVector3(
-                    smoothedTarget._smoothedAimDirection,
+                    smoothedTarget.m_smoothedAimDirection,
                     target.AimDirection.Value,
-                    ref smoothedTarget._aimVelocity,
+                    ref smoothedTarget.m_aimVelocity,
                     target.AimSmoothTime);
-                smoothedTarget._smoothedAimDirection = Vector3.Normalize(smoothedDir);
-                smoothedTarget.AimDirection = smoothedTarget._smoothedAimDirection;
+                smoothedTarget.m_smoothedAimDirection = Vector3.Normalize(smoothedDir);
+                smoothedTarget.AimDirection = smoothedTarget.m_smoothedAimDirection;
 
                 // 更新原始目标的平滑状态（用于下一帧）
-                target._smoothedAimDirection = smoothedTarget._smoothedAimDirection;
-                target._aimVelocity = smoothedTarget._aimVelocity;
+                target.m_smoothedAimDirection = smoothedTarget.m_smoothedAimDirection;
+                target.m_aimVelocity = smoothedTarget.m_aimVelocity;
             }
             else
             {
@@ -509,7 +509,7 @@ namespace Engine.Animation
         /// <summary>
         /// 检查目标是否可达
         /// </summary>
-        private bool IsTargetReachable(IKChain chain, IKTarget target, Vector3[] worldPositions)
+        public bool IsTargetReachable(IKChain chain, IKTarget target, Vector3[] worldPositions)
         {
             if (!target.Position.HasValue)
                 return true;
@@ -528,7 +528,7 @@ namespace Engine.Animation
         /// <summary>
         /// 计算骨骼链的总长度
         /// </summary>
-        private float CalculateChainLength(IKChain chain, Vector3[] worldPositions)
+        public float CalculateChainLength(IKChain chain, Vector3[] worldPositions)
         {
             float length = 0;
 
@@ -545,7 +545,7 @@ namespace Engine.Animation
         /// <summary>
         /// 处理不可达目标
         /// </summary>
-        private void HandleUnreachableTarget(IKChain chain, IKTarget target,
+        public void HandleUnreachableTarget(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model)
         {
             switch (chain.UnreachableStrategy)
@@ -556,7 +556,7 @@ namespace Engine.Animation
                     if (algorithm != null)
                     {
                         algorithm.Solve(chain, target, boneTransforms, worldPositions, model,
-                            chain.AlgorithmConfig ?? _defaultConfig);
+                            chain.AlgorithmConfig ?? m_defaultConfig);
                     }
                     break;
 
@@ -566,7 +566,7 @@ namespace Engine.Animation
 
                 case UnreachableStrategy.UseLastValidResult:
                     // 使用上一次有效结果
-                    if (_lastValidTransforms.TryGetValue(chain.Name, out var lastValid))
+                    if (m_lastValidTransforms.TryGetValue(chain.Name, out var lastValid))
                     {
                         for (int i = 0; i < chain.BoneIndices.Length; i++)
                         {
@@ -580,14 +580,14 @@ namespace Engine.Animation
         /// <summary>
         /// 保存有效的 IK 结果
         /// </summary>
-        private void SaveLastValidResult(IKChain chain, Matrix?[] boneTransforms)
+        public void SaveLastValidResult(IKChain chain, Matrix?[] boneTransforms)
         {
             var transforms = new Matrix?[chain.BoneIndices.Length];
             for (int i = 0; i < chain.BoneIndices.Length; i++)
             {
                 transforms[i] = boneTransforms[chain.BoneIndices[i]];
             }
-            _lastValidTransforms[chain.Name] = transforms;
+            m_lastValidTransforms[chain.Name] = transforms;
         }
 
         /// <summary>
@@ -595,16 +595,16 @@ namespace Engine.Animation
         /// </summary>
         public void Clear()
         {
-            _chains.Clear();
-            _targets.Clear();
+            m_chains.Clear();
+            m_targets.Clear();
             _pendingChains.Clear();
-            _lastValidTransforms.Clear();
+            m_lastValidTransforms.Clear();
         }
 
         /// <summary>
         /// 平滑阻尼向量（临界阻尼平滑）
         /// </summary>
-        private static Vector3 SmoothDampVector3(Vector3 current, Vector3 target, ref Vector3 velocity, float smoothTime)
+        public static Vector3 SmoothDampVector3(Vector3 current, Vector3 target, ref Vector3 velocity, float smoothTime)
         {
             // 临界阻尼平滑算法
             // smoothTime 是到达目标的大约时间

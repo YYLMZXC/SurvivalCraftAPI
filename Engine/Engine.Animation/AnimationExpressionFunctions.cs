@@ -11,7 +11,7 @@ namespace Engine.Animation
         /// <summary>
         /// 预定义的函数委托，避免每次调用时创建
         /// </summary>
-        private static readonly NCalc.Handlers.EvaluateFunctionHandler s_evaluateFunctionHandler = EvaluateFunction;
+        public static readonly NCalc.Handlers.EvaluateFunctionHandler s_evaluateFunctionHandler = EvaluateFunction;
 
         /// <summary>
         /// 注册自定义函数到表达式对象
@@ -29,7 +29,7 @@ namespace Engine.Animation
             expression.EvaluateFunction -= s_evaluateFunctionHandler;
         }
 
-        private static void EvaluateFunction(string name, FunctionArgs args)
+        public static void EvaluateFunction(string name, FunctionArgs args)
         {
             switch (name.ToLowerInvariant())
             {

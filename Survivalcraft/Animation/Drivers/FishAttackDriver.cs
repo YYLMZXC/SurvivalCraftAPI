@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "FishAttack";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Jaw" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Jaw" };
 
         // 参数名称
         public string BitingPhaseParam { get; set; } = "BitingPhase";

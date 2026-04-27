@@ -10,8 +10,8 @@ namespace Engine.Animation
     public class AnimationBlender
     {
         // 预分配缓冲区，避免每帧 GC
-        private Matrix?[] _layerTransformsBuffer;
-        private int _bufferSize;
+        public Matrix?[] m_layerTransformsBuffer;
+        public int m_bufferSize;
 
         /// <summary>
         /// 混合所有活动层的骨骼变换
@@ -38,8 +38,8 @@ namespace Engine.Animation
                     continue;
 
                 // 使用预分配缓冲区
-                Array.Clear(_layerTransformsBuffer, 0, boneCount);
-                layer.SampleTransforms(_layerTransformsBuffer, model);
+                Array.Clear(m_layerTransformsBuffer, 0, boneCount);
+                layer.SampleTransforms(m_layerTransformsBuffer, model);
 
                 for (int i = 0; i < boneCount; i++)
                 {
@@ -47,7 +47,7 @@ namespace Engine.Animation
                     if (!IsBoneInMask(i, layer.BoneMask, model))
                         continue;
 
-                    if (!_layerTransformsBuffer[i].HasValue)
+                    if (!m_layerTransformsBuffer[i].HasValue)
                         continue;
 
                     if (outputTransforms[i].HasValue)
@@ -55,14 +55,14 @@ namespace Engine.Animation
                         // 混合已有变换
                         outputTransforms[i] = BlendTransforms(
                             outputTransforms[i].Value,
-                            _layerTransformsBuffer[i].Value,
+                            m_layerTransformsBuffer[i].Value,
                             layer.BlendMode,
                             layer.Weight);
                     }
                     else
                     {
                         // 首次设置
-                        outputTransforms[i] = _layerTransformsBuffer[i].Value;
+                        outputTransforms[i] = m_layerTransformsBuffer[i].Value;
                     }
                 }
             }
@@ -73,10 +73,10 @@ namespace Engine.Animation
         /// </summary>
         void EnsureBufferSize(int requiredSize)
         {
-            if (_layerTransformsBuffer == null || _bufferSize < requiredSize)
+            if (m_layerTransformsBuffer == null || m_bufferSize < requiredSize)
             {
-                _bufferSize = Math.Max(requiredSize, 64); // 最小 64 个骨骼
-                _layerTransformsBuffer = new Matrix?[_bufferSize];
+                m_bufferSize = Math.Max(requiredSize, 64); // 最小 64 个骨骼
+                m_layerTransformsBuffer = new Matrix?[m_bufferSize];
             }
         }
 

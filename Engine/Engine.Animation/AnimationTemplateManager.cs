@@ -13,9 +13,9 @@ namespace Engine.Animation
     /// </summary>
     public static class AnimationTemplateManager
     {
-        private static readonly Dictionary<string, AnimationTemplate> s_templates = new();
+        public static readonly Dictionary<string, AnimationTemplate> s_templates = new();
 
-        private static readonly JsonSerializerOptions s_jsonOptions = new()
+        public static readonly JsonSerializerOptions s_jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
@@ -138,7 +138,7 @@ namespace Engine.Animation
 
         #region 私有方法
 
-        private static AnimationTemplate CreateTemplateFromConfig(AnimationTemplateConfig config)
+        public static AnimationTemplate CreateTemplateFromConfig(AnimationTemplateConfig config)
         {
             if (config == null || string.IsNullOrEmpty(config.Name))
                 return null;
@@ -184,7 +184,7 @@ namespace Engine.Animation
             );
         }
 
-        private static LayerDefinition CreateLayerFromConfig(TemplateLayerConfig config)
+        public static LayerDefinition CreateLayerFromConfig(TemplateLayerConfig config)
         {
             if (config == null)
                 return null;
@@ -200,7 +200,7 @@ namespace Engine.Animation
             return new LayerDefinition(config.Index, blendMode, boneMask);
         }
 
-        private static StateTrackDefinition CreateStateTrackFromConfig(TemplateStateTrackConfig config)
+        public static StateTrackDefinition CreateStateTrackFromConfig(TemplateStateTrackConfig config)
         {
             if (config == null)
                 return null;
@@ -224,7 +224,7 @@ namespace Engine.Animation
             return definition;
         }
 
-        private static AnimationBlendMode ParseBlendMode(string value)
+        public static AnimationBlendMode ParseBlendMode(string value)
         {
             if (string.IsNullOrEmpty(value))
                 return AnimationBlendMode.Override;
@@ -237,7 +237,7 @@ namespace Engine.Animation
             };
         }
 
-        private static StateTrackType ParseStateTrackType(string value)
+        public static StateTrackType ParseStateTrackType(string value)
         {
             if (string.IsNullOrEmpty(value))
                 return StateTrackType.Float;

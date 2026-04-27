@@ -127,7 +127,7 @@ namespace Game {
         /// <summary>
         /// 同步动画参数到动画控制器
         /// </summary>
-        protected override void SyncAnimationParameters()
+        public override void SyncAnimationParameters()
         {
             base.SyncAnimationParameters();
 

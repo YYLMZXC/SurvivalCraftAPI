@@ -45,75 +45,75 @@ namespace Engine.Animation {
         /// </summary>
         public static bool MorphWeightAnimationEnabled;
 
-        Model _model;
-        ModelAnimation _animation;
-        float _time;
-        float _previousTime;
-        bool _looping;
-        bool _playing;
-        Dictionary<string, int> _boneNameToIndex = new();
-        List<AnimationEvent> _events = new();
-        int _lastEventIndex = -1;
+        public Model m_model;
+        public ModelAnimation m_animation;
+        public float m_time;
+        public float m_previousTime;
+        public bool m_looping;
+        public bool m_playing;
+        public Dictionary<string, int> m_boneNameToIndex = new();
+        public List<AnimationEvent> m_events = new();
+        public int m_lastEventIndex = -1;
 
         // Phase range support
-        float _startPhase = 0f;
-        float _endPhase = 1f;
-        bool _preservePose = false;
-        float _wrapOvershoot = 0f; // For loop boundary interpolation
-        float _keyInterval = 0f;   // Cached keyframe interval for boundary interpolation
-        float[] _weightBuffer;     // Reusable buffer for morph weight interpolation
+        public float m_startPhase = 0f;
+        public float m_endPhase = 1f;
+        public bool m_preservePose = false;
+        public float m_wrapOvershoot = 0f; // For loop boundary interpolation
+        public float m_keyInterval = 0f;   // Cached keyframe interval for boundary interpolation
+        public float[] m_weightBuffer;     // Reusable buffer for morph weight interpolation
 
         /// <summary>
         /// 当前动画
         /// </summary>
-        public ModelAnimation Animation => _animation;
+        public ModelAnimation Animation => m_animation;
 
         /// <summary>
         /// 当前播放时间
         /// </summary>
         public float Time {
-            get => _time;
-            set => _time = value;
+            get => m_time;
+            set => m_time = value;
         }
 
         /// <summary>
         /// 起始相位 (0-1)，默认为 0
         /// </summary>
         public float StartPhase {
-            get => _startPhase;
-            set => _startPhase = Math.Clamp(value, 0f, 1f);
+            get => m_startPhase;
+            set => m_startPhase = Math.Clamp(value, 0f, 1f);
         }
 
         /// <summary>
         /// 结束相位 (0-1)，默认为 1
         /// </summary>
         public float EndPhase {
-            get => _endPhase;
-            set => _endPhase = Math.Clamp(value, 0f, 1f);
+            get => m_endPhase;
+            set => m_endPhase = Math.Clamp(value, 0f, 1f);
         }
 
         /// <summary>
         /// 是否在非播放状态下保持最后姿态
         /// </summary>
         public bool PreservePose {
-            get => _preservePose;
-            set => _preservePose = value;
+            get => m_preservePose;
+            set => m_preservePose = value;
         }
 
         /// <summary>
         /// 是否有有效的动画数据
         /// </summary>
-        public bool HasValidAnimation => _animation != null && _animation.Duration > 0;
+        public bool HasValidAnimation => m_animation != null && m_animation.Duration > 0;
 
         /// <summary>
         /// 相位范围大小
         /// </summary>
-        public float PhaseRange => Math.Abs(_endPhase - _startPhase);
+        public float PhaseRange => Math.Abs(m_endPhase - m_startPhase);
 
         /// <summary>
         /// 相位方向：1 表示正向（EndPhase > StartPhase），-1 表示反向
         /// </summary>
-        public int PhaseDirection => _endPhase > _startPhase ? 1 : -1;
+        public int PhaseDirection => m_endPhase > m_startPhase ? 1 : -1;
 
         /// <summary>
         /// 实际播放方向：PhaseDirection × sign(Speed)
@@ -128,8 +128,8 @@ namespace Engine.Animation {
                 if (!HasValidAnimation || PhaseRange <= 0f) return 0f;
 
                 float effectiveTime = GetEffectiveTime();  // Time in seconds
-                float normalizedPhase = effectiveTime / _animation.Duration;  // Convert to 0-1
-                float normalizedProgress = (normalizedPhase - _startPhase) / PhaseRange;
+                float normalizedPhase = effectiveTime / m_animation.Duration;  // Convert to 0-1
+                float normalizedProgress = (normalizedPhase - m_startPhase) / PhaseRange;
                 return Math.Clamp(normalizedProgress, 0f, 1f);
             }
         }
@@ -137,20 +137,20 @@ namespace Engine.Animation {
         /// <summary>
         /// 是否正在播放
         /// </summary>
-        public bool IsPlaying => _playing;
+        public bool IsPlaying => m_playing;
 
         /// <summary>
         /// 关联的模型
         /// </summary>
-        public Model Model => _model;
+        public Model Model => m_model;
 
         /// <summary>
         /// 是否循环播放
         /// </summary>
         public bool Loop
         {
-            get => _looping;
-            set => _looping = value;
+            get => m_looping;
+            set => m_looping = value;
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace Engine.Animation {
         /// <summary>
         /// 获取动画事件列表
         /// </summary>
-        public IReadOnlyList<AnimationEvent> Events => _events;
+        public IReadOnlyList<AnimationEvent> Events => m_events;
 
         /// <summary>
         /// 获取有效时间（基于相位）
@@ -174,17 +174,17 @@ namespace Engine.Animation {
         public float GetEffectiveTime() {
             if (!HasValidAnimation) return 0f;
 
-            float duration = _animation.Duration;
-            float startTime = _startPhase * duration;
-            float endTime = _endPhase * duration;
+            float duration = m_animation.Duration;
+            float startTime = m_startPhase * duration;
+            float endTime = m_endPhase * duration;
 
             // 确保时间在相位范围内
             if (PhaseDirection > 0) {
                 // 正向：StartPhase -> EndPhase
-                return Math.Clamp(_time, startTime, endTime);
+                return Math.Clamp(m_time, startTime, endTime);
             } else {
                 // 反向：EndPhase -> StartPhase
-                return Math.Clamp(_time, endTime, startTime);
+                return Math.Clamp(m_time, endTime, startTime);
             }
         }
 
@@ -192,12 +192,12 @@ namespace Engine.Animation {
         /// 设置动画
         /// </summary>
         public void SetAnimation(Model model, ModelAnimation animation) {
-            _model = model;
-            _animation = animation;
-            _time = 0f;
-            _previousTime = 0f;
-            _lastEventIndex = -1;
-            _wrapOvershoot = 0f;
+            m_model = model;
+            m_animation = animation;
+            m_time = 0f;
+            m_previousTime = 0f;
+            m_lastEventIndex = -1;
+            m_wrapOvershoot = 0f;
             BuildBoneIndexMap();
         }
 
@@ -207,9 +207,9 @@ namespace Engine.Animation {
         /// <param name="startPhase">起始相位 (0-1)</param>
         /// <param name="endPhase">结束相位 (0-1)</param>
         public void SetPhaseRange(float startPhase, float endPhase) {
-            _startPhase = Math.Clamp(startPhase, 0f, 1f);
-            _endPhase = Math.Clamp(endPhase, 0f, 1f);
-            _wrapOvershoot = 0f;
+            m_startPhase = Math.Clamp(startPhase, 0f, 1f);
+            m_endPhase = Math.Clamp(endPhase, 0f, 1f);
+            m_wrapOvershoot = 0f;
         }
 
         /// <summary>
@@ -219,43 +219,43 @@ namespace Engine.Animation {
         /// <param name="normalizedTime">触发时间（归一化时间 0-1）</param>
         /// <param name="parameter">可选参数</param>
         public void AddEvent(string eventName, float normalizedTime, object parameter = null) {
-            _events.Add(new AnimationEvent(eventName, normalizedTime, parameter));
+            m_events.Add(new AnimationEvent(eventName, normalizedTime, parameter));
             // 按时间排序
-            _events.Sort((a, b) => a.Time.CompareTo(b.Time));
+            m_events.Sort((a, b) => a.Time.CompareTo(b.Time));
         }
 
         /// <summary>
         /// 清除所有动画事件
         /// </summary>
         public void ClearEvents() {
-            _events.Clear();
-            _lastEventIndex = -1;
+            m_events.Clear();
+            m_lastEventIndex = -1;
         }
 
         /// <summary>
         /// 开始播放
         /// </summary>
         public void Play(bool loop = true) {
-            _playing = true;
-            _looping = loop;
+            m_playing = true;
+            m_looping = loop;
         }
 
         /// <summary>
         /// 停止播放
         /// </summary>
         public void Stop() {
-            _playing = false;
+            m_playing = false;
         }
 
         /// <summary>
         /// 设置归一化时间 (0-1)
         /// </summary>
         public void SetNormalizedTime(float normalizedTime) {
-            if (_animation != null && _animation.Duration > 0) {
-                _time = normalizedTime * _animation.Duration;
-                _previousTime = _time;
-                _lastEventIndex = -1;
-                _wrapOvershoot = 0f;
+            if (m_animation != null && m_animation.Duration > 0) {
+                m_time = normalizedTime * m_animation.Duration;
+                m_previousTime = m_time;
+                m_lastEventIndex = -1;
+                m_wrapOvershoot = 0f;
             }
         }
 
@@ -263,107 +263,107 @@ namespace Engine.Animation {
         /// 更新动画时间
         /// </summary>
         public void Update(float deltaTime) {
-            if (!_playing) return;
+            if (!m_playing) return;
 
-            _previousTime = _time;
+            m_previousTime = m_time;
 
             // 如果有动画，处理相位范围逻辑
             if (!HasValidAnimation) return;
 
-            float duration = _animation.Duration;
-            float startTime = _startPhase * duration;
-            float endTime = _endPhase * duration;
+            float duration = m_animation.Duration;
+            float startTime = m_startPhase * duration;
+            float endTime = m_endPhase * duration;
 
             // 速度为 0 时停在 StartPhase
             if (Speed == 0f) {
-                _time = startTime;
+                m_time = startTime;
                 return;
             }
 
             // 更新时间
-            _time += deltaTime * Speed;
+            m_time += deltaTime * Speed;
 
             // 计算边界
             float minTime = Math.Min(startTime, endTime);
             float maxTime = Math.Max(startTime, endTime);
 
-            if (_looping) {
+            if (m_looping) {
                 // 循环模式
                 if (ActualDirection > 0) {
                     // 正向播放
-                    if (_time > maxTime) {
+                    if (m_time > maxTime) {
                         // Wrap 发生：记录超出的时间作为边界插值的起始点
-                        _wrapOvershoot = _time - maxTime;
-                        _time = minTime + _wrapOvershoot;
+                        m_wrapOvershoot = m_time - maxTime;
+                        m_time = minTime + m_wrapOvershoot;
                         // 缓存关键帧间隔（从动画数据获取）
-                        _keyInterval = EstimateKeyInterval();
-                        _lastEventIndex = -1;
-                    } else if (_wrapOvershoot > 0f) {
+                        m_keyInterval = EstimateKeyInterval();
+                        m_lastEventIndex = -1;
+                    } else if (m_wrapOvershoot > 0f) {
                         // 已经在 wrap 后，累加时间
-                        _wrapOvershoot += deltaTime * Math.Abs(Speed);
+                        m_wrapOvershoot += deltaTime * Math.Abs(Speed);
                         // 当累加超过关键帧间隔时，插值完成
-                        if (_keyInterval > 0f && _wrapOvershoot >= _keyInterval) {
-                            _wrapOvershoot = 0f;
-                            _keyInterval = 0f;
+                        if (m_keyInterval > 0f && m_wrapOvershoot >= m_keyInterval) {
+                            m_wrapOvershoot = 0f;
+                            m_keyInterval = 0f;
                         }
                     }
                 } else {
                     // 反向播放
-                    if (_time < minTime) {
-                        _wrapOvershoot = minTime - _time;
-                        _time = maxTime - _wrapOvershoot;
-                        _keyInterval = EstimateKeyInterval();
-                        _lastEventIndex = -1;
-                    } else if (_wrapOvershoot > 0f) {
-                        _wrapOvershoot += deltaTime * Math.Abs(Speed);
-                        if (_keyInterval > 0f && _wrapOvershoot >= _keyInterval) {
-                            _wrapOvershoot = 0f;
-                            _keyInterval = 0f;
+                    if (m_time < minTime) {
+                        m_wrapOvershoot = minTime - m_time;
+                        m_time = maxTime - m_wrapOvershoot;
+                        m_keyInterval = EstimateKeyInterval();
+                        m_lastEventIndex = -1;
+                    } else if (m_wrapOvershoot > 0f) {
+                        m_wrapOvershoot += deltaTime * Math.Abs(Speed);
+                        if (m_keyInterval > 0f && m_wrapOvershoot >= m_keyInterval) {
+                            m_wrapOvershoot = 0f;
+                            m_keyInterval = 0f;
                         }
                     }
                 }
             } else {
                 // 非循环模式：停在边界
                 if (ActualDirection > 0) {
-                    if (_time >= maxTime) {
-                        _time = maxTime;
-                        _playing = false;
+                    if (m_time >= maxTime) {
+                        m_time = maxTime;
+                        m_playing = false;
                     }
                 } else {
-                    if (_time <= minTime) {
-                        _time = minTime;
-                        _playing = false;
+                    if (m_time <= minTime) {
+                        m_time = minTime;
+                        m_playing = false;
                     }
                 }
-                _wrapOvershoot = 0f;
+                m_wrapOvershoot = 0f;
             }
 
             // 检查事件
-            CheckEvents(_previousTime, _time);
+            CheckEvents(m_previousTime, m_time);
         }
 
         /// <summary>
         /// 检查并触发指定时间范围内的事件
         /// </summary>
-        void CheckEvents(float fromTime, float toTime) {
-            if (_events.Count == 0 || OnAnimationEvent == null) return;
+        public void CheckEvents(float fromTime, float toTime) {
+            if (m_events.Count == 0 || OnAnimationEvent == null) return;
 
-            float duration = _animation?.Duration ?? 0f;
+            float duration = m_animation?.Duration ?? 0f;
             if (duration <= 0f) return;
 
             // 将绝对时间转换为归一化时间
             float fromNormalized = fromTime / duration;
             float toNormalized = toTime / duration;
 
-            for (int i = 0; i < _events.Count; i++) {
-                var evt = _events[i];
+            for (int i = 0; i < m_events.Count; i++) {
+                var evt = m_events[i];
                 // 事件时间使用归一化时间 (0-1)
                 // 检查事件时间是否在当前帧的时间范围内
                 if (evt.Time > fromNormalized && evt.Time <= toNormalized) {
                     // 确保每个事件只触发一次（通过索引跟踪）
-                    if (i > _lastEventIndex) {
+                    if (i > m_lastEventIndex) {
                         OnAnimationEvent?.Invoke(evt);
-                        _lastEventIndex = i;
+                        m_lastEventIndex = i;
                     }
                 }
             }
@@ -373,9 +373,9 @@ namespace Engine.Animation {
         /// 采样当前时间的骨骼变换
         /// </summary>
         public void SampleBoneTransforms(Matrix?[] boneTransforms) {
-            if (_animation == null || _model == null || boneTransforms == null) return;
+            if (m_animation == null || m_model == null || boneTransforms == null) return;
 
-            SampleAtTimeInternal(_time, boneTransforms);
+            SampleAtTimeInternal(m_time, boneTransforms);
         }
 
         /// <summary>
@@ -383,19 +383,19 @@ namespace Engine.Animation {
         /// 直接修改 ModelMaterial 属性，递增 Version。
         /// </summary>
         public void SamplePointerTargets(Model model = null) {
-            if (_animation == null) return;
-            Model m = model ?? _model;
+            if (m_animation == null) return;
+            Model m = model ?? m_model;
             float time = GetEffectiveTime();
 
-            if (_animation.PointerTargets.Count > 0) {
-                for (int i = 0; i < _animation.PointerTargets.Count; i++) {
-                    _animation.PointerTargets[i](time);
+            if (m_animation.PointerTargets.Count > 0) {
+                for (int i = 0; i < m_animation.PointerTargets.Count; i++) {
+                    m_animation.PointerTargets[i](time);
                 }
             }
 
-            if (_animation.NodeVisibilityTargets.Count > 0 && m != null) {
-                for (int i = 0; i < _animation.NodeVisibilityTargets.Count; i++) {
-                    _animation.NodeVisibilityTargets[i](time, m);
+            if (m_animation.NodeVisibilityTargets.Count > 0 && m != null) {
+                for (int i = 0; i < m_animation.NodeVisibilityTargets.Count; i++) {
+                    m_animation.NodeVisibilityTargets[i](time, m);
                 }
             }
         }
@@ -411,10 +411,10 @@ namespace Engine.Animation {
         /// 采样 morph target 权重并写入 Model 的 MeshParts
         /// </summary>
         public void SampleMorphWeights(Model model) {
-            if (_animation == null || model == null || !MorphWeightAnimationEnabled) return;
-            float time = _time;
+            if (m_animation == null || model == null || !MorphWeightAnimationEnabled) return;
+            float time = m_time;
 
-            foreach (var channel in _animation.Channels) {
+            foreach (var channel in m_animation.Channels) {
                 if (channel.Property != ModelAnimation.AnimationProperty.Weights) continue;
 
                 var sampler = channel.Sampler;
@@ -436,26 +436,26 @@ namespace Engine.Animation {
             }
         }
 
-        float[] SampleWeightArrays(float[][] weights, float[] times, float time, ModelAnimation.InterpolationType interpolation) {
+        public float[] SampleWeightArrays(float[][] weights, float[] times, float time, ModelAnimation.InterpolationType interpolation) {
             if (weights == null || weights.Length == 0) return null;
 
             int len = weights[0]?.Length ?? 0;
             if (len == 0) return null;
 
             // Ensure buffer
-            if (_weightBuffer == null || _weightBuffer.Length < len)
-                _weightBuffer = new float[len];
+            if (m_weightBuffer == null || m_weightBuffer.Length < len)
+                m_weightBuffer = new float[len];
 
             int idx = FindKeyIndex(times, time);
             if (idx < 0) idx = 0;
             if (idx >= weights.Length - 1) {
-                Array.Copy(weights[weights.Length - 1], _weightBuffer, len);
-                return _weightBuffer;
+                Array.Copy(weights[weights.Length - 1], m_weightBuffer, len);
+                return m_weightBuffer;
             }
 
             if (interpolation == ModelAnimation.InterpolationType.Step) {
-                Array.Copy(weights[idx], _weightBuffer, len);
-                return _weightBuffer;
+                Array.Copy(weights[idx], m_weightBuffer, len);
+                return m_weightBuffer;
             }
 
             float t0 = times[idx];
@@ -463,22 +463,22 @@ namespace Engine.Animation {
             float alpha = (time - t0) / (t1 - t0);
 
             for (int i = 0; i < len; i++) {
-                _weightBuffer[i] = weights[idx][i] + (weights[idx + 1][i] - weights[idx][i]) * alpha;
+                m_weightBuffer[i] = weights[idx][i] + (weights[idx + 1][i] - weights[idx][i]) * alpha;
             }
-            return _weightBuffer;
+            return m_weightBuffer;
         }
 
         /// <summary>
         /// 内部采样方法
         /// </summary>
-        void SampleAtTimeInternal(float time, Matrix?[] boneTransforms) {
-            if (_animation == null || _model == null || boneTransforms == null) return;
+        public void SampleAtTimeInternal(float time, Matrix?[] boneTransforms) {
+            if (m_animation == null || m_model == null || boneTransforms == null) return;
 
             // 按骨骼分组通道，合并同一骨骼的所有属性
             Dictionary<int, (Vector3? translation, Quaternion? rotation, Vector3? scale)> boneTransformsData = new();
 
-            foreach (var channel in _animation.Channels) {
-                if (!_boneNameToIndex.TryGetValue(channel.TargetBoneName, out int boneIndex))
+            foreach (var channel in m_animation.Channels) {
+                if (!m_boneNameToIndex.TryGetValue(channel.TargetBoneName, out int boneIndex))
                     continue;
 
                 var sampler = channel.Sampler;
@@ -520,7 +520,7 @@ namespace Engine.Animation {
                 var (animTranslation, animRotation, animScale) = kvp.Value;
 
                 // 获取骨骼原始变换并分解
-                ModelBone bone = _model.m_bones[boneIndex];
+                ModelBone bone = m_model.m_bones[boneIndex];
                 Vector3 origScale, origTranslation;
                 Quaternion origRotation;
                 bone.Transform.Decompose(out origScale, out origRotation, out origTranslation);
@@ -543,16 +543,16 @@ namespace Engine.Animation {
         /// 在指定相位采样骨骼变换（用于 PreservePose）
         /// </summary>
         public void SampleBoneTransformsAtPhase(float phase, Matrix?[] boneTransforms) {
-            if (_animation == null || boneTransforms == null) return;
+            if (m_animation == null || boneTransforms == null) return;
 
-            float time = Math.Clamp(phase, 0f, 1f) * _animation.Duration;
+            float time = Math.Clamp(phase, 0f, 1f) * m_animation.Duration;
             SampleAtTimeInternal(time, boneTransforms);
         }
 
         /// <summary>
         /// 混合两个矩阵
         /// </summary>
-        Matrix BlendMatrix(Matrix a, Matrix b, float t) {
+        public Matrix BlendMatrix(Matrix a, Matrix b, float t) {
             // 分解矩阵
             Vector3 scaleA, translationA;
             Quaternion rotationA;
@@ -573,7 +573,7 @@ namespace Engine.Animation {
                    Matrix.CreateTranslation(blendedTranslation);
         }
 
-        Vector3 SampleVector3(Vector3[] values, float[] times, float time, ModelAnimation.InterpolationType interpolation) {
+        public Vector3 SampleVector3(Vector3[] values, float[] times, float time, ModelAnimation.InterpolationType interpolation) {
             if (values == null || values.Length == 0) return Vector3.Zero;
             if (values.Length == 1) return values[0];
 
@@ -583,9 +583,9 @@ namespace Engine.Animation {
 
             // 循环边界插值：当 wrap 发生后，从边界帧插值到当前位置
             // _wrapOvershoot 会累积直到超过 _keyInterval
-            if (_looping && _wrapOvershoot > 0f && _keyInterval > 0f && times.Length >= 2) {
+            if (m_looping && m_wrapOvershoot > 0f && m_keyInterval > 0f && times.Length >= 2) {
                 // 计算插值权重：wrap 后经过的时间 / 关键帧间隔
-                float blendAlpha = _wrapOvershoot / _keyInterval;
+                float blendAlpha = m_wrapOvershoot / m_keyInterval;
                 blendAlpha = Math.Clamp(blendAlpha, 0f, 1f);
 
                 // 获取当前位置的值（正常插值）
@@ -623,7 +623,7 @@ namespace Engine.Animation {
             };
         }
 
-        Quaternion SampleQuaternion(Quaternion[] values, float[] times, float time, ModelAnimation.InterpolationType interpolation) {
+        public Quaternion SampleQuaternion(Quaternion[] values, float[] times, float time, ModelAnimation.InterpolationType interpolation) {
             if (values == null || values.Length == 0) return Quaternion.Identity;
             if (values.Length == 1) return values[0];
 
@@ -632,8 +632,8 @@ namespace Engine.Animation {
             if (idx < 0) return values[0];
 
             // 循环边界插值：当 wrap 发生后，从边界帧插值到当前位置
-            if (_looping && _wrapOvershoot > 0f && _keyInterval > 0f && times.Length >= 2) {
-                float blendAlpha = _wrapOvershoot / _keyInterval;
+            if (m_looping && m_wrapOvershoot > 0f && m_keyInterval > 0f && times.Length >= 2) {
+                float blendAlpha = m_wrapOvershoot / m_keyInterval;
                 blendAlpha = Math.Clamp(blendAlpha, 0f, 1f);
 
                 // 获取当前位置的值（正常插值）
@@ -671,7 +671,7 @@ namespace Engine.Animation {
             };
         }
 
-        int FindKeyIndex(float[] times, float time) {
+        public int FindKeyIndex(float[] times, float time) {
             if (times == null || times.Length == 0) return -1;
 
             for (int i = 0; i < times.Length - 1; i++) {
@@ -682,7 +682,7 @@ namespace Engine.Animation {
             return times.Length - 1;
         }
 
-        Vector3 CubicSplineInterpolate(Vector3[] values, int idx, float t) {
+        public Vector3 CubicSplineInterpolate(Vector3[] values, int idx, float t) {
             // 简化的三次样条插值
             return Vector3.Lerp(values[idx], values[Math.Min(idx + 1, values.Length - 1)], t);
         }
@@ -690,12 +690,12 @@ namespace Engine.Animation {
         /// <summary>
         /// 估算关键帧间隔（用于循环边界插值）
         /// </summary>
-        float EstimateKeyInterval() {
-            if (_animation == null || _animation.Channels == null || _animation.Channels.Count == 0)
+        public float EstimateKeyInterval() {
+            if (m_animation == null || m_animation.Channels == null || m_animation.Channels.Count == 0)
                 return 0f;
 
             // 从第一个有效的通道获取关键帧时间
-            foreach (var channel in _animation.Channels) {
+            foreach (var channel in m_animation.Channels) {
                 var sampler = channel.Sampler;
                 if (sampler?.KeyTimes != null && sampler.KeyTimes.Length >= 2) {
                     var times = sampler.KeyTimes;
@@ -707,12 +707,12 @@ namespace Engine.Animation {
             return 0f;
         }
 
-        void BuildBoneIndexMap() {
-            _boneNameToIndex.Clear();
-            if (_model == null) return;
+        public void BuildBoneIndexMap() {
+            m_boneNameToIndex.Clear();
+            if (m_model == null) return;
 
-            foreach (var bone in _model.m_bones) {
-                _boneNameToIndex[bone.Name] = bone.Index;
+            foreach (var bone in m_model.m_bones) {
+                m_boneNameToIndex[bone.Name] = bone.Index;
             }
         }
     }

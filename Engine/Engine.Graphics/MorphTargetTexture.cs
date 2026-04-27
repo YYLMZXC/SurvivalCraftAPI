@@ -11,20 +11,20 @@ namespace Engine.Graphics {
     /// - 层组织：[POSITION targets][NORMAL targets][TANGENT targets]...
     /// </summary>
     public class MorphTargetTexture : GraphicsResource {
-        bool _disposed;
-        float[] _layerData;
+        public bool m_disposed;
+        public float[] m_layerData;
         // 保留原始数据用于 device reset 后重新上传
-        IReadOnlyList<Vector3>[] _savedPositions;
-        IReadOnlyList<Vector3>[] _savedNormals;
-        IReadOnlyList<Vector4>[] _savedTangents;
-        IReadOnlyList<Vector2>[] _savedTexCoords0;
-        IReadOnlyList<Vector2>[] _savedTexCoords1;
-        IReadOnlyList<Vector4>[] _savedColors0;
+        public IReadOnlyList<Vector3>[] m_savedPositions;
+        public IReadOnlyList<Vector3>[] m_savedNormals;
+        public IReadOnlyList<Vector4>[] m_savedTangents;
+        public IReadOnlyList<Vector2>[] m_savedTexCoords0;
+        public IReadOnlyList<Vector2>[] m_savedTexCoords1;
+        public IReadOnlyList<Vector4>[] m_savedColors0;
 
         // 定义属性的规范顺序
-        static readonly string[] CanonicalAttributeOrder = ["POSITION", "NORMAL", "TANGENT", "TEXCOORD_0", "TEXCOORD_1", "COLOR_0"];
+        public static readonly string[] CanonicalAttributeOrder = ["POSITION", "NORMAL", "TANGENT", "TEXCOORD_0", "TEXCOORD_1", "COLOR_0"];
 
-        readonly List<string> _activeAttributes = [];
+        public readonly List<string> m_activeAttributes = [];
 
         /// <summary>
         /// 纹理句柄
@@ -54,7 +54,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 活跃属性列表
         /// </summary>
-        public IReadOnlyList<string> ActiveAttributes => _activeAttributes;
+        public IReadOnlyList<string> ActiveAttributes => m_activeAttributes;
 
         /// <summary>
         /// 是否有 POSITION morph targets
@@ -126,7 +126,7 @@ namespace Engine.Graphics {
             // 按规范顺序排序属性
             foreach (string canonicalAttr in CanonicalAttributeOrder) {
                 if (attributes.Contains(canonicalAttr)) {
-                    _activeAttributes.Add(canonicalAttr);
+                    m_activeAttributes.Add(canonicalAttr);
                 }
             }
 
@@ -135,7 +135,7 @@ namespace Engine.Graphics {
 
             // 计算层数和属性偏移
             int layerIndex = 0;
-            foreach (string attr in _activeAttributes) {
+            foreach (string attr in m_activeAttributes) {
                 switch (attr) {
                     case "POSITION": PositionOffset = layerIndex; break;
                     case "NORMAL": NormalOffset = layerIndex; break;
@@ -147,15 +147,15 @@ namespace Engine.Graphics {
                 layerIndex += targetCount;
             }
 
-            LayerCount = targetCount * _activeAttributes.Count;
+            LayerCount = targetCount * m_activeAttributes.Count;
 
             // 预分配层数据数组
             int layerPixelCount = TextureSize * TextureSize;
-            _layerData = new float[layerPixelCount * 4];
+            m_layerData = new float[layerPixelCount * 4];
             CreateTexture();
         }
 
-        unsafe void CreateTexture() {
+        public unsafe void CreateTexture() {
             TextureHandle = (int)GLWrapper.GL.GenTexture();
             GLWrapper.GL.BindTexture(TextureTarget.Texture2DArray, (uint)TextureHandle);
 
@@ -230,17 +230,17 @@ namespace Engine.Graphics {
             GLWrapper.GL.BindTexture(TextureTarget.Texture2DArray, 0);
 
             // 保留原始数据用于 device reset 后重新上传
-            _savedPositions = positions;
-            _savedNormals = normals;
-            _savedTangents = tangents;
-            _savedTexCoords0 = texCoords0;
-            _savedTexCoords1 = texCoords1;
-            _savedColors0 = colors0;
+            m_savedPositions = positions;
+            m_savedNormals = normals;
+            m_savedTangents = tangents;
+            m_savedTexCoords0 = texCoords0;
+            m_savedTexCoords1 = texCoords1;
+            m_savedColors0 = colors0;
         }
 
-        unsafe void UploadAttributeLayer<T>(IReadOnlyList<T> attributeData, int layerIndex) where T : unmanaged {
+        public unsafe void UploadAttributeLayer<T>(IReadOnlyList<T> attributeData, int layerIndex) where T : unmanaged {
             // 清零层数据
-            Array.Clear(_layerData, 0, _layerData.Length);
+            Array.Clear(m_layerData, 0, m_layerData.Length);
             int vertexCount = Math.Min(attributeData.Count, VertexCount);
 
             // 填充数据（VEC2/VEC3 填充为 VEC4/RGBA）
@@ -248,35 +248,35 @@ namespace Engine.Graphics {
                 for (int i = 0; i < vertexCount; i++) {
                     int offset = i * 4;
                     Vector3 v = vec3Data[i];
-                    _layerData[offset + 0] = v.X;
-                    _layerData[offset + 1] = v.Y;
-                    _layerData[offset + 2] = v.Z;
-                    _layerData[offset + 3] = 0f; // padding
+                    m_layerData[offset + 0] = v.X;
+                    m_layerData[offset + 1] = v.Y;
+                    m_layerData[offset + 2] = v.Z;
+                    m_layerData[offset + 3] = 0f; // padding
                 }
             }
             else if (attributeData is IReadOnlyList<Vector4> vec4Data) {
                 for (int i = 0; i < vertexCount; i++) {
                     int offset = i * 4;
                     Vector4 v = vec4Data[i];
-                    _layerData[offset + 0] = v.X;
-                    _layerData[offset + 1] = v.Y;
-                    _layerData[offset + 2] = v.Z;
-                    _layerData[offset + 3] = v.W;
+                    m_layerData[offset + 0] = v.X;
+                    m_layerData[offset + 1] = v.Y;
+                    m_layerData[offset + 2] = v.Z;
+                    m_layerData[offset + 3] = v.W;
                 }
             }
             else if (attributeData is IReadOnlyList<Vector2> vec2Data) {
                 for (int i = 0; i < vertexCount; i++) {
                     int offset = i * 4;
                     Vector2 v = vec2Data[i];
-                    _layerData[offset + 0] = v.X;
-                    _layerData[offset + 1] = v.Y;
-                    _layerData[offset + 2] = 0f; // padding
-                    _layerData[offset + 3] = 0f; // padding
+                    m_layerData[offset + 0] = v.X;
+                    m_layerData[offset + 1] = v.Y;
+                    m_layerData[offset + 2] = 0f; // padding
+                    m_layerData[offset + 3] = 0f; // padding
                 }
             }
 
             // 上传到纹理
-            fixed (float* ptr = _layerData) {
+            fixed (float* ptr = m_layerData) {
                 GLWrapper.GL.TexSubImage3D(
                     TextureTarget.Texture2DArray,
                     0,
@@ -302,14 +302,14 @@ namespace Engine.Graphics {
         }
 
         public override void Dispose() {
-            if (_disposed) {
+            if (m_disposed) {
                 return;
             }
             if (TextureHandle != 0) {
                 GLWrapper.GL.DeleteTexture((uint)TextureHandle);
                 TextureHandle = 0;
             }
-            _disposed = true;
+            m_disposed = true;
             base.Dispose();
         }
 
@@ -321,9 +321,9 @@ namespace Engine.Graphics {
 
         public override void HandleDeviceReset() {
             CreateTexture();
-            if (_savedPositions != null || _savedNormals != null || _savedTangents != null) {
-                UploadData(_savedPositions, _savedNormals, _savedTangents,
-                    _savedTexCoords0, _savedTexCoords1, _savedColors0);
+            if (m_savedPositions != null || m_savedNormals != null || m_savedTangents != null) {
+                UploadData(m_savedPositions, m_savedNormals, m_savedTangents,
+                    m_savedTexCoords0, m_savedTexCoords1, m_savedColors0);
             }
         }
     }

@@ -8,23 +8,23 @@ namespace Engine.Graphics {
     /// 对应官方 renderer.js 中的 defines 数组
     /// </summary>
     public class ShaderDefines : IShaderDefineBuilder {
-        readonly List<string> _defines = [];
+        public readonly List<string> m_defines = [];
 
         // 缓存的 hash，避免每次遍历计算
-        int _cachedHash;
-        bool _hashValid;
+        public int m_cachedHash;
+        public bool m_hashValid;
 
         /// <summary>
         /// 增量更新 hash
         /// </summary>
-        void UpdateHash(string define) {
+        public void UpdateHash(string define) {
             unchecked {
-                if (_hashValid) {
-                    _cachedHash = _cachedHash * 31 + define.GetHashCode();
+                if (m_hashValid) {
+                    m_cachedHash = m_cachedHash * 31 + define.GetHashCode();
                 }
                 else {
-                    _cachedHash = 17 * 31 + define.GetHashCode();
-                    _hashValid = true;
+                    m_cachedHash = 17 * 31 + define.GetHashCode();
+                    m_hashValid = true;
                 }
             }
         }
@@ -32,9 +32,9 @@ namespace Engine.Graphics {
         /// <summary>
         /// 从另一个 ShaderDefines 复制 hash（用于 Clone）
         /// </summary>
-        void CopyHashFrom(ShaderDefines other) {
-            _cachedHash = other._cachedHash;
-            _hashValid = other._hashValid;
+        public void CopyHashFrom(ShaderDefines other) {
+            m_cachedHash = other.m_cachedHash;
+            m_hashValid = other.m_hashValid;
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Engine.Graphics {
         /// </summary>
         public void Add(string define, int value = 1) {
             string str = $"{define} {value}";
-            _defines.Add(str);
+            m_defines.Add(str);
             UpdateHash(str);
         }
 
@@ -51,7 +51,7 @@ namespace Engine.Graphics {
         /// 如 "SCATTER_SAMPLES_COUNT 55"
         /// </summary>
         public void AddRaw(string define) {
-            _defines.Add(define);
+            m_defines.Add(define);
             UpdateHash(define);
         }
 
@@ -60,7 +60,7 @@ namespace Engine.Graphics {
         /// </summary>
         public void AddTextureMap(string textureName) {
             string str = $"HAS_{textureName.ToUpper()}_MAP 1";
-            _defines.Add(str);
+            m_defines.Add(str);
             UpdateHash(str);
         }
 
@@ -69,7 +69,7 @@ namespace Engine.Graphics {
         /// </summary>
         public void AddUVTransform(string textureName) {
             string str = $"HAS_{textureName.ToUpper()}_UV_TRANSFORM 1";
-            _defines.Add(str);
+            m_defines.Add(str);
             UpdateHash(str);
         }
 
@@ -78,7 +78,7 @@ namespace Engine.Graphics {
         /// </summary>
         public void AddMaterialExtension(string extensionName) {
             string str = $"MATERIAL_{extensionName.ToUpper()} 1";
-            _defines.Add(str);
+            m_defines.Add(str);
             UpdateHash(str);
         }
 
@@ -94,7 +94,7 @@ namespace Engine.Graphics {
             };
             if (!string.IsNullOrEmpty(suffix)) {
                 string str = $"HAS_{attributeName.ToUpper()}_{suffix} 1";
-                _defines.Add(str);
+                m_defines.Add(str);
                 UpdateHash(str);
             }
         }
@@ -104,7 +104,7 @@ namespace Engine.Graphics {
         /// </summary>
         public void SetWeightCount(int count) {
             string str = $"WEIGHT_COUNT {count}";
-            _defines.Add(str);
+            m_defines.Add(str);
             UpdateHash(str);
         }
 
@@ -113,7 +113,7 @@ namespace Engine.Graphics {
         /// </summary>
         public void SetJointCount(int count) {
             string str = $"JOINT_COUNT {count}";
-            _defines.Add(str);
+            m_defines.Add(str);
             UpdateHash(str);
         }
 
@@ -177,15 +177,15 @@ namespace Engine.Graphics {
             };
             // Remove existing ALPHAMODE define if present
             // 注意：移除后需要重新计算 hash
-            bool removed = _defines.RemoveAll(d => d.StartsWith("ALPHAMODE ")) > 0;
+            bool removed = m_defines.RemoveAll(d => d.StartsWith("ALPHAMODE ")) > 0;
             string str = $"ALPHAMODE {modeValue}";
-            _defines.Add(str);
+            m_defines.Add(str);
 
             // 如果移除了旧值，需要重新计算整个 hash
             if (removed) {
-                _hashValid = false;
-                _cachedHash = 0;
-                foreach (string define in _defines) {
+                m_hashValid = false;
+                m_cachedHash = 0;
+                foreach (string define in m_defines) {
                     UpdateHash(define);
                 }
             }
@@ -198,9 +198,9 @@ namespace Engine.Graphics {
         /// 生成完整的 defines 代码（包含 #version）
         /// </summary>
         public string GetDefinesCode() {
-            StringBuilder sb = new(_defines.Count * 32 + 20);
+            StringBuilder sb = new(m_defines.Count * 32 + 20);
             sb.AppendLine($"#version {ShaderCache.GlslVersion} es");
-            foreach (string define in _defines) {
+            foreach (string define in m_defines) {
                 sb.AppendLine($"#define {define}");
             }
             return sb.ToString();
@@ -209,9 +209,9 @@ namespace Engine.Graphics {
         /// <summary>
         /// 生成 defines 代码（不包含 #version，用于插入到着色器中）
         /// </summary>
-        internal string GetDefinesCodeWithoutVersion() {
-            StringBuilder sb = new(_defines.Count * 32);
-            foreach (string define in _defines) {
+        public string GetDefinesCodeWithoutVersion() {
+            StringBuilder sb = new(m_defines.Count * 32);
+            foreach (string define in m_defines) {
                 sb.AppendLine($"#define {define}");
             }
             return sb.ToString();
@@ -220,34 +220,34 @@ namespace Engine.Graphics {
         /// <summary>
         /// 获取 defines 列表（用于 ShaderCache.SelectShader）
         /// </summary>
-        public IEnumerable<string> GetDefinesList() => _defines;
+        public IEnumerable<string> GetDefinesList() => m_defines;
 
         /// <summary>
         /// 计算组合 hash（用于着色器缓存）
         /// 使用缓存避免重复计算
         /// </summary>
         public int ComputeHash() {
-            if (_hashValid) {
-                return _cachedHash;
+            if (m_hashValid) {
+                return m_cachedHash;
             }
             unchecked {
-                _cachedHash = 17;
-                foreach (string define in _defines) {
-                    _cachedHash = _cachedHash * 31 + define.GetHashCode();
+                m_cachedHash = 17;
+                foreach (string define in m_defines) {
+                    m_cachedHash = m_cachedHash * 31 + define.GetHashCode();
                 }
-                _hashValid = true;
+                m_hashValid = true;
             }
-            return _cachedHash;
+            return m_cachedHash;
         }
 
-        public override string ToString() => string.Join(", ", _defines);
+        public override string ToString() => string.Join(", ", m_defines);
 
         /// <summary>
         /// 创建当前 ShaderDefines 的副本
         /// </summary>
         public ShaderDefines Clone() {
             ShaderDefines clone = new();
-            clone._defines.AddRange(_defines);
+            clone.m_defines.AddRange(m_defines);
             clone.CopyHashFrom(this);
             return clone;
         }
@@ -256,9 +256,9 @@ namespace Engine.Graphics {
         /// 转换为 ShaderMacro 数组（用于与现有 Shader 系统集成）
         /// </summary>
         public ShaderMacro[] ToShaderMacros() {
-            ShaderMacro[] macros = new ShaderMacro[_defines.Count];
-            for (int i = 0; i < _defines.Count; i++) {
-                string define = _defines[i];
+            ShaderMacro[] macros = new ShaderMacro[m_defines.Count];
+            for (int i = 0; i < m_defines.Count; i++) {
+                string define = m_defines[i];
                 int spaceIndex = define.IndexOf(' ');
                 if (spaceIndex > 0) {
                     macros[i] = new ShaderMacro(define.Substring(0, spaceIndex), define.Substring(spaceIndex + 1));
@@ -414,7 +414,7 @@ namespace Engine.Graphics {
             return defines;
         }
 
-        static bool IsTrianglePrimitive(PrimitiveType type) => type is PrimitiveType.TriangleList
+        public static bool IsTrianglePrimitive(PrimitiveType type) => type is PrimitiveType.TriangleList
             or PrimitiveType.TriangleStrip
             or PrimitiveType.TriangleFan;
 

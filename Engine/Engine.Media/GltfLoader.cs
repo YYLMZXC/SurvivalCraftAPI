@@ -30,7 +30,7 @@ namespace Engine.Media {
         /// 检查是否为 glTF 文件
         /// </summary>
         public static bool IsGltfFile(string filePath) {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            string ext = Storage.GetExtension(filePath).ToLowerInvariant();
             return ext is ".gltf" or ".glb";
         }
 
@@ -113,7 +113,7 @@ namespace Engine.Media {
             return modelData;
         }
 
-        static void ConvertBones(ModelRoot modelRoot, ModelData modelData, List<Node> allNodes, Dictionary<Node, int> nodeToIndex) {
+        public static void ConvertBones(ModelRoot modelRoot, ModelData modelData, List<Node> allNodes, Dictionary<Node, int> nodeToIndex) {
             // 创建临时映射：Node -> 临时索引
             Dictionary<Node, int> nodeToTempIndex = new();
             for (int i = 0; i < allNodes.Count; i++) {
@@ -218,7 +218,7 @@ namespace Engine.Media {
             }
         }
 
-        static int CalculateDepth(int boneIndex, ModelBoneData[] bones) {
+        public static int CalculateDepth(int boneIndex, ModelBoneData[] bones) {
             int depth = 0;
             int current = boneIndex;
             while (bones[current].ParentBoneIndex >= 0 && depth < bones.Length) {
@@ -231,7 +231,7 @@ namespace Engine.Media {
         /// <summary>
         /// 加载纹理和材质，建立索引映射
         /// </summary>
-        static void ConvertTexturesAndMaterials(ModelRoot modelRoot, ModelData modelData,
+        public static void ConvertTexturesAndMaterials(ModelRoot modelRoot, ModelData modelData,
             Dictionary<GltfTexture, int> textureToIndex, Dictionary<GltfMaterial, int> materialToIndex) {
 
             // 1. 分析纹理用途，确定 sRGB vs Linear
@@ -291,7 +291,7 @@ namespace Engine.Media {
         /// <summary>
         /// 分析纹理颜色空间（sRGB vs Linear）
         /// </summary>
-        static void AnalyzeTextureColorSpace(GltfMaterial material, Dictionary<int, bool> textureIsSrgb) {
+        public static void AnalyzeTextureColorSpace(GltfMaterial material, Dictionary<int, bool> textureIsSrgb) {
             // sRGB channels: BaseColor, Emissive
             // Linear channels: Normal, MetallicRoughness, Occlusion
 
@@ -312,7 +312,7 @@ namespace Engine.Media {
         /// <summary>
         /// 加载材质属性
         /// </summary>
-        static void LoadMaterialProperties(GltfMaterial gltfMaterial, ModelMaterial mat, ModelData modelData) {
+        public static void LoadMaterialProperties(GltfMaterial gltfMaterial, ModelMaterial mat, ModelData modelData) {
             // BaseColor
             MaterialChannel? channel = gltfMaterial.FindChannel("BaseColor");
             if (channel != null) {
@@ -370,7 +370,7 @@ namespace Engine.Media {
         /// <summary>
         /// 加载材质扩展
         /// </summary>
-        static void LoadMaterialExtensions(GltfMaterial gltfMaterial, ModelMaterial mat, ModelData modelData) {
+        public static void LoadMaterialExtensions(GltfMaterial gltfMaterial, ModelMaterial mat, ModelData modelData) {
             foreach (var jsonSerializable in gltfMaterial.Extensions) {
                 Type type = jsonSerializable.GetType();
                 string extName = null;
@@ -423,7 +423,7 @@ namespace Engine.Media {
         /// <summary>
         /// 从材质通道加载 ModelMaterialTexture
         /// </summary>
-        static ModelMaterialTexture LoadMaterialTexture(MaterialChannel? channel, ModelData modelData) {
+        public static ModelMaterialTexture LoadMaterialTexture(MaterialChannel? channel, ModelData modelData) {
             if (channel?.Texture == null) {
                 return null;
             }
@@ -449,7 +449,7 @@ namespace Engine.Media {
             return matTex;
         }
 
-        static float GetFactorSafe(MaterialChannel channel, string factorName, float defaultValue) {
+        public static float GetFactorSafe(MaterialChannel channel, string factorName, float defaultValue) {
             try {
                 return channel.GetFactor(factorName);
             } catch {
@@ -457,14 +457,14 @@ namespace Engine.Media {
             }
         }
 
-        static int GetTextureIndex(GltfTexture texture, Dictionary<GltfTexture, int> textureToIndex) {
+        public static int GetTextureIndex(GltfTexture texture, Dictionary<GltfTexture, int> textureToIndex) {
             if (texture == null || !textureToIndex.TryGetValue(texture, out int index)) {
                 return -1;
             }
             return index;
         }
 
-        static void ConvertMeshes(ModelRoot modelRoot, ModelData modelData, List<Node> allNodes,
+        public static void ConvertMeshes(ModelRoot modelRoot, ModelData modelData, List<Node> allNodes,
             Dictionary<Node, int> nodeToIndex, Dictionary<GltfTexture, int> textureToIndex, Dictionary<GltfMaterial, int> materialToIndex) {
             int bufferIndex = 0;
 
@@ -483,7 +483,7 @@ namespace Engine.Media {
             }
         }
 
-        static void ProcessNodeForMesh(Node node, ModelData modelData, List<Node> allNodes,
+        public static void ProcessNodeForMesh(Node node, ModelData modelData, List<Node> allNodes,
             Dictionary<Node, int> nodeToIndex, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex,
             bool parentVisible = true) {
             // 解析当前节点的 visibility 状态
@@ -569,7 +569,7 @@ namespace Engine.Media {
             }
         }
 
-        static ModelMeshPartData ProcessPrimitive(MeshPrimitive primitive, ModelData modelData, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex) {
+        public static ModelMeshPartData ProcessPrimitive(MeshPrimitive primitive, ModelData modelData, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex) {
             // 获取顶点数据
             var posAccessor = primitive.GetVertexAccessor("POSITION");
             if (posAccessor == null) {
@@ -891,7 +891,7 @@ namespace Engine.Media {
             return meshPart;
         }
 
-        static IReadOnlyList<Vector3>[] ToEngineVector3List(System.Numerics.Vector3[][] arrays) {
+        public static IReadOnlyList<Vector3>[] ToEngineVector3List(System.Numerics.Vector3[][] arrays) {
             if (arrays == null) return null;
             var result = new IReadOnlyList<Vector3>[arrays.Length];
             for (int t = 0; t < arrays.Length; t++) {
@@ -906,7 +906,7 @@ namespace Engine.Media {
             return result;
         }
 
-        static IReadOnlyList<Vector4>[] ToEngineVector4List(System.Numerics.Vector4[][] arrays) {
+        public static IReadOnlyList<Vector4>[] ToEngineVector4List(System.Numerics.Vector4[][] arrays) {
             if (arrays == null) return null;
             var result = new IReadOnlyList<Vector4>[arrays.Length];
             for (int t = 0; t < arrays.Length; t++) {
@@ -921,7 +921,7 @@ namespace Engine.Media {
             return result;
         }
 
-        static PrimitiveType MapPrimitiveType(GltfPrimitiveType type) => type switch {
+        public static PrimitiveType MapPrimitiveType(GltfPrimitiveType type) => type switch {
             GltfPrimitiveType.POINTS => PrimitiveType.Points,
             GltfPrimitiveType.LINES => PrimitiveType.LineList,
             GltfPrimitiveType.LINE_LOOP => PrimitiveType.LineLoop,
@@ -932,7 +932,7 @@ namespace Engine.Media {
             _ => PrimitiveType.TriangleList
         };
 
-        static void ConvertSkins(ModelRoot modelRoot, ModelData modelData, Dictionary<Node, int> nodeToIndex) {
+        public static void ConvertSkins(ModelRoot modelRoot, ModelData modelData, Dictionary<Node, int> nodeToIndex) {
             // 查找第一个有 Skin 的节点
             // 注意：glTF 允许一个模型有多个 Skin（用于不同的网格），但大多数模型只有一个
             // 这是一个简化处理，未来可以扩展为支持多个 Skin
@@ -982,7 +982,7 @@ namespace Engine.Media {
             };
         }
 
-        static void ConvertAnimations(ModelRoot modelRoot, ModelData modelData) {
+        public static void ConvertAnimations(ModelRoot modelRoot, ModelData modelData) {
             // 构建 material source index → ModelMaterial 查找表
             Dictionary<int, ModelMaterial> materialsByIndex = new();
             foreach (ModelMaterial mat in modelData.Materials) {
@@ -1028,7 +1028,7 @@ namespace Engine.Media {
             }
         }
 
-        static ModelAnimation.AnimationProperty ConvertAnimationProperty(PropertyPath path) {
+        public static ModelAnimation.AnimationProperty ConvertAnimationProperty(PropertyPath path) {
             return path switch {
                 PropertyPath.translation => ModelAnimation.AnimationProperty.Translation,
                 PropertyPath.rotation => ModelAnimation.AnimationProperty.Rotation,
@@ -1038,7 +1038,7 @@ namespace Engine.Media {
             };
         }
 
-        static ModelAnimation.AnimationSampler ConvertSamplerByPath(AnimationChannel channel) {
+        public static ModelAnimation.AnimationSampler ConvertSamplerByPath(AnimationChannel channel) {
             ModelAnimation.AnimationSampler result = new();
             var path = channel.TargetNodePath;
 
@@ -1110,7 +1110,7 @@ namespace Engine.Media {
 
         #region KHR_animation_pointer
 
-        static Action<float> CreatePointerTarget(AnimationChannel channel, Dictionary<int, ModelMaterial> materialsByIndex) {
+        public static Action<float> CreatePointerTarget(AnimationChannel channel, Dictionary<int, ModelMaterial> materialsByIndex) {
             string path = channel.TargetPointerPath;
             if (string.IsNullOrEmpty(path)) return null;
 
@@ -1128,7 +1128,7 @@ namespace Engine.Media {
             return null;
         }
 
-        static Action<float> CreateMaterialPointerTarget(string[] segments, AnimationChannel channel, Dictionary<int, ModelMaterial> materialsByIndex) {
+        public static Action<float> CreateMaterialPointerTarget(string[] segments, AnimationChannel channel, Dictionary<int, ModelMaterial> materialsByIndex) {
             if (!int.TryParse(segments[1], out int materialIndex)) return null;
             if (!materialsByIndex.TryGetValue(materialIndex, out ModelMaterial mat)) return null;
 
@@ -1160,7 +1160,7 @@ namespace Engine.Media {
             return null;
         }
 
-        static Action<float> CreateTextureTransformTarget(string propertyPath, AnimationChannel channel, ModelMaterial mat) {
+        public static Action<float> CreateTextureTransformTarget(string propertyPath, AnimationChannel channel, ModelMaterial mat) {
             const string suffix = "/extensions/KHR_texture_transform/";
             int idx = propertyPath.IndexOf(suffix);
             if (idx < 0) return null;
@@ -1178,7 +1178,7 @@ namespace Engine.Media {
             };
         }
 
-        static ModelMaterialTexture GetMaterialTexture(ModelMaterial mat, string texturePath) {
+        public static ModelMaterialTexture GetMaterialTexture(ModelMaterial mat, string texturePath) {
             if (texturePath == "pbrMetallicRoughness/baseColorTexture") return mat.BaseColorTexture;
             if (texturePath == "pbrMetallicRoughness/metallicRoughnessTexture") return mat.MetallicRoughnessTexture;
             if (texturePath == "normalTexture") return mat.NormalTexture;
@@ -1201,7 +1201,7 @@ namespace Engine.Media {
             return null;
         }
 
-        static Action<float> CreateExtensionTarget(string extPath, AnimationChannel channel, ModelMaterial mat) {
+        public static Action<float> CreateExtensionTarget(string extPath, AnimationChannel channel, ModelMaterial mat) {
             string[] parts = extPath.Split('/');
             if (parts.Length < 2) return null;
             string ext = parts[0], prop = parts[1];
@@ -1299,41 +1299,41 @@ namespace Engine.Media {
 
         // Typed closure factories — isolateMemory=true ensures independence from ModelRoot
 
-        static Action<float> CreateFloatTarget(AnimationChannel channel, Action<float> set) {
+        public static Action<float> CreateFloatTarget(AnimationChannel channel, Action<float> set) {
             var sampler = channel.GetSamplerOrNull<float>();
             if (sampler == null) return null;
             var curve = sampler.CreateCurveSampler(true);
             return time => set(curve.GetPoint(time));
         }
 
-        static Action<float> CreateVec2Target(AnimationChannel channel, Action<Vector2> set) {
+        public static Action<float> CreateVec2Target(AnimationChannel channel, Action<Vector2> set) {
             var sampler = channel.GetSamplerOrNull<System.Numerics.Vector2>();
             if (sampler == null) return null;
             var curve = sampler.CreateCurveSampler(true);
             return time => set(new Vector2(curve.GetPoint(time).X, curve.GetPoint(time).Y));
         }
 
-        static Action<float> CreateVec3Target(AnimationChannel channel, Action<Vector3> set) {
+        public static Action<float> CreateVec3Target(AnimationChannel channel, Action<Vector3> set) {
             var sampler = channel.GetSamplerOrNull<System.Numerics.Vector3>();
             if (sampler == null) return null;
             var curve = sampler.CreateCurveSampler(true);
             return time => { var v = curve.GetPoint(time); set(new Vector3(v.X, v.Y, v.Z)); };
         }
 
-        static Action<float> CreateVec4Target(AnimationChannel channel, Action<Vector4> set) {
+        public static Action<float> CreateVec4Target(AnimationChannel channel, Action<Vector4> set) {
             var sampler = channel.GetSamplerOrNull<System.Numerics.Vector4>();
             if (sampler == null) return null;
             var curve = sampler.CreateCurveSampler(true);
             return time => { var v = curve.GetPoint(time); set(new Vector4(v.X, v.Y, v.Z, v.W)); };
         }
 
-        static int EstimateKeyFrameCount(AnimationChannel channel) {
+        public static int EstimateKeyFrameCount(AnimationChannel channel) {
             float duration = (float)channel.LogicalParent.Duration;
             int estimatedFrames = Math.Max(1, (int)(duration * 30f));
             return Math.Min(estimatedFrames, 300);
         }
 
-        static Action<float, Model> CreateNodeVisibilityTarget(AnimationChannel channel,
+        public static Action<float, Model> CreateNodeVisibilityTarget(AnimationChannel channel,
             Dictionary<int, int> nodeToMeshIndex, Dictionary<int, int> nodeToLightIndex) {
             string path = channel.TargetPointerPath;
             // Expected: /nodes/{index}/extensions/KHR_node_visibility/visible
@@ -1377,7 +1377,7 @@ namespace Engine.Media {
 
         #endregion
 
-        static System.Numerics.Vector4[] GenerateTangents(
+        public static System.Numerics.Vector4[] GenerateTangents(
             System.Numerics.Vector3[] positions,
             System.Numerics.Vector3[] normals,
             System.Numerics.Vector2[] uvs,
@@ -1440,32 +1440,32 @@ namespace Engine.Media {
             return tangents;
         }
 
-        static unsafe void WriteFloat(byte[] buffer, int offset, float value) {
+        public static unsafe void WriteFloat(byte[] buffer, int offset, float value) {
             // 使用指针直接写入，避免 BitConverter.GetBytes 的数组分配
             fixed (byte* ptr = &buffer[offset]) {
                 *(float*)ptr = value;
             }
         }
 
-        static void WriteVector2(byte[] buffer, int offset, float x, float y) {
+        public static void WriteVector2(byte[] buffer, int offset, float x, float y) {
             WriteFloat(buffer, offset, x);
             WriteFloat(buffer, offset + 4, y);
         }
 
-        static void WriteVector3(byte[] buffer, int offset, float x, float y, float z) {
+        public static void WriteVector3(byte[] buffer, int offset, float x, float y, float z) {
             WriteFloat(buffer, offset, x);
             WriteFloat(buffer, offset + 4, y);
             WriteFloat(buffer, offset + 8, z);
         }
 
-        static void WriteVector4(byte[] buffer, int offset, float x, float y, float z, float w) {
+        public static void WriteVector4(byte[] buffer, int offset, float x, float y, float z, float w) {
             WriteFloat(buffer, offset, x);
             WriteFloat(buffer, offset + 4, y);
             WriteFloat(buffer, offset + 8, z);
             WriteFloat(buffer, offset + 12, w);
         }
 
-        static void WriteIndex32(byte[] buffer, int elementIndex, uint value) {
+        public static void WriteIndex32(byte[] buffer, int elementIndex, uint value) {
             int offset = elementIndex * 4;
             buffer[offset] = (byte)(value & 0xFF);
             buffer[offset + 1] = (byte)((value >> 8) & 0xFF);
@@ -1473,7 +1473,7 @@ namespace Engine.Media {
             buffer[offset + 3] = (byte)((value >> 24) & 0xFF);
         }
 
-        static BoundingBox CalculateBoundingBoxFromPositions(SharpGLTF.Memory.IAccessorArray<System.Numerics.Vector3> positions, uint[] indices) {
+        public static BoundingBox CalculateBoundingBoxFromPositions(SharpGLTF.Memory.IAccessorArray<System.Numerics.Vector3> positions, uint[] indices) {
             if (positions == null || positions.Count == 0) {
                 return new BoundingBox(Vector3.Zero, Vector3.Zero);
             }
@@ -1508,7 +1508,7 @@ namespace Engine.Media {
             return new BoundingBox(min, max);
         }
 
-        static void CalculateMeshBoundingBox(ModelMeshData meshData, List<ModelMeshPartData> parts) {
+        public static void CalculateMeshBoundingBox(ModelMeshData meshData, List<ModelMeshPartData> parts) {
             if (parts.Count == 0) {
                 meshData.BoundingBox = new BoundingBox(Vector3.Zero, Vector3.Zero);
                 return;

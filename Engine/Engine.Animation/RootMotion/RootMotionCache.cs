@@ -10,16 +10,16 @@ namespace Engine.Animation.RootMotion
     /// </summary>
     public class RootMotionCache
     {
-        private readonly List<(float time, Vector3 position)> _positionSamples = new();
-        private float _animationDuration;
-        private Vector3 _totalTranslation;
-        private Vector3 _peakVelocity;
-        private int _lastSampleIndex = 0;
+        public readonly List<(float time, Vector3 position)> m_positionSamples = new();
+        public float m_animationDuration;
+        public Vector3 m_totalTranslation;
+        public Vector3 m_peakVelocity;
+        public int m_lastSampleIndex = 0;
 
         /// <summary>
         /// 是否有位移数据
         /// </summary>
-        public bool HasTranslationData => _positionSamples.Count > 1;
+        public bool HasTranslationData => m_positionSamples.Count > 1;
 
         /// <summary>
         /// 自动检测根骨骼名称
@@ -50,7 +50,7 @@ namespace Engine.Animation.RootMotion
             return null;
         }
 
-        private static bool HasTranslationAnimation(Model model, string boneName)
+        public static bool HasTranslationAnimation(Model model, string boneName)
         {
             // 检查模型的所有动画是否有该骨骼的位移通道
             foreach (var anim in model.Animations)
@@ -74,11 +74,11 @@ namespace Engine.Animation.RootMotion
         /// <param name="rootBoneName">根骨骼名称</param>
         public void BuildFromAnimation(ModelAnimation animation, string rootBoneName)
         {
-            _positionSamples.Clear();
-            _animationDuration = animation.Duration;
-            _totalTranslation = Vector3.Zero;
-            _peakVelocity = Vector3.Zero;
-            _lastSampleIndex = 0;
+            m_positionSamples.Clear();
+            m_animationDuration = animation.Duration;
+            m_totalTranslation = Vector3.Zero;
+            m_peakVelocity = Vector3.Zero;
+            m_lastSampleIndex = 0;
 
             // 查找根骨骼的位移通道
             ModelAnimation.AnimationChannel translationChannel = null;
@@ -105,30 +105,30 @@ namespace Engine.Animation.RootMotion
 
             for (int i = 0; i < count; i++)
             {
-                _positionSamples.Add((sampler.KeyTimes[i], sampler.Translations[i]));
+                m_positionSamples.Add((sampler.KeyTimes[i], sampler.Translations[i]));
             }
 
-            if (_positionSamples.Count > 0)
+            if (m_positionSamples.Count > 0)
             {
-                _totalTranslation = _positionSamples[^1].position - _positionSamples[0].position;
-                _peakVelocity = CalculatePeakVelocity();
+                m_totalTranslation = m_positionSamples[^1].position - m_positionSamples[0].position;
+                m_peakVelocity = CalculatePeakVelocity();
             }
         }
 
         /// <summary>
         /// 计算动画中的峰值速度
         /// </summary>
-        private Vector3 CalculatePeakVelocity()
+        public Vector3 CalculatePeakVelocity()
         {
-            if (_positionSamples.Count < 2)
+            if (m_positionSamples.Count < 2)
                 return Vector3.Zero;
 
             Vector3 peakVel = Vector3.Zero;
 
-            for (int i = 0; i < _positionSamples.Count - 1; i++)
+            for (int i = 0; i < m_positionSamples.Count - 1; i++)
             {
-                var (t1, p1) = _positionSamples[i];
-                var (t2, p2) = _positionSamples[i + 1];
+                var (t1, p1) = m_positionSamples[i];
+                var (t2, p2) = m_positionSamples[i + 1];
 
                 float dt = t2 - t1;
                 if (dt <= 0) continue;
@@ -151,7 +151,7 @@ namespace Engine.Animation.RootMotion
         /// <returns>速度向量</returns>
         public Vector3 GetVelocity(float prevTime, float currentTime)
         {
-            if (_positionSamples.Count < 2)
+            if (m_positionSamples.Count < 2)
                 return Vector3.Zero;
 
             Vector3 prevPos = SamplePosition(prevTime);
@@ -161,14 +161,14 @@ namespace Engine.Animation.RootMotion
             if (deltaTime <= 0)
             {
                 // 处理循环回绕
-                if (currentTime < prevTime && _animationDuration > 0)
+                if (currentTime < prevTime && m_animationDuration > 0)
                 {
-                    deltaTime = (_animationDuration - prevTime) + currentTime;
+                    deltaTime = (m_animationDuration - prevTime) + currentTime;
                     if (deltaTime <= 0)
                         return Vector3.Zero;
 
-                    Vector3 endPos = _positionSamples[^1].position;
-                    Vector3 startPos = _positionSamples[0].position;
+                    Vector3 endPos = m_positionSamples[^1].position;
+                    Vector3 startPos = m_positionSamples[0].position;
                     Vector3 delta = (endPos - prevPos) + (currentPos - startPos);
                     return delta / deltaTime;
                 }
@@ -181,53 +181,53 @@ namespace Engine.Animation.RootMotion
         /// <summary>
         /// 采样指定时间的位置
         /// </summary>
-        private Vector3 SamplePosition(float time)
+        public Vector3 SamplePosition(float time)
         {
-            if (_positionSamples.Count == 0)
+            if (m_positionSamples.Count == 0)
                 return Vector3.Zero;
-            if (_positionSamples.Count == 1)
-                return _positionSamples[0].position;
+            if (m_positionSamples.Count == 1)
+                return m_positionSamples[0].position;
 
             // 处理循环
-            if (_animationDuration > 0)
+            if (m_animationDuration > 0)
             {
-                time = time % _animationDuration;
+                time = time % m_animationDuration;
                 if (time < 0)
-                    time += _animationDuration;
+                    time += m_animationDuration;
             }
 
             // 从上次位置开始搜索（通常只需要 0-2 次比较）
-            int startIdx = _lastSampleIndex;
-            for (int i = startIdx; i < _positionSamples.Count - 1; i++)
+            int startIdx = m_lastSampleIndex;
+            for (int i = startIdx; i < m_positionSamples.Count - 1; i++)
             {
-                if (_positionSamples[i].time <= time && _positionSamples[i + 1].time >= time)
+                if (m_positionSamples[i].time <= time && m_positionSamples[i + 1].time >= time)
                 {
-                    _lastSampleIndex = i;
-                    var (t1, p1) = _positionSamples[i];
-                    var (t2, p2) = _positionSamples[i + 1];
+                    m_lastSampleIndex = i;
+                    var (t1, p1) = m_positionSamples[i];
+                    var (t2, p2) = m_positionSamples[i + 1];
                     float t = (t2 - t1) > 0 ? (time - t1) / (t2 - t1) : 0;
                     return Vector3.Lerp(p1, p2, t);
                 }
             }
 
             // 回退到二分查找
-            int left = 0, right = _positionSamples.Count - 1;
+            int left = 0, right = m_positionSamples.Count - 1;
             while (left < right - 1)
             {
                 int mid = (left + right) / 2;
-                if (_positionSamples[mid].time <= time)
+                if (m_positionSamples[mid].time <= time)
                     left = mid;
                 else
                     right = mid;
             }
 
-            _lastSampleIndex = left;
+            m_lastSampleIndex = left;
             if (left == right)
-                return _positionSamples[left].position;
+                return m_positionSamples[left].position;
 
             {
-                var (t1, p1) = _positionSamples[left];
-                var (t2, p2) = _positionSamples[right];
+                var (t1, p1) = m_positionSamples[left];
+                var (t2, p2) = m_positionSamples[right];
                 float t = (t2 - t1) > 0 ? (time - t1) / (t2 - t1) : 0;
                 return Vector3.Lerp(p1, p2, t);
             }
@@ -236,18 +236,18 @@ namespace Engine.Animation.RootMotion
         /// <summary>
         /// 获取动画总位移（用于 AddImpulse 模式）
         /// </summary>
-        public Vector3 GetTotalTranslation() => _totalTranslation;
+        public Vector3 GetTotalTranslation() => m_totalTranslation;
 
         /// <summary>
         /// 获取平均速度（用于 AddImpulse 模式 Average 方式）
         /// </summary>
         public Vector3 GetAverageVelocity() =>
-            _animationDuration > 0 ? _totalTranslation / _animationDuration : Vector3.Zero;
+            m_animationDuration > 0 ? m_totalTranslation / m_animationDuration : Vector3.Zero;
 
         /// <summary>
         /// 获取峰值速度（用于 AddImpulse 模式 Peak 方式）
         /// </summary>
-        public Vector3 GetPeakVelocity() => _peakVelocity;
+        public Vector3 GetPeakVelocity() => m_peakVelocity;
     }
 
     /// <summary>
@@ -255,8 +255,8 @@ namespace Engine.Animation.RootMotion
     /// </summary>
     public class RootScaleCache
     {
-        private readonly List<(float time, Vector3 scale)> _scaleSamples = new();
-        private float _animationDuration;
+        public readonly List<(float time, Vector3 scale)> _scaleSamples = new();
+        public float _animationDuration;
 
         /// <summary>
         /// 是否有缩放数据

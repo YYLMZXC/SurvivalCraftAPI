@@ -35,7 +35,7 @@ namespace Engine.Animation
         /// <summary>
         /// 单骨骼 IK：旋转骨骼链让 AimAxis 朝向目标方向
         /// </summary>
-        private void SolveSingleBone(IKChain chain, IKTarget target,
+        public void SolveSingleBone(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions,
             int rootIdx, int endIdx, Vector3 rootPos, Model model)
         {
@@ -91,7 +91,7 @@ namespace Engine.Animation
         /// <summary>
         /// 应用关节限制
         /// </summary>
-        private void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model)
+        public void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model)
         {
             if (chain.JointLimits == null || model == null)
                 return;

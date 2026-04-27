@@ -10,67 +10,67 @@ namespace Engine.Animation
     /// </summary>
     public class AnimationController
     {
-        private readonly Model _model;
-        private readonly AnimationTemplate _template;
-        private readonly AnimationLayer[] _layers;
-        private readonly Dictionary<string, StateTrack> _stateTracks = new();
-        private readonly AnimationParameters _parameters = new();
-        private readonly AnimationBlender _blender = new();
-        private readonly StateRuleEvaluator _ruleEvaluator = new();
-        private readonly AnimationConfigLoader _configLoader = new();
+        public readonly Model m_model;
+        public readonly AnimationTemplate m_template;
+        public readonly AnimationLayer[] m_layers;
+        public readonly Dictionary<string, StateTrack> m_stateTracks = new();
+        public readonly AnimationParameters m_parameters = new();
+        public readonly AnimationBlender m_blender = new();
+        public readonly StateRuleEvaluator m_ruleEvaluator = new();
+        public readonly AnimationConfigLoader m_configLoader = new();
 
         // 共享的表达式求值器
-        private readonly ExpressionEvaluator _expressionEvaluator;
+        public readonly ExpressionEvaluator m_expressionEvaluator;
 
         // 根运动应用器
-        private readonly TranslationApplier _translationApplier = new();
-        private readonly CollisionBoxApplier _collisionBoxApplier = new();
+        public readonly TranslationApplier m_translationApplier = new();
+        public readonly CollisionBoxApplier m_collisionBoxApplier = new();
 
         // 根运动缓存（按动画名称缓存）
-        private readonly Dictionary<string, RootMotionCache> _rootMotionCaches = new();
-        private readonly Dictionary<string, RootScaleCache> _rootScaleCaches = new();
+        public readonly Dictionary<string, RootMotionCache> m_rootMotionCaches = new();
+        public readonly Dictionary<string, RootScaleCache> m_rootScaleCaches = new();
 
         // 当前 Base 层的动画名称和根运动配置
-        private string _currentAnimationName;
-        private RootMotionConfig _currentRootMotionConfig;
-        private float _prevRootMotionTime;
+        public string m_currentAnimationName;
+        public RootMotionConfig m_currentRootMotionConfig;
+        public float m_prevRootMotionTime;
 
         // 状态规则配置（从动画配置文件加载）
-        private Dictionary<string, StateTrackConfig> _stateConfigs;
+        public Dictionary<string, StateTrackConfig> m_stateConfigs;
 
         // 记录每个状态轨道当前匹配的规则索引（用于避免重复切换）
-        private readonly Dictionary<string, int> _lastMatchedRuleIndex = new();
+        public readonly Dictionary<string, int> m_lastMatchedRuleIndex = new();
 
         // 动画引用配置（用于获取 OnComplete 动作）
-        private Dictionary<string, AnimationReference> _animationReferences = new();
+        public Dictionary<string, AnimationReference> m_animationReferences = new();
 
         // 当前层播放的动画别名（用于查找 OnComplete 配置）
-        private readonly Dictionary<string, string> _layerAnimationAlias = new();
+        public readonly Dictionary<string, string> m_layerAnimationAlias = new();
 
         // 记录层的动画播放状态（用于检测完成）
-        private readonly Dictionary<string, bool> _layerWasPlaying = new();
+        public readonly Dictionary<string, bool> m_layerWasPlaying = new();
 
         // 记录层的循环设置（用于判断是否是非循环动画完成）
-        private readonly Dictionary<string, bool> _layerLooping = new();
+        public readonly Dictionary<string, bool> m_layerLooping = new();
 
         // 记录当前应用在每个层上的动画引用（用于获取 OnComplete）
-        private readonly Dictionary<string, AnimationReference> _layerAnimationRef = new();
+        public readonly Dictionary<string, AnimationReference> m_layerAnimationRef = new();
 
         // 记录哪些层被手动控制（跳过状态规则评估）
-        private readonly HashSet<string> _manualOverrideLayers = new();
+        public readonly HashSet<string> m_manualOverrideLayers = new();
 
         // IK 求解器（延迟初始化）
-        private IKSolver _ikSolver;
+        public IKSolver m_ikSolver;
 
-        public Model Model => _model;
-        public AnimationTemplate Template => _template;
-        public AnimationParameters Parameters => _parameters;
-        public AnimationLayer[] Layers => _layers;
+        public Model Model => m_model;
+        public AnimationTemplate Template => m_template;
+        public AnimationParameters Parameters => m_parameters;
+        public AnimationLayer[] Layers => m_layers;
 
         /// <summary>
         /// 共享的表达式求值器（供动画来源使用）
         /// </summary>
-        public ExpressionEvaluator ExpressionEvaluator => _expressionEvaluator;
+        public ExpressionEvaluator ExpressionEvaluator => m_expressionEvaluator;
 
         /// <summary>
         /// IK 求解器（延迟初始化）
@@ -79,11 +79,11 @@ namespace Engine.Animation
         {
             get
             {
-                if (_ikSolver == null)
+                if (m_ikSolver == null)
                 {
-                    _ikSolver = new IKSolver();
+                    m_ikSolver = new IKSolver();
                 }
-                return _ikSolver;
+                return m_ikSolver;
             }
         }
 
@@ -119,8 +119,8 @@ namespace Engine.Animation
         /// </summary>
         public Vector3 DefaultCollisionSize
         {
-            get => _collisionBoxApplier.DefaultSize;
-            set => _collisionBoxApplier.DefaultSize = value;
+            get => m_collisionBoxApplier.DefaultSize;
+            set => m_collisionBoxApplier.DefaultSize = value;
         }
 
         /// <summary>
@@ -135,38 +135,38 @@ namespace Engine.Animation
 
         public AnimationController(Model model, string templateName)
         {
-            _model = model;
-            _template = AnimationTemplateManager.Get(templateName);
+            m_model = model;
+            m_template = AnimationTemplateManager.Get(templateName);
 
-            if (_template == null)
+            if (m_template == null)
             {
                 // 使用简单模板作为后备
-                _template = AnimationTemplateManager.Get("Simple");
+                m_template = AnimationTemplateManager.Get("Simple");
             }
 
             // 初始化共享的表达式求值器
-            _expressionEvaluator = _ruleEvaluator.Evaluator;
+            m_expressionEvaluator = m_ruleEvaluator.Evaluator;
 
             // 初始化层（按 Index 排序，确保混合顺序正确）
-            _layers = new AnimationLayer[_template.Layers.Count];
+            m_layers = new AnimationLayer[m_template.Layers.Count];
             int layerIndex = 0;
-            foreach (var (name, layerDef) in _template.Layers.OrderBy(kvp => kvp.Value.Index))
+            foreach (var (name, layerDef) in m_template.Layers.OrderBy(kvp => kvp.Value.Index))
             {
-                _layers[layerIndex] = new AnimationLayer(
+                m_layers[layerIndex] = new AnimationLayer(
                     name,
                     layerDef.Index,
                     layerDef.BlendMode,
                     layerDef.BoneMask);
 
                 // 订阅层的动画事件（通过层的事件接口，统一处理主播放器和过渡播放器）
-                _layers[layerIndex].OnAnimationEvent += ForwardAnimationEvent;
+                m_layers[layerIndex].OnAnimationEvent += ForwardAnimationEvent;
                 layerIndex++;
             }
 
             // 初始化状态轨道
-            foreach (var (name, trackDef) in _template.StateTracks)
+            foreach (var (name, trackDef) in m_template.StateTracks)
             {
-                _stateTracks[name] = new StateTrack(name, trackDef);
+                m_stateTracks[name] = new StateTrack(name, trackDef);
             }
         }
 
@@ -175,7 +175,7 @@ namespace Engine.Animation
         /// </summary>
         public void SetState(string trackName, object value)
         {
-            if (_stateTracks.TryGetValue(trackName, out var track))
+            if (m_stateTracks.TryGetValue(trackName, out var track))
             {
                 track.SetValue(value);
                 OnStateChanged(trackName, value);
@@ -187,12 +187,12 @@ namespace Engine.Animation
         /// </summary>
         public object GetState(string trackName)
         {
-            if (_stateTracks.TryGetValue(trackName, out var track))
+            if (m_stateTracks.TryGetValue(trackName, out var track))
                 return track.Value;
             return null;
         }
 
-        private void OnStateChanged(string trackName, object value)
+        public void OnStateChanged(string trackName, object value)
         {
             // 根据状态切换动画
             switch (trackName)
@@ -206,27 +206,27 @@ namespace Engine.Animation
             }
         }
 
-        private void PlayGaitAnimation(string gait)
+        public void PlayGaitAnimation(string gait)
         {
             if (string.IsNullOrEmpty(gait)) return;
 
-            var baseLayer = _layers.FirstOrDefault(l => l.Name == "Base");
+            var baseLayer = m_layers.FirstOrDefault(l => l.Name == "Base");
             if (baseLayer == null) return;
 
             // 查找对应动画
-            var animation = _model.Animations.FirstOrDefault(a =>
+            var animation = m_model.Animations.FirstOrDefault(a =>
                 a.Name.Equals(gait, StringComparison.OrdinalIgnoreCase) ||
                 a.Name.Contains(gait, StringComparison.OrdinalIgnoreCase));
 
             if (animation != null)
             {
-                baseLayer.PlayAnimation(_model, animation);
+                baseLayer.PlayAnimation(m_model, animation);
             }
         }
 
-        private void PlayActivityAnimation(string activity)
+        public void PlayActivityAnimation(string activity)
         {
-            var upperBodyLayer = _layers.FirstOrDefault(l => l.Name == "UpperBody");
+            var upperBodyLayer = m_layers.FirstOrDefault(l => l.Name == "UpperBody");
             if (upperBodyLayer == null) return;
 
             if (string.IsNullOrEmpty(activity) || activity == "None")
@@ -236,13 +236,13 @@ namespace Engine.Animation
                 return;
             }
 
-            var animation = _model.Animations.FirstOrDefault(a =>
+            var animation = m_model.Animations.FirstOrDefault(a =>
                 a.Name.Equals(activity, StringComparison.OrdinalIgnoreCase) ||
                 a.Name.Contains(activity, StringComparison.OrdinalIgnoreCase));
 
             if (animation != null)
             {
-                upperBodyLayer.PlayAnimation(_model, animation);
+                upperBodyLayer.PlayAnimation(m_model, animation);
             }
         }
 
@@ -255,19 +255,19 @@ namespace Engine.Animation
             SyncEngineParameters();
 
             // 2. 评估状态规则（仅当参数有变化时）
-            if (_parameters.IsDirty)
+            if (m_parameters.IsDirty)
             {
                 EvaluateStateRules();
-                _parameters.ClearDirty();
+                m_parameters.ClearDirty();
             }
 
             // 3. 更新动态属性（速度、循环状态等）
             UpdateDynamicProperties();
 
             // 4. 更新所有层
-            foreach (var layer in _layers)
+            foreach (var layer in m_layers)
             {
-                layer.Update(deltaTime, _parameters);
+                layer.Update(deltaTime, m_parameters);
             }
 
             // 5. 应用根运动（仅 Base 层）
@@ -280,14 +280,14 @@ namespace Engine.Animation
         /// <summary>
         /// 应用根运动到物理体
         /// </summary>
-        private void ApplyRootMotion(float deltaTime)
+        public void ApplyRootMotion(float deltaTime)
         {
             // 检查是否有根运动配置
-            if (_currentRootMotionConfig == null)
+            if (m_currentRootMotionConfig == null)
                 return;
 
             // 只处理 Base 层（index 0）
-            var baseLayer = _layers.FirstOrDefault(l => l.Index == 0);
+            var baseLayer = m_layers.FirstOrDefault(l => l.Index == 0);
             if (baseLayer == null) return;
 
             var player = baseLayer.AnimationPlayer;
@@ -298,31 +298,31 @@ namespace Engine.Animation
 
             // 检查是否需要更新缓存
             string animName = animation.Name;
-            if (animName != _currentAnimationName)
+            if (animName != m_currentAnimationName)
             {
-                _currentAnimationName = animName;
-                _prevRootMotionTime = player.Time;
+                m_currentAnimationName = animName;
+                m_prevRootMotionTime = player.Time;
 
                 // 构建缓存
-                if (!_rootMotionCaches.TryGetValue(animName, out var motionCache))
+                if (!m_rootMotionCaches.TryGetValue(animName, out var motionCache))
                 {
                     motionCache = new RootMotionCache();
                     motionCache.BuildFromAnimation(animation, RootBoneName);
-                    _rootMotionCaches[animName] = motionCache;
+                    m_rootMotionCaches[animName] = motionCache;
                 }
 
-                if (!_rootScaleCaches.TryGetValue(animName, out var scaleCache))
+                if (!m_rootScaleCaches.TryGetValue(animName, out var scaleCache))
                 {
                     scaleCache = new RootScaleCache();
                     scaleCache.BuildFromAnimation(animation, RootBoneName);
-                    _rootScaleCaches[animName] = scaleCache;
+                    m_rootScaleCaches[animName] = scaleCache;
                 }
             }
 
             // 获取缓存
-            if (!_rootMotionCaches.TryGetValue(animName, out var rootMotionCache))
+            if (!m_rootMotionCaches.TryGetValue(animName, out var rootMotionCache))
                 return;
-            if (!_rootScaleCaches.TryGetValue(animName, out var rootScaleCache))
+            if (!m_rootScaleCaches.TryGetValue(animName, out var rootScaleCache))
                 rootScaleCache = null;
 
             float currentTime = player.Time;
@@ -334,7 +334,7 @@ namespace Engine.Animation
                 return;
             }
 
-            var rootMotionConfig = _currentRootMotionConfig;
+            var rootMotionConfig = m_currentRootMotionConfig;
             Vector3 velocity = Vector3.Zero;
             Vector3? impulse = null;
 
@@ -343,7 +343,7 @@ namespace Engine.Animation
             {
                 if (translationConfig.Mode == TranslationMode.AddImpulse)
                 {
-                    bool loopPoint = DetectRootMotionLoopPoint(_prevRootMotionTime, currentTime, duration, player.Loop);
+                    bool loopPoint = DetectRootMotionLoopPoint(m_prevRootMotionTime, currentTime, duration, player.Loop);
                     if (loopPoint)
                     {
                         impulse = CalculateRootMotionImpulse(translationConfig, rootMotionCache);
@@ -351,7 +351,7 @@ namespace Engine.Animation
                 }
                 else
                 {
-                    velocity = rootMotionCache.GetVelocity(_prevRootMotionTime, currentTime);
+                    velocity = rootMotionCache.GetVelocity(m_prevRootMotionTime, currentTime);
                 }
             }
 
@@ -364,14 +364,14 @@ namespace Engine.Animation
                 scale = rootScaleCache.SampleScale(normalizedTime);
             }
 
-            _prevRootMotionTime = currentTime;
+            m_prevRootMotionTime = currentTime;
 
             // 应用位移
             if (translationConfig.Mode != TranslationMode.None && Velocity.HasValue)
             {
                 var vel = Velocity.Value;
                 var rotation = EntityRotation ?? Quaternion.Identity;
-                _translationApplier.ApplyTranslation(
+                m_translationApplier.ApplyTranslation(
                     translationConfig,
                     velocity,
                     impulse,
@@ -384,7 +384,7 @@ namespace Engine.Animation
             // 应用缩放
             if (rootMotionConfig.Scale.Mode != ScaleMode.None && SetCollisionBox != null)
             {
-                _collisionBoxApplier.ApplyScale(
+                m_collisionBoxApplier.ApplyScale(
                     rootMotionConfig.Scale,
                     scale,
                     SetCollisionBox,
@@ -395,7 +395,7 @@ namespace Engine.Animation
         /// <summary>
         /// 检测根运动循环点
         /// </summary>
-        private bool DetectRootMotionLoopPoint(float prevTime, float currentTime, float duration, bool isLooping)
+        public bool DetectRootMotionLoopPoint(float prevTime, float currentTime, float duration, bool isLooping)
         {
             // 循环回绕
             if (isLooping && currentTime < prevTime && prevTime > duration * 0.5f)
@@ -415,7 +415,7 @@ namespace Engine.Animation
         /// <summary>
         /// 计算根运动冲量
         /// </summary>
-        private Vector3 CalculateRootMotionImpulse(TranslationConfig config, RootMotionCache cache)
+        public Vector3 CalculateRootMotionImpulse(TranslationConfig config, RootMotionCache cache)
         {
             // 优先使用配置覆盖值
             if (config.ImpulseOverride.HasValue)
@@ -436,21 +436,21 @@ namespace Engine.Animation
         /// </summary>
         public void SetRootMotionConfig(RootMotionConfig config)
         {
-            _currentRootMotionConfig = config;
-            _currentAnimationName = null;  // 重置动画名称，触发缓存更新
+            m_currentRootMotionConfig = config;
+            m_currentAnimationName = null;  // 重置动画名称，触发缓存更新
         }
 
         /// <summary>
         /// 更新动态属性（每帧评估表达式）
         /// </summary>
-        private void UpdateDynamicProperties()
+        public void UpdateDynamicProperties()
         {
-            foreach (var layer in _layers)
+            foreach (var layer in m_layers)
             {
                 string layerName = layer.Name;
 
                 // 检查是否有该层的动画引用
-                if (!_layerAnimationRef.TryGetValue(layerName, out var animRef) || animRef == null)
+                if (!m_layerAnimationRef.TryGetValue(layerName, out var animRef) || animRef == null)
                     continue;
 
                 var player = layer.AnimationPlayer;
@@ -460,7 +460,7 @@ namespace Engine.Animation
                 var speedProp = animRef.GetSpeedProperty();
                 if (speedProp.IsExpression)
                 {
-                    float speed = speedProp.GetValue(_parameters, _expressionEvaluator);
+                    float speed = speedProp.GetValue(m_parameters, m_expressionEvaluator);
                     player.Speed = speed;
                 }
 
@@ -468,9 +468,9 @@ namespace Engine.Animation
                 var loopProp = animRef.GetLoopProperty();
                 if (loopProp.IsExpression)
                 {
-                    bool loop = loopProp.GetValue(_parameters, _expressionEvaluator);
+                    bool loop = loopProp.GetValue(m_parameters, m_expressionEvaluator);
                     player.Loop = loop;
-                    _layerLooping[layerName] = loop;
+                    m_layerLooping[layerName] = loop;
                 }
             }
         }
@@ -478,37 +478,37 @@ namespace Engine.Animation
         /// <summary>
         /// 检查动画完成事件
         /// </summary>
-        private void CheckAnimationCompletion()
+        public void CheckAnimationCompletion()
         {
-            foreach (var layer in _layers)
+            foreach (var layer in m_layers)
             {
                 string layerName = layer.Name;
                 var player = layer.AnimationPlayer;
 
                 // 获取当前播放状态
                 bool isPlaying = player?.IsPlaying ?? false;
-                bool wasPlaying = _layerWasPlaying.GetValueOrDefault(layerName, false);
-                bool isLooping = _layerLooping.GetValueOrDefault(layerName, true);
+                bool wasPlaying = m_layerWasPlaying.GetValueOrDefault(layerName, false);
+                bool isLooping = m_layerLooping.GetValueOrDefault(layerName, true);
 
                 // 检测非循环动画完成：之前在播放，现在停止了，且不是循环动画
                 if (wasPlaying && !isPlaying && !isLooping)
                 {
                     // 动画完成，执行 OnComplete 动作
-                    if (_layerAnimationRef.TryGetValue(layerName, out var animRef) && animRef?.OnComplete != null)
+                    if (m_layerAnimationRef.TryGetValue(layerName, out var animRef) && animRef?.OnComplete != null)
                     {
                         ExecuteOnCompleteAction(animRef.OnComplete);
                     }
                 }
 
                 // 更新播放状态记录
-                _layerWasPlaying[layerName] = isPlaying;
+                m_layerWasPlaying[layerName] = isPlaying;
             }
         }
 
         /// <summary>
         /// 执行动画完成动作
         /// </summary>
-        private void ExecuteOnCompleteAction(OnCompleteAction action)
+        public void ExecuteOnCompleteAction(OnCompleteAction action)
         {
             if (action == null) return;
 
@@ -538,7 +538,7 @@ namespace Engine.Animation
         /// </summary>
         public void SetAnimationReferences(Dictionary<string, AnimationReference> references)
         {
-            _animationReferences = references ?? new();
+            m_animationReferences = references ?? new();
         }
 
         /// <summary>
@@ -546,32 +546,32 @@ namespace Engine.Animation
         /// </summary>
         public void SetStateConfigs(Dictionary<string, StateTrackConfig> configs)
         {
-            _stateConfigs = configs;
+            m_stateConfigs = configs;
         }
 
         /// <summary>
         /// 评估状态规则，根据条件自动切换动画
         /// </summary>
-        private void EvaluateStateRules()
+        public void EvaluateStateRules()
         {
-            if (_stateConfigs == null)
+            if (m_stateConfigs == null)
             {
                 return;
             }
 
             // 如果所有层都被手动控制，跳过评估
-            if (_manualOverrideLayers.Count > 0 && _manualOverrideLayers.Count >= _layers.Length)
+            if (m_manualOverrideLayers.Count > 0 && m_manualOverrideLayers.Count >= m_layers.Length)
             {
                 return;
             }
 
-            foreach (var (trackName, trackConfig) in _stateConfigs)
+            foreach (var (trackName, trackConfig) in m_stateConfigs)
             {
                 if (string.IsNullOrEmpty(trackConfig.Layer)) continue;
-                if (!_layers.Any(l => l.Name == trackConfig.Layer)) continue;
+                if (!m_layers.Any(l => l.Name == trackConfig.Layer)) continue;
 
                 // 跳过被手动控制的层
-                if (_manualOverrideLayers.Contains(trackConfig.Layer)) continue;
+                if (m_manualOverrideLayers.Contains(trackConfig.Layer)) continue;
                 if (trackConfig.Rules == null || trackConfig.Rules.Count == 0) continue;
 
                 // 找到匹配的规则
@@ -581,7 +581,7 @@ namespace Engine.Animation
                 for (int i = 0; i < trackConfig.Rules.Count; i++)
                 {
                     var rule = trackConfig.Rules[i];
-                    bool result = _ruleEvaluator.EvaluateCondition(rule.Condition, _parameters);
+                    bool result = m_ruleEvaluator.EvaluateCondition(rule.Condition, m_parameters);
 
                     if (result)
                     {
@@ -595,13 +595,13 @@ namespace Engine.Animation
                 if (matchedRule == null) continue;
 
                 // 检查是否与上次匹配相同
-                if (_lastMatchedRuleIndex.TryGetValue(trackName, out var lastIndex) && lastIndex == matchedIndex)
+                if (m_lastMatchedRuleIndex.TryGetValue(trackName, out var lastIndex) && lastIndex == matchedIndex)
                 {
                     continue; // 规则未变化，跳过
                 }
 
                 // 更新匹配记录
-                _lastMatchedRuleIndex[trackName] = matchedIndex;
+                m_lastMatchedRuleIndex[trackName] = matchedIndex;
 
                 // 切换动画
                 if (matchedRule.Animation != null)
@@ -611,7 +611,7 @@ namespace Engine.Animation
                 else
                 {
                     // animation: null 表示该层不激活，让下层输出可见
-                    var layer = _layers.FirstOrDefault(l => l.Name == trackConfig.Layer);
+                    var layer = m_layers.FirstOrDefault(l => l.Name == trackConfig.Layer);
                     if (layer != null)
                     {
                         // 检查层是否正在播放动画，如果是则使用过渡停用
@@ -634,16 +634,16 @@ namespace Engine.Animation
         /// 应用动画配置到指定层
         /// </summary>
         /// <returns>是否成功应用动画</returns>
-        private bool ApplyAnimationToLayer(string layerName, AnimationReference animRef)
+        public bool ApplyAnimationToLayer(string layerName, AnimationReference animRef)
         {
-            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            var layer = m_layers.FirstOrDefault(l => l.Name == layerName);
             if (layer == null) return false;
 
             string source = animRef?.Source;
             if (string.IsNullOrEmpty(source)) return false;
 
             // 检查 source 是否是动画别名（在 animations 部分定义）
-            if (_animationReferences.TryGetValue(source, out var aliasRef))
+            if (m_animationReferences.TryGetValue(source, out var aliasRef))
             {
                 // 使用别名解析后的配置（别名配置优先，因为状态规则通常只指定 source）
                 // 保留动态属性值
@@ -684,7 +684,7 @@ namespace Engine.Animation
                     {
                         foreach (var kvp in animRef.DriverArgs)
                         {
-                            _parameters.SetParameter(kvp.Key, kvp.Value);
+                            m_parameters.SetParameter(kvp.Key, kvp.Value);
                         }
                     }
                 }
@@ -707,12 +707,12 @@ namespace Engine.Animation
                 // 驱动器相关参数通过 Parameters 传递
                 if (speed != 1f)
                 {
-                    _parameters.SetParameter("Speed", speed);
+                    m_parameters.SetParameter("Speed", speed);
                 }
 
                 // 驱动器没有完成概念，清除跟踪
-                _layerAnimationRef.Remove(layerName);
-                _layerLooping.Remove(layerName);
+                m_layerAnimationRef.Remove(layerName);
+                m_layerLooping.Remove(layerName);
 
                 return true;
             }
@@ -737,14 +737,14 @@ namespace Engine.Animation
                     if (blendDuration > 0f)
                     {
                         layer.PlayAnimationWithTransition(
-                            _model,
+                            m_model,
                             animation,
                             loop,
                             blendDuration);
                     }
                     else
                     {
-                        layer.PlayAnimation(_model, animation, loop);
+                        layer.PlayAnimation(m_model, animation, loop);
                     }
 
                     // 设置播放速度
@@ -763,9 +763,9 @@ namespace Engine.Animation
                     ApplyAnimationEvents(layer.AnimationPlayer, animation, animRef.Events);
 
                     // 记录动画引用和循环设置（用于 OnComplete）
-                    _layerAnimationRef[layerName] = animRef;
-                    _layerLooping[layerName] = loop;
-                    _layerWasPlaying[layerName] = true;
+                    m_layerAnimationRef[layerName] = animRef;
+                    m_layerLooping[layerName] = loop;
+                    m_layerWasPlaying[layerName] = true;
 
                     return true;
                 }
@@ -776,7 +776,7 @@ namespace Engine.Animation
             // 处理动画名（模型内置动画）
             else
             {
-                var animation = _model.Animations.FirstOrDefault(a =>
+                var animation = m_model.Animations.FirstOrDefault(a =>
                     a.Name.Equals(source, StringComparison.OrdinalIgnoreCase) ||
                     a.Name.Contains(source, StringComparison.OrdinalIgnoreCase));
 
@@ -787,7 +787,7 @@ namespace Engine.Animation
                 {
                     // 使用过渡播放
                     layer.PlayAnimationWithTransition(
-                        _model,
+                        m_model,
                         animation,
                         loop,
                         blendDuration);
@@ -795,7 +795,7 @@ namespace Engine.Animation
                 else
                 {
                     // 立即播放
-                    layer.PlayAnimation(_model, animation, loop);
+                    layer.PlayAnimation(m_model, animation, loop);
                 }
 
                 // 设置播放速度
@@ -814,9 +814,9 @@ namespace Engine.Animation
                 ApplyAnimationEvents(layer.AnimationPlayer, animation, animRef.Events);
 
                 // 记录动画引用和循环设置（用于 OnComplete）
-                _layerAnimationRef[layerName] = animRef;
-                _layerLooping[layerName] = loop;
-                _layerWasPlaying[layerName] = true;
+                m_layerAnimationRef[layerName] = animRef;
+                m_layerLooping[layerName] = loop;
+                m_layerWasPlaying[layerName] = true;
 
                 return true;
             }
@@ -828,7 +828,7 @@ namespace Engine.Animation
         /// <param name="player">动画播放器</param>
         /// <param name="animation">动画（未使用，保留参数兼容性）</param>
         /// <param name="events">事件配置列表（时间使用归一化时间 0-1）</param>
-        private void ApplyAnimationEvents(AnimationPlayer player, ModelAnimation animation, List<AnimationEventConfig> events)
+        public void ApplyAnimationEvents(AnimationPlayer player, ModelAnimation animation, List<AnimationEventConfig> events)
         {
             // 清除旧事件
             player.ClearEvents();
@@ -846,13 +846,13 @@ namespace Engine.Animation
         /// <summary>
         /// 根据配置创建驱动器
         /// </summary>
-        private IAnimationDriver CreateDriverFromConfig(string driverType, Dictionary<string, object> args)
+        public IAnimationDriver CreateDriverFromConfig(string driverType, Dictionary<string, object> args)
         {
-            var driver = _configLoader.CreateDriver(driverType);
+            var driver = m_configLoader.CreateDriver(driverType);
 
             if (driver != null && args != null)
             {
-                _configLoader.ApplyDriverProperties(driver, args);
+                m_configLoader.ApplyDriverProperties(driver, args);
             }
 
             return driver;
@@ -862,7 +862,7 @@ namespace Engine.Animation
         /// 检查驱动器类型是否匹配
         /// 支持多种匹配方式：完整名称、简短名称、带/不带 Driver 后缀
         /// </summary>
-        private static bool IsDriverTypeMatch(IAnimationDriver driver, string requestedType)
+        public static bool IsDriverTypeMatch(IAnimationDriver driver, string requestedType)
         {
             if (driver == null || string.IsNullOrEmpty(requestedType))
                 return false;
@@ -893,7 +893,7 @@ namespace Engine.Animation
         /// 加载外部动画文件
         /// 支持格式：file:path/to/animation.glb 或 file:path/animation.glb#AnimationName
         /// </summary>
-        private ModelAnimation LoadExternalAnimation(string source)
+        public ModelAnimation LoadExternalAnimation(string source)
         {
             // 移除 file: 前缀
             string pathAndName = source.Substring(5);
@@ -933,7 +933,7 @@ namespace Engine.Animation
         /// <summary>
         /// 加载动画文件
         /// </summary>
-        private LoadedAnimationData LoadAnimationFile(string path)
+        public LoadedAnimationData LoadAnimationFile(string path)
         {
             try
             {
@@ -964,30 +964,30 @@ namespace Engine.Animation
         public void ComputeBoneTransforms(Matrix?[] boneTransforms)
         {
             // 1. 层混合
-            _blender.BlendLayers(_layers, boneTransforms, _model);
+            m_blender.BlendLayers(m_layers, boneTransforms, m_model);
 
             // 2. KHR_animation_pointer 采样（材质/纹理属性动画）
-            for (int i = 0; i < _layers.Length; i++)
+            for (int i = 0; i < m_layers.Length; i++)
             {
-                if (_layers[i].IsActive)
-                    _layers[i].AnimationPlayer?.SamplePointerTargets(_model);
+                if (m_layers[i].IsActive)
+                    m_layers[i].AnimationPlayer?.SamplePointerTargets(m_model);
             }
 
             // 3. Morph target 权重采样
-            for (int i = 0; i < _layers.Length; i++)
+            for (int i = 0; i < m_layers.Length; i++)
             {
-                if (_layers[i].IsActive)
-                    _layers[i].AnimationPlayer?.SampleMorphWeights(_model);
+                if (m_layers[i].IsActive)
+                    m_layers[i].AnimationPlayer?.SampleMorphWeights(m_model);
             }
 
             // 4. IK 后处理（在层混合后应用）
-            _ikSolver?.Solve(boneTransforms, _model);
+            m_ikSolver?.Solve(boneTransforms, m_model);
         }
 
         /// <summary>
         /// 转发动画事件
         /// </summary>
-        private void ForwardAnimationEvent(AnimationEvent animationEvent)
+        public void ForwardAnimationEvent(AnimationEvent animationEvent)
         {
             OnAnimationEvent?.Invoke(animationEvent);
         }
@@ -1001,7 +1001,7 @@ namespace Engine.Animation
         /// <param name="parameter">可选参数</param>
         public void AddAnimationEvent(string layerName, string eventName, float time, object parameter = null)
         {
-            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            var layer = m_layers.FirstOrDefault(l => l.Name == layerName);
             if (layer != null)
             {
                 layer.AnimationPlayer.AddEvent(eventName, time, parameter);
@@ -1013,7 +1013,7 @@ namespace Engine.Animation
         /// </summary>
         public void ClearAnimationEvents()
         {
-            foreach (var layer in _layers)
+            foreach (var layer in m_layers)
             {
                 layer.AnimationPlayer.ClearEvents();
             }
@@ -1026,7 +1026,7 @@ namespace Engine.Animation
         /// <param name="driver">驱动器实例</param>
         public void SetDriver(string layerName, IAnimationDriver driver)
         {
-            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            var layer = m_layers.FirstOrDefault(l => l.Name == layerName);
             if (layer != null)
             {
                 layer.SetDriver(driver);
@@ -1054,12 +1054,12 @@ namespace Engine.Animation
         public bool PlayAnimation(string layerName, string animationNameOrAlias,
             bool loop = true, float blendDuration = 0.3f)
         {
-            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            var layer = m_layers.FirstOrDefault(l => l.Name == layerName);
             if (layer == null) return false;
 
             // 1. 检查是否是别名
             AnimationReference animRef = null;
-            if (_animationReferences.TryGetValue(animationNameOrAlias, out var aliasRef))
+            if (m_animationReferences.TryGetValue(animationNameOrAlias, out var aliasRef))
             {
                 // 使用别名配置，但覆盖循环和过渡时长（如果显式指定）
                 animRef = new AnimationReference
@@ -1088,7 +1088,7 @@ namespace Engine.Animation
             }
 
             // 3. 标记该层为手动控制
-            _manualOverrideLayers.Add(layerName);
+            m_manualOverrideLayers.Add(layerName);
 
             // 4. 设置保持姿态模式（非循环动画结束后保持当前姿态）
             layer.SetHoldPose(true);
@@ -1099,7 +1099,7 @@ namespace Engine.Animation
             {
                 // 应用失败时回滚状态
                 layer.SetHoldPose(false);
-                _manualOverrideLayers.Remove(layerName);
+                m_manualOverrideLayers.Remove(layerName);
             }
             return success;
         }
@@ -1135,7 +1135,7 @@ namespace Engine.Animation
             };
 
             // 标记该层为手动控制
-            _manualOverrideLayers.Add(layerName);
+            m_manualOverrideLayers.Add(layerName);
 
             // 应用并返回结果
             return ApplyAnimationToLayer(layerName, animRef);
@@ -1151,7 +1151,7 @@ namespace Engine.Animation
         /// <param name="layerName">层名称</param>
         public void StopAnimation(string layerName)
         {
-            var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+            var layer = m_layers.FirstOrDefault(l => l.Name == layerName);
             layer?.StopAnimation();
         }
 
@@ -1171,31 +1171,31 @@ namespace Engine.Animation
             if (string.IsNullOrEmpty(layerName))
             {
                 // 清除所有层的保持姿态状态
-                foreach (var layer in _layers)
+                foreach (var layer in m_layers)
                 {
                     layer?.SetHoldPose(false);
                 }
-                _manualOverrideLayers.Clear();
+                m_manualOverrideLayers.Clear();
                 // 清除所有规则匹配缓存，强制重新评估
-                _lastMatchedRuleIndex.Clear();
+                m_lastMatchedRuleIndex.Clear();
             }
             else
             {
                 // 清除指定层的保持姿态状态
-                var layer = _layers.FirstOrDefault(l => l.Name == layerName);
+                var layer = m_layers.FirstOrDefault(l => l.Name == layerName);
                 layer?.SetHoldPose(false);
 
-                _manualOverrideLayers.Remove(layerName);
+                m_manualOverrideLayers.Remove(layerName);
 
                 // 清除该层相关状态轨道的规则匹配缓存
                 // 通过遍历状态配置找到该层对应的轨道
-                if (_stateConfigs != null)
+                if (m_stateConfigs != null)
                 {
-                    foreach (var (trackName, trackConfig) in _stateConfigs)
+                    foreach (var (trackName, trackConfig) in m_stateConfigs)
                     {
                         if (trackConfig.Layer == layerName)
                         {
-                            _lastMatchedRuleIndex.Remove(trackName);
+                            m_lastMatchedRuleIndex.Remove(trackName);
                         }
                     }
                 }
@@ -1203,7 +1203,7 @@ namespace Engine.Animation
 
             // 设置参数脏标记，确保下一帧会重新评估状态规则
             // 这对于插播动画完成后立即切换到其他状态（如 Sit）很重要
-            _parameters.SetDirty();
+            m_parameters.SetDirty();
         }
 
         /// <summary>
@@ -1213,7 +1213,7 @@ namespace Engine.Animation
         /// <returns>是否被手动控制</returns>
         public bool IsManualControl(string layerName)
         {
-            return _manualOverrideLayers.Contains(layerName);
+            return m_manualOverrideLayers.Contains(layerName);
         }
 
         /// <summary>
@@ -1222,7 +1222,7 @@ namespace Engine.Animation
         /// <returns>别名列表</returns>
         public IEnumerable<string> GetAnimationAliases()
         {
-            return _animationReferences.Keys;
+            return m_animationReferences.Keys;
         }
 
         /// <summary>
@@ -1232,7 +1232,7 @@ namespace Engine.Animation
         /// <returns>是否存在</returns>
         public bool HasAnimationAlias(string alias)
         {
-            return _animationReferences.ContainsKey(alias);
+            return m_animationReferences.ContainsKey(alias);
         }
 
         #endregion
@@ -1309,7 +1309,7 @@ namespace Engine.Animation
             string algorithmName = null, int maxChainLength = 3)
         {
             IKSolver.RegisterChainByName(name, endBoneName, algorithmName, maxChainLength);
-            return IKSolver.BuildChainImmediate(name, _model);
+            return IKSolver.BuildChainImmediate(name, m_model);
         }
 
         /// <summary>
@@ -1327,7 +1327,7 @@ namespace Engine.Animation
         /// </summary>
         public void Dispose()
         {
-            foreach (var layer in _layers)
+            foreach (var layer in m_layers)
             {
                 if (layer != null)
                 {

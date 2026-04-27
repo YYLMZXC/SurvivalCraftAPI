@@ -17,7 +17,7 @@ namespace Engine.Animation
         /// 驱动器类型注册表（名称 -> 类型）
         /// 使用 ConcurrentDictionary 确保多线程环境下的安全性
         /// </summary>
-        private static readonly ConcurrentDictionary<string, Type> s_drivers = new(StringComparer.OrdinalIgnoreCase);
+        public static readonly ConcurrentDictionary<string, Type> s_drivers = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// 已注册的驱动器数量

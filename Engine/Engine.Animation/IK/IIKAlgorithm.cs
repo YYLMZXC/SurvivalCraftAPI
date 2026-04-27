@@ -28,7 +28,7 @@ namespace Engine.Animation
         /// <param name="worldPositions">骨骼世界位置数组</param>
         /// <param name="model">模型对象</param>
         /// <param name="config">算法配置参数</param>
-        void Solve(IKChain chain, IKTarget target,
+        public void Solve(IKChain chain, IKTarget target,
             Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
             IKAlgorithmConfig config = null);
     }

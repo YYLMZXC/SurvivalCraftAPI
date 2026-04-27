@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "FishSwim";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Body", "Tail1", "Tail2" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Body", "Tail1", "Tail2" };
 
         // 参数名称
         public string PhaseParam { get; set; } = "MovementPhase";

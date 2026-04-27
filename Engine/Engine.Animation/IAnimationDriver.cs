@@ -13,30 +13,30 @@ namespace Engine.Animation
         /// <summary>
         /// 驱动器名称
         /// </summary>
-        string Name { get; }
+        public string Name { get; }
 
         /// <summary>
         /// 混合模式
         /// </summary>
-        AnimationBlendMode BlendMode { get; }
+        public AnimationBlendMode BlendMode { get; }
 
         /// <summary>
         /// 目标骨骼列表
         /// </summary>
-        string[] TargetBones { get; }
+        public string[] TargetBones { get; }
 
         /// <summary>
         /// 采样驱动器产生的骨骼变换
         /// </summary>
         /// <param name="boneTransforms">骨骼变换数组，驱动器需要填充对应骨骼的变换</param>
         /// <param name="model">模型对象，用于查找骨骼索引</param>
-        void SampleTransforms(Matrix?[] boneTransforms, Model model);
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model);
 
         /// <summary>
         /// 更新驱动器状态
         /// </summary>
         /// <param name="deltaTime">帧时间</param>
         /// <param name="parameters">动画参数</param>
-        void Update(float deltaTime, AnimationParameters parameters);
+        public void Update(float deltaTime, AnimationParameters parameters);
     }
 }

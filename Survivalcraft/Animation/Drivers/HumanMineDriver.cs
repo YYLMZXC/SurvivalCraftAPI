@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "HumanMine";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Additive;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Hand2" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Hand2" };
 
         // 参数名称
         public string PokingPhaseParam { get; set; } = "PokingPhase";

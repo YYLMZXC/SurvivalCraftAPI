@@ -9,16 +9,16 @@ namespace Engine.Animation
     /// </summary>
     public static class AnimationSourcePool
     {
-        private static readonly Stack<ClipAnimationSource> _clipPool = new();
-        private static readonly object _lock = new();
-        private static int _maxPoolSize = 64;
+        public static readonly Stack<ClipAnimationSource> m_clipPool = new();
+        public static readonly object m_lock = new();
+        public static int m_maxPoolSize = 64;
 
         /// <summary>
         /// 设置池最大大小
         /// </summary>
         public static void SetMaxPoolSize(int size)
         {
-            _maxPoolSize = Math.Max(0, size);
+            m_maxPoolSize = Math.Max(0, size);
         }
 
         /// <summary>
@@ -26,11 +26,11 @@ namespace Engine.Animation
         /// </summary>
         public static ClipAnimationSource RentClip(Model model, ModelAnimation animation, AnimationSourceConfig config = null)
         {
-            lock (_lock)
+            lock (m_lock)
             {
-                if (_clipPool.Count > 0)
+                if (m_clipPool.Count > 0)
                 {
-                    var source = _clipPool.Pop();
+                    var source = m_clipPool.Pop();
                     // 重新初始化
                     source = new ClipAnimationSource(model, animation, config);
                     return source;
@@ -47,14 +47,14 @@ namespace Engine.Animation
         {
             if (source == null) return;
 
-            lock (_lock)
+            lock (m_lock)
             {
-                if (_clipPool.Count >= _maxPoolSize) return;
+                if (m_clipPool.Count >= m_maxPoolSize) return;
 
                 if (source is ClipAnimationSource clipSource)
                 {
                     clipSource.Reset();
-                    _clipPool.Push(clipSource);
+                    m_clipPool.Push(clipSource);
                 }
                 // DriverAnimationSource 通常绑定到层，不需要池化
             }
@@ -65,9 +65,9 @@ namespace Engine.Animation
         /// </summary>
         public static void Clear()
         {
-            lock (_lock)
+            lock (m_lock)
             {
-                _clipPool.Clear();
+                m_clipPool.Clear();
             }
         }
 
@@ -78,9 +78,9 @@ namespace Engine.Animation
         {
             get
             {
-                lock (_lock)
+                lock (m_lock)
                 {
-                    return _clipPool.Count;
+                    return m_clipPool.Count;
                 }
             }
         }
@@ -91,8 +91,8 @@ namespace Engine.Animation
     /// </summary>
     public static class AnimationCache
     {
-        private static readonly Dictionary<string, WeakReference<LoadedAnimationData>> _cache = new();
-        private static readonly object _lock = new();
+        public static readonly Dictionary<string, WeakReference<LoadedAnimationData>> _cache = new();
+        public static readonly object _lock = new();
 
         /// <summary>
         /// 获取或加载动画

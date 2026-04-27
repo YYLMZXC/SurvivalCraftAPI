@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "BirdFly";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Body", "Wing1", "Wing2", "Leg1", "Leg2", "Head", "Neck" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Body", "Wing1", "Wing2", "Leg1", "Leg2", "Head", "Neck" };
 
         // 参数名称
         public string FlyPhaseParam { get; set; } = "FlyPhase";

@@ -60,7 +60,7 @@ namespace Engine.Media {
         public SpecularGlossinessExtension SpecularGlossiness { get; set; }
 
         // Dynamic extensions storage
-        readonly Dictionary<string, MaterialExtension> _extensions = new();
+        public readonly Dictionary<string, MaterialExtension> m_extensions = new();
 
         /// <summary>
         /// 将材质数据填充到着色器定义构建器
@@ -143,7 +143,7 @@ namespace Engine.Media {
             }
 
             // Dynamic extensions
-            foreach (MaterialExtension ext in _extensions.Values) {
+            foreach (MaterialExtension ext in m_extensions.Values) {
                 if (ext?.IsEnabled == true) {
                     ext.AppendDefines(builder);
                 }

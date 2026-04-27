@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "HumanRide";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Body", "Leg1", "Leg2", "Hand1", "Hand2" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Body", "Leg1", "Leg2", "Hand1", "Hand2" };
 
         // 参数名称
         public string IsRidingParam { get; set; } = "IsRiding";

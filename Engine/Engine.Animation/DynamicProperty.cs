@@ -9,9 +9,9 @@ namespace Engine.Animation
     /// <typeparam name="T">The type of the property value</typeparam>
     public class DynamicProperty<T>
     {
-        private readonly T _staticValue;
-        private readonly string _expression;
-        private readonly bool _isExpression;
+        public readonly T m_staticValue;
+        public readonly string m_expression;
+        public readonly bool m_isExpression;
 
         /// <summary>
         /// Create a dynamic property from a configuration value.
@@ -24,31 +24,31 @@ namespace Engine.Animation
         {
             if (value == null)
             {
-                _staticValue = default;
-                _isExpression = false;
+                m_staticValue = default;
+                m_isExpression = false;
                 return;
             }
 
             if (value is string str && ExpressionEvaluator.IsExpression(str))
             {
-                _expression = ExpressionEvaluator.StripPrefix(str);
-                _isExpression = true;
+                m_expression = ExpressionEvaluator.StripPrefix(str);
+                m_isExpression = true;
             }
             else
             {
-                _staticValue = ConvertValue(value);
-                _isExpression = false;
+                m_staticValue = ConvertValue(value);
+                m_isExpression = false;
             }
         }
 
         /// <summary>
-        /// Private constructor for creating static/expression properties directly.
+        /// public constructor for creating static/expression properties directly.
         /// </summary>
-        private DynamicProperty(T staticValue, string expression, bool isExpression)
+        public DynamicProperty(T staticValue, string expression, bool isExpression)
         {
-            _staticValue = staticValue;
-            _expression = expression;
-            _isExpression = isExpression;
+            m_staticValue = staticValue;
+            m_expression = expression;
+            m_isExpression = isExpression;
         }
 
         /// <summary>
@@ -59,29 +59,29 @@ namespace Engine.Animation
         /// <returns>The property value</returns>
         public T GetValue(AnimationParameters parameters, ExpressionEvaluator evaluator)
         {
-            if (!_isExpression)
-                return _staticValue;
+            if (!m_isExpression)
+                return m_staticValue;
 
             if (evaluator == null)
-                return _staticValue;
+                return m_staticValue;
 
-            return evaluator.Evaluate<T>(_expression, parameters, _staticValue);
+            return evaluator.Evaluate<T>(m_expression, parameters, m_staticValue);
         }
 
         /// <summary>
         /// Check if this property is an expression (dynamic).
         /// </summary>
-        public bool IsExpression => _isExpression;
+        public bool IsExpression => m_isExpression;
 
         /// <summary>
         /// Get the raw expression string (if this is an expression).
         /// </summary>
-        public string Expression => _isExpression ? _expression : null;
+        public string Expression => m_isExpression ? m_expression : null;
 
         /// <summary>
         /// Get the static value (if this is not an expression).
         /// </summary>
-        public T StaticValue => _staticValue;
+        public T StaticValue => m_staticValue;
 
         /// <summary>
         /// Create a static property.
@@ -114,7 +114,7 @@ namespace Engine.Animation
         /// <summary>
         /// Convert an object value to the target type T.
         /// </summary>
-        private static T ConvertValue(object value)
+        public static T ConvertValue(object value)
         {
             var targetType = typeof(T);
 
@@ -166,7 +166,7 @@ namespace Engine.Animation
         /// <summary>
         /// Convert a JsonElement to the target type.
         /// </summary>
-        private static T ConvertJsonElement(System.Text.Json.JsonElement element, Type targetType)
+        public static T ConvertJsonElement(System.Text.Json.JsonElement element, Type targetType)
         {
             if (targetType == typeof(float))
                 return (T)(object)element.GetSingle();
@@ -191,9 +191,9 @@ namespace Engine.Animation
         /// </summary>
         public override string ToString()
         {
-            if (_isExpression)
-                return $"expr:{_expression}";
-            return _staticValue?.ToString() ?? "null";
+            if (m_isExpression)
+                return $"expr:{m_expression}";
+            return m_staticValue?.ToString() ?? "null";
         }
     }
 }

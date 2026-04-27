@@ -16,8 +16,8 @@ namespace Engine.Animation.Drivers
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         // 目标骨骼 - 默认为空，表示作用于根骨骼
-        private string[] _targetBones = Array.Empty<string>();
-        public string[] TargetBones => _targetBones;
+        public string[] m_targetBones = Array.Empty<string>();
+        public string[] TargetBones => m_targetBones;
 
         // 可选：指定特定骨骼名称（如果为空则使用根骨骼）
         public string RootBoneName { get; set; } = null;
@@ -52,16 +52,16 @@ namespace Engine.Animation.Drivers
         /// </summary>
         public bool AutoRollDirection { get; set; } = true;
 
-        private float _deathPhase;
-        private float _bodyHeight;
-        private Vector3 _bodyRight;
-        private Vector3 _deathCauseOffset;
-        private int _rootBoneIndex = -1;
+        public float m_deathPhase;
+        public float m_bodyHeight;
+        public Vector3 m_bodyRight;
+        public Vector3 m_deathCauseOffset;
+        public int m_rootBoneIndex = -1;
 
         /// <summary>
         /// 获取默认根骨骼索引。优先使用 model.RootBone，否则使用第一个骨骼。
         /// </summary>
-        private static int GetDefaultRootBoneIndex(Model model)
+        public static int GetDefaultRootBoneIndex(Model model)
         {
             if (model.RootBone != null)
                 return model.RootBone.Index;
@@ -72,40 +72,40 @@ namespace Engine.Animation.Drivers
 
         public void Update(float deltaTime, AnimationParameters parameters)
         {
-            _deathPhase = Math.Clamp(parameters.GetFloat(DeathPhaseParam), 0f, 1f);
-            _bodyHeight = parameters.GetFloat(BodyHeightParam);
-            _bodyRight = parameters.GetVector3(BodyRightParam);
-            _deathCauseOffset = parameters.GetVector3(DeathCauseOffsetParam);
+            m_deathPhase = Math.Clamp(parameters.GetFloat(DeathPhaseParam), 0f, 1f);
+            m_bodyHeight = parameters.GetFloat(BodyHeightParam);
+            m_bodyRight = parameters.GetVector3(BodyRightParam);
+            m_deathCauseOffset = parameters.GetVector3(DeathCauseOffsetParam);
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model)
         {
-            if (_deathPhase <= 0f) return;
+            if (m_deathPhase <= 0f) return;
 
             // 获取根骨骼索引
-            if (_rootBoneIndex < 0)
+            if (m_rootBoneIndex < 0)
             {
                 if (!string.IsNullOrEmpty(RootBoneName))
                 {
                     var bone = model.FindBone(RootBoneName);
-                    _rootBoneIndex = bone?.Index ?? GetDefaultRootBoneIndex(model);
+                    m_rootBoneIndex = bone?.Index ?? GetDefaultRootBoneIndex(model);
                 }
                 else
                 {
-                    _rootBoneIndex = GetDefaultRootBoneIndex(model);
+                    m_rootBoneIndex = GetDefaultRootBoneIndex(model);
                 }
             }
 
             // 如果没有有效骨骼，直接返回
-            if (_rootBoneIndex < 0) return;
+            if (m_rootBoneIndex < 0) return;
 
-            float t = _deathPhase;
+            float t = m_deathPhase;
 
             // 计算侧翻方向
             float rollDirection = 1f;
-            if (AutoRollDirection && _bodyRight.LengthSquared() > 0.001f && _deathCauseOffset.LengthSquared() > 0.001f)
+            if (AutoRollDirection && m_bodyRight.LengthSquared() > 0.001f && m_deathCauseOffset.LengthSquared() > 0.001f)
             {
-                rollDirection = Vector3.Dot(_bodyRight, _deathCauseOffset) > 0f ? 1 : -1;
+                rollDirection = Vector3.Dot(m_bodyRight, m_deathCauseOffset) > 0f ? 1 : -1;
             }
 
             // 计算角度（弧度）
@@ -113,7 +113,7 @@ namespace Engine.Animation.Drivers
             float pitchRad = PitchAngle * t * MathF.PI / 180f;
 
             // 计算位移
-            float dropY = -BodyDrop * _bodyHeight * t;
+            float dropY = -BodyDrop * m_bodyHeight * t;
 
             Matrix deathTransform =
                 Matrix.CreateRotationX(pitchRad) *
@@ -121,7 +121,7 @@ namespace Engine.Animation.Drivers
                 Matrix.CreateTranslation(0, dropY, 0);            // 再平移（世界坐标系 Y）
 
             // 应用到根骨骼
-            boneTransforms[_rootBoneIndex] = deathTransform;
+            boneTransforms[m_rootBoneIndex] = deathTransform;
         }
     }
 }

@@ -220,14 +220,14 @@ namespace Game {
         /// <summary>
         /// 设置默认动画事件
         /// </summary>
-        protected virtual void SetupDefaultAnimationEvents() {
+        public virtual void SetupDefaultAnimationEvents() {
             // 子类可以覆盖此方法来添加特定事件
         }
 
         /// <summary>
         /// 处理动画事件
         /// </summary>
-        protected virtual void HandleAnimationEvent(AnimationEvent animationEvent) {
+        public virtual void HandleAnimationEvent(AnimationEvent animationEvent) {
             if (animationEvent == null) return;
 
             switch (animationEvent.Name) {
@@ -249,7 +249,7 @@ namespace Game {
         /// <summary>
         /// 处理脚步声事件
         /// </summary>
-        protected virtual void OnFootstepEvent(AnimationEvent animationEvent) {
+        public virtual void OnFootstepEvent(AnimationEvent animationEvent) {
             // 检查冷却时间，防止频繁触发
             if (m_footstepCooldown > 0f) return;
 
@@ -272,7 +272,7 @@ namespace Game {
         /// <summary>
         /// 处理攻击命中事件
         /// </summary>
-        protected virtual void OnAttackHitEvent(AnimationEvent animationEvent) {
+        public virtual void OnAttackHitEvent(AnimationEvent animationEvent) {
             // 标记攻击命中帧
             IsAttackHitMoment = true;
 
@@ -289,7 +289,7 @@ namespace Game {
         /// <summary>
         /// 处理攻击开始事件
         /// </summary>
-        protected virtual void OnAttackStartEvent(AnimationEvent animationEvent) {
+        public virtual void OnAttackStartEvent(AnimationEvent animationEvent) {
             ModsManager.HookAction(
                 "OnCreatureAttackStart",
                 loader => {
@@ -302,7 +302,7 @@ namespace Game {
         /// <summary>
         /// 处理攻击结束事件
         /// </summary>
-        protected virtual void OnAttackEndEvent(AnimationEvent animationEvent) {
+        public virtual void OnAttackEndEvent(AnimationEvent animationEvent) {
             IsAttackHitMoment = false;
 
             ModsManager.HookAction(
@@ -370,7 +370,7 @@ namespace Game {
         /// <summary>
         /// 同步动画参数到动画控制器
         /// </summary>
-        protected virtual void SyncAnimationParameters() {
+        public virtual void SyncAnimationParameters() {
             var ctrl = AnimationController;
             if (ctrl == null) return;
 

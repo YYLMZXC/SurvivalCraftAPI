@@ -22,7 +22,7 @@ namespace Engine.Animation
         /// <summary>
         /// 缓存的 JsonSerializerOptions（避免每次创建新实例）
         /// </summary>
-        private static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions
+        public static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
@@ -301,7 +301,7 @@ namespace Engine.Animation
         /// <summary>
         /// 在模型中查找指定名称的动画
         /// </summary>
-        private ModelAnimation FindAnimationInModel(Model model, string animationName)
+        public ModelAnimation FindAnimationInModel(Model model, string animationName)
         {
             if (model == null || string.IsNullOrEmpty(animationName))
             {
@@ -452,7 +452,7 @@ namespace Engine.Animation
         /// <summary>
         /// 通过反射创建游戏层驱动器（回退方案）
         /// </summary>
-        private IAnimationDriver CreateGameDriver(string typeName)
+        public IAnimationDriver CreateGameDriver(string typeName)
         {
             try
             {
@@ -540,7 +540,7 @@ namespace Engine.Animation
         /// <summary>
         /// 创建嵌套对象并设置属性（使用 PropertySetterCache 优化性能）
         /// </summary>
-        private object CreateNestedObject(Type targetType, Dictionary<string, object> properties)
+        public object CreateNestedObject(Type targetType, Dictionary<string, object> properties)
         {
             try
             {
@@ -577,7 +577,7 @@ namespace Engine.Animation
         /// <summary>
         /// 转换值到目标类型
         /// </summary>
-        private object ConvertValue(object value, Type targetType)
+        public object ConvertValue(object value, Type targetType)
         {
             if (value == null)
                 return null;
@@ -615,7 +615,7 @@ namespace Engine.Animation
         /// <summary>
         /// 从 JsonElement 转换值
         /// </summary>
-        private object ConvertJsonElement(System.Text.Json.JsonElement element, Type targetType)
+        public object ConvertJsonElement(System.Text.Json.JsonElement element, Type targetType)
         {
             // 处理嵌套对象
             if (element.ValueKind == System.Text.Json.JsonValueKind.Object)
@@ -687,7 +687,7 @@ namespace Engine.Animation
         /// <summary>
         /// 根据值类型设置参数
         /// </summary>
-        private void SetParameterByType(AnimationParameters parameters, string name, object value)
+        public void SetParameterByType(AnimationParameters parameters, string name, object value)
         {
             if (value == null) return;
 

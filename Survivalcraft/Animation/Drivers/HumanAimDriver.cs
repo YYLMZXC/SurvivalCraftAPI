@@ -13,8 +13,8 @@ namespace Game.Animation.Drivers
         public string Name => "HumanAim";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Additive;
 
-        public string[] TargetBones => _targetBones;
-        private string[] _targetBones = new[] { "Hand1", "Hand2" };
+        public string[] TargetBones => mTargetBones;
+        private string[] mTargetBones = new[] { "Hand1", "Hand2" };
 
         // 参数名称
         public string AimHandAngleParam { get; set; } = "AimHandAngle";

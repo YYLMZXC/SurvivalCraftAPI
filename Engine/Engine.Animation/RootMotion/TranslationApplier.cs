@@ -8,8 +8,8 @@ namespace Engine.Animation.RootMotion
     /// </summary>
     public class TranslationApplier
     {
-        private Vector3 _smoothVelocity; // SmoothDamp 内部状态
-        private Vector3 _springVelocity; // SpringDamper 内部状态
+        public Vector3 m_smoothVelocity; // SmoothDamp 内部状态
+        public Vector3 m_springVelocity; // SpringDamper 内部状态
 
         /// <summary>
         /// 应用根运动位移
@@ -60,7 +60,7 @@ namespace Engine.Animation.RootMotion
             }
         }
 
-        private void ApplyBlend(TranslationConfig config, Vector3 targetVelocity,
+        public void ApplyBlend(TranslationConfig config, Vector3 targetVelocity,
             ref Vector3 velocity, float deltaTime)
         {
             Vector3 current = velocity;
@@ -70,7 +70,7 @@ namespace Engine.Animation.RootMotion
             {
                 case BlendMethod.SmoothDamp:
                     result = SmoothDamp(current, targetVelocity,
-                        ref _smoothVelocity, config.SmoothTime, deltaTime);
+                        ref m_smoothVelocity, config.SmoothTime, deltaTime);
                     break;
 
                 case BlendMethod.WeightedAverage:
@@ -79,7 +79,7 @@ namespace Engine.Animation.RootMotion
 
                 case BlendMethod.SpringDamper:
                     result = SpringDamper(current, targetVelocity,
-                        ref _springVelocity, config.SpringStiffness, config.SpringDamping, deltaTime);
+                        ref m_springVelocity, config.SpringStiffness, config.SpringDamping, deltaTime);
                     break;
 
                 default:
@@ -91,7 +91,7 @@ namespace Engine.Animation.RootMotion
             velocity = result;
         }
 
-        private static Vector3 ApplyVelocityMask(Vector3 current, Vector3 target, Vector3 mask)
+        public static Vector3 ApplyVelocityMask(Vector3 current, Vector3 target, Vector3 mask)
         {
             return new Vector3(
                 mask.X > 0.5f ? target.X : current.X,
@@ -100,7 +100,7 @@ namespace Engine.Animation.RootMotion
             );
         }
 
-        private static Vector3 ClampVelocity(Vector3 velocity, float maxSpeed)
+        public static Vector3 ClampVelocity(Vector3 velocity, float maxSpeed)
         {
             if (maxSpeed <= 0) return velocity;
             float speed = velocity.Length();
@@ -112,7 +112,7 @@ namespace Engine.Animation.RootMotion
         /// <summary>
         /// 平滑阻尼算法（类似 Unity SmoothDamp）
         /// </summary>
-        private static Vector3 SmoothDamp(Vector3 current, Vector3 target,
+        public static Vector3 SmoothDamp(Vector3 current, Vector3 target,
             ref Vector3 velocity, float smoothTime, float deltaTime)
         {
             if (smoothTime <= 0)
@@ -134,7 +134,7 @@ namespace Engine.Animation.RootMotion
         /// 弹簧力 = -stiffness * 位移（将物体拉向目标）
         /// 阻尼力 = -damping * 速度（减缓运动）
         /// </summary>
-        private static Vector3 SpringDamper(Vector3 current, Vector3 target,
+        public static Vector3 SpringDamper(Vector3 current, Vector3 target,
             ref Vector3 velocity, float stiffness, float damping, float deltaTime)
         {
             Vector3 displacement = current - target;

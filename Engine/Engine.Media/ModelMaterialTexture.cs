@@ -67,10 +67,7 @@ namespace Engine.Media {
             // 转置后: M11=sx*cos, M12=sx*sin, M21=-sy*sin, M22=sy*cos, M31=tx, M32=ty
             float cos = MathF.Cos(rotation);
             float sin = MathF.Sin(rotation);
-            return new Matrix3x2(
-                scale.X * cos, -scale.X * sin,
-                scale.Y * sin, scale.Y * cos,
-                offset.X, offset.Y);
+            return new Matrix3x2(scale.X * cos, -scale.X * sin, scale.Y * sin, scale.Y * cos, offset.X, offset.Y);
         }
 
         /// <summary>

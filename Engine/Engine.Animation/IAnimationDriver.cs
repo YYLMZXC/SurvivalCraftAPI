@@ -1,15 +1,11 @@
-#nullable disable
-
 using Engine.Graphics;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 动画驱动器接口
     /// 用于程序化生成骨骼变换
     /// </summary>
-    public interface IAnimationDriver
-    {
+    public interface IAnimationDriver {
         /// <summary>
         /// 驱动器名称
         /// </summary>

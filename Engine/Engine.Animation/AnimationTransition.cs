@@ -1,14 +1,10 @@
-#nullable disable
-
 using Engine.Graphics;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 过渡中断策略
     /// </summary>
-    public enum TransitionInterruptMode
-    {
+    public enum TransitionInterruptMode {
         /// <summary>
         /// 可以被新过渡中断
         /// </summary>
@@ -28,8 +24,7 @@ namespace Engine.Animation
     /// <summary>
     /// 动画过渡，负责管理两个动画之间的平滑过渡
     /// </summary>
-    public class AnimationTransition
-    {
+    public class AnimationTransition {
         public float m_elapsedTime;
         public float m_duration;
         public bool m_isActive;
@@ -44,7 +39,7 @@ namespace Engine.Animation
         public Model m_targetModel;
         public ModelAnimation m_targetAnimation;
         public bool m_targetLoop;
-        public AnimationEventHandler m_targetPlayerEventHandler;  // 保存委托引用用于取消订阅
+        public AnimationEventHandler m_targetPlayerEventHandler; // 保存委托引用用于取消订阅
 
         // 停用过渡模式：淡出到无
         public bool m_isDeactivateTransition;
@@ -52,8 +47,7 @@ namespace Engine.Animation
         /// <summary>
         /// 过渡时长（秒）
         /// </summary>
-        public float Duration
-        {
+        public float Duration {
             get => m_duration;
             set => m_duration = Math.Max(0f, value);
         }
@@ -96,10 +90,7 @@ namespace Engine.Animation
         /// <summary>
         /// 创建动画过渡实例
         /// </summary>
-        public AnimationTransition()
-        {
-            m_duration = 0.25f; // 默认过渡时长 0.25 秒
-        }
+        public AnimationTransition() => m_duration = 0.25f; // 默认过渡时长 0.25 秒
 
         /// <summary>
         /// 开始过渡到新动画
@@ -112,35 +103,33 @@ namespace Engine.Animation
         /// <param name="interruptMode">中断模式</param>
         /// <param name="priority">优先级</param>
         /// <returns>是否成功开始过渡</returns>
-        public bool StartTransition(
-            AnimationPlayer sourcePlayer,
+        public bool StartTransition(AnimationPlayer sourcePlayer,
             Model targetModel,
             ModelAnimation targetAnimation,
             bool loop,
             float duration,
             TransitionInterruptMode interruptMode = TransitionInterruptMode.CanInterrupt,
-            int priority = 0)
-        {
+            int priority = 0) {
             // 检查是否可以被中断
-            if (m_isActive)
-            {
-                if (InterruptMode == TransitionInterruptMode.CannotInterrupt)
+            if (m_isActive) {
+                if (InterruptMode == TransitionInterruptMode.CannotInterrupt) {
                     return false;
-
-                if (InterruptMode == TransitionInterruptMode.HigherPriorityOnly && priority <= m_priority)
+                }
+                if (InterruptMode == TransitionInterruptMode.HigherPriorityOnly
+                    && priority <= m_priority) {
                     return false;
+                }
             }
 
             // 保存源状态
             m_sourcePlayer = sourcePlayer;
             // 即使源动画已经停止播放，也要采样当前姿态用于过渡
             // 这样非循环动画播放完成后，过渡到下一个动画时可以正确混合
-            if (m_sourcePlayer != null && m_sourcePlayer.Animation != null)
-            {
+            if (m_sourcePlayer != null
+                && m_sourcePlayer.Animation != null) {
                 // 确保源变换缓冲区足够大
                 int boneCount = targetModel != null ? targetModel.Bones.Count : 0;
-                if (boneCount > 0)
-                {
+                if (boneCount > 0) {
                     EnsureSourceBufferSize(boneCount);
                     m_sourcePlayer.SampleBoneTransforms(m_sourceTransforms);
                 }
@@ -152,17 +141,16 @@ namespace Engine.Animation
             m_targetLoop = loop;
 
             // 取消旧播放器的事件订阅（如果有）
-            if (m_targetPlayer != null && m_targetPlayerEventHandler != null)
-            {
+            if (m_targetPlayer != null
+                && m_targetPlayerEventHandler != null) {
                 m_targetPlayer.OnAnimationEvent -= m_targetPlayerEventHandler;
             }
-
             m_targetPlayer = new AnimationPlayer();
             m_targetPlayer.SetAnimation(targetModel, targetAnimation);
             m_targetPlayer.Play(loop);
 
             // 订阅目标播放器的事件到过渡的事件（保存委托引用以便取消订阅）
-            m_targetPlayerEventHandler = (evt) => TargetPlayerEvent?.Invoke(evt);
+            m_targetPlayerEventHandler = evt => TargetPlayerEvent?.Invoke(evt);
             m_targetPlayer.OnAnimationEvent += m_targetPlayerEventHandler;
 
             // 设置过渡参数
@@ -171,7 +159,6 @@ namespace Engine.Animation
             m_isActive = true;
             m_priority = priority;
             InterruptMode = interruptMode;
-
             return true;
         }
 
@@ -179,19 +166,17 @@ namespace Engine.Animation
         /// 更新过渡状态
         /// </summary>
         /// <param name="deltaTime">帧时间</param>
-        public void Update(float deltaTime)
-        {
-            if (!m_isActive)
+        public void Update(float deltaTime) {
+            if (!m_isActive) {
                 return;
-
+            }
             m_elapsedTime += deltaTime;
 
             // 更新目标动画
             m_targetPlayer?.Update(deltaTime);
 
             // 检查过渡是否完成
-            if (m_elapsedTime >= m_duration)
-            {
+            if (m_elapsedTime >= m_duration) {
                 CompleteTransition();
             }
         }
@@ -201,35 +186,28 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="boneTransforms">输出骨骼变换数组</param>
         /// <param name="model">模型对象</param>
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
-            if (!m_isActive || boneTransforms == null || model == null)
-            {
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
+            if (!m_isActive
+                || boneTransforms == null
+                || model == null) {
                 // 如果没有活动过渡，直接采样目标动画
                 m_targetPlayer?.SampleBoneTransforms(boneTransforms);
                 return;
             }
-
             int boneCount = model.Bones.Count;
 
             // 停用过渡模式：淡出源动画到 Identity
-            if (m_isDeactivateTransition)
-            {
-                if (m_sourceTransforms == null || Progress >= 1f)
-                {
+            if (m_isDeactivateTransition) {
+                if (m_sourceTransforms == null
+                    || Progress >= 1f) {
                     // 过渡完成，不做任何事（层将被停用）
                     return;
                 }
 
                 // 淡出源变换到 Identity
-                for (int i = 0; i < boneCount; i++)
-                {
-                    if (m_sourceTransforms[i].HasValue)
-                    {
-                        boneTransforms[i] = BlendTransforms(
-                            m_sourceTransforms[i].Value,
-                            Matrix.Identity,
-                            Progress);
+                for (int i = 0; i < boneCount; i++) {
+                    if (m_sourceTransforms[i].HasValue) {
+                        boneTransforms[i] = BlendTransforms(m_sourceTransforms[i].Value, Matrix.Identity, Progress);
                     }
                 }
                 return;
@@ -237,47 +215,34 @@ namespace Engine.Animation
 
             // 如果进度为 0 或没有源变换，使用目标变换
             // 注意：即使源动画已停止播放，只要 _sourceTransforms 有值就应该进行混合
-            if (Progress <= 0f || m_sourceTransforms == null)
-            {
+            if (Progress <= 0f
+                || m_sourceTransforms == null) {
                 m_targetPlayer?.SampleBoneTransforms(boneTransforms);
                 return;
             }
 
             // 如果进度为 1，使用目标变换
-            if (Progress >= 1f)
-            {
+            if (Progress >= 1f) {
                 m_targetPlayer?.SampleBoneTransforms(boneTransforms);
                 return;
             }
 
             // 混合源和目标变换
-            var targetTransforms = new Matrix?[boneCount];
+            Matrix?[] targetTransforms = new Matrix?[boneCount];
             m_targetPlayer?.SampleBoneTransforms(targetTransforms);
-
-            for (int i = 0; i < boneCount; i++)
-            {
-                if (targetTransforms[i].HasValue)
-                {
-                    if (m_sourceTransforms[i].HasValue)
-                    {
+            for (int i = 0; i < boneCount; i++) {
+                if (targetTransforms[i].HasValue) {
+                    if (m_sourceTransforms[i].HasValue) {
                         // 混合变换
-                        boneTransforms[i] = BlendTransforms(
-                            m_sourceTransforms[i].Value,
-                            targetTransforms[i].Value,
-                            Progress);
+                        boneTransforms[i] = BlendTransforms(m_sourceTransforms[i].Value, targetTransforms[i].Value, Progress);
                     }
-                    else
-                    {
+                    else {
                         boneTransforms[i] = targetTransforms[i].Value;
                     }
                 }
-                else if (m_sourceTransforms[i].HasValue)
-                {
+                else if (m_sourceTransforms[i].HasValue) {
                     // 从源变换淡出
-                    boneTransforms[i] = BlendTransforms(
-                        m_sourceTransforms[i].Value,
-                        Matrix.Identity,
-                        Progress);
+                    boneTransforms[i] = BlendTransforms(m_sourceTransforms[i].Value, Matrix.Identity, Progress);
                 }
             }
         }
@@ -285,8 +250,7 @@ namespace Engine.Animation
         /// <summary>
         /// 完成过渡
         /// </summary>
-        public void CompleteTransition()
-        {
+        public void CompleteTransition() {
             m_isActive = false;
             m_sourcePlayer = null;
             m_sourceTransforms = null;
@@ -301,14 +265,12 @@ namespace Engine.Animation
         /// <summary>
         /// 取消过渡
         /// </summary>
-        public void CancelTransition()
-        {
+        public void CancelTransition() {
             // 取消目标播放器的事件订阅
-            if (m_targetPlayer != null && m_targetPlayerEventHandler != null)
-            {
+            if (m_targetPlayer != null
+                && m_targetPlayerEventHandler != null) {
                 m_targetPlayer.OnAnimationEvent -= m_targetPlayerEventHandler;
             }
-
             m_isActive = false;
             m_sourcePlayer = null;
             m_sourceTransforms = null;
@@ -323,20 +285,21 @@ namespace Engine.Animation
         /// <param name="sourcePlayer">源动画播放器</param>
         /// <param name="duration">过渡时长</param>
         /// <returns>是否成功开始过渡</returns>
-        public bool StartDeactivateTransition(AnimationPlayer sourcePlayer, float duration)
-        {
-            if (sourcePlayer == null || !sourcePlayer.IsPlaying)
+        public bool StartDeactivateTransition(AnimationPlayer sourcePlayer, float duration) {
+            if (sourcePlayer == null
+                || !sourcePlayer.IsPlaying) {
                 return false;
+            }
 
             // 检查是否可以被中断
-            if (m_isActive && InterruptMode == TransitionInterruptMode.CannotInterrupt)
+            if (m_isActive && InterruptMode == TransitionInterruptMode.CannotInterrupt) {
                 return false;
+            }
 
             // 保存源状态
             m_sourcePlayer = sourcePlayer;
-            var model = sourcePlayer.Model;
-            if (model != null)
-            {
+            Model model = sourcePlayer.Model;
+            if (model != null) {
                 EnsureSourceBufferSize(model.Bones.Count);
                 sourcePlayer.SampleBoneTransforms(m_sourceTransforms);
             }
@@ -353,7 +316,6 @@ namespace Engine.Animation
             m_isDeactivateTransition = true;
             m_priority = 0;
             InterruptMode = TransitionInterruptMode.CanInterrupt;
-
             return true;
         }
 
@@ -362,27 +324,26 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="priority">新过渡的优先级</param>
         /// <returns>是否可以开始新过渡</returns>
-        public bool CanStartNewTransition(int priority = 0)
-        {
-            if (!m_isActive)
+        public bool CanStartNewTransition(int priority = 0) {
+            if (!m_isActive) {
                 return true;
-
-            if (InterruptMode == TransitionInterruptMode.CannotInterrupt)
+            }
+            if (InterruptMode == TransitionInterruptMode.CannotInterrupt) {
                 return false;
-
-            if (InterruptMode == TransitionInterruptMode.HigherPriorityOnly && priority <= m_priority)
+            }
+            if (InterruptMode == TransitionInterruptMode.HigherPriorityOnly
+                && priority <= m_priority) {
                 return false;
-
+            }
             return true;
         }
 
         /// <summary>
         /// 确保源变换缓冲区大小足够
         /// </summary>
-        public void EnsureSourceBufferSize(int requiredSize)
-        {
-            if (m_sourceTransforms == null || m_sourceTransforms.Length < requiredSize)
-            {
+        public void EnsureSourceBufferSize(int requiredSize) {
+            if (m_sourceTransforms == null
+                || m_sourceTransforms.Length < requiredSize) {
                 m_sourceTransforms = new Matrix?[Math.Max(requiredSize, 64)];
             }
             Array.Clear(m_sourceTransforms, 0, m_sourceTransforms.Length);
@@ -391,51 +352,63 @@ namespace Engine.Animation
         /// <summary>
         /// 混合两个变换矩阵
         /// </summary>
-        public Matrix BlendTransforms(Matrix a, Matrix b, float t)
-        {
+        public Matrix BlendTransforms(Matrix a, Matrix b, float t) {
             // 分解为 T、R、S 分别插值
-            DecomposeMatrix(a, out var tA, out var rA, out var sA);
-            DecomposeMatrix(b, out var tB, out var rB, out var sB);
-
+            DecomposeMatrix(a, out Vector3 tA, out Quaternion rA, out Vector3 sA);
+            DecomposeMatrix(b, out Vector3 tB, out Quaternion rB, out Vector3 sB);
             return Matrix.CreateScale(Vector3.Lerp(sA, sB, t))
-                 * Matrix.CreateFromQuaternion(Quaternion.Slerp(rA, rB, t))
-                 * Matrix.CreateTranslation(Vector3.Lerp(tA, tB, t));
+                * Matrix.CreateFromQuaternion(Quaternion.Slerp(rA, rB, t))
+                * Matrix.CreateTranslation(Vector3.Lerp(tA, tB, t));
         }
 
         /// <summary>
         /// 分解矩阵为平移、旋转、缩放
         /// </summary>
-        public void DecomposeMatrix(Matrix m, out Vector3 translation, out Quaternion rotation, out Vector3 scale)
-        {
+        public void DecomposeMatrix(Matrix m, out Vector3 translation, out Quaternion rotation, out Vector3 scale) {
             // 提取平移
             translation = m.Translation;
 
             // 提取缩放
-            Vector3 right = new Vector3(m.M11, m.M12, m.M13);
-            Vector3 up = new Vector3(m.M21, m.M22, m.M23);
-            Vector3 forward = new Vector3(m.M31, m.M32, m.M33);
-
+            Vector3 right = new(m.M11, m.M12, m.M13);
+            Vector3 up = new(m.M21, m.M22, m.M23);
+            Vector3 forward = new(m.M31, m.M32, m.M33);
             float scaleX = right.Length();
             float scaleY = up.Length();
             float scaleZ = forward.Length();
             scale = new Vector3(scaleX, scaleY, scaleZ);
 
             // 提取旋转
-            if (scaleX != 0) right /= scaleX;
-            if (scaleY != 0) up /= scaleY;
-            if (scaleZ != 0) forward /= scaleZ;
-
-            Matrix rotationMatrix = new Matrix(
-                right.X, right.Y, right.Z, 0,
-                up.X, up.Y, up.Z, 0,
-                forward.X, forward.Y, forward.Z, 0,
-                0, 0, 0, 1);
-
+            if (scaleX != 0) {
+                right /= scaleX;
+            }
+            if (scaleY != 0) {
+                up /= scaleY;
+            }
+            if (scaleZ != 0) {
+                forward /= scaleZ;
+            }
+            Matrix rotationMatrix = new(
+                right.X,
+                right.Y,
+                right.Z,
+                0,
+                up.X,
+                up.Y,
+                up.Z,
+                0,
+                forward.X,
+                forward.Y,
+                forward.Z,
+                0,
+                0,
+                0,
+                0,
+                1
+            );
             rotation = Quaternion.CreateFromRotationMatrix(rotationMatrix);
 
             // 处理负缩放
-            if (scaleX * scaleY * scaleZ < 0)
-            {
+            if (scaleX * scaleY * scaleZ < 0) {
                 scale = -scale;
             }
         }

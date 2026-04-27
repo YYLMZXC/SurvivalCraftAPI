@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using SharpGLTF.Schema2;
-using System.Numerics;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Media {
@@ -53,7 +51,7 @@ namespace Engine.Media {
             }
             channel = material.FindChannel("SpecularColor");
             if (channel != null) {
-                var color = channel.Value.Color;
+                System.Numerics.Vector4 color = channel.Value.Color;
                 SpecularColorFactor = new Vector3(color.X, color.Y, color.Z);
                 SpecularColorTexture = LoadTextureFromChannel(modelData, channel);
             }

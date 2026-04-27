@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Engine.Media {
     /// <summary>
     /// 材质数据（PBR 材质属性）

@@ -1,14 +1,8 @@
-using System;
-
-using Engine;
-
-namespace Engine.Animation.RootMotion
-{
+namespace Engine.Animation.RootMotion {
     /// <summary>
     /// 位移应用模式
     /// </summary>
-    public enum TranslationMode
-    {
+    public enum TranslationMode {
         /// <summary>
         /// 不应用位移（默认）
         /// </summary>
@@ -33,8 +27,7 @@ namespace Engine.Animation.RootMotion
     /// <summary>
     /// 融合方式（Blend 模式）
     /// </summary>
-    public enum BlendMethod
-    {
+    public enum BlendMethod {
         /// <summary>
         /// 平滑阻尼（推荐）
         /// </summary>
@@ -54,8 +47,7 @@ namespace Engine.Animation.RootMotion
     /// <summary>
     /// 冲量计算方式（AddImpulse 模式）
     /// </summary>
-    public enum ImpulseMethod
-    {
+    public enum ImpulseMethod {
         /// <summary>
         /// 平均速度 = 总位移 / 动画时长（默认）
         /// </summary>
@@ -75,8 +67,7 @@ namespace Engine.Animation.RootMotion
     /// <summary>
     /// 缩放应用模式
     /// </summary>
-    public enum ScaleMode
-    {
+    public enum ScaleMode {
         /// <summary>
         /// 不应用缩放（默认）
         /// </summary>
@@ -91,8 +82,7 @@ namespace Engine.Animation.RootMotion
     /// <summary>
     /// 缩放数据来源
     /// </summary>
-    public enum ScaleSource
-    {
+    public enum ScaleSource {
         /// <summary>
         /// 从动画根骨骼缩放提取
         /// </summary>
@@ -107,8 +97,7 @@ namespace Engine.Animation.RootMotion
     /// <summary>
     /// 位移应用配置
     /// </summary>
-    public class TranslationConfig
-    {
+    public class TranslationConfig {
         /// <summary>
         /// 位移应用模式
         /// </summary>
@@ -181,8 +170,7 @@ namespace Engine.Animation.RootMotion
     /// <summary>
     /// 缩放应用配置
     /// </summary>
-    public class ScaleConfig
-    {
+    public class ScaleConfig {
         /// <summary>
         /// 缩放应用模式
         /// </summary>
@@ -212,8 +200,7 @@ namespace Engine.Animation.RootMotion
     /// <summary>
     /// 根运动配置
     /// </summary>
-    public class RootMotionConfig
-    {
+    public class RootMotionConfig {
         /// <summary>
         /// 位移应用配置
         /// </summary>

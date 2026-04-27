@@ -1,12 +1,8 @@
-#nullable disable
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 状态轨道类型
     /// </summary>
-    public enum StateTrackType
-    {
+    public enum StateTrackType {
         /// <summary>
         /// 枚举状态：Walk/Trot/Canter
         /// </summary>

@@ -1,14 +1,10 @@
-#nullable disable
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 状态规则求值器，使用 NCalc 评估条件表达式。
     /// 支持表达式缓存和参数优化。
     /// 内部委托给 ExpressionEvaluator 实现。
     /// </summary>
-    public class StateRuleEvaluator
-    {
+    public class StateRuleEvaluator {
         /// <summary>
         /// 内部表达式求值器
         /// </summary>
@@ -25,16 +21,12 @@ namespace Engine.Animation
         /// <param name="condition">条件表达式字符串</param>
         /// <param name="parameters">参数容器</param>
         /// <returns>表达式求值结果</returns>
-        public bool EvaluateCondition(string condition, AnimationParameters parameters)
-        {
-            return m_evaluator.EvaluateBool(condition, parameters, false);
-        }
+        public bool EvaluateCondition(string condition, AnimationParameters parameters) => m_evaluator.EvaluateBool(condition, parameters);
 
         /// <summary>
         /// 清除编译缓存。
         /// </summary>
-        public void ClearCache()
-        {
+        public void ClearCache() {
             m_evaluator.ClearCache();
         }
     }

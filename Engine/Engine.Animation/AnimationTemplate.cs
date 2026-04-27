@@ -1,25 +1,17 @@
-#nullable disable
-
-using System.Collections.Generic;
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 动画模板，定义生物类型的动画特性
     /// </summary>
-    public class AnimationTemplate
-    {
+    public class AnimationTemplate {
         public string Name { get; }
         public Dictionary<string, LayerDefinition> Layers { get; }
         public Dictionary<string, StateTrackDefinition> StateTracks { get; }
         public string[] RequiredBones { get; }
 
-        public AnimationTemplate(
-            string name,
+        public AnimationTemplate(string name,
             Dictionary<string, LayerDefinition> layers,
             Dictionary<string, StateTrackDefinition> stateTracks,
-            string[] requiredBones = null)
-        {
+            string[] requiredBones = null) {
             Name = name;
             Layers = layers ?? new Dictionary<string, LayerDefinition>();
             StateTracks = stateTracks ?? new Dictionary<string, StateTrackDefinition>();

@@ -1,18 +1,12 @@
-#nullable disable
-
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 动画驱动器注册表
     /// 提供驱动器类型的注册和创建功能，避免运行时反射查找
     /// 使用 ConcurrentDictionary 确保线程安全
     /// </summary>
-    public static class AnimationDriverManager
-    {
+    public static class AnimationDriverManager {
         /// <summary>
         /// 驱动器类型注册表（名称 -> 类型）
         /// 使用 ConcurrentDictionary 确保多线程环境下的安全性
@@ -29,17 +23,16 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="name">驱动器名称（支持短名称，如 "LookAt"、"Death"）</param>
         /// <param name="type">驱动器类型（必须实现 IAnimationDriver）</param>
-        public static void Register(string name, Type type)
-        {
-            if (string.IsNullOrEmpty(name))
+        public static void Register(string name, Type type) {
+            if (string.IsNullOrEmpty(name)) {
                 throw new ArgumentNullException(nameof(name));
-
-            if (type == null)
+            }
+            if (type == null) {
                 throw new ArgumentNullException(nameof(type));
-
-            if (!typeof(IAnimationDriver).IsAssignableFrom(type))
+            }
+            if (!typeof(IAnimationDriver).IsAssignableFrom(type)) {
                 throw new ArgumentException($"Type {type.FullName} does not implement IAnimationDriver", nameof(type));
-
+            }
             s_drivers[name] = type;
         }
 
@@ -48,8 +41,7 @@ namespace Engine.Animation
         /// </summary>
         /// <typeparam name="T">驱动器类型</typeparam>
         /// <param name="name">驱动器名称</param>
-        public static void Register<T>(string name) where T : IAnimationDriver, new()
-        {
+        public static void Register<T>(string name) where T : IAnimationDriver, new() {
             Register(name, typeof(T));
         }
 
@@ -57,13 +49,11 @@ namespace Engine.Animation
         /// 批量注册驱动器
         /// </summary>
         /// <param name="drivers">驱动器名称和类型的键值对</param>
-        public static void RegisterAll(IEnumerable<KeyValuePair<string, Type>> drivers)
-        {
-            if (drivers == null)
+        public static void RegisterAll(IEnumerable<KeyValuePair<string, Type>> drivers) {
+            if (drivers == null) {
                 return;
-
-            foreach (var kvp in drivers)
-            {
+            }
+            foreach (KeyValuePair<string, Type> kvp in drivers) {
                 Register(kvp.Key, kvp.Value);
             }
         }
@@ -73,22 +63,18 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="name">驱动器名称</param>
         /// <returns>是否已注册</returns>
-        public static bool IsRegistered(string name)
-        {
-            return !string.IsNullOrEmpty(name) && s_drivers.ContainsKey(name);
-        }
+        public static bool IsRegistered(string name) => !string.IsNullOrEmpty(name) && s_drivers.ContainsKey(name);
 
         /// <summary>
         /// 获取已注册的驱动器类型
         /// </summary>
         /// <param name="name">驱动器名称</param>
         /// <returns>驱动器类型，如果未注册则返回 null</returns>
-        public static Type GetDriverType(string name)
-        {
-            if (string.IsNullOrEmpty(name))
+        public static Type GetDriverType(string name) {
+            if (string.IsNullOrEmpty(name)) {
                 return null;
-
-            return s_drivers.TryGetValue(name, out var type) ? type : null;
+            }
+            return s_drivers.TryGetValue(name, out Type type) ? type : null;
         }
 
         /// <summary>
@@ -96,18 +82,15 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="name">驱动器名称</param>
         /// <returns>驱动器实例，如果未注册则返回 null</returns>
-        public static IAnimationDriver Create(string name)
-        {
-            var type = GetDriverType(name);
-            if (type == null)
+        public static IAnimationDriver Create(string name) {
+            Type type = GetDriverType(name);
+            if (type == null) {
                 return null;
-
-            try
-            {
+            }
+            try {
                 return Activator.CreateInstance(type) as IAnimationDriver;
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 Log.Error($"[AnimationDriverManager] Failed to create driver '{name}': {ex.Message}");
                 return null;
             }
@@ -116,17 +99,13 @@ namespace Engine.Animation
         /// <summary>
         /// 清除所有注册（主要用于测试）
         /// </summary>
-        public static void Clear()
-        {
+        public static void Clear() {
             s_drivers.Clear();
         }
 
         /// <summary>
         /// 获取所有已注册的驱动器名称
         /// </summary>
-        public static IEnumerable<string> GetRegisteredNames()
-        {
-            return s_drivers.Keys;
-        }
+        public static IEnumerable<string> GetRegisteredNames() => s_drivers.Keys;
     }
 }

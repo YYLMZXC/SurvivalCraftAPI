@@ -1,14 +1,8 @@
-#nullable disable
-
-using System;
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 状态轨道运行时实例
     /// </summary>
-    public class StateTrack
-    {
+    public class StateTrack {
         public string Name { get; }
         public StateTrackType Type { get; }
         public object Value { get; set; }
@@ -23,8 +17,7 @@ namespace Engine.Animation
 
         public event Action<StateTrack, object, object> OnStateChanged;
 
-        public StateTrack(string name, StateTrackDefinition definition)
-        {
+        public StateTrack(string name, StateTrackDefinition definition) {
             Name = name;
             Type = definition.Type;
             DefaultValue = definition.DefaultValue;
@@ -34,11 +27,9 @@ namespace Engine.Animation
             Value = DefaultValue;
         }
 
-        public void SetValue(object value)
-        {
-            if (!Equals(Value, value))
-            {
-                var oldValue = Value;
+        public void SetValue(object value) {
+            if (!Equals(Value, value)) {
+                object oldValue = Value;
                 Value = value;
                 OnStateChanged?.Invoke(this, oldValue, value);
             }

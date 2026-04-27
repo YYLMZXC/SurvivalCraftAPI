@@ -1,14 +1,10 @@
-#nullable disable
-
 using Engine.Graphics;
 
-namespace Engine.Animation.Drivers
-{
+namespace Engine.Animation.Drivers {
     /// <summary>
     /// 头部追踪驱动器
     /// </summary>
-    public class LookAtDriver : IAnimationDriver
-    {
+    public class LookAtDriver : IAnimationDriver {
         public string Name => "LookAt";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
@@ -43,27 +39,27 @@ namespace Engine.Animation.Drivers
 
         // 旋转轴配置（用于适配不同坐标系）
         // "X", "Y", "Z"
-        public string PitchAxis { get; set; } = "X";  // 俯仰轴（上下）
-        public string YawAxis { get; set; } = "Z";    // 偏航轴（左右）
+        public string PitchAxis { get; set; } = "X"; // 俯仰轴（上下）
+        public string YawAxis { get; set; } = "Z"; // 偏航轴（左右）
 
         // 是否反转方向
         public bool InvertPitch { get; set; } = false;
         public bool InvertYaw { get; set; } = false;
 
-        public float m_lookAngleX;  // 弧度
-        public float m_lookAngleY;  // 弧度
+        public float m_lookAngleX; // 弧度
+        public float m_lookAngleY; // 弧度
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             // 参数是弧度
             m_lookAngleX = Math.Clamp(parameters.GetFloat(LookAngleXParam), -MaxAngleX, MaxAngleX);
             m_lookAngleY = Math.Clamp(parameters.GetFloat(LookAngleYParam), -MaxAngleY, MaxAngleY);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
-            var targetBone = model.FindBone(TargetBoneName);
-            if (targetBone == null) return;
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
+            ModelBone targetBone = model.FindBone(TargetBoneName);
+            if (targetBone == null) {
+                return;
+            }
 
             // 应用方向反转
             float pitch = InvertPitch ? -m_lookAngleY : m_lookAngleY;
@@ -77,14 +73,12 @@ namespace Engine.Animation.Drivers
             boneTransforms[targetBone.Index] = pitchRotation * yawRotation;
         }
 
-        public Matrix CreateRotationForAxis(string axis, float angle)
-        {
-            return axis?.ToUpperInvariant() switch
-            {
+        public Matrix CreateRotationForAxis(string axis, float angle) {
+            return axis?.ToUpperInvariant() switch {
                 "X" => Matrix.CreateRotationX(angle),
                 "Y" => Matrix.CreateRotationY(angle),
                 "Z" => Matrix.CreateRotationZ(angle),
-                _ => Matrix.CreateRotationX(angle)  // 默认 X 轴
+                _ => Matrix.CreateRotationX(angle) // 默认 X 轴
             };
         }
     }

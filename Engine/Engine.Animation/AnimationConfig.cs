@@ -1,12 +1,8 @@
-#nullable disable
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 动画完成时执行的动作
     /// </summary>
-    public class OnCompleteAction
-    {
+    public class OnCompleteAction {
         /// <summary>
         /// 动作类型：setState 或 trigger
         /// </summary>
@@ -36,8 +32,7 @@ namespace Engine.Animation
     /// <summary>
     /// 动画引用配置
     /// </summary>
-    public class AnimationReference
-    {
+    public class AnimationReference {
         /// <summary>
         /// 动画来源（animation://名称、driver:驱动器名 或 文件路径）
         /// </summary>
@@ -101,6 +96,7 @@ namespace Engine.Animation
         /// 创建动态属性包装器（缓存实例）
         /// </summary>
         public DynamicProperty<float> GetSpeedProperty() => m_cachedSpeedProperty ??= new DynamicProperty<float>(SpeedValue);
+
         public DynamicProperty<bool> GetLoopProperty() => m_cachedLoopProperty ??= new DynamicProperty<bool>(LoopValue);
         public DynamicProperty<float> GetStartPhaseProperty() => m_cachedStartPhaseProperty ??= new DynamicProperty<float>(StartPhaseValue);
         public DynamicProperty<float> GetEndPhaseProperty() => m_cachedEndPhaseProperty ??= new DynamicProperty<float>(EndPhaseValue);
@@ -110,8 +106,7 @@ namespace Engine.Animation
     /// <summary>
     /// 层配置
     /// </summary>
-    public class LayerConfig
-    {
+    public class LayerConfig {
         /// <summary>
         /// 混合模式：override 或 additive
         /// </summary>
@@ -131,8 +126,7 @@ namespace Engine.Animation
     /// <summary>
     /// 状态规则配置（新格式）
     /// </summary>
-    public class StateRuleConfig
-    {
+    public class StateRuleConfig {
         /// <summary>
         /// 条件表达式（NCalc 语法）
         /// </summary>
@@ -147,8 +141,7 @@ namespace Engine.Animation
     /// <summary>
     /// 状态轨道配置（新格式）
     /// </summary>
-    public class StateTrackConfig
-    {
+    public class StateTrackConfig {
         /// <summary>
         /// 所属层名称
         /// </summary>
@@ -163,8 +156,7 @@ namespace Engine.Animation
     /// <summary>
     /// 驱动器配置
     /// </summary>
-    public class DriverConfig
-    {
+    public class DriverConfig {
         public string Type { get; set; }
         public Dictionary<string, object> Properties { get; set; }
     }
@@ -172,8 +164,7 @@ namespace Engine.Animation
     /// <summary>
     /// 动画配置
     /// </summary>
-    public class AnimationConfig
-    {
+    public class AnimationConfig {
         /// <summary>
         /// 模板名称
         /// </summary>

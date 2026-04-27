@@ -1,14 +1,8 @@
-#nullable disable
-
-using Engine.Graphics;
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// IK 目标 - 运行时目标（位置/方向约束）
     /// </summary>
-    public class IKTarget
-    {
+    public class IKTarget {
         /// <summary>
         /// 位置约束（模型空间坐标）
         /// </summary>
@@ -71,32 +65,18 @@ namespace Engine.Animation
         /// <summary>
         /// 创建位置目标
         /// </summary>
-        public static IKTarget PositionTarget(Vector3 position, float weight = 1.0f)
-        {
-            return new IKTarget { Position = position, PositionWeight = weight };
-        }
+        public static IKTarget PositionTarget(Vector3 position, float weight = 1.0f) => new() { Position = position, PositionWeight = weight };
 
         /// <summary>
         /// 创建方向目标
         /// </summary>
-        public static IKTarget AimTarget(Vector3 direction, float weight = 1.0f)
-        {
-            return new IKTarget { AimDirection = direction, AimWeight = weight };
-        }
+        public static IKTarget AimTarget(Vector3 direction, float weight = 1.0f) => new() { AimDirection = direction, AimWeight = weight };
 
         /// <summary>
         /// 创建混合目标（位置 + 方向）
         /// </summary>
-        public static IKTarget CombinedTarget(Vector3 position, Vector3 direction,
-            float positionWeight = 1.0f, float aimWeight = 1.0f)
-        {
-            return new IKTarget
-            {
-                Position = position,
-                PositionWeight = positionWeight,
-                AimDirection = direction,
-                AimWeight = aimWeight
-            };
-        }
+        public static IKTarget CombinedTarget(Vector3 position, Vector3 direction, float positionWeight = 1.0f, float aimWeight = 1.0f) => new() {
+            Position = position, PositionWeight = positionWeight, AimDirection = direction, AimWeight = aimWeight
+        };
     }
 }

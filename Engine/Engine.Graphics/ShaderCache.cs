@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Silk.NET.OpenGLES;
@@ -62,7 +60,6 @@ namespace Engine.Graphics {
             if (!IsInitialized) {
                 throw new InvalidOperationException("ShaderCache not initialized. Call Initialize() first.");
             }
-
             m_sources[shaderName] = source;
 
             // 解析 #include
@@ -78,11 +75,9 @@ namespace Engine.Graphics {
             if (!IsInitialized) {
                 throw new InvalidOperationException("ShaderCache not initialized. Call Initialize() first.");
             }
-
             foreach ((string name, string source) in shaders) {
                 m_sources[name] = source;
             }
-
             ResolveIncludes(basePath);
         }
 
@@ -96,7 +91,6 @@ namespace Engine.Graphics {
                     basePath += "/";
                 }
             }
-
             bool changed = true;
             while (changed) {
                 changed = false;
@@ -104,7 +98,6 @@ namespace Engine.Graphics {
                 foreach (string key in keys) {
                     string src = m_sources[key];
                     MatchCollection matches = Regex.Matches(src, @"#include\s+<([^>]+)>");
-
                     foreach (Match match in matches) {
                         string includeName = match.Groups[1].Value;
 
@@ -114,7 +107,8 @@ namespace Engine.Graphics {
                             changed = true;
                         }
                         // 否则通过回调加载
-                        else if (Storage.LoadContentStreamCallback != null && basePath != null) {
+                        else if (Storage.LoadContentStreamCallback != null
+                            && basePath != null) {
                             string includePath = basePath + includeName;
                             Stream includeStream = Storage.LoadContentStreamCallback(includePath);
                             if (includeStream != null) {
@@ -126,7 +120,6 @@ namespace Engine.Graphics {
                             }
                         }
                     }
-
                     m_sources[key] = src;
                 }
             }
@@ -145,7 +138,6 @@ namespace Engine.Graphics {
             if (!m_sources.TryGetValue(shaderName, out string src)) {
                 throw new FileNotFoundException($"Shader source not found: {shaderName}");
             }
-
             bool isVert = shaderName.EndsWith(".vert");
             int hash = ComputeHash(shaderName) ^ (defines?.ComputeHash() ?? 0);
 
@@ -203,12 +195,10 @@ namespace Engine.Graphics {
 
             // Defines
             sb.Append(definesStr);
-
             sb.AppendLine("#line 1");
 
             // Base source
             sb.Append(baseSource);
-
             return sb.ToString();
         }
 
@@ -216,21 +206,16 @@ namespace Engine.Graphics {
         /// 编译着色器
         /// </summary>
         public static uint CompileShader(bool isVert, string source, string shaderName) {
-            Silk.NET.OpenGLES.ShaderType type = isVert
-                ? Silk.NET.OpenGLES.ShaderType.VertexShader
-                : Silk.NET.OpenGLES.ShaderType.FragmentShader;
-
+            ShaderType type = isVert ? ShaderType.VertexShader : ShaderType.FragmentShader;
             uint shader = GLWrapper.GL.CreateShader(type);
             GLWrapper.GL.ShaderSource(shader, source);
             GLWrapper.GL.CompileShader(shader);
-            GLWrapper.GL.GetShader(shader, Silk.NET.OpenGLES.ShaderParameterName.CompileStatus, out int status);
-
+            GLWrapper.GL.GetShader(shader, ShaderParameterName.CompileStatus, out int status);
             if (status == 0) {
                 string log = GLWrapper.GL.GetShaderInfoLog(shader);
                 GLWrapper.GL.DeleteShader(shader);
                 throw new InvalidOperationException($"Shader compilation failed ({shaderName}): {log}");
             }
-
             return shader;
         }
 
@@ -241,15 +226,14 @@ namespace Engine.Graphics {
             if (!IsInitialized) {
                 return null;
             }
-
             string cacheKey = $"{vertexShaderHash},{fragmentShaderHash}";
             if (m_programCache.TryGetValue(cacheKey, out Shader program)) {
                 return program;
             }
 
             // 检查着色器 hash 是否存在
-            if (!m_shaderObjectCache.ContainsKey(vertexShaderHash) ||
-                !m_shaderObjectCache.ContainsKey(fragmentShaderHash)) {
+            if (!m_shaderObjectCache.ContainsKey(vertexShaderHash)
+                || !m_shaderObjectCache.ContainsKey(fragmentShaderHash)) {
                 return null;
             }
 
@@ -261,7 +245,6 @@ namespace Engine.Graphics {
 
             // 绑定 UBO
             BindUniformBlockBindingsCallback?.Invoke(programHandle);
-
             program = new Shader(programHandle);
             m_programCache[cacheKey] = program;
             return program;
@@ -274,7 +257,6 @@ namespace Engine.Graphics {
             if (!IsInitialized) {
                 throw new InvalidOperationException("ShaderCache not initialized. Call Initialize() first.");
             }
-
             string cacheKey = $"{vertexShaderHash},{fragmentShaderHash}";
             if (m_programCache.TryGetValue(cacheKey, out Shader program)) {
                 return program;
@@ -283,7 +265,6 @@ namespace Engine.Graphics {
             // 尝试从二进制缓存加载
             uint programHandle = TryLoadProgramBinary(cacheKey);
             bool fromCache = programHandle != 0;
-
             if (!fromCache) {
                 // 缓存加载失败，走编译链接流程
                 if (!m_shaderObjectCache.TryGetValue(vertexShaderHash, out uint vertShader)) {
@@ -292,17 +273,14 @@ namespace Engine.Graphics {
                 if (!m_shaderObjectCache.TryGetValue(fragmentShaderHash, out uint fragShader)) {
                     throw new InvalidOperationException($"Fragment shader not found: {fragmentShaderHash}");
                 }
-
                 programHandle = GLWrapper.GL.CreateProgram();
                 GLWrapper.GL.AttachShader(programHandle, vertShader);
                 GLWrapper.GL.AttachShader(programHandle, fragShader);
 
                 // 绑定 attribute locations（必须在链接前）
                 BindAttributeLocationsCallback?.Invoke(programHandle);
-
                 GLWrapper.GL.LinkProgram(programHandle);
-                GLWrapper.GL.GetProgram(programHandle, Silk.NET.OpenGLES.ProgramPropertyARB.LinkStatus, out int status);
-
+                GLWrapper.GL.GetProgram(programHandle, ProgramPropertyARB.LinkStatus, out int status);
                 if (status == 0) {
                     string log = GLWrapper.GL.GetProgramInfoLog(programHandle);
                     throw new InvalidOperationException($"Program link failed: {log}");
@@ -322,7 +300,6 @@ namespace Engine.Graphics {
                 // 从缓存加载成功，仍需绑定 UBO
                 BindUniformBlockBindingsCallback?.Invoke(programHandle);
             }
-
             program = new Shader(programHandle);
             m_programCache[cacheKey] = program;
             return program;
@@ -335,35 +312,24 @@ namespace Engine.Graphics {
             if (string.IsNullOrEmpty(CacheDirectory)) {
                 return 0;
             }
-
             string cacheFile = Path.Combine(CacheDirectory, $"{cacheKey}.bin");
             if (!File.Exists(cacheFile)) {
                 return 0;
             }
-
             try {
                 byte[] fileData = File.ReadAllBytes(cacheFile);
                 if (fileData.Length < 4) {
                     return 0;
                 }
-
                 uint formatValue = BitConverter.ToUInt32(fileData, 0);
                 int binaryLength = fileData.Length - 4;
-
                 uint programHandle = GLWrapper.GL.CreateProgram();
-                GLWrapper.GL.ProgramBinary(
-                    programHandle,
-                    (Silk.NET.OpenGLES.GLEnum)formatValue,
-                    fileData.AsSpan(4, binaryLength),
-                    (uint)binaryLength
-                );
-
-                GLWrapper.GL.GetProgram(programHandle, Silk.NET.OpenGLES.ProgramPropertyARB.LinkStatus, out int status);
+                GLWrapper.GL.ProgramBinary(programHandle, (GLEnum)formatValue, fileData.AsSpan(4, binaryLength), (uint)binaryLength);
+                GLWrapper.GL.GetProgram(programHandle, ProgramPropertyARB.LinkStatus, out int status);
                 if (status == 0) {
                     GLWrapper.GL.DeleteProgram(programHandle);
                     return 0;
                 }
-
                 return programHandle;
             }
             catch {
@@ -387,38 +353,21 @@ namespace Engine.Graphics {
             if (string.IsNullOrEmpty(CacheDirectory)) {
                 return;
             }
-
             try {
                 if (!Storage.DirectoryExists(CacheDirectory)) {
                     Storage.CreateDirectory(CacheDirectory);
                 }
-
-                GLWrapper.GL.GetProgram(
-                    programHandle,
-                    Silk.NET.OpenGLES.ProgramPropertyARB.ProgramBinaryLength,
-                    out int binaryLength
-                );
-
+                GLWrapper.GL.GetProgram(programHandle, ProgramPropertyARB.ProgramBinaryLength, out int binaryLength);
                 if (binaryLength <= 0) {
                     return;
                 }
-
                 byte[] binary = new byte[binaryLength + 4];
                 uint formatValue;
-
                 fixed (byte* ptr = &binary[4]) {
-                    GLWrapper.GL.GetProgramBinary(
-                        programHandle,
-                        (uint)binaryLength,
-                        out _,
-                        out Silk.NET.OpenGLES.GLEnum format,
-                        ptr
-                    );
+                    GLWrapper.GL.GetProgramBinary(programHandle, (uint)binaryLength, out _, out GLEnum format, ptr);
                     formatValue = (uint)format;
                 }
-
                 BitConverter.TryWriteBytes(binary, formatValue);
-
                 string cacheFile = Path.Combine(CacheDirectory, $"{cacheKey}.bin");
                 Storage.WriteAllBytes(cacheFile, binary);
             }
@@ -430,8 +379,7 @@ namespace Engine.Graphics {
         /// <summary>
         /// 获取已解析的着色器源代码
         /// </summary>
-        public static string GetSource(string shaderName) =>
-            m_sources.TryGetValue(shaderName, out string src) ? src : null;
+        public static string GetSource(string shaderName) => m_sources.TryGetValue(shaderName, out string src) ? src : null;
 
         /// <summary>
         /// 计算字符串 hash
@@ -465,7 +413,6 @@ namespace Engine.Graphics {
                 program.Dispose();
             }
             m_programCache.Clear();
-
             m_sources.Clear();
             IsInitialized = false;
         }

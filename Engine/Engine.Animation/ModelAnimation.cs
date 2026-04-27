@@ -8,6 +8,7 @@ namespace Engine.Animation {
         public string Name { get; set; } = string.Empty;
         public float Duration { get; set; }
         public List<AnimationChannel> Channels { get; set; } = [];
+
         /// <summary>
         /// KHR_animation_pointer targets. Action&lt;float&gt; 接受时间（秒），
         /// 采样曲线并直接修改目标属性。
@@ -44,10 +45,12 @@ namespace Engine.Animation {
             public Vector3[] Translations { get; set; } = [];
             public Quaternion[] Rotations { get; set; } = [];
             public Vector3[] Scales { get; set; } = [];
+
             /// <summary>
             /// Morph target weights per keyframe. Weights[i] is a float[] with one weight per morph target.
             /// </summary>
             public float[][] Weights { get; set; } = [];
+
             public InterpolationType Interpolation { get; set; }
         }
 

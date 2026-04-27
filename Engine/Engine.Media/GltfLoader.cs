@@ -1,11 +1,10 @@
-#nullable disable
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+using System.Numerics;
+using System.Reflection;
 using Engine.Animation;
 using Engine.Graphics;
+using SharpGLTF.Animations;
+using SharpGLTF.IO;
+using SharpGLTF.Memory;
 using SharpGLTF.Schema2;
 using SharpGLTF.Validation;
 using GltfPrimitiveType = SharpGLTF.Schema2.PrimitiveType;
@@ -41,14 +40,12 @@ namespace Engine.Media {
         /// <returns>ModelData 实例</returns>
         public static ModelData LoadFromFile(string filePath) {
             ArgumentNullException.ThrowIfNull(filePath);
-
             string basePath = Path.GetDirectoryName(filePath);
-            LoadExternalStreamCallback = (relativePath) => {
+            LoadExternalStreamCallback = relativePath => {
                 string fullPath = Path.Combine(basePath, relativePath);
                 return File.Exists(fullPath) ? File.OpenRead(fullPath) : null;
             };
-
-            using var stream = File.OpenRead(filePath);
+            using FileStream stream = File.OpenRead(filePath);
             return Load(stream, basePath);
         }
 
@@ -60,6 +57,7 @@ namespace Engine.Media {
         /// <returns>ModelData 实例</returns>
         public static ModelData Load(Stream stream, string basePath = null) {
             ArgumentNullException.ThrowIfNull(stream);
+
             BYTES FileReaderCallback(string assetName) {
                 string path = basePath == null ? assetName : Storage.CombinePaths(basePath.Replace('\\', '/'), assetName);
                 Stream resourceStream = LoadExternalStreamCallback(path);
@@ -74,7 +72,8 @@ namespace Engine.Media {
                 }
                 return new BYTES(bytes);
             }
-            var context = ReadContext.Create(FileReaderCallback);
+
+            ReadContext context = ReadContext.Create(FileReaderCallback);
             context.Validation = ValidationMode.Skip;
             ModelRoot modelRoot = context.ReadSchema2(stream);
             return ConvertToModelData(modelRoot);
@@ -109,7 +108,6 @@ namespace Engine.Media {
 
             // 转换动画数据
             ConvertAnimations(modelRoot, modelData);
-
             return modelData;
         }
 
@@ -139,11 +137,7 @@ namespace Engine.Media {
 
             // 如果需要虚拟根骨骼，创建它
             if (needVirtualRoot) {
-                tempBones[0] = new ModelBoneData {
-                    Name = "Root",
-                    Transform = Matrix.Identity,
-                    ParentBoneIndex = -1
-                };
+                tempBones[0] = new ModelBoneData { Name = "Root", Transform = Matrix.Identity, ParentBoneIndex = -1 };
                 virtualRootIndex = 0;
             }
 
@@ -152,9 +146,7 @@ namespace Engine.Media {
                 Node node = allNodes[i];
                 int boneIndex = i + boneOffset;
                 tempBones[boneIndex] = new ModelBoneData {
-                    Name = node.Name ?? $"Node{node.LogicalIndex}",
-                    Transform = node.LocalMatrix,
-                    ParentBoneIndex = -1 // 先设为 -1，后面再更新
+                    Name = node.Name ?? $"Node{node.LogicalIndex}", Transform = node.LocalMatrix, ParentBoneIndex = -1 // 先设为 -1，后面再更新
                 };
             }
 
@@ -163,10 +155,11 @@ namespace Engine.Media {
                 Node node = allNodes[i];
                 int boneIndex = i + boneOffset;
                 Node parent = node.VisualParent;
-
-                if (parent != null && nodeToTempIndex.TryGetValue(parent, out int parentIndex)) {
+                if (parent != null
+                    && nodeToTempIndex.TryGetValue(parent, out int parentIndex)) {
                     tempBones[boneIndex].ParentBoneIndex = parentIndex + boneOffset;
-                } else if (needVirtualRoot) {
+                }
+                else if (needVirtualRoot) {
                     // 没有父节点的节点，设置为虚拟根骨骼的子节点
                     tempBones[boneIndex].ParentBoneIndex = virtualRootIndex;
                 }
@@ -186,7 +179,6 @@ namespace Engine.Media {
                 sortedIndices.Add(i);
             }
             sortedIndices.Sort((a, b) => depths[a].CompareTo(depths[b]));
-
             for (int newIndex = 0; newIndex < sortedIndices.Count; newIndex++) {
                 oldToNew[sortedIndices[newIndex]] = newIndex;
             }
@@ -210,18 +202,15 @@ namespace Engine.Media {
 
             // 如果没有节点，创建一个默认根节点
             if (modelData.Bones.Count == 0) {
-                modelData.Bones.Add(new ModelBoneData {
-                    Name = "Root",
-                    ParentBoneIndex = -1,
-                    Transform = Matrix.Identity
-                });
+                modelData.Bones.Add(new ModelBoneData { Name = "Root", ParentBoneIndex = -1, Transform = Matrix.Identity });
             }
         }
 
         public static int CalculateDepth(int boneIndex, ModelBoneData[] bones) {
             int depth = 0;
             int current = boneIndex;
-            while (bones[current].ParentBoneIndex >= 0 && depth < bones.Length) {
+            while (bones[current].ParentBoneIndex >= 0
+                && depth < bones.Length) {
                 current = bones[current].ParentBoneIndex;
                 depth++;
             }
@@ -231,9 +220,10 @@ namespace Engine.Media {
         /// <summary>
         /// 加载纹理和材质，建立索引映射
         /// </summary>
-        public static void ConvertTexturesAndMaterials(ModelRoot modelRoot, ModelData modelData,
-            Dictionary<GltfTexture, int> textureToIndex, Dictionary<GltfMaterial, int> materialToIndex) {
-
+        public static void ConvertTexturesAndMaterials(ModelRoot modelRoot,
+            ModelData modelData,
+            Dictionary<GltfTexture, int> textureToIndex,
+            Dictionary<GltfMaterial, int> materialToIndex) {
             // 1. 分析纹理用途，确定 sRGB vs Linear
             Dictionary<int, bool> textureIsSrgb = new();
             foreach (GltfTexture tex in modelRoot.LogicalTextures) {
@@ -249,27 +239,19 @@ namespace Engine.Media {
                 if (image?.Content == null) {
                     continue;
                 }
-
                 int texIndex = modelData.Textures.Count;
                 textureToIndex[gltfTexture] = texIndex;
                 modelData.GltfTextureToModelIndex[gltfTexture.LogicalIndex] = texIndex;
-
                 bool isSrgb = textureIsSrgb.GetValueOrDefault(gltfTexture.LogicalIndex, true);
-
-                ModelTextureInfo texInfo = new() {
-                    Name = image.Name ?? $"Texture{image.LogicalIndex}",
-                    IsSrgb = isSrgb
-                };
-
+                ModelTextureInfo texInfo = new() { Name = image.Name ?? $"Texture{image.LogicalIndex}", IsSrgb = isSrgb };
                 string sourcePath = image.Content.SourcePath;
                 if (!string.IsNullOrEmpty(sourcePath)) {
                     texInfo.SourceImage = image.Content;
-                } else {
+                }
+                else {
                     texInfo.SourceImage = image.Content;
                 }
-
                 texInfo.SetSampler(gltfTexture.Sampler);
-
                 modelData.Textures.Add(texInfo);
             }
 
@@ -277,13 +259,8 @@ namespace Engine.Media {
             foreach (GltfMaterial gltfMaterial in modelRoot.LogicalMaterials) {
                 int matIndex = modelData.Materials.Count;
                 materialToIndex[gltfMaterial] = matIndex;
-
-                ModelMaterial mat = new() {
-                    Name = gltfMaterial.Name ?? $"Material{gltfMaterial.LogicalIndex}"
-                };
-
+                ModelMaterial mat = new() { Name = gltfMaterial.Name ?? $"Material{gltfMaterial.LogicalIndex}" };
                 LoadMaterialProperties(gltfMaterial, mat, modelData);
-
                 modelData.Materials.Add(mat);
             }
         }
@@ -316,7 +293,7 @@ namespace Engine.Media {
             // BaseColor
             MaterialChannel? channel = gltfMaterial.FindChannel("BaseColor");
             if (channel != null) {
-                var color = channel.Value.Color;
+                System.Numerics.Vector4 color = channel.Value.Color;
                 mat.BaseColorFactor = new Vector4(color.X, color.Y, color.Z, color.W);
                 mat.BaseColorTexture = LoadMaterialTexture(channel, modelData);
             }
@@ -346,7 +323,7 @@ namespace Engine.Media {
             // Emissive
             channel = gltfMaterial.FindChannel("Emissive");
             if (channel != null) {
-                var emissive = channel.Value.Color;
+                System.Numerics.Vector4 emissive = channel.Value.Color;
                 mat.EmissiveFactor = new Vector3(emissive.X, emissive.Y, emissive.Z);
                 mat.EmissiveTexture = LoadMaterialTexture(channel, modelData);
             }
@@ -371,20 +348,21 @@ namespace Engine.Media {
         /// 加载材质扩展
         /// </summary>
         public static void LoadMaterialExtensions(GltfMaterial gltfMaterial, ModelMaterial mat, ModelData modelData) {
-            foreach (var jsonSerializable in gltfMaterial.Extensions) {
+            foreach (JsonSerializable jsonSerializable in gltfMaterial.Extensions) {
                 Type type = jsonSerializable.GetType();
                 string extName = null;
 
                 // 获取扩展名称
                 if (jsonSerializable is ExtraProperties) {
-                    var method = type.GetMethod("GetSchemaName", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                    MethodInfo method = type.GetMethod("GetSchemaName", BindingFlags.Instance | BindingFlags.NonPublic);
                     extName = (string)method?.Invoke(jsonSerializable, null);
-                } else {
-                    var nameProp = type.GetProperty("Name", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+                }
+                else {
+                    PropertyInfo nameProp = type.GetProperty("Name", BindingFlags.Instance | BindingFlags.Public);
                     extName = (string)nameProp?.GetValue(jsonSerializable);
                 }
-
-                if (extName == null || !MaterialExtensionManager.IsExtensionEnabled(extName)) {
+                if (extName == null
+                    || !MaterialExtensionManager.IsExtensionEnabled(extName)) {
                     continue;
                 }
 
@@ -427,12 +405,10 @@ namespace Engine.Media {
             if (channel?.Texture == null) {
                 return null;
             }
-
             int textureIndex = modelData.GetTextureIndex(channel.Value.Texture.LogicalIndex);
             if (textureIndex < 0) {
                 return null;
             }
-
             int uvIndex = channel.Value.TextureCoordinate;
             ModelMaterialTexture matTex = new(textureIndex, uvIndex);
 
@@ -445,81 +421,87 @@ namespace Engine.Media {
                     transform.Rotation
                 );
             }
-
             return matTex;
         }
 
         public static float GetFactorSafe(MaterialChannel channel, string factorName, float defaultValue) {
             try {
                 return channel.GetFactor(factorName);
-            } catch {
+            }
+            catch {
                 return defaultValue;
             }
         }
 
         public static int GetTextureIndex(GltfTexture texture, Dictionary<GltfTexture, int> textureToIndex) {
-            if (texture == null || !textureToIndex.TryGetValue(texture, out int index)) {
+            if (texture == null
+                || !textureToIndex.TryGetValue(texture, out int index)) {
                 return -1;
             }
             return index;
         }
 
-        public static void ConvertMeshes(ModelRoot modelRoot, ModelData modelData, List<Node> allNodes,
-            Dictionary<Node, int> nodeToIndex, Dictionary<GltfTexture, int> textureToIndex, Dictionary<GltfMaterial, int> materialToIndex) {
+        public static void ConvertMeshes(ModelRoot modelRoot,
+            ModelData modelData,
+            List<Node> allNodes,
+            Dictionary<Node, int> nodeToIndex,
+            Dictionary<GltfTexture, int> textureToIndex,
+            Dictionary<GltfMaterial, int> materialToIndex) {
             int bufferIndex = 0;
 
             // 获取默认场景或使用所有根节点
             Scene scene = modelRoot.DefaultScene ?? modelRoot.LogicalScenes.FirstOrDefault();
             IEnumerable<Node> nodesToProcess;
-
             if (scene != null) {
                 nodesToProcess = scene.VisualChildren;
-            } else {
+            }
+            else {
                 nodesToProcess = modelRoot.LogicalNodes.Where(n => n.VisualParent == null);
             }
-
             foreach (Node node in nodesToProcess) {
                 ProcessNodeForMesh(node, modelData, allNodes, nodeToIndex, ref bufferIndex, materialToIndex);
             }
         }
 
-        public static void ProcessNodeForMesh(Node node, ModelData modelData, List<Node> allNodes,
-            Dictionary<Node, int> nodeToIndex, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex,
+        public static void ProcessNodeForMesh(Node node,
+            ModelData modelData,
+            List<Node> allNodes,
+            Dictionary<Node, int> nodeToIndex,
+            ref int bufferIndex,
+            Dictionary<GltfMaterial, int> materialToIndex,
             bool parentVisible = true) {
             // 解析当前节点的 visibility 状态
             bool nodeVisible = parentVisible;
             if (node.TryGetVisibility(out bool vis)) {
                 nodeVisible = vis && parentVisible;
             }
-
             if (node.Mesh != null) {
                 int boneIndex = nodeToIndex.TryGetValue(node, out int idx) ? idx : 0;
 
                 // 每个 primitive 创建独立 ModelMeshData，避免同一 mesh 内不同材质的 parts 被错误地一起绘制
                 // EXT_mesh_gpu_instancing：读取实例变换矩阵
                 MeshGpuInstancing gpuInstancing = node.GetGpuInstancing();
-                System.Numerics.Matrix4x4[] instanceMatrices = null;
+                Matrix4x4[] instanceMatrices = null;
                 int instanceCount = 0;
-                if (gpuInstancing != null && gpuInstancing.Count > 0) {
+                if (gpuInstancing != null
+                    && gpuInstancing.Count > 0) {
                     instanceCount = gpuInstancing.Count;
-                    instanceMatrices = new System.Numerics.Matrix4x4[instanceCount];
+                    instanceMatrices = new Matrix4x4[instanceCount];
                     for (int i = 0; i < instanceCount; i++) {
                         instanceMatrices[i] = gpuInstancing.GetLocalMatrix(i);
                     }
                 }
-
                 foreach (MeshPrimitive primitive in node.Mesh.Primitives) {
                     ModelMeshPartData meshPart = ProcessPrimitive(primitive, modelData, ref bufferIndex, materialToIndex);
-                    if (meshPart == null) continue;
+                    if (meshPart == null) {
+                        continue;
+                    }
 
                     // 设置实例化数据（同节点所有 primitive 共享同一数组引用，请勿修改数组内容）
                     meshPart.InstanceCount = instanceCount;
                     meshPart.InstanceMatrices = instanceMatrices;
-
                     ModelMeshData meshData = new() {
-                        Name = node.Mesh.Name ?? $"Mesh{node.Mesh.LogicalIndex}",
-                        ParentBoneIndex = boneIndex,
-                        IsVisible = nodeVisible
+                        Name = node.Mesh.Name ?? $"Mesh{node.Mesh.LogicalIndex}", ParentBoneIndex = boneIndex, IsVisible = nodeVisible
                     };
                     meshData.MeshParts.Add(meshPart);
                     CalculateMeshBoundingBox(meshData, meshData.MeshParts);
@@ -537,9 +519,10 @@ namespace Engine.Media {
             }
 
             // KHR_lights_punctual
-            if (node.PunctualLight != null && modelData.Lights.Count < ModelLight.MaxPunctualLights) {
-                var pl = node.PunctualLight;
-                var wm = node.WorldMatrix;
+            if (node.PunctualLight != null
+                && modelData.Lights.Count < ModelLight.MaxPunctualLights) {
+                PunctualLight pl = node.PunctualLight;
+                Matrix4x4 wm = node.WorldMatrix;
                 ModelLightData ld = new() {
                     Color = new Vector3(pl.Color.X, pl.Color.Y, pl.Color.Z),
                     Intensity = pl.Intensity,
@@ -562,28 +545,36 @@ namespace Engine.Media {
                 // 记录 node → light 索引映射（visibility 动画用）
                 modelData.GltfNodeToLightIndex[node.LogicalIndex] = modelData.Lights.Count - 1;
             }
-
             foreach (Node child in node.VisualChildren) {
-                ProcessNodeForMesh(child, modelData, allNodes, nodeToIndex, ref bufferIndex, materialToIndex,
-                    nodeVisible);
+                ProcessNodeForMesh(
+                    child,
+                    modelData,
+                    allNodes,
+                    nodeToIndex,
+                    ref bufferIndex,
+                    materialToIndex,
+                    nodeVisible
+                );
             }
         }
 
-        public static ModelMeshPartData ProcessPrimitive(MeshPrimitive primitive, ModelData modelData, ref int bufferIndex, Dictionary<GltfMaterial, int> materialToIndex) {
+        public static ModelMeshPartData ProcessPrimitive(MeshPrimitive primitive,
+            ModelData modelData,
+            ref int bufferIndex,
+            Dictionary<GltfMaterial, int> materialToIndex) {
             // 获取顶点数据
-            var posAccessor = primitive.GetVertexAccessor("POSITION");
+            Accessor posAccessor = primitive.GetVertexAccessor("POSITION");
             if (posAccessor == null) {
                 return null;
             }
-
-            var positions = posAccessor.AsVector3Array();
-            var normals = primitive.GetVertexAccessor("NORMAL")?.AsVector3Array();
-            var uv0 = primitive.GetVertexAccessor("TEXCOORD_0")?.AsVector2Array();
-            var uv1 = primitive.GetVertexAccessor("TEXCOORD_1")?.AsVector2Array();
-            var tangents = primitive.GetVertexAccessor("TANGENT")?.AsVector4Array();
-            var colors = primitive.GetVertexAccessor("COLOR_0")?.AsVector4Array();
-            var joints = primitive.GetVertexAccessor("JOINTS_0")?.AsVector4Array();
-            var weights = primitive.GetVertexAccessor("WEIGHTS_0")?.AsVector4Array();
+            IAccessorArray<System.Numerics.Vector3> positions = posAccessor.AsVector3Array();
+            IAccessorArray<System.Numerics.Vector3> normals = primitive.GetVertexAccessor("NORMAL")?.AsVector3Array();
+            IAccessorArray<System.Numerics.Vector2> uv0 = primitive.GetVertexAccessor("TEXCOORD_0")?.AsVector2Array();
+            IAccessorArray<System.Numerics.Vector2> uv1 = primitive.GetVertexAccessor("TEXCOORD_1")?.AsVector2Array();
+            IAccessorArray<System.Numerics.Vector4> tangents = primitive.GetVertexAccessor("TANGENT")?.AsVector4Array();
+            IAccessorArray<System.Numerics.Vector4> colors = primitive.GetVertexAccessor("COLOR_0")?.AsVector4Array();
+            IAccessorArray<System.Numerics.Vector4> joints = primitive.GetVertexAccessor("JOINTS_0")?.AsVector4Array();
+            IAccessorArray<System.Numerics.Vector4> weights = primitive.GetVertexAccessor("WEIGHTS_0")?.AsVector4Array();
 
             // Morph Target 数据收集
             int morphTargetCount = primitive.MorphTargetsCount;
@@ -595,16 +586,17 @@ namespace Engine.Media {
                 morphNormals = new System.Numerics.Vector3[morphTargetCount][];
                 morphTangentsArr = new System.Numerics.Vector4[morphTargetCount][];
                 for (int t = 0; t < morphTargetCount; t++) {
-                    var ta = primitive.GetMorphTargetAccessors(t);
-                    morphPositions[t] = ta.TryGetValue("POSITION", out var mp) ? mp.AsVector3Array().ToArray() : null;
-                    morphNormals[t] = ta.TryGetValue("NORMAL", out var mn) ? mn.AsVector3Array().ToArray() : null;
-                    morphTangentsArr[t] = ta.TryGetValue("TANGENT", out var mt) ? mt.AsVector4Array().ToArray() : null;
+                    IReadOnlyDictionary<string, Accessor> ta = primitive.GetMorphTargetAccessors(t);
+                    morphPositions[t] = ta.TryGetValue("POSITION", out Accessor mp) ? mp.AsVector3Array().ToArray() : null;
+                    morphNormals[t] = ta.TryGetValue("NORMAL", out Accessor mn) ? mn.AsVector3Array().ToArray() : null;
+                    morphTangentsArr[t] = ta.TryGetValue("TANGENT", out Accessor mt) ? mt.AsVector4Array().ToArray() : null;
                 }
             }
 
             // 获取索引数据
             uint[] indices = primitive.GetIndices()?.ToArray();
-            if (indices == null || indices.Length == 0) {
+            if (indices == null
+                || indices.Length == 0) {
                 // 如果没有索引，创建顺序索引（避免 LINQ 分配）
                 indices = new uint[positions.Count];
                 for (int i = 0; i < positions.Count; i++) {
@@ -622,52 +614,76 @@ namespace Engine.Media {
             System.Numerics.Vector3[] uwPos = null, uwNrm = null;
             System.Numerics.Vector2[] uwUv0 = null, uwUv1 = null;
             System.Numerics.Vector4[] uwJoints = null, uwWeights = null, uwColors = null;
-
-            if (isTrianglesOnly && tangents == null && normals != null && uv0 != null && indices != null) {
+            if (isTrianglesOnly
+                && tangents == null
+                && normals != null
+                && uv0 != null
+                && indices != null) {
                 int idxCount = indices.Length;
                 uwPos = new System.Numerics.Vector3[idxCount];
                 uwNrm = new System.Numerics.Vector3[idxCount];
                 uwUv0 = new System.Numerics.Vector2[idxCount];
-                if (uv1 != null) uwUv1 = new System.Numerics.Vector2[idxCount];
-                if (colors != null) uwColors = new System.Numerics.Vector4[idxCount];
-                if (joints != null) uwJoints = new System.Numerics.Vector4[idxCount];
-                if (weights != null) uwWeights = new System.Numerics.Vector4[idxCount];
-
+                if (uv1 != null) {
+                    uwUv1 = new System.Numerics.Vector2[idxCount];
+                }
+                if (colors != null) {
+                    uwColors = new System.Numerics.Vector4[idxCount];
+                }
+                if (joints != null) {
+                    uwJoints = new System.Numerics.Vector4[idxCount];
+                }
+                if (weights != null) {
+                    uwWeights = new System.Numerics.Vector4[idxCount];
+                }
                 for (int i = 0; i < idxCount; i++) {
                     int idx = (int)indices[i];
                     uwPos[i] = positions[idx];
                     uwNrm[i] = normals[idx];
                     uwUv0[i] = uv0[idx];
-                    if (uwUv1 != null) uwUv1[i] = uv1[idx];
-                    if (uwColors != null) uwColors[i] = colors[idx];
-                    if (uwJoints != null) uwJoints[i] = joints[idx];
-                    if (uwWeights != null) uwWeights[i] = weights[idx];
+                    if (uwUv1 != null) {
+                        uwUv1[i] = uv1[idx];
+                    }
+                    if (uwColors != null) {
+                        uwColors[i] = colors[idx];
+                    }
+                    if (uwJoints != null) {
+                        uwJoints[i] = joints[idx];
+                    }
+                    if (uwWeights != null) {
+                        uwWeights[i] = weights[idx];
+                    }
                 }
 
                 // Unweld Morph Targets
                 if (morphTargetCount > 0) {
                     for (int t = 0; t < morphTargetCount; t++) {
                         if (morphPositions[t] != null) {
-                            var uw = new System.Numerics.Vector3[idxCount];
-                            for (int i = 0; i < idxCount; i++) uw[i] = morphPositions[t][(int)indices[i]];
+                            System.Numerics.Vector3[] uw = new System.Numerics.Vector3[idxCount];
+                            for (int i = 0; i < idxCount; i++) {
+                                uw[i] = morphPositions[t][(int)indices[i]];
+                            }
                             morphPositions[t] = uw;
                         }
                         if (morphNormals[t] != null) {
-                            var uw = new System.Numerics.Vector3[idxCount];
-                            for (int i = 0; i < idxCount; i++) uw[i] = morphNormals[t][(int)indices[i]];
+                            System.Numerics.Vector3[] uw = new System.Numerics.Vector3[idxCount];
+                            for (int i = 0; i < idxCount; i++) {
+                                uw[i] = morphNormals[t][(int)indices[i]];
+                            }
                             morphNormals[t] = uw;
                         }
                         if (morphTangentsArr[t] != null) {
-                            var uw = new System.Numerics.Vector4[idxCount];
-                            for (int i = 0; i < idxCount; i++) uw[i] = morphTangentsArr[t][(int)indices[i]];
+                            System.Numerics.Vector4[] uw = new System.Numerics.Vector4[idxCount];
+                            for (int i = 0; i < idxCount; i++) {
+                                uw[i] = morphTangentsArr[t][(int)indices[i]];
+                            }
                             morphTangentsArr[t] = uw;
                         }
                     }
                 }
-
                 indices = new uint[idxCount];
-                for (int i = 0; i < idxCount; i++) indices[i] = (uint)i;
-
+                for (int i = 0; i < idxCount; i++) {
+                    indices[i] = (uint)i;
+                }
                 generatedTangents = GenerateTangents(uwPos, uwNrm, uwUv0, indices);
             }
 
@@ -722,44 +738,44 @@ namespace Engine.Media {
                 elements.Add(new VertexElement(offset, VertexElementFormat.Vector4, VertexElementSemantic.BlendWeights));
                 offset += 16;
             }
-
             VertexDeclaration vertexDecl = new(elements.ToArray());
 
             // 构建顶点缓冲
             int vertexCount = uwPos != null ? uwPos.Length : positions.Count;
             byte[] vertexBuffer = new byte[vertexCount * offset];
             int vertexStride = offset;
-
             for (int i = 0; i < vertexCount; i++) {
                 int baseOffset = i * vertexStride;
                 int currentOffset = 0;
 
                 // Position
-                var pos = uwPos != null ? uwPos[i] : positions[i];
+                System.Numerics.Vector3 pos = uwPos != null ? uwPos[i] : positions[i];
                 WriteVector3(vertexBuffer, baseOffset + currentOffset, pos.X, pos.Y, pos.Z);
                 currentOffset += 12;
 
                 // Normal - 始终写入，没有数据时使用默认向上法线
                 if (hasNormals) {
-                    var normal = uwNrm != null ? uwNrm[i] : normals[i];
+                    System.Numerics.Vector3 normal = uwNrm != null ? uwNrm[i] : normals[i];
                     WriteVector3(vertexBuffer, baseOffset + currentOffset, normal.X, normal.Y, normal.Z);
-                } else {
+                }
+                else {
                     WriteVector3(vertexBuffer, baseOffset + currentOffset, 0f, 1f, 0f);
                 }
                 currentOffset += 12;
 
                 // UV0 - 始终写入，没有数据时使用默认值
                 if (hasUV0) {
-                    var uv = uwUv0 != null ? uwUv0[i] : uv0[i];
+                    System.Numerics.Vector2 uv = uwUv0 != null ? uwUv0[i] : uv0[i];
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, uv.X, uv.Y);
-                } else {
+                }
+                else {
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, 0f, 0f);
                 }
                 currentOffset += 8;
 
                 // UV1 - 仅在有 TEXCOORD_1 数据时写入
                 if (hasUV1) {
-                    var uv = uwUv1 != null ? uwUv1[i] : uv1[i];
+                    System.Numerics.Vector2 uv = uwUv1 != null ? uwUv1[i] : uv1[i];
                     WriteVector2(vertexBuffer, baseOffset + currentOffset, uv.X, uv.Y);
                     currentOffset += 8;
                 }
@@ -767,10 +783,11 @@ namespace Engine.Media {
                 // Tangent
                 if (hasTangents) {
                     if (tangents != null) {
-                        var t = tangents[i];
+                        System.Numerics.Vector4 t = tangents[i];
                         WriteVector4(vertexBuffer, baseOffset + currentOffset, t.X, t.Y, t.Z, t.W);
-                    } else {
-                        var t = generatedTangents[i];
+                    }
+                    else {
+                        System.Numerics.Vector4 t = generatedTangents[i];
                         WriteVector4(vertexBuffer, baseOffset + currentOffset, t.X, t.Y, t.Z, t.W);
                     }
                     currentOffset += 16;
@@ -778,22 +795,22 @@ namespace Engine.Media {
 
                 // Color - 顶点颜色
                 if (hasColors) {
-                    var c = uwColors != null ? uwColors[i] : colors[i];
+                    System.Numerics.Vector4 c = uwColors != null ? uwColors[i] : colors[i];
                     WriteVector4(vertexBuffer, baseOffset + currentOffset, c.X, c.Y, c.Z, c.W);
                     currentOffset += 16;
                 }
 
                 // BlendIndices 和 BlendWeights
                 if (hasSkinning) {
-                    var joint = uwJoints != null ? uwJoints[i] : joints[i];
-                    var weight = uwWeights != null ? uwWeights[i] : weights[i];
+                    System.Numerics.Vector4 joint = uwJoints != null ? uwJoints[i] : joints[i];
+                    System.Numerics.Vector4 weight = uwWeights != null ? uwWeights[i] : weights[i];
 
                     // BlendIndices (存储为 float)
-                    WriteVector4(buffer: vertexBuffer, baseOffset + currentOffset, joint.X, joint.Y, joint.Z, joint.W);
+                    WriteVector4(vertexBuffer, baseOffset + currentOffset, joint.X, joint.Y, joint.Z, joint.W);
                     currentOffset += 16;
 
                     // BlendWeights
-                    WriteVector4(buffer: vertexBuffer, baseOffset + currentOffset, weight.X, weight.Y, weight.Z, weight.W);
+                    WriteVector4(vertexBuffer, baseOffset + currentOffset, weight.X, weight.Y, weight.Z, weight.W);
                     currentOffset += 16;
                 }
             }
@@ -809,7 +826,6 @@ namespace Engine.Media {
                     uint idx0 = indices[baseIdx];
                     uint idx1 = indices[baseIdx + 2]; // 交换
                     uint idx2 = indices[baseIdx + 1]; // 交换
-
                     WriteIndex32(indexBuffer, baseIdx, idx0);
                     WriteIndex32(indexBuffer, baseIdx + 1, idx1);
                     WriteIndex32(indexBuffer, baseIdx + 2, idx2);
@@ -823,19 +839,14 @@ namespace Engine.Media {
             }
 
             // 创建缓冲数据
-            ModelBuffersData buffersData = new() {
-                VertexDeclaration = vertexDecl,
-                Vertices = vertexBuffer,
-                Indices = indexBuffer
-            };
-
+            ModelBuffersData buffersData = new() { VertexDeclaration = vertexDecl, Vertices = vertexBuffer, Indices = indexBuffer };
             modelData.Buffers.Add(buffersData);
 
             // 计算包围盒
             BoundingBox bbox;
             if (uwPos != null) {
-                var min = new Vector3(float.MaxValue);
-                var max = new Vector3(float.MinValue);
+                Vector3 min = new(float.MaxValue);
+                Vector3 max = new(float.MinValue);
                 for (int i = 0; i < uwPos.Length; i++) {
                     min.X = Math.Min(min.X, uwPos[i].X);
                     min.Y = Math.Min(min.Y, uwPos[i].Y);
@@ -845,10 +856,10 @@ namespace Engine.Media {
                     max.Z = Math.Max(max.Z, uwPos[i].Z);
                 }
                 bbox = new BoundingBox(min, max);
-            } else {
+            }
+            else {
                 bbox = CalculateBoundingBoxFromPositions(positions, indices);
             }
-
             ModelMeshPartData meshPart = new() {
                 BuffersDataIndex = bufferIndex++,
                 StartIndex = 0,
@@ -858,7 +869,8 @@ namespace Engine.Media {
             };
 
             // 设置材质索引
-            if (primitive.Material != null && materialToIndex.TryGetValue(primitive.Material, out int matIndex)) {
+            if (primitive.Material != null
+                && materialToIndex.TryGetValue(primitive.Material, out int matIndex)) {
                 meshPart.MaterialIndex = matIndex;
             }
 
@@ -866,20 +878,20 @@ namespace Engine.Media {
             if (morphTargetCount > 0) {
                 HashSet<string> morphAttributes = new();
                 for (int t = 0; t < morphTargetCount; t++) {
-                    foreach (var attr in primitive.GetMorphTargetAccessors(t).Keys) {
+                    foreach (string attr in primitive.GetMorphTargetAccessors(t).Keys) {
                         morphAttributes.Add(attr);
                     }
                 }
                 int finalVertexCount = uwPos != null ? uwPos.Length : positions.Count;
-                var morphTex = new MorphTargetTexture(finalVertexCount, morphTargetCount, morphAttributes);
+                MorphTargetTexture morphTex = new(finalVertexCount, morphTargetCount, morphAttributes);
                 // 转为数组列表用于 UploadData
-                var mpList = ToEngineVector3List(morphPositions);
-                var mnList = ToEngineVector3List(morphNormals);
-                var mtList = ToEngineVector4List(morphTangentsArr);
+                IReadOnlyList<Vector3>[] mpList = ToEngineVector3List(morphPositions);
+                IReadOnlyList<Vector3>[] mnList = ToEngineVector3List(morphNormals);
+                IReadOnlyList<Vector4>[] mtList = ToEngineVector4List(morphTangentsArr);
                 morphTex.UploadData(mpList, mnList, mtList, null, null, null);
                 meshPart.MorphTargetTexture = morphTex;
                 meshPart.MorphTargetCount = morphTargetCount;
-                var meshWeights = primitive.LogicalParent.MorphWeights;
+                IReadOnlyList<float> meshWeights = primitive.LogicalParent.MorphWeights;
                 meshPart.MorphWeights = new float[morphTargetCount];
                 if (meshWeights != null) {
                     for (int i = 0; i < Math.Min(meshWeights.Count, morphTargetCount); i++) {
@@ -887,18 +899,21 @@ namespace Engine.Media {
                     }
                 }
             }
-
             return meshPart;
         }
 
         public static IReadOnlyList<Vector3>[] ToEngineVector3List(System.Numerics.Vector3[][] arrays) {
-            if (arrays == null) return null;
-            var result = new IReadOnlyList<Vector3>[arrays.Length];
+            if (arrays == null) {
+                return null;
+            }
+            IReadOnlyList<Vector3>[] result = new IReadOnlyList<Vector3>[arrays.Length];
             for (int t = 0; t < arrays.Length; t++) {
-                if (arrays[t] == null) continue;
-                var converted = new Vector3[arrays[t].Length];
+                if (arrays[t] == null) {
+                    continue;
+                }
+                Vector3[] converted = new Vector3[arrays[t].Length];
                 for (int i = 0; i < arrays[t].Length; i++) {
-                    var v = arrays[t][i];
+                    System.Numerics.Vector3 v = arrays[t][i];
                     converted[i] = new Vector3(v.X, v.Y, v.Z);
                 }
                 result[t] = converted;
@@ -907,13 +922,17 @@ namespace Engine.Media {
         }
 
         public static IReadOnlyList<Vector4>[] ToEngineVector4List(System.Numerics.Vector4[][] arrays) {
-            if (arrays == null) return null;
-            var result = new IReadOnlyList<Vector4>[arrays.Length];
+            if (arrays == null) {
+                return null;
+            }
+            IReadOnlyList<Vector4>[] result = new IReadOnlyList<Vector4>[arrays.Length];
             for (int t = 0; t < arrays.Length; t++) {
-                if (arrays[t] == null) continue;
-                var converted = new Vector4[arrays[t].Length];
+                if (arrays[t] == null) {
+                    continue;
+                }
+                Vector4[] converted = new Vector4[arrays[t].Length];
                 for (int i = 0; i < arrays[t].Length; i++) {
-                    var v = arrays[t][i];
+                    System.Numerics.Vector4 v = arrays[t][i];
                     converted[i] = new Vector4(v.X, v.Y, v.Z, v.W);
                 }
                 result[t] = converted;
@@ -943,7 +962,6 @@ namespace Engine.Media {
                     break;
                 }
             }
-
             if (firstSkin == null) {
                 return; // 没有蒙皮数据
             }
@@ -951,7 +969,6 @@ namespace Engine.Media {
             // 提取关节索引
             IReadOnlyList<Node> skinJoints = firstSkin.Joints;
             int jointCount = skinJoints.Count;
-
             int[] jointIndices = new int[jointCount];
             for (int i = 0; i < jointCount; i++) {
                 Node joint = skinJoints[i];
@@ -959,27 +976,24 @@ namespace Engine.Media {
             }
 
             // 提取逆绑定矩阵
-            IReadOnlyList<System.Numerics.Matrix4x4> inverseBindMatrices = firstSkin.InverseBindMatrices;
+            IReadOnlyList<Matrix4x4> inverseBindMatrices = firstSkin.InverseBindMatrices;
             Matrix[] ibm = new Matrix[jointCount];
             for (int i = 0; i < jointCount; i++) {
                 if (i < inverseBindMatrices.Count) {
                     ibm[i] = inverseBindMatrices[i];
-                } else {
+                }
+                else {
                     ibm[i] = Matrix.Identity;
                 }
             }
 
             // 获取骨架根节点索引
             int skeletonRootIndex = -1;
-            if (firstSkin.Skeleton != null && nodeToIndex.TryGetValue(firstSkin.Skeleton, out int rootIdx)) {
+            if (firstSkin.Skeleton != null
+                && nodeToIndex.TryGetValue(firstSkin.Skeleton, out int rootIdx)) {
                 skeletonRootIndex = rootIdx;
             }
-
-            modelData.Skin = new ModelSkin {
-                JointIndices = jointIndices,
-                InverseBindMatrices = ibm,
-                SkeletonRootIndex = skeletonRootIndex
-            };
+            modelData.Skin = new ModelSkin { JointIndices = jointIndices, InverseBindMatrices = ibm, SkeletonRootIndex = skeletonRootIndex };
         }
 
         public static void ConvertAnimations(ModelRoot modelRoot, ModelData modelData) {
@@ -990,23 +1004,24 @@ namespace Engine.Media {
                     materialsByIndex[mat.SourceMaterialIndex] = mat;
                 }
             }
-
             foreach (SharpGLTF.Schema2.Animation anim in modelRoot.LogicalAnimations) {
-                ModelAnimation modelAnim = new() {
-                    Name = anim.Name ?? $"Animation{anim.LogicalIndex}",
-                    Duration = (float)anim.Duration
-                };
-
+                ModelAnimation modelAnim = new() { Name = anim.Name ?? $"Animation{anim.LogicalIndex}", Duration = anim.Duration };
                 foreach (AnimationChannel channel in anim.Channels) {
                     if (channel.TargetNodePath == PropertyPath.pointer) {
                         // KHR_animation_pointer 通道
                         string path = channel.TargetPointerPath;
-                        if (path != null && path.StartsWith("/nodes/")) {
-                            Action<float, Model> nodeTarget = CreateNodeVisibilityTarget(channel, modelData.GltfNodeToMeshIndex, modelData.GltfNodeToLightIndex);
+                        if (path != null
+                            && path.StartsWith("/nodes/")) {
+                            Action<float, Model> nodeTarget = CreateNodeVisibilityTarget(
+                                channel,
+                                modelData.GltfNodeToMeshIndex,
+                                modelData.GltfNodeToLightIndex
+                            );
                             if (nodeTarget != null) {
                                 modelAnim.NodeVisibilityTargets.Add(nodeTarget);
                             }
-                        } else {
+                        }
+                        else {
                             Action<float> target = CreatePointerTarget(channel, materialsByIndex);
                             if (target != null) {
                                 modelAnim.PointerTargets.Add(target);
@@ -1023,7 +1038,6 @@ namespace Engine.Media {
                         modelAnim.Channels.Add(modelChannel);
                     }
                 }
-
                 modelData.Animations.Add(modelAnim);
             }
         }
@@ -1040,13 +1054,11 @@ namespace Engine.Media {
 
         public static ModelAnimation.AnimationSampler ConvertSamplerByPath(AnimationChannel channel) {
             ModelAnimation.AnimationSampler result = new();
-            var path = channel.TargetNodePath;
-
+            PropertyPath path = channel.TargetNodePath;
             try {
                 // 获取关键帧数量和时长
-                float duration = (float)channel.LogicalParent.Duration;
+                float duration = channel.LogicalParent.Duration;
                 int keyCount = EstimateKeyFrameCount(channel);
-
                 if (keyCount == 0) {
                     return result;
                 }
@@ -1057,54 +1069,54 @@ namespace Engine.Media {
                 List<Quaternion> rotations = new();
                 List<Vector3> scales = new();
                 List<float[]> weights = new();
-
                 for (int i = 0; i <= keyCount; i++) {
-                    float t = (duration * i) / keyCount;
+                    float t = duration * i / keyCount;
                     times.Add(t);
-
                     if (path == PropertyPath.translation) {
-                        var sampler = channel.GetSamplerOrNull<System.Numerics.Vector3>();
+                        IAnimationSampler<System.Numerics.Vector3> sampler = channel.GetSamplerOrNull<System.Numerics.Vector3>();
                         if (sampler != null) {
-                            var curveSampler = sampler.CreateCurveSampler(true);
-                            var value = curveSampler.GetPoint(t);
+                            ICurveSampler<System.Numerics.Vector3> curveSampler = sampler.CreateCurveSampler(true);
+                            System.Numerics.Vector3 value = curveSampler.GetPoint(t);
                             translations.Add(new Vector3(value.X, value.Y, value.Z));
                         }
-                    } else if (path == PropertyPath.rotation) {
-                        var sampler = channel.GetSamplerOrNull<System.Numerics.Quaternion>();
+                    }
+                    else if (path == PropertyPath.rotation) {
+                        IAnimationSampler<System.Numerics.Quaternion> sampler = channel.GetSamplerOrNull<System.Numerics.Quaternion>();
                         if (sampler != null) {
-                            var curveSampler = sampler.CreateCurveSampler(true);
-                            var value = curveSampler.GetPoint(t);
+                            ICurveSampler<System.Numerics.Quaternion> curveSampler = sampler.CreateCurveSampler(true);
+                            System.Numerics.Quaternion value = curveSampler.GetPoint(t);
                             rotations.Add(new Quaternion(value.X, value.Y, value.Z, value.W));
                         }
-                    } else if (path == PropertyPath.scale) {
-                        var sampler = channel.GetSamplerOrNull<System.Numerics.Vector3>();
+                    }
+                    else if (path == PropertyPath.scale) {
+                        IAnimationSampler<System.Numerics.Vector3> sampler = channel.GetSamplerOrNull<System.Numerics.Vector3>();
                         if (sampler != null) {
-                            var curveSampler = sampler.CreateCurveSampler(true);
-                            var value = curveSampler.GetPoint(t);
+                            ICurveSampler<System.Numerics.Vector3> curveSampler = sampler.CreateCurveSampler(true);
+                            System.Numerics.Vector3 value = curveSampler.GetPoint(t);
                             scales.Add(new Vector3(value.X, value.Y, value.Z));
                         }
-                    } else if (path == PropertyPath.weights) {
-                        var sampler = channel.GetSamplerOrNull<float[]>();
+                    }
+                    else if (path == PropertyPath.weights) {
+                        IAnimationSampler<float[]> sampler = channel.GetSamplerOrNull<float[]>();
                         if (sampler != null) {
-                            var curveSampler = sampler.CreateCurveSampler(true);
-                            var value = curveSampler.GetPoint(t);
+                            ICurveSampler<float[]> curveSampler = sampler.CreateCurveSampler(true);
+                            float[] value = curveSampler.GetPoint(t);
                             weights.Add(value);
                         }
                     }
                 }
-
                 result.KeyTimes = times.ToArray();
                 result.Translations = translations.ToArray();
                 result.Rotations = rotations.ToArray();
                 result.Scales = scales.ToArray();
                 result.Weights = weights.ToArray();
                 result.Interpolation = ModelAnimation.InterpolationType.Linear;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 // 动画转换失败时记录错误，但继续处理其他动画
                 // 注意：这里不抛出异常，允许部分动画数据加载成功
                 Log.Warning($"[GltfLoader] Animation conversion warning: {ex.Message}");
             }
-
             return result;
         }
 
@@ -1112,11 +1124,13 @@ namespace Engine.Media {
 
         public static Action<float> CreatePointerTarget(AnimationChannel channel, Dictionary<int, ModelMaterial> materialsByIndex) {
             string path = channel.TargetPointerPath;
-            if (string.IsNullOrEmpty(path)) return null;
-
+            if (string.IsNullOrEmpty(path)) {
+                return null;
+            }
             string[] segments = path.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
-            if (segments.Length < 3) return null;
-
+            if (segments.Length < 3) {
+                return null;
+            }
             try {
                 if (segments[0] == "materials") {
                     return CreateMaterialPointerTarget(segments, channel, materialsByIndex);
@@ -1128,24 +1142,59 @@ namespace Engine.Media {
             return null;
         }
 
-        public static Action<float> CreateMaterialPointerTarget(string[] segments, AnimationChannel channel, Dictionary<int, ModelMaterial> materialsByIndex) {
-            if (!int.TryParse(segments[1], out int materialIndex)) return null;
-            if (!materialsByIndex.TryGetValue(materialIndex, out ModelMaterial mat)) return null;
-
+        public static Action<float> CreateMaterialPointerTarget(string[] segments,
+            AnimationChannel channel,
+            Dictionary<int, ModelMaterial> materialsByIndex) {
+            if (!int.TryParse(segments[1], out int materialIndex)) {
+                return null;
+            }
+            if (!materialsByIndex.TryGetValue(materialIndex, out ModelMaterial mat)) {
+                return null;
+            }
             string propertyPath = string.Join("/", segments, 2, segments.Length - 2);
 
             // Core PBR
             switch (propertyPath) {
                 case "pbrMetallicRoughness/baseColorFactor":
-                    return CreateVec4Target(channel, v => { mat.BaseColorFactor = v; mat.Version++; });
+                    return CreateVec4Target(
+                        channel,
+                        v => {
+                            mat.BaseColorFactor = v;
+                            mat.Version++;
+                        }
+                    );
                 case "pbrMetallicRoughness/metallicFactor":
-                    return CreateFloatTarget(channel, v => { mat.MetallicFactor = v; mat.Version++; });
+                    return CreateFloatTarget(
+                        channel,
+                        v => {
+                            mat.MetallicFactor = v;
+                            mat.Version++;
+                        }
+                    );
                 case "pbrMetallicRoughness/roughnessFactor":
-                    return CreateFloatTarget(channel, v => { mat.RoughnessFactor = v; mat.Version++; });
+                    return CreateFloatTarget(
+                        channel,
+                        v => {
+                            mat.RoughnessFactor = v;
+                            mat.Version++;
+                        }
+                    );
                 case "emissiveFactor":
-                    return CreateVec3Target(channel, v => { mat.EmissiveFactor = v; mat.Version++; });
+                    return CreateVec3Target(
+                        channel,
+                        v => {
+                            mat.EmissiveFactor = v;
+                            mat.Version++;
+                        }
+                    );
                 case "alphaCutoff":
-                    return CreateFloatTarget(channel, v => { mat.AlphaCutoff = v; mat.Version++; });
+                    return CreateFloatTarget(
+                        channel,
+                        v => {
+                            mat.AlphaCutoff = v;
+                            mat.Version++;
+                        }
+                    );
             }
 
             // Texture transform
@@ -1163,134 +1212,361 @@ namespace Engine.Media {
         public static Action<float> CreateTextureTransformTarget(string propertyPath, AnimationChannel channel, ModelMaterial mat) {
             const string suffix = "/extensions/KHR_texture_transform/";
             int idx = propertyPath.IndexOf(suffix);
-            if (idx < 0) return null;
+            if (idx < 0) {
+                return null;
+            }
             string texturePath = propertyPath.Substring(0, idx);
             string propName = propertyPath.Substring(idx + suffix.Length);
-
             ModelMaterialTexture tex = GetMaterialTexture(mat, texturePath);
-            if (tex == null) return null;
-
+            if (tex == null) {
+                return null;
+            }
             return propName switch {
-                "offset" => CreateVec2Target(channel, v => { tex.Offset = v; tex.RecomputeUVTransform(); mat.Version++; }),
-                "scale" => CreateVec2Target(channel, v => { tex.Scale = v; tex.RecomputeUVTransform(); mat.Version++; }),
-                "rotation" => CreateFloatTarget(channel, v => { tex.Rotation = v; tex.RecomputeUVTransform(); mat.Version++; }),
+                "offset" => CreateVec2Target(
+                    channel,
+                    v => {
+                        tex.Offset = v;
+                        tex.RecomputeUVTransform();
+                        mat.Version++;
+                    }
+                ),
+                "scale" => CreateVec2Target(
+                    channel,
+                    v => {
+                        tex.Scale = v;
+                        tex.RecomputeUVTransform();
+                        mat.Version++;
+                    }
+                ),
+                "rotation" => CreateFloatTarget(
+                    channel,
+                    v => {
+                        tex.Rotation = v;
+                        tex.RecomputeUVTransform();
+                        mat.Version++;
+                    }
+                ),
                 _ => null
             };
         }
 
         public static ModelMaterialTexture GetMaterialTexture(ModelMaterial mat, string texturePath) {
-            if (texturePath == "pbrMetallicRoughness/baseColorTexture") return mat.BaseColorTexture;
-            if (texturePath == "pbrMetallicRoughness/metallicRoughnessTexture") return mat.MetallicRoughnessTexture;
-            if (texturePath == "normalTexture") return mat.NormalTexture;
-            if (texturePath == "occlusionTexture") return mat.OcclusionTexture;
-            if (texturePath == "emissiveTexture") return mat.EmissiveTexture;
-            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatTexture") return mat.ClearCoat?.Texture;
-            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatRoughnessTexture") return mat.ClearCoat?.RoughnessTexture;
-            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatNormalTexture") return mat.ClearCoat?.NormalTexture;
-            if (texturePath == "extensions/KHR_materials_sheen/sheenColorTexture") return mat.Sheen?.ColorTexture;
-            if (texturePath == "extensions/KHR_materials_sheen/sheenRoughnessTexture") return mat.Sheen?.RoughnessTexture;
-            if (texturePath == "extensions/KHR_materials_transmission/transmissionTexture") return mat.Transmission?.Texture;
-            if (texturePath == "extensions/KHR_materials_volume/thicknessTexture") return mat.Volume?.ThicknessTexture;
-            if (texturePath == "extensions/KHR_materials_iridescence/iridescenceTexture") return mat.Iridescence?.Texture;
-            if (texturePath == "extensions/KHR_materials_iridescence/iridescenceThicknessTexture") return mat.Iridescence?.ThicknessTexture;
-            if (texturePath == "extensions/KHR_materials_specular/specularTexture") return mat.Specular?.SpecularTexture;
-            if (texturePath == "extensions/KHR_materials_specular/specularColorTexture") return mat.Specular?.SpecularColorTexture;
-            if (texturePath == "extensions/KHR_materials_anisotropy/anisotropyTexture") return mat.Anisotropy?.AnisotropyTexture;
-            if (texturePath == "extensions/KHR_materials_diffuse_transmission/diffuseTransmissionTexture") return mat.DiffuseTransmission?.Texture;
-            if (texturePath == "extensions/KHR_materials_diffuse_transmission/diffuseTransmissionColorTexture") return mat.DiffuseTransmission?.ColorTexture;
+            if (texturePath == "pbrMetallicRoughness/baseColorTexture") {
+                return mat.BaseColorTexture;
+            }
+            if (texturePath == "pbrMetallicRoughness/metallicRoughnessTexture") {
+                return mat.MetallicRoughnessTexture;
+            }
+            if (texturePath == "normalTexture") {
+                return mat.NormalTexture;
+            }
+            if (texturePath == "occlusionTexture") {
+                return mat.OcclusionTexture;
+            }
+            if (texturePath == "emissiveTexture") {
+                return mat.EmissiveTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatTexture") {
+                return mat.ClearCoat?.Texture;
+            }
+            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatRoughnessTexture") {
+                return mat.ClearCoat?.RoughnessTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_clearcoat/clearcoatNormalTexture") {
+                return mat.ClearCoat?.NormalTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_sheen/sheenColorTexture") {
+                return mat.Sheen?.ColorTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_sheen/sheenRoughnessTexture") {
+                return mat.Sheen?.RoughnessTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_transmission/transmissionTexture") {
+                return mat.Transmission?.Texture;
+            }
+            if (texturePath == "extensions/KHR_materials_volume/thicknessTexture") {
+                return mat.Volume?.ThicknessTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_iridescence/iridescenceTexture") {
+                return mat.Iridescence?.Texture;
+            }
+            if (texturePath == "extensions/KHR_materials_iridescence/iridescenceThicknessTexture") {
+                return mat.Iridescence?.ThicknessTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_specular/specularTexture") {
+                return mat.Specular?.SpecularTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_specular/specularColorTexture") {
+                return mat.Specular?.SpecularColorTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_anisotropy/anisotropyTexture") {
+                return mat.Anisotropy?.AnisotropyTexture;
+            }
+            if (texturePath == "extensions/KHR_materials_diffuse_transmission/diffuseTransmissionTexture") {
+                return mat.DiffuseTransmission?.Texture;
+            }
+            if (texturePath == "extensions/KHR_materials_diffuse_transmission/diffuseTransmissionColorTexture") {
+                return mat.DiffuseTransmission?.ColorTexture;
+            }
             return null;
         }
 
         public static Action<float> CreateExtensionTarget(string extPath, AnimationChannel channel, ModelMaterial mat) {
             string[] parts = extPath.Split('/');
-            if (parts.Length < 2) return null;
+            if (parts.Length < 2) {
+                return null;
+            }
             string ext = parts[0], prop = parts[1];
-
             switch (ext) {
                 case "KHR_materials_emissive_strength":
-                    if (mat.EmissiveStrength != null && prop == "emissiveStrength")
-                        return CreateFloatTarget(channel, v => { mat.EmissiveStrength.EmissiveStrength = v; mat.Version++; });
+                    if (mat.EmissiveStrength != null
+                        && prop == "emissiveStrength") {
+                        return CreateFloatTarget(
+                            channel,
+                            v => {
+                                mat.EmissiveStrength.EmissiveStrength = v;
+                                mat.Version++;
+                            }
+                        );
+                    }
                     break;
                 case "KHR_materials_ior":
-                    if (mat.Ior != null && prop == "ior")
-                        return CreateFloatTarget(channel, v => { mat.Ior.Ior = v; mat.Version++; });
+                    if (mat.Ior != null
+                        && prop == "ior") {
+                        return CreateFloatTarget(
+                            channel,
+                            v => {
+                                mat.Ior.Ior = v;
+                                mat.Version++;
+                            }
+                        );
+                    }
                     break;
                 case "KHR_materials_specular":
                     if (mat.Specular != null) {
-                        if (prop == "specularFactor")
-                            return CreateFloatTarget(channel, v => { mat.Specular.SpecularFactor = v; mat.Version++; });
-                        if (prop == "specularColorFactor")
-                            return CreateVec3Target(channel, v => { mat.Specular.SpecularColorFactor = v; mat.Version++; });
+                        if (prop == "specularFactor") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Specular.SpecularFactor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "specularColorFactor") {
+                            return CreateVec3Target(
+                                channel,
+                                v => {
+                                    mat.Specular.SpecularColorFactor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
                     }
                     break;
                 case "KHR_materials_sheen":
                     if (mat.Sheen != null) {
-                        if (prop == "sheenColorFactor")
-                            return CreateVec3Target(channel, v => { mat.Sheen.ColorFactor = v; mat.Version++; });
-                        if (prop == "sheenRoughnessFactor")
-                            return CreateFloatTarget(channel, v => { mat.Sheen.RoughnessFactor = v; mat.Version++; });
+                        if (prop == "sheenColorFactor") {
+                            return CreateVec3Target(
+                                channel,
+                                v => {
+                                    mat.Sheen.ColorFactor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "sheenRoughnessFactor") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Sheen.RoughnessFactor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
                     }
                     break;
                 case "KHR_materials_clearcoat":
                     if (mat.ClearCoat != null) {
-                        if (prop == "clearcoatFactor")
-                            return CreateFloatTarget(channel, v => { mat.ClearCoat.Factor = v; mat.Version++; });
-                        if (prop == "clearcoatRoughnessFactor")
-                            return CreateFloatTarget(channel, v => { mat.ClearCoat.RoughnessFactor = v; mat.Version++; });
+                        if (prop == "clearcoatFactor") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.ClearCoat.Factor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "clearcoatRoughnessFactor") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.ClearCoat.RoughnessFactor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
                     }
                     break;
                 case "KHR_materials_transmission":
-                    if (mat.Transmission != null && prop == "transmissionFactor")
-                        return CreateFloatTarget(channel, v => { mat.Transmission.Factor = v; mat.Version++; });
+                    if (mat.Transmission != null
+                        && prop == "transmissionFactor") {
+                        return CreateFloatTarget(
+                            channel,
+                            v => {
+                                mat.Transmission.Factor = v;
+                                mat.Version++;
+                            }
+                        );
+                    }
                     break;
                 case "KHR_materials_volume":
                     if (mat.Volume != null) {
-                        if (prop == "thicknessFactor")
-                            return CreateFloatTarget(channel, v => { mat.Volume.ThicknessFactor = v; mat.Version++; });
-                        if (prop == "attenuationDistance")
-                            return CreateFloatTarget(channel, v => { mat.Volume.AttenuationDistance = v; mat.Version++; });
-                        if (prop == "attenuationColor")
-                            return CreateVec3Target(channel, v => { mat.Volume.AttenuationColor = v; mat.Version++; });
+                        if (prop == "thicknessFactor") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Volume.ThicknessFactor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "attenuationDistance") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Volume.AttenuationDistance = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "attenuationColor") {
+                            return CreateVec3Target(
+                                channel,
+                                v => {
+                                    mat.Volume.AttenuationColor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
                     }
                     break;
                 case "KHR_materials_iridescence":
                     if (mat.Iridescence != null) {
-                        if (prop == "iridescenceFactor")
-                            return CreateFloatTarget(channel, v => { mat.Iridescence.Factor = v; mat.Version++; });
-                        if (prop == "iridescenceIor")
-                            return CreateFloatTarget(channel, v => { mat.Iridescence.IOR = v; mat.Version++; });
-                        if (prop == "iridescenceThicknessMinimum")
-                            return CreateFloatTarget(channel, v => { mat.Iridescence.ThicknessMinimum = v; mat.Version++; });
-                        if (prop == "iridescenceThicknessMaximum")
-                            return CreateFloatTarget(channel, v => { mat.Iridescence.ThicknessMaximum = v; mat.Version++; });
+                        if (prop == "iridescenceFactor") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Iridescence.Factor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "iridescenceIor") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Iridescence.IOR = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "iridescenceThicknessMinimum") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Iridescence.ThicknessMinimum = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "iridescenceThicknessMaximum") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Iridescence.ThicknessMaximum = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
                     }
                     break;
                 case "KHR_materials_anisotropy":
                     if (mat.Anisotropy != null) {
-                        if (prop == "anisotropyStrength")
-                            return CreateFloatTarget(channel, v => { mat.Anisotropy.AnisotropyStrength = v; mat.Version++; });
-                        if (prop == "anisotropyRotation")
-                            return CreateFloatTarget(channel, v => { mat.Anisotropy.AnisotropyRotation = v; mat.Version++; });
+                        if (prop == "anisotropyStrength") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Anisotropy.AnisotropyStrength = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "anisotropyRotation") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.Anisotropy.AnisotropyRotation = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
                     }
                     break;
                 case "KHR_materials_dispersion":
-                    if (mat.Dispersion != null && prop == "dispersion")
-                        return CreateFloatTarget(channel, v => { mat.Dispersion.Dispersion = v; mat.Version++; });
+                    if (mat.Dispersion != null
+                        && prop == "dispersion") {
+                        return CreateFloatTarget(
+                            channel,
+                            v => {
+                                mat.Dispersion.Dispersion = v;
+                                mat.Version++;
+                            }
+                        );
+                    }
                     break;
                 case "KHR_materials_volume_scatter":
                     if (mat.VolumeScatter != null) {
-                        if (prop == "multiscatterColor")
-                            return CreateVec3Target(channel, v => { mat.VolumeScatter.MultiscatterColor = v; mat.Version++; });
-                        if (prop == "scatterAnisotropy")
-                            return CreateFloatTarget(channel, v => { mat.VolumeScatter.ScatterAnisotropy = v; mat.Version++; });
+                        if (prop == "multiscatterColor") {
+                            return CreateVec3Target(
+                                channel,
+                                v => {
+                                    mat.VolumeScatter.MultiscatterColor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "scatterAnisotropy") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.VolumeScatter.ScatterAnisotropy = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
                     }
                     break;
                 case "KHR_materials_diffuse_transmission":
                     if (mat.DiffuseTransmission != null) {
-                        if (prop == "diffuseTransmissionFactor")
-                            return CreateFloatTarget(channel, v => { mat.DiffuseTransmission.Factor = v; mat.Version++; });
-                        if (prop == "diffuseTransmissionColorFactor")
-                            return CreateVec3Target(channel, v => { mat.DiffuseTransmission.ColorFactor = v; mat.Version++; });
+                        if (prop == "diffuseTransmissionFactor") {
+                            return CreateFloatTarget(
+                                channel,
+                                v => {
+                                    mat.DiffuseTransmission.Factor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
+                        if (prop == "diffuseTransmissionColorFactor") {
+                            return CreateVec3Target(
+                                channel,
+                                v => {
+                                    mat.DiffuseTransmission.ColorFactor = v;
+                                    mat.Version++;
+                                }
+                            );
+                        }
                     }
                     break;
             }
@@ -1300,66 +1576,91 @@ namespace Engine.Media {
         // Typed closure factories — isolateMemory=true ensures independence from ModelRoot
 
         public static Action<float> CreateFloatTarget(AnimationChannel channel, Action<float> set) {
-            var sampler = channel.GetSamplerOrNull<float>();
-            if (sampler == null) return null;
-            var curve = sampler.CreateCurveSampler(true);
+            IAnimationSampler<float> sampler = channel.GetSamplerOrNull<float>();
+            if (sampler == null) {
+                return null;
+            }
+            ICurveSampler<float> curve = sampler.CreateCurveSampler(true);
             return time => set(curve.GetPoint(time));
         }
 
         public static Action<float> CreateVec2Target(AnimationChannel channel, Action<Vector2> set) {
-            var sampler = channel.GetSamplerOrNull<System.Numerics.Vector2>();
-            if (sampler == null) return null;
-            var curve = sampler.CreateCurveSampler(true);
+            IAnimationSampler<System.Numerics.Vector2> sampler = channel.GetSamplerOrNull<System.Numerics.Vector2>();
+            if (sampler == null) {
+                return null;
+            }
+            ICurveSampler<System.Numerics.Vector2> curve = sampler.CreateCurveSampler(true);
             return time => set(new Vector2(curve.GetPoint(time).X, curve.GetPoint(time).Y));
         }
 
         public static Action<float> CreateVec3Target(AnimationChannel channel, Action<Vector3> set) {
-            var sampler = channel.GetSamplerOrNull<System.Numerics.Vector3>();
-            if (sampler == null) return null;
-            var curve = sampler.CreateCurveSampler(true);
-            return time => { var v = curve.GetPoint(time); set(new Vector3(v.X, v.Y, v.Z)); };
+            IAnimationSampler<System.Numerics.Vector3> sampler = channel.GetSamplerOrNull<System.Numerics.Vector3>();
+            if (sampler == null) {
+                return null;
+            }
+            ICurveSampler<System.Numerics.Vector3> curve = sampler.CreateCurveSampler(true);
+            return time => {
+                System.Numerics.Vector3 v = curve.GetPoint(time);
+                set(new Vector3(v.X, v.Y, v.Z));
+            };
         }
 
         public static Action<float> CreateVec4Target(AnimationChannel channel, Action<Vector4> set) {
-            var sampler = channel.GetSamplerOrNull<System.Numerics.Vector4>();
-            if (sampler == null) return null;
-            var curve = sampler.CreateCurveSampler(true);
-            return time => { var v = curve.GetPoint(time); set(new Vector4(v.X, v.Y, v.Z, v.W)); };
+            IAnimationSampler<System.Numerics.Vector4> sampler = channel.GetSamplerOrNull<System.Numerics.Vector4>();
+            if (sampler == null) {
+                return null;
+            }
+            ICurveSampler<System.Numerics.Vector4> curve = sampler.CreateCurveSampler(true);
+            return time => {
+                System.Numerics.Vector4 v = curve.GetPoint(time);
+                set(new Vector4(v.X, v.Y, v.Z, v.W));
+            };
         }
 
         public static int EstimateKeyFrameCount(AnimationChannel channel) {
-            float duration = (float)channel.LogicalParent.Duration;
+            float duration = channel.LogicalParent.Duration;
             int estimatedFrames = Math.Max(1, (int)(duration * 30f));
             return Math.Min(estimatedFrames, 300);
         }
 
         public static Action<float, Model> CreateNodeVisibilityTarget(AnimationChannel channel,
-            Dictionary<int, int> nodeToMeshIndex, Dictionary<int, int> nodeToLightIndex) {
+            Dictionary<int, int> nodeToMeshIndex,
+            Dictionary<int, int> nodeToLightIndex) {
             string path = channel.TargetPointerPath;
             // Expected: /nodes/{index}/extensions/KHR_node_visibility/visible
-            if (!path.StartsWith("/nodes/")) return null;
-
-            string[] segments = path.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
-            if (segments.Length < 5 || segments[0] != "nodes" || segments[2] != "extensions")
+            if (!path.StartsWith("/nodes/")) {
                 return null;
-
-            if (!int.TryParse(segments[1], out int nodeIndex)) return null;
-
-            var sampler = channel.GetSamplerOrNull<float>();
-            if (sampler == null) return null;
-            var curve = sampler.CreateCurveSampler(true);
+            }
+            string[] segments = path.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length < 5
+                || segments[0] != "nodes"
+                || segments[2] != "extensions") {
+                return null;
+            }
+            if (!int.TryParse(segments[1], out int nodeIndex)) {
+                return null;
+            }
+            IAnimationSampler<float> sampler = channel.GetSamplerOrNull<float>();
+            if (sampler == null) {
+                return null;
+            }
+            ICurveSampler<float> curve = sampler.CreateCurveSampler(true);
 
             // 查找此节点对应的 mesh 和/或 light
             int meshIndex = nodeToMeshIndex.TryGetValue(nodeIndex, out int mi) ? mi : -1;
             int lightIndex = nodeToLightIndex.TryGetValue(nodeIndex, out int li) ? li : -1;
-
-            if (meshIndex < 0 && lightIndex < 0) return null;
-
+            if (meshIndex < 0
+                && lightIndex < 0) {
+                return null;
+            }
             return (time, model) => {
-                if (model == null) return;
+                if (model == null) {
+                    return;
+                }
                 float value = curve.GetPoint(time);
                 bool visible = value >= 0.5f;
-                if (meshIndex >= 0 && meshIndex < model.Meshes.Count) {
+                if (meshIndex >= 0
+                    && meshIndex < model.Meshes.Count) {
                     // 一个 glTF mesh 可能被拆分为多个 ModelMesh（每个 primitive 一个），
                     // 通过 ParentBone 查找所有同级 mesh
                     ModelBone bone = model.Meshes[meshIndex].ParentBone;
@@ -1369,7 +1670,8 @@ namespace Engine.Media {
                         }
                     }
                 }
-                if (lightIndex >= 0 && lightIndex < model.Lights.Count) {
+                if (lightIndex >= 0
+                    && lightIndex < model.Lights.Count) {
                     model.Lights[lightIndex].IsVisible = visible;
                 }
             };
@@ -1377,62 +1679,76 @@ namespace Engine.Media {
 
         #endregion
 
-        public static System.Numerics.Vector4[] GenerateTangents(
-            System.Numerics.Vector3[] positions,
+        public static System.Numerics.Vector4[] GenerateTangents(System.Numerics.Vector3[] positions,
             System.Numerics.Vector3[] normals,
             System.Numerics.Vector2[] uvs,
             uint[] indices) {
-            if (positions == null || normals == null || uvs == null || indices == null) return null;
+            if (positions == null
+                || normals == null
+                || uvs == null
+                || indices == null) {
+                return null;
+            }
             int vertexCount = positions.Length;
-            if (vertexCount == 0 || normals.Length < vertexCount || uvs.Length < vertexCount) return null;
-
-            var tan1 = new System.Numerics.Vector3[vertexCount];
-            var tan2 = new System.Numerics.Vector3[vertexCount];
-
+            if (vertexCount == 0
+                || normals.Length < vertexCount
+                || uvs.Length < vertexCount) {
+                return null;
+            }
+            System.Numerics.Vector3[] tan1 = new System.Numerics.Vector3[vertexCount];
+            System.Numerics.Vector3[] tan2 = new System.Numerics.Vector3[vertexCount];
             for (int i = 0; i + 2 < indices.Length; i += 3) {
                 int i0 = (int)indices[i], i1 = (int)indices[i + 1], i2 = (int)indices[i + 2];
-                if ((uint)i0 >= vertexCount || (uint)i1 >= vertexCount || (uint)i2 >= vertexCount) continue;
-
-                var p0 = positions[i0]; var p1 = positions[i1]; var p2 = positions[i2];
-                var uv0 = uvs[i0]; var uv1 = uvs[i1]; var uv2 = uvs[i2];
-
-                var edge1 = p1 - p0; var edge2 = p2 - p0;
-                var duv1 = uv1 - uv0; var duv2 = uv2 - uv0;
-
+                if ((uint)i0 >= vertexCount
+                    || (uint)i1 >= vertexCount
+                    || (uint)i2 >= vertexCount) {
+                    continue;
+                }
+                System.Numerics.Vector3 p0 = positions[i0];
+                System.Numerics.Vector3 p1 = positions[i1];
+                System.Numerics.Vector3 p2 = positions[i2];
+                System.Numerics.Vector2 uv0 = uvs[i0];
+                System.Numerics.Vector2 uv1 = uvs[i1];
+                System.Numerics.Vector2 uv2 = uvs[i2];
+                System.Numerics.Vector3 edge1 = p1 - p0;
+                System.Numerics.Vector3 edge2 = p2 - p0;
+                System.Numerics.Vector2 duv1 = uv1 - uv0;
+                System.Numerics.Vector2 duv2 = uv2 - uv0;
                 float denom = duv1.X * duv2.Y - duv2.X * duv1.Y;
-                if (MathF.Abs(denom) < 1e-8f) continue;
+                if (MathF.Abs(denom) < 1e-8f) {
+                    continue;
+                }
                 float inv = 1f / denom;
-
-                var sdir = (edge1 * duv2.Y - edge2 * duv1.Y) * inv;
-                var tdir = (edge2 * duv1.X - edge1 * duv2.X) * inv;
-
-                tan1[i0] += sdir; tan1[i1] += sdir; tan1[i2] += sdir;
-                tan2[i0] += tdir; tan2[i1] += tdir; tan2[i2] += tdir;
+                System.Numerics.Vector3 sdir = (edge1 * duv2.Y - edge2 * duv1.Y) * inv;
+                System.Numerics.Vector3 tdir = (edge2 * duv1.X - edge1 * duv2.X) * inv;
+                tan1[i0] += sdir;
+                tan1[i1] += sdir;
+                tan1[i2] += sdir;
+                tan2[i0] += tdir;
+                tan2[i1] += tdir;
+                tan2[i2] += tdir;
             }
-
-            var tangents = new System.Numerics.Vector4[vertexCount];
+            System.Numerics.Vector4[] tangents = new System.Numerics.Vector4[vertexCount];
             for (int i = 0; i < vertexCount; i++) {
-                var n = normals[i];
+                System.Numerics.Vector3 n = normals[i];
                 if (n.LengthSquared() < float.Epsilon) {
                     tangents[i] = new System.Numerics.Vector4(1f, 0f, 0f, 1f);
                     continue;
                 }
                 n = System.Numerics.Vector3.Normalize(n);
-                var t = tan1[i];
-
+                System.Numerics.Vector3 t = tan1[i];
                 if (t.LengthSquared() < 1e-12f) {
                     // 零切线退化：选一个垂直于法线的方向
-                    var axis = MathF.Abs(n.Y) < 0.999f
-                        ? System.Numerics.Vector3.UnitY
-                        : System.Numerics.Vector3.UnitX;
+                    System.Numerics.Vector3 axis = MathF.Abs(n.Y) < 0.999f ? System.Numerics.Vector3.UnitY : System.Numerics.Vector3.UnitX;
                     t = System.Numerics.Vector3.Cross(axis, n);
-                    if (t.LengthSquared() < 1e-12f) t = System.Numerics.Vector3.UnitX;
+                    if (t.LengthSquared() < 1e-12f) {
+                        t = System.Numerics.Vector3.UnitX;
+                    }
                     tangents[i] = new System.Numerics.Vector4(System.Numerics.Vector3.Normalize(t), 1f);
                     continue;
                 }
-
                 t = System.Numerics.Vector3.Normalize(t - n * System.Numerics.Vector3.Dot(n, t));
-                var b = System.Numerics.Vector3.Cross(n, t);
+                System.Numerics.Vector3 b = System.Numerics.Vector3.Cross(n, t);
                 // glTF 约定：bitangent = cross(N, T) * w，与 Lengyel 标准公式方向相反
                 float w = System.Numerics.Vector3.Dot(b, tan2[i]) < 0f ? 1f : -1f;
                 tangents[i] = new System.Numerics.Vector4(t, w);
@@ -1473,18 +1789,18 @@ namespace Engine.Media {
             buffer[offset + 3] = (byte)((value >> 24) & 0xFF);
         }
 
-        public static BoundingBox CalculateBoundingBoxFromPositions(SharpGLTF.Memory.IAccessorArray<System.Numerics.Vector3> positions, uint[] indices) {
-            if (positions == null || positions.Count == 0) {
+        public static BoundingBox CalculateBoundingBoxFromPositions(IAccessorArray<System.Numerics.Vector3> positions, uint[] indices) {
+            if (positions == null
+                || positions.Count == 0) {
                 return new BoundingBox(Vector3.Zero, Vector3.Zero);
             }
-
             Vector3 min = new(float.MaxValue);
             Vector3 max = new(float.MinValue);
-
-            if (indices != null && indices.Length > 0) {
+            if (indices != null
+                && indices.Length > 0) {
                 foreach (uint idx in indices) {
                     if (idx < positions.Count) {
-                        var pos = positions[(int)idx];
+                        System.Numerics.Vector3 pos = positions[(int)idx];
                         min.X = Math.Min(min.X, pos.X);
                         min.Y = Math.Min(min.Y, pos.Y);
                         min.Z = Math.Min(min.Z, pos.Z);
@@ -1493,9 +1809,10 @@ namespace Engine.Media {
                         max.Z = Math.Max(max.Z, pos.Z);
                     }
                 }
-            } else {
+            }
+            else {
                 for (int i = 0; i < positions.Count; i++) {
-                    var pos = positions[i];
+                    System.Numerics.Vector3 pos = positions[i];
                     min.X = Math.Min(min.X, pos.X);
                     min.Y = Math.Min(min.Y, pos.Y);
                     min.Z = Math.Min(min.Z, pos.Z);
@@ -1504,7 +1821,6 @@ namespace Engine.Media {
                     max.Z = Math.Max(max.Z, pos.Z);
                 }
             }
-
             return new BoundingBox(min, max);
         }
 
@@ -1513,12 +1829,10 @@ namespace Engine.Media {
                 meshData.BoundingBox = new BoundingBox(Vector3.Zero, Vector3.Zero);
                 return;
             }
-
             Vector3 min = new(float.MaxValue);
             Vector3 max = new(float.MinValue);
-
-            foreach (var part in parts) {
-                var bbox = part.BoundingBox;
+            foreach (ModelMeshPartData part in parts) {
+                BoundingBox bbox = part.BoundingBox;
                 min.X = Math.Min(min.X, bbox.Min.X);
                 min.Y = Math.Min(min.Y, bbox.Min.Y);
                 min.Z = Math.Min(min.Z, bbox.Min.Z);
@@ -1526,7 +1840,6 @@ namespace Engine.Media {
                 max.Y = Math.Max(max.Y, bbox.Max.Y);
                 max.Z = Math.Max(max.Z, bbox.Max.Z);
             }
-
             meshData.BoundingBox = new BoundingBox(min, max);
         }
     }

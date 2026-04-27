@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Numerics;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Media {

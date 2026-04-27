@@ -1,12 +1,8 @@
-#nullable disable
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 目标不可达时的回退策略
     /// </summary>
-    public enum UnreachableStrategy
-    {
+    public enum UnreachableStrategy {
         /// <summary>
         /// 向目标方向伸展到最大长度（默认）
         /// </summary>

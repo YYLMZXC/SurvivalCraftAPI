@@ -1,5 +1,3 @@
-#nullable disable
-
 namespace Engine.Graphics {
     /// <summary>
     /// 蒙皮数据，存储骨骼索引和权重
@@ -41,20 +39,23 @@ namespace Engine.Graphics {
         /// <param name="bones">模型的骨骼列表</param>
         /// <exception cref="InvalidOperationException">当关节索引无效时抛出</exception>
         public void ResolveJoints(List<ModelBone> bones) {
-            if (JointIndices == null || bones == null) return;
-
+            if (JointIndices == null
+                || bones == null) {
+                return;
+            }
             Joints.Clear();
             for (int i = 0; i < JointIndices.Length; i++) {
                 int index = JointIndices[i];
-                if (index < 0 || index >= bones.Count) {
-                    throw new InvalidOperationException(
-                        $"Invalid joint index {index} at position {i}. Valid range: 0-{bones.Count - 1}");
+                if (index < 0
+                    || index >= bones.Count) {
+                    throw new InvalidOperationException($"Invalid joint index {index} at position {i}. Valid range: 0-{bones.Count - 1}");
                 }
                 Joints.Add(bones[index]);
             }
 
             // 解析根骨骼
-            if (SkeletonRootIndex >= 0 && SkeletonRootIndex < bones.Count) {
+            if (SkeletonRootIndex >= 0
+                && SkeletonRootIndex < bones.Count) {
                 SkeletonRoot = bones[SkeletonRootIndex];
             }
         }
@@ -62,10 +63,6 @@ namespace Engine.Graphics {
         /// <summary>
         /// 验证蒙皮数据是否有效
         /// </summary>
-        public bool IsValid() {
-            return JointCount > 0
-                && Joints.Count == JointCount
-                && InverseBindMatrices?.Length == JointCount;
-        }
+        public bool IsValid() => JointCount > 0 && Joints.Count == JointCount && InverseBindMatrices?.Length == JointCount;
     }
 }

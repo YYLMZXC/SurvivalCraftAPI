@@ -1,17 +1,12 @@
-#nullable disable
-
 using Engine.Graphics;
 
-namespace Engine.Animation.Drivers
-{
+namespace Engine.Animation.Drivers {
     /// <summary>
     /// 死亡动画驱动器 - 默认作用于根骨骼产生全身倒下效果
-    ///
     /// 变换顺序：抬高 -> 旋转 -> 下沉
     /// 这样可以避免身体边缘在侧翻时陷入地面
     /// </summary>
-    public class DeathDriver : IAnimationDriver
-    {
+    public class DeathDriver : IAnimationDriver {
         public string Name => "Death";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
@@ -61,50 +56,50 @@ namespace Engine.Animation.Drivers
         /// <summary>
         /// 获取默认根骨骼索引。优先使用 model.RootBone，否则使用第一个骨骼。
         /// </summary>
-        public static int GetDefaultRootBoneIndex(Model model)
-        {
-            if (model.RootBone != null)
+        public static int GetDefaultRootBoneIndex(Model model) {
+            if (model.RootBone != null) {
                 return model.RootBone.Index;
-            if (model.Bones.Count > 0)
+            }
+            if (model.Bones.Count > 0) {
                 return model.Bones[0].Index;
+            }
             return -1;
         }
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             m_deathPhase = Math.Clamp(parameters.GetFloat(DeathPhaseParam), 0f, 1f);
             m_bodyHeight = parameters.GetFloat(BodyHeightParam);
             m_bodyRight = parameters.GetVector3(BodyRightParam);
             m_deathCauseOffset = parameters.GetVector3(DeathCauseOffsetParam);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
-            if (m_deathPhase <= 0f) return;
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
+            if (m_deathPhase <= 0f) {
+                return;
+            }
 
             // 获取根骨骼索引
-            if (m_rootBoneIndex < 0)
-            {
-                if (!string.IsNullOrEmpty(RootBoneName))
-                {
-                    var bone = model.FindBone(RootBoneName);
+            if (m_rootBoneIndex < 0) {
+                if (!string.IsNullOrEmpty(RootBoneName)) {
+                    ModelBone bone = model.FindBone(RootBoneName);
                     m_rootBoneIndex = bone?.Index ?? GetDefaultRootBoneIndex(model);
                 }
-                else
-                {
+                else {
                     m_rootBoneIndex = GetDefaultRootBoneIndex(model);
                 }
             }
 
             // 如果没有有效骨骼，直接返回
-            if (m_rootBoneIndex < 0) return;
-
+            if (m_rootBoneIndex < 0) {
+                return;
+            }
             float t = m_deathPhase;
 
             // 计算侧翻方向
             float rollDirection = 1f;
-            if (AutoRollDirection && m_bodyRight.LengthSquared() > 0.001f && m_deathCauseOffset.LengthSquared() > 0.001f)
-            {
+            if (AutoRollDirection
+                && m_bodyRight.LengthSquared() > 0.001f
+                && m_deathCauseOffset.LengthSquared() > 0.001f) {
                 rollDirection = Vector3.Dot(m_bodyRight, m_deathCauseOffset) > 0f ? 1 : -1;
             }
 
@@ -114,11 +109,10 @@ namespace Engine.Animation.Drivers
 
             // 计算位移
             float dropY = -BodyDrop * m_bodyHeight * t;
-
-            Matrix deathTransform =
-                Matrix.CreateRotationX(pitchRad) *
-                Matrix.CreateRotationZ(rollRad) *                 // 先旋转
-                Matrix.CreateTranslation(0, dropY, 0);            // 再平移（世界坐标系 Y）
+            Matrix deathTransform = Matrix.CreateRotationX(pitchRad)
+                * Matrix.CreateRotationZ(rollRad)
+                * // 先旋转
+                Matrix.CreateTranslation(0, dropY, 0); // 再平移（世界坐标系 Y）
 
             // 应用到根骨骼
             boneTransforms[m_rootBoneIndex] = deathTransform;

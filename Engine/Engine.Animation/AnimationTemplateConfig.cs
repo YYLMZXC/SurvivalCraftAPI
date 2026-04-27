@@ -1,14 +1,8 @@
-#nullable disable
-
-using System.Collections.Generic;
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 动画模板配置，用于 JSON 反序列化
     /// </summary>
-    public class AnimationTemplateConfig
-    {
+    public class AnimationTemplateConfig {
         /// <summary>
         /// 模板名称
         /// </summary>
@@ -33,8 +27,7 @@ namespace Engine.Animation
     /// <summary>
     /// 模板动画层配置
     /// </summary>
-    public class TemplateLayerConfig
-    {
+    public class TemplateLayerConfig {
         /// <summary>
         /// 层索引（决定优先级）
         /// </summary>
@@ -54,8 +47,7 @@ namespace Engine.Animation
     /// <summary>
     /// 模板状态轨道配置
     /// </summary>
-    public class TemplateStateTrackConfig
-    {
+    public class TemplateStateTrackConfig {
         /// <summary>
         /// 轨道类型：Enum、Bool 或 Float
         /// </summary>

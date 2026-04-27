@@ -1,12 +1,8 @@
-#nullable disable
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 状态轨道定义
     /// </summary>
-    public class StateTrackDefinition
-    {
+    public class StateTrackDefinition {
         public StateTrackType Type { get; set; }
 
         // Enum 类型特有
@@ -20,8 +16,7 @@ namespace Engine.Animation
 
         public StateTrackDefinition() { }
 
-        public StateTrackDefinition(StateTrackType type, object defaultValue = null)
-        {
+        public StateTrackDefinition(StateTrackType type, object defaultValue = null) {
             Type = type;
             DefaultValue = defaultValue;
         }

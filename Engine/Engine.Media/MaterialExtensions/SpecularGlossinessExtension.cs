@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using SharpGLTF.Schema2;
-using System.Numerics;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Media {
@@ -64,7 +62,7 @@ namespace Engine.Media {
                 foreach (IMaterialParameter param in sgChannel.Value.Parameters) {
                     if (param.Name == "SpecularFactor"
                         && param.ValueType == typeof(System.Numerics.Vector3)) {
-                        var spec = (System.Numerics.Vector3)param.Value;
+                        System.Numerics.Vector3 spec = (System.Numerics.Vector3)param.Value;
                         SpecularFactor = spec;
                     }
                     else if (param.Name == "GlossinessFactor"

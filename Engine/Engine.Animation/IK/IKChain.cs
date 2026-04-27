@@ -1,14 +1,10 @@
-#nullable disable
-
 using Engine.Graphics;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// IK 骨骼链定义
     /// </summary>
-    public class IKChain
-    {
+    public class IKChain {
         /// <summary>
         /// 链名称
         /// </summary>
@@ -57,8 +53,7 @@ namespace Engine.Animation
         /// <summary>
         /// 创建 IK 链
         /// </summary>
-        public IKChain(string name, int[] boneIndices, string endBoneName)
-        {
+        public IKChain(string name, int[] boneIndices, string endBoneName) {
             Name = name;
             BoneIndices = boneIndices;
             EndBoneName = endBoneName;
@@ -72,23 +67,22 @@ namespace Engine.Animation
         /// <summary>
         /// 获取骨骼的关节限制
         /// </summary>
-        public JointLimit GetJointLimit(int boneIndex, Model model)
-        {
-            if (JointLimits == null || model == null)
+        public JointLimit GetJointLimit(int boneIndex, Model model) {
+            if (JointLimits == null
+                || model == null) {
                 return null;
-
-            var bone = model.m_bones[boneIndex];
-            if (bone == null)
+            }
+            ModelBone bone = model.m_bones[boneIndex];
+            if (bone == null) {
                 return null;
-
-            return JointLimits.TryGetValue(bone.Name, out var limit) ? limit : null;
+            }
+            return JointLimits.TryGetValue(bone.Name, out JointLimit limit) ? limit : null;
         }
 
         /// <summary>
         /// 设置关节限制
         /// </summary>
-        public void SetJointLimit(string boneName, JointLimit limit)
-        {
+        public void SetJointLimit(string boneName, JointLimit limit) {
             JointLimits ??= new Dictionary<string, JointLimit>();
             JointLimits[boneName] = limit;
         }

@@ -1,15 +1,11 @@
-#nullable disable
-
 using Engine.Animation.RootMotion;
 using Engine.Graphics;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 动画来源接口 - 关键帧动画和驱动器都实现此接口
     /// </summary>
-    public interface IAnimationSource
-    {
+    public interface IAnimationSource {
         /// <summary>
         /// 来源名称
         /// </summary>
@@ -35,8 +31,7 @@ namespace Engine.Animation
     /// <summary>
     /// 动画配置
     /// </summary>
-    public class AnimationSourceConfig
-    {
+    public class AnimationSourceConfig {
         public string Source { get; set; }
 
         /// <summary>
@@ -95,6 +90,7 @@ namespace Engine.Animation
         /// 创建动态属性包装器（缓存实例）
         /// </summary>
         public DynamicProperty<float> GetSpeedProperty() => m_cachedSpeedProperty ??= new DynamicProperty<float>(SpeedValue);
+
         public DynamicProperty<bool> GetLoopProperty() => m_cachedLoopProperty ??= new DynamicProperty<bool>(LoopValue);
         public DynamicProperty<float> GetStartPhaseProperty() => m_cachedStartPhaseProperty ??= new DynamicProperty<float>(StartPhaseValue);
         public DynamicProperty<float> GetEndPhaseProperty() => m_cachedEndPhaseProperty ??= new DynamicProperty<float>(EndPhaseValue);
@@ -104,8 +100,7 @@ namespace Engine.Animation
     /// <summary>
     /// 动画事件配置
     /// </summary>
-    public class AnimationEventConfig
-    {
+    public class AnimationEventConfig {
         /// <summary>
         /// 事件触发时间（归一化时间 0-1）
         /// </summary>

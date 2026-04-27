@@ -1,19 +1,14 @@
-#nullable disable
-
-using System;
-using System.Collections.Generic;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Engine.Graphics;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 动画配置加载器
     /// 负责从 JSON 文件加载 AnimationConfig 并解析动画引用
     /// </summary>
-    public class AnimationConfigLoader
-    {
+    public class AnimationConfigLoader {
         /// <summary>
         /// 动画引用协议前缀
         /// </summary>
@@ -22,16 +17,12 @@ namespace Engine.Animation
         /// <summary>
         /// 缓存的 JsonSerializerOptions（避免每次创建新实例）
         /// </summary>
-        public static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            AllowTrailingCommas = true
+        public static readonly JsonSerializerOptions s_jsonOptions = new() {
+            PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true
         };
 
         // 静态构造函数注册自定义转换器
-        static AnimationConfigLoader()
-        {
+        static AnimationConfigLoader() {
             s_jsonOptions.Converters.Add(new AnimationReferenceConverter());
         }
 
@@ -49,23 +40,17 @@ namespace Engine.Animation
         /// <returns>加载的 AnimationConfig 实例</returns>
         /// <exception cref="ArgumentNullException">jsonNode 为 null</exception>
         /// <exception cref="JsonException">JSON 解析失败</exception>
-        public AnimationConfig LoadFromJsonNode(JsonNode jsonNode)
-        {
-            if (jsonNode == null)
-            {
+        public AnimationConfig LoadFromJsonNode(JsonNode jsonNode) {
+            if (jsonNode == null) {
                 throw new ArgumentNullException(nameof(jsonNode));
             }
-
-            AnimationConfig config = JsonSerializer.Deserialize<AnimationConfig>(jsonNode, s_jsonOptions);
-
-            if (config == null)
-            {
+            AnimationConfig config = jsonNode.Deserialize<AnimationConfig>(s_jsonOptions);
+            if (config == null) {
                 throw new JsonException("Failed to deserialize AnimationConfig: result is null");
             }
 
             // 验证配置
             ValidateConfig(config);
-
             return config;
         }
 
@@ -75,28 +60,23 @@ namespace Engine.Animation
         /// <param name="reference">动画引用配置</param>
         /// <param name="model">目标模型（用于动画查找）</param>
         /// <returns>解析后的 ModelAnimation，如果无法解析则返回 null</returns>
-        public ModelAnimation ResolveAnimation(AnimationReference reference, Model model)
-        {
-            if (reference == null || string.IsNullOrEmpty(reference.Source))
-            {
+        public ModelAnimation ResolveAnimation(AnimationReference reference, Model model) {
+            if (reference == null
+                || string.IsNullOrEmpty(reference.Source)) {
                 return null;
             }
-
             string source = reference.Source;
 
             // 处理 animation:// 协议
-            if (source.StartsWith(AnimationProtocolPrefix))
-            {
+            if (source.StartsWith(AnimationProtocolPrefix)) {
                 string animationName = source.Substring(AnimationProtocolPrefix.Length);
                 return FindAnimationInModel(model, animationName);
             }
 
             // 使用回调加载外部动画
-            if (LoadAnimationCallback != null)
-            {
+            if (LoadAnimationCallback != null) {
                 return LoadAnimationCallback(source);
             }
-
             return null;
         }
 
@@ -106,27 +86,19 @@ namespace Engine.Animation
         /// <param name="config">动画配置</param>
         /// <param name="model">目标模型</param>
         /// <returns>解析后的动画字典（别名 -> ModelAnimation）</returns>
-        public Dictionary<string, ModelAnimation> ResolveAllAnimations(AnimationConfig config, Model model)
-        {
+        public Dictionary<string, ModelAnimation> ResolveAllAnimations(AnimationConfig config, Model model) {
             Dictionary<string, ModelAnimation> result = new();
-
-            if (config?.Animations == null)
-            {
+            if (config?.Animations == null) {
                 return result;
             }
-
-            foreach (var kvp in config.Animations)
-            {
+            foreach (KeyValuePair<string, AnimationReference> kvp in config.Animations) {
                 string alias = kvp.Key;
                 AnimationReference reference = kvp.Value;
-
                 ModelAnimation animation = ResolveAnimation(reference, model);
-                if (animation != null)
-                {
+                if (animation != null) {
                     result[alias] = animation;
                 }
             }
-
             return result;
         }
 
@@ -135,197 +107,156 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="config">要验证的配置</param>
         /// <exception cref="AnimationConfigValidationException">验证失败</exception>
-        public void ValidateConfig(AnimationConfig config)
-        {
-            if (config == null)
-            {
+        public void ValidateConfig(AnimationConfig config) {
+            if (config == null) {
                 throw new AnimationConfigValidationException("Config is null");
             }
-
             List<string> errors = new();
 
             // 验证模板名称
-            if (string.IsNullOrEmpty(config.Template))
-            {
+            if (string.IsNullOrEmpty(config.Template)) {
                 errors.Add("Template name is required");
             }
-            else if (!AnimationTemplateManager.Exists(config.Template))
-            {
+            else if (!AnimationTemplateManager.Exists(config.Template)) {
                 errors.Add($"Unknown template: {config.Template}");
             }
 
             // 验证动画引用
-            if (config.Animations != null)
-            {
+            if (config.Animations != null) {
                 int index = 0;
-                foreach (var kvp in config.Animations)
-                {
+                foreach (KeyValuePair<string, AnimationReference> kvp in config.Animations) {
                     string alias = kvp.Key;
                     AnimationReference reference = kvp.Value;
-
-                    if (string.IsNullOrEmpty(alias))
-                    {
+                    if (string.IsNullOrEmpty(alias)) {
                         errors.Add($"Animation alias at index {index} is empty");
                     }
-
-                    if (reference != null)
-                    {
-                        if (string.IsNullOrEmpty(reference.Source))
-                        {
+                    if (reference != null) {
+                        if (string.IsNullOrEmpty(reference.Source)) {
                             errors.Add($"Animation '{alias}': Source is required");
                         }
 
                         // Validate SpeedValue
-                        if (reference.SpeedValue != null)
-                        {
+                        if (reference.SpeedValue != null) {
                             // If it's a number, validate the range
-                            if (reference.SpeedValue is float speedFloat && speedFloat <= 0)
-                            {
+                            if (reference.SpeedValue is float speedFloat
+                                && speedFloat <= 0) {
                                 errors.Add($"Animation '{alias}': Speed must be positive (got {speedFloat})");
                             }
-                            else if (reference.SpeedValue is int speedInt && speedInt <= 0)
-                            {
+                            else if (reference.SpeedValue is int speedInt
+                                && speedInt <= 0) {
                                 errors.Add($"Animation '{alias}': Speed must be positive (got {speedInt})");
                             }
-                            else if (reference.SpeedValue is string speedStr && !ExpressionEvaluator.IsExpression(speedStr))
-                            {
+                            else if (reference.SpeedValue is string speedStr
+                                && !ExpressionEvaluator.IsExpression(speedStr)) {
                                 // Static string value that's not an expression - try to parse
-                                if (float.TryParse(speedStr, out var parsedSpeed) && parsedSpeed <= 0)
-                                {
+                                if (float.TryParse(speedStr, out float parsedSpeed)
+                                    && parsedSpeed <= 0) {
                                     errors.Add($"Animation '{alias}': Speed must be positive (got {speedStr})");
                                 }
                             }
                         }
 
                         // Validate StartPhaseValue
-                        if (reference.StartPhaseValue != null)
-                        {
-                            if (reference.StartPhaseValue is float startFloat && (startFloat < 0 || startFloat > 1))
-                            {
+                        if (reference.StartPhaseValue != null) {
+                            if (reference.StartPhaseValue is float startFloat
+                                && (startFloat < 0 || startFloat > 1)) {
                                 errors.Add($"Animation '{alias}': startPhase must be between 0 and 1 (got {startFloat})");
                             }
-                            else if (reference.StartPhaseValue is int startInt && (startInt < 0 || startInt > 1))
-                            {
+                            else if (reference.StartPhaseValue is int startInt
+                                && (startInt < 0 || startInt > 1)) {
                                 errors.Add($"Animation '{alias}': startPhase must be between 0 and 1 (got {startInt})");
                             }
                         }
 
                         // Validate EndPhaseValue
-                        if (reference.EndPhaseValue != null)
-                        {
-                            if (reference.EndPhaseValue is float endFloat && (endFloat < 0 || endFloat > 1))
-                            {
+                        if (reference.EndPhaseValue != null) {
+                            if (reference.EndPhaseValue is float endFloat
+                                && (endFloat < 0 || endFloat > 1)) {
                                 errors.Add($"Animation '{alias}': endPhase must be between 0 and 1 (got {endFloat})");
                             }
-                            else if (reference.EndPhaseValue is int endInt && (endInt < 0 || endInt > 1))
-                            {
+                            else if (reference.EndPhaseValue is int endInt
+                                && (endInt < 0 || endInt > 1)) {
                                 errors.Add($"Animation '{alias}': endPhase must be between 0 and 1 (got {endInt})");
                             }
                         }
 
                         // Validate BlendDurationValue
-                        if (reference.BlendDurationValue != null)
-                        {
-                            if (reference.BlendDurationValue is float blendFloat && blendFloat < 0)
-                            {
+                        if (reference.BlendDurationValue != null) {
+                            if (reference.BlendDurationValue is float blendFloat
+                                && blendFloat < 0) {
                                 errors.Add($"Animation '{alias}': BlendDuration cannot be negative (got {blendFloat})");
                             }
-                            else if (reference.BlendDurationValue is int blendInt && blendInt < 0)
-                            {
+                            else if (reference.BlendDurationValue is int blendInt
+                                && blendInt < 0) {
                                 errors.Add($"Animation '{alias}': BlendDuration cannot be negative (got {blendInt})");
                             }
                         }
                     }
-
                     index++;
                 }
             }
 
             // 验证层配置
-            if (config.Layers != null)
-            {
-                foreach (var kvp in config.Layers)
-                {
+            if (config.Layers != null) {
+                foreach (KeyValuePair<string, LayerConfig> kvp in config.Layers) {
                     string layerName = kvp.Key;
                     LayerConfig layerConfig = kvp.Value;
-
-                    if (string.IsNullOrEmpty(layerName))
-                    {
+                    if (string.IsNullOrEmpty(layerName)) {
                         errors.Add("Layer name cannot be empty");
                     }
-
-                    if (layerConfig?.Driver != null && string.IsNullOrEmpty(layerConfig.Driver.Type))
-                    {
+                    if (layerConfig?.Driver != null
+                        && string.IsNullOrEmpty(layerConfig.Driver.Type)) {
                         errors.Add($"Layer '{layerName}': Driver Type is required");
                     }
                 }
             }
 
             // 验证状态配置
-            if (config.States != null)
-            {
-                foreach (var kvp in config.States)
-                {
+            if (config.States != null) {
+                foreach (KeyValuePair<string, StateTrackConfig> kvp in config.States) {
                     string trackName = kvp.Key;
                     StateTrackConfig trackConfig = kvp.Value;
-
-                    if (string.IsNullOrEmpty(trackName))
-                    {
+                    if (string.IsNullOrEmpty(trackName)) {
                         errors.Add("State track name cannot be empty");
                     }
-
-                    if (trackConfig?.Rules != null)
-                    {
+                    if (trackConfig?.Rules != null) {
                         int ruleIndex = 0;
-                        foreach (var rule in trackConfig.Rules)
-                        {
-                            if (string.IsNullOrEmpty(rule.Condition))
-                            {
+                        foreach (StateRuleConfig rule in trackConfig.Rules) {
+                            if (string.IsNullOrEmpty(rule.Condition)) {
                                 errors.Add($"State '{trackName}' rule {ruleIndex}: Condition is required");
                             }
-
                             ruleIndex++;
                         }
                     }
                 }
             }
-
-            if (errors.Count > 0)
-            {
-                throw new AnimationConfigValidationException(
-                    $"Animation config validation failed:\n{string.Join("\n", errors)}",
-                    errors);
+            if (errors.Count > 0) {
+                throw new AnimationConfigValidationException($"Animation config validation failed:\n{string.Join("\n", errors)}", errors);
             }
         }
 
         /// <summary>
         /// 在模型中查找指定名称的动画
         /// </summary>
-        public ModelAnimation FindAnimationInModel(Model model, string animationName)
-        {
-            if (model == null || string.IsNullOrEmpty(animationName))
-            {
+        public ModelAnimation FindAnimationInModel(Model model, string animationName) {
+            if (model == null
+                || string.IsNullOrEmpty(animationName)) {
                 return null;
             }
 
             // 尝试精确匹配
-            foreach (var anim in model.Animations)
-            {
-                if (anim.Name == animationName)
-                {
+            foreach (ModelAnimation anim in model.Animations) {
+                if (anim.Name == animationName) {
                     return anim;
                 }
             }
 
             // 尝试忽略大小写匹配
-            foreach (var anim in model.Animations)
-            {
-                if (string.Equals(anim.Name, animationName, StringComparison.OrdinalIgnoreCase))
-                {
+            foreach (ModelAnimation anim in model.Animations) {
+                if (string.Equals(anim.Name, animationName, StringComparison.OrdinalIgnoreCase)) {
                     return anim;
                 }
             }
-
             return null;
         }
 
@@ -335,15 +266,11 @@ namespace Engine.Animation
         /// <param name="config">动画配置</param>
         /// <param name="model">目标模型</param>
         /// <returns>配置好的 AnimationController 实例</returns>
-        public AnimationController CreateController(AnimationConfig config, Model model)
-        {
-            if (config == null)
-            {
+        public AnimationController CreateController(AnimationConfig config, Model model) {
+            if (config == null) {
                 throw new ArgumentNullException(nameof(config));
             }
-
-            if (model == null)
-            {
+            if (model == null) {
                 throw new ArgumentNullException(nameof(model));
             }
 
@@ -360,39 +287,32 @@ namespace Engine.Animation
             controller.ModelScale = config.ModelScale;
 
             // 设置初始参数
-            if (config.Parameters != null)
-            {
-                foreach (var kvp in config.Parameters)
-                {
+            if (config.Parameters != null) {
+                foreach (KeyValuePair<string, object> kvp in config.Parameters) {
                     SetParameterByType(controller.Parameters, kvp.Key, kvp.Value);
                 }
             }
 
             // 配置层驱动器
-            if (config.Layers != null)
-            {
-                foreach (var kvp in config.Layers)
-                {
+            if (config.Layers != null) {
+                foreach (KeyValuePair<string, LayerConfig> kvp in config.Layers) {
                     string layerName = kvp.Key;
                     LayerConfig layerConfig = kvp.Value;
 
                     // 查找层
-                    var layer = controller.Layers.FirstOrDefault(l => l.Name == layerName);
-                    if (layer == null) continue;
-
-                    // 应用骨骼遮罩配置（覆盖模板中的默认值）
-                    if (layerConfig?.Bones != null)
-                    {
-                        layer.BoneMask = layerConfig.Bones.Length > 0 ? layerConfig.Bones : null;
+                    AnimationLayer layer = controller.Layers.FirstOrDefault(l => l.Name == layerName);
+                    if (layer == null) {
+                        continue;
                     }
 
-                    if (layerConfig?.Driver != null)
-                    {
+                    // 应用骨骼遮罩配置（覆盖模板中的默认值）
+                    if (layerConfig?.Bones != null) {
+                        layer.BoneMask = layerConfig.Bones.Length > 0 ? layerConfig.Bones : null;
+                    }
+                    if (layerConfig?.Driver != null) {
                         IAnimationDriver driver = CreateDriver(layerConfig.Driver.Type);
-                        if (driver != null)
-                        {
-                            if (layerConfig.Driver.Properties != null)
-                            {
+                        if (driver != null) {
+                            if (layerConfig.Driver.Properties != null) {
                                 ApplyDriverProperties(driver, layerConfig.Driver.Properties);
                             }
                             controller.SetDriver(layerName, driver);
@@ -402,17 +322,16 @@ namespace Engine.Animation
             }
 
             // 配置状态规则
-            if (config.States != null && config.States.Count > 0)
-            {
+            if (config.States != null
+                && config.States.Count > 0) {
                 controller.SetStateConfigs(config.States);
             }
 
             // 设置动画别名引用（用于状态规则中的别名解析）
-            if (config.Animations != null && config.Animations.Count > 0)
-            {
+            if (config.Animations != null
+                && config.Animations.Count > 0) {
                 controller.SetAnimationReferences(config.Animations);
             }
-
             return controller;
         }
 
@@ -420,19 +339,19 @@ namespace Engine.Animation
         /// 创建驱动器实例
         /// 优先从 AnimationDriverManager 查找，找不到时回退到反射
         /// </summary>
-        public IAnimationDriver CreateDriver(string type)
-        {
-            if (string.IsNullOrEmpty(type))
+        public IAnimationDriver CreateDriver(string type) {
+            if (string.IsNullOrEmpty(type)) {
                 return null;
+            }
 
             // 优先从 AnimationDriverManager 查找
-            var driver = AnimationDriverManager.Create(type);
-            if (driver != null)
+            IAnimationDriver driver = AnimationDriverManager.Create(type);
+            if (driver != null) {
                 return driver;
+            }
 
             // 回退到硬编码的引擎层驱动器
-            driver = type switch
-            {
+            driver = type switch {
                 "LookAtDriver" => new Drivers.LookAtDriver(),
                 "LookAt" => new Drivers.LookAtDriver(),
                 "DeathDriver" => new Drivers.DeathDriver(),
@@ -440,9 +359,9 @@ namespace Engine.Animation
                 "ExpressionDriver" => new Drivers.ExpressionDriver(),
                 _ => null
             };
-
-            if (driver != null)
+            if (driver != null) {
                 return driver;
+            }
 
             // 最后尝试通过反射创建
             //return CreateGameDriver(type);
@@ -452,48 +371,31 @@ namespace Engine.Animation
         /// <summary>
         /// 通过反射创建游戏层驱动器（回退方案）
         /// </summary>
-        public IAnimationDriver CreateGameDriver(string typeName)
-        {
-            try
-            {
+        public IAnimationDriver CreateGameDriver(string typeName) {
+            try {
                 // 尝试的类型名（原始名和加 Driver 后缀）
-                string[] typeNames = new[]
-                {
-                    typeName,
-                    typeName + "Driver"
-                };
+                string[] typeNames = new[] { typeName, typeName + "Driver" };
 
                 // 尝试的命名空间
-                string[] namespaces = new[]
-                {
-                    "Game.Animation.Drivers",
-                    "Game"
-                };
-
-                foreach (var tname in typeNames)
-                {
-                    foreach (var ns in namespaces)
-                    {
+                string[] namespaces = new[] { "Game.Animation.Drivers", "Game" };
+                foreach (string tname in typeNames) {
+                    foreach (string ns in namespaces) {
                         string fullName = $"{ns}.{tname}";
-                        var type = Serialization.TypeCache.FindType(fullName, skipSystemAssemblies: true, throwIfNotFound: false);
-                        if (type != null)
-                        {
+                        Type type = Serialization.TypeCache.FindType(fullName, true, false);
+                        if (type != null) {
                             return Activator.CreateInstance(type) as IAnimationDriver;
                         }
                     }
                 }
 
                 // 尝试完整类型名（用户可能提供了完整名称）
-                var directType = Serialization.TypeCache.FindType(typeName, skipSystemAssemblies: true, throwIfNotFound: false);
-                if (directType != null)
-                {
+                Type directType = Serialization.TypeCache.FindType(typeName, true, false);
+                if (directType != null) {
                     return Activator.CreateInstance(directType) as IAnimationDriver;
                 }
-
                 return null;
             }
-            catch
-            {
+            catch {
                 return null;
             }
         }
@@ -501,37 +403,32 @@ namespace Engine.Animation
         /// <summary>
         /// 应用驱动器属性（使用 PropertySetterCache 优化性能）
         /// </summary>
-        public void ApplyDriverProperties(IAnimationDriver driver, Dictionary<string, object> properties)
-        {
-            if (properties == null || driver == null)
+        public void ApplyDriverProperties(IAnimationDriver driver, Dictionary<string, object> properties) {
+            if (properties == null
+                || driver == null) {
                 return;
-
-            foreach (var kvp in properties)
-            {
-                try
-                {
+            }
+            foreach (KeyValuePair<string, object> kvp in properties) {
+                try {
                     // 获取属性类型以进行值转换
-                    var driverType = driver.GetType();
-                    var property = driverType.GetProperty(kvp.Key);
-                    if (property == null || !property.CanWrite)
+                    Type driverType = driver.GetType();
+                    PropertyInfo property = driverType.GetProperty(kvp.Key);
+                    if (property == null
+                        || !property.CanWrite) {
                         continue;
-
+                    }
                     object value = ConvertValue(kvp.Value, property.PropertyType);
 
                     // 处理嵌套对象
-                    if (value is Dictionary<string, object> nestedDict)
-                    {
+                    if (value is Dictionary<string, object> nestedDict) {
                         value = CreateNestedObject(property.PropertyType, nestedDict);
                     }
-
-                    if (value != null)
-                    {
+                    if (value != null) {
                         // 使用缓存的属性设置器
                         PropertySetterCache.SetProperty(driver, kvp.Key, value);
                     }
                 }
-                catch
-                {
+                catch {
                     // 忽略转换失败
                 }
             }
@@ -540,36 +437,30 @@ namespace Engine.Animation
         /// <summary>
         /// 创建嵌套对象并设置属性（使用 PropertySetterCache 优化性能）
         /// </summary>
-        public object CreateNestedObject(Type targetType, Dictionary<string, object> properties)
-        {
-            try
-            {
+        public object CreateNestedObject(Type targetType, Dictionary<string, object> properties) {
+            try {
                 // 使用缓存的创建器
-                var obj = PropertySetterCache.CreateAndSetProperties(targetType, null);
-                if (obj == null) return null;
-
-                foreach (var kvp in properties)
-                {
-                    var property = targetType.GetProperty(kvp.Key);
-                    if (property == null || !property.CanWrite)
+                object obj = PropertySetterCache.CreateAndSetProperties(targetType, null);
+                if (obj == null) {
+                    return null;
+                }
+                foreach (KeyValuePair<string, object> kvp in properties) {
+                    PropertyInfo property = targetType.GetProperty(kvp.Key);
+                    if (property == null
+                        || !property.CanWrite) {
                         continue;
-
+                    }
                     object value = ConvertValue(kvp.Value, property.PropertyType);
-                    if (value is Dictionary<string, object> nestedDict)
-                    {
+                    if (value is Dictionary<string, object> nestedDict) {
                         value = CreateNestedObject(property.PropertyType, nestedDict);
                     }
-
-                    if (value != null)
-                    {
+                    if (value != null) {
                         PropertySetterCache.SetProperty(obj, kvp.Key, value);
                     }
                 }
-
                 return obj;
             }
-            catch
-            {
+            catch {
                 return null;
             }
         }
@@ -577,66 +468,52 @@ namespace Engine.Animation
         /// <summary>
         /// 转换值到目标类型
         /// </summary>
-        public object ConvertValue(object value, Type targetType)
-        {
-            if (value == null)
+        public object ConvertValue(object value, Type targetType) {
+            if (value == null) {
                 return null;
+            }
 
             // 处理 JsonElement（来自 System.Text.Json）
-            if (value is System.Text.Json.JsonElement jsonElement)
-            {
+            if (value is JsonElement jsonElement) {
                 return ConvertJsonElement(jsonElement, targetType);
             }
-
-            if (targetType == typeof(float))
-            {
+            if (targetType == typeof(float)) {
                 return Convert.ToSingle(value);
             }
-            if (targetType == typeof(double))
-            {
+            if (targetType == typeof(double)) {
                 return Convert.ToDouble(value);
             }
-            if (targetType == typeof(int))
-            {
+            if (targetType == typeof(int)) {
                 return Convert.ToInt32(value);
             }
-            if (targetType == typeof(bool))
-            {
+            if (targetType == typeof(bool)) {
                 return Convert.ToBoolean(value);
             }
-            if (targetType == typeof(string))
-            {
+            if (targetType == typeof(string)) {
                 return value.ToString();
             }
-
             return Convert.ChangeType(value, targetType);
         }
 
         /// <summary>
         /// 从 JsonElement 转换值
         /// </summary>
-        public object ConvertJsonElement(System.Text.Json.JsonElement element, Type targetType)
-        {
+        public object ConvertJsonElement(JsonElement element, Type targetType) {
             // 处理嵌套对象
-            if (element.ValueKind == System.Text.Json.JsonValueKind.Object)
-            {
-                var dict = new Dictionary<string, object>();
-                foreach (var prop in element.EnumerateObject())
-                {
+            if (element.ValueKind == JsonValueKind.Object) {
+                Dictionary<string, object> dict = new();
+                foreach (JsonProperty prop in element.EnumerateObject()) {
                     dict[prop.Name] = prop.Value;
                 }
                 return dict;
             }
 
             // 处理数组
-            if (element.ValueKind == System.Text.Json.JsonValueKind.Array)
-            {
-                if (targetType == typeof(float[]))
-                {
-                    var arr = new float[element.GetArrayLength()];
+            if (element.ValueKind == JsonValueKind.Array) {
+                if (targetType == typeof(float[])) {
+                    float[] arr = new float[element.GetArrayLength()];
                     int i = 0;
-                    foreach (var item in element.EnumerateArray())
-                    {
+                    foreach (JsonElement item in element.EnumerateArray()) {
                         arr[i++] = item.GetSingle();
                     }
                     return arr;
@@ -645,38 +522,29 @@ namespace Engine.Animation
             }
 
             // 处理字符串 - 可能是表达式
-            if (element.ValueKind == System.Text.Json.JsonValueKind.String)
-            {
+            if (element.ValueKind == JsonValueKind.String) {
                 string stringValue = element.GetString();
 
                 // 检查是否是表达式
-                if (ExpressionEvaluator.IsExpression(stringValue))
-                {
+                if (ExpressionEvaluator.IsExpression(stringValue)) {
                     // 返回原始字符串，让 DynamicProperty 处理
                     return stringValue;
                 }
-
                 return stringValue;
             }
-
-            if (targetType == typeof(float))
-            {
+            if (targetType == typeof(float)) {
                 return element.GetSingle();
             }
-            if (targetType == typeof(double))
-            {
+            if (targetType == typeof(double)) {
                 return element.GetDouble();
             }
-            if (targetType == typeof(int))
-            {
+            if (targetType == typeof(int)) {
                 return element.GetInt32();
             }
-            if (targetType == typeof(bool))
-            {
+            if (targetType == typeof(bool)) {
                 return element.GetBoolean();
             }
-            if (targetType == typeof(string))
-            {
+            if (targetType == typeof(string)) {
                 return element.GetString();
             }
 
@@ -687,50 +555,32 @@ namespace Engine.Animation
         /// <summary>
         /// 根据值类型设置参数
         /// </summary>
-        public void SetParameterByType(AnimationParameters parameters, string name, object value)
-        {
-            if (value == null) return;
+        public void SetParameterByType(AnimationParameters parameters, string name, object value) {
+            if (value == null) {
+                return;
+            }
 
             // 处理 JsonElement
-            if (value is System.Text.Json.JsonElement jsonElement)
-            {
-                switch (jsonElement.ValueKind)
-                {
-                    case System.Text.Json.JsonValueKind.Number:
-                        parameters.SetFloat(name, jsonElement.GetSingle());
-                        break;
-                    case System.Text.Json.JsonValueKind.True:
-                    case System.Text.Json.JsonValueKind.False:
-                        parameters.SetBool(name, jsonElement.GetBoolean());
-                        break;
-                    case System.Text.Json.JsonValueKind.String:
+            if (value is JsonElement jsonElement) {
+                switch (jsonElement.ValueKind) {
+                    case JsonValueKind.Number: parameters.SetFloat(name, jsonElement.GetSingle()); break;
+                    case JsonValueKind.True:
+                    case JsonValueKind.False: parameters.SetBool(name, jsonElement.GetBoolean()); break;
+                    case JsonValueKind.String:
                         // 字符串参数暂不处理
                         break;
                 }
                 return;
             }
-
-            switch (value)
-            {
-                case float f:
-                    parameters.SetFloat(name, f);
-                    break;
-                case double d:
-                    parameters.SetFloat(name, (float)d);
-                    break;
-                case int i:
-                    parameters.SetFloat(name, i);
-                    break;
-                case bool b:
-                    parameters.SetBool(name, b);
-                    break;
-                case Vector3 v:
-                    parameters.SetVector3(name, v);
-                    break;
+            switch (value) {
+                case float f: parameters.SetFloat(name, f); break;
+                case double d: parameters.SetFloat(name, (float)d); break;
+                case int i: parameters.SetFloat(name, i); break;
+                case bool b: parameters.SetBool(name, b); break;
+                case Vector3 v: parameters.SetVector3(name, v); break;
                 default:
                     // 尝试转换为 float
-                    if (double.TryParse(value.ToString(), out double num))
-                    {
+                    if (double.TryParse(value.ToString(), out double num)) {
                         parameters.SetFloat(name, (float)num);
                     }
                     break;
@@ -742,18 +592,13 @@ namespace Engine.Animation
         /// </summary>
         /// <param name="config">动画配置</param>
         /// <returns>动画别名列表</returns>
-        public IReadOnlyList<string> GetAnimationAliases(AnimationConfig config)
-        {
+        public IReadOnlyList<string> GetAnimationAliases(AnimationConfig config) {
             List<string> aliases = new();
-
-            if (config?.Animations != null)
-            {
-                foreach (var kvp in config.Animations)
-                {
+            if (config?.Animations != null) {
+                foreach (KeyValuePair<string, AnimationReference> kvp in config.Animations) {
                     aliases.Add(kvp.Key);
                 }
             }
-
             return aliases;
         }
 
@@ -763,40 +608,29 @@ namespace Engine.Animation
         /// <param name="config">动画配置</param>
         /// <param name="alias">动画别名</param>
         /// <returns>动画引用配置，如果不存在则返回 null</returns>
-        public AnimationReference GetAnimationReference(AnimationConfig config, string alias)
-        {
-            if (config?.Animations == null || string.IsNullOrEmpty(alias))
-            {
+        public AnimationReference GetAnimationReference(AnimationConfig config, string alias) {
+            if (config?.Animations == null
+                || string.IsNullOrEmpty(alias)) {
                 return null;
             }
-
-            return config.Animations.TryGetValue(alias, out var reference) ? reference : null;
+            return config.Animations.TryGetValue(alias, out AnimationReference reference) ? reference : null;
         }
     }
 
     /// <summary>
     /// 动画配置验证异常
     /// </summary>
-    public class AnimationConfigValidationException : Exception
-    {
+    public class AnimationConfigValidationException : Exception {
         /// <summary>
         /// 验证错误列表
         /// </summary>
         public IReadOnlyList<string> Errors { get; }
 
-        public AnimationConfigValidationException(string message) : base(message)
-        {
-            Errors = new List<string>();
-        }
+        public AnimationConfigValidationException(string message) : base(message) => Errors = new List<string>();
 
-        public AnimationConfigValidationException(string message, IEnumerable<string> errors) : base(message)
-        {
-            Errors = new List<string>(errors);
-        }
+        public AnimationConfigValidationException(string message, IEnumerable<string> errors) : base(message) => Errors = new List<string>(errors);
 
-        public AnimationConfigValidationException(string message, Exception innerException) : base(message, innerException)
-        {
+        public AnimationConfigValidationException(string message, Exception innerException) : base(message, innerException) =>
             Errors = new List<string>();
-        }
     }
 }

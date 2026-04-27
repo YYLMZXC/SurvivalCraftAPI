@@ -1,12 +1,8 @@
-#nullable disable
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// IK 算法配置参数
     /// </summary>
-    public class IKAlgorithmConfig
-    {
+    public class IKAlgorithmConfig {
         /// <summary>
         /// CCD/FABRIK 最大迭代次数
         /// </summary>

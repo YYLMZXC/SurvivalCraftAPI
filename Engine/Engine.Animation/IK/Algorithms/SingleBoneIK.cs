@@ -1,62 +1,73 @@
-#nullable disable
-
 using Engine.Graphics;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 单骨骼 IK 算法
     /// 适用于链长度为 2 的情况（如脖子-头部）
     /// </summary>
-    public class SingleBoneIK : IIKAlgorithm
-    {
+    public class SingleBoneIK : IIKAlgorithm {
         public string Name => "SingleBoneIK";
         public bool SupportsAim => true;
 
-        public void Solve(IKChain chain, IKTarget target,
-            Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
+        public void Solve(IKChain chain,
+            IKTarget target,
+            Matrix?[] boneTransforms,
+            Vector3[] worldPositions,
+            Model model,
             IKAlgorithmConfig config = null) // config 未使用，单骨骼 IK 无额外配置项
         {
-            if (chain == null || chain.Length != 2)
+            if (chain == null
+                || chain.Length != 2) {
                 return;
-
-            if (!target.AimDirection.HasValue && !target.Position.HasValue)
+            }
+            if (!target.AimDirection.HasValue
+                && !target.Position.HasValue) {
                 return;
-
+            }
             int[] indices = chain.BoneIndices;
             int rootIdx = indices[0];
             int endIdx = indices[1];
-
             Vector3 rootPos = worldPositions[rootIdx];
-
-            SolveSingleBone(chain, target, boneTransforms, worldPositions, rootIdx, endIdx, rootPos, model);
+            SolveSingleBone(
+                chain,
+                target,
+                boneTransforms,
+                worldPositions,
+                rootIdx,
+                endIdx,
+                rootPos,
+                model
+            );
         }
 
         /// <summary>
         /// 单骨骼 IK：旋转骨骼链让 AimAxis 朝向目标方向
         /// </summary>
-        public void SolveSingleBone(IKChain chain, IKTarget target,
-            Matrix?[] boneTransforms, Vector3[] worldPositions,
-            int rootIdx, int endIdx, Vector3 rootPos, Model model)
-        {
+        public void SolveSingleBone(IKChain chain,
+            IKTarget target,
+            Matrix?[] boneTransforms,
+            Vector3[] worldPositions,
+            int rootIdx,
+            int endIdx,
+            Vector3 rootPos,
+            Model model) {
             // 目标方向（模型空间）
             Vector3 targetDir;
-            if (target.AimDirection.HasValue)
-            {
-                var dir = target.AimDirection.Value;
-                if (dir.LengthSquared() < 0.0001f)
+            if (target.AimDirection.HasValue) {
+                Vector3 dir = target.AimDirection.Value;
+                if (dir.LengthSquared() < 0.0001f) {
                     return;
+                }
                 targetDir = Vector3.Normalize(dir);
             }
-            else if (target.Position.HasValue)
-            {
-                var toTarget = target.Position.Value - rootPos;
-                if (toTarget.LengthSquared() < 0.0001f)
+            else if (target.Position.HasValue) {
+                Vector3 toTarget = target.Position.Value - rootPos;
+                if (toTarget.LengthSquared() < 0.0001f) {
                     return;
+                }
                 targetDir = Vector3.Normalize(toTarget);
             }
-            else
-            {
+            else {
                 return;
             }
 
@@ -69,8 +80,8 @@ namespace Engine.Animation
 
             // 应用权重
             float weight = target.AimWeight;
-            if (weight > 0f && weight < 1.0f)
-            {
+            if (weight > 0f
+                && weight < 1.0f) {
                 modelRotation = Quaternion.Slerp(Quaternion.Identity, modelRotation, weight);
             }
 
@@ -91,17 +102,16 @@ namespace Engine.Animation
         /// <summary>
         /// 应用关节限制
         /// </summary>
-        public void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model)
-        {
-            if (chain.JointLimits == null || model == null)
+        public void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model) {
+            if (chain.JointLimits == null
+                || model == null) {
                 return;
-
-            foreach (int boneIdx in chain.BoneIndices)
-            {
-                var limit = chain.GetJointLimit(boneIdx, model);
-                if (limit != null && boneTransforms[boneIdx].HasValue)
-                {
-                    var transform = boneTransforms[boneIdx].Value;
+            }
+            foreach (int boneIdx in chain.BoneIndices) {
+                JointLimit limit = chain.GetJointLimit(boneIdx, model);
+                if (limit != null
+                    && boneTransforms[boneIdx].HasValue) {
+                    Matrix transform = boneTransforms[boneIdx].Value;
                     boneTransforms[boneIdx] = limit.ApplyLimit(transform);
                 }
             }

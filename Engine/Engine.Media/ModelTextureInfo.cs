@@ -8,11 +8,11 @@ namespace Engine.Media {
     /// </summary>
     public enum ModelTextureType {
         None,
-        BaseColor,      // sRGB
-        Normal,         // Linear
+        BaseColor, // sRGB
+        Normal, // Linear
         MetallicRoughness, // Linear
-        Occlusion,      // Linear
-        Emissive        // sRGB
+        Occlusion, // Linear
+        Emissive // sRGB
     }
 
     /// <summary>
@@ -52,7 +52,6 @@ namespace Engine.Media {
                 // glTF 默认值：Linear 过滤，Repeat 环绕
                 return SamplerState.LinearWrap;
             }
-
             SamplerState state = new();
 
             // 设置过滤模式
@@ -61,7 +60,6 @@ namespace Engine.Media {
             // 设置环绕模式
             state.AddressModeU = TranslateAddressMode(sampler.WrapS);
             state.AddressModeV = TranslateAddressMode(sampler.WrapT);
-
             return state;
         }
 

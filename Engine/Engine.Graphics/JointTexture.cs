@@ -1,6 +1,3 @@
-using System;
-using System.Numerics;
-using System.Runtime.InteropServices;
 using Silk.NET.OpenGLES;
 
 namespace Engine.Graphics {
@@ -39,7 +36,6 @@ namespace Engine.Graphics {
             // 每个 mat4 需要 4 个像素（每个像素 RGBA32F = vec4）
             // 所以每个关节需要 8 个像素
             TextureSize = (int)Math.Ceiling(Math.Sqrt(maxJoints * 8));
-
             m_textureData = new float[TextureSize * TextureSize * 4];
             m_normalMatrices = new Matrix[maxJoints];
             CreateTexture();
@@ -49,12 +45,10 @@ namespace Engine.Graphics {
             TextureHandle = GLWrapper.GL.GenTexture();
             GLWrapper.ActiveTexture(TextureUnit.Texture0);
             GLWrapper.BindTexture(TextureTarget.Texture2D, (int)TextureHandle, true);
-
             GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
             GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
             GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GLWrapper.GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
             GLWrapper.GL.TexImage2D(
                 TextureTarget.Texture2D,
                 0,
@@ -74,7 +68,10 @@ namespace Engine.Graphics {
         /// </summary>
         /// <param name="jointMatrices">关节矩阵数组（已与逆绑定矩阵相乘）</param>
         public unsafe void Update(Matrix[] jointMatrices) {
-            if (jointMatrices == null || jointMatrices.Length == 0) return;
+            if (jointMatrices == null
+                || jointMatrices.Length == 0) {
+                return;
+            }
             fixed (Matrix* ptr = jointMatrices) {
                 UpdateCore(ptr, Math.Min(jointMatrices.Length, MaxJointCount));
             }
@@ -85,7 +82,9 @@ namespace Engine.Graphics {
         /// </summary>
         /// <param name="jointMatrices">关节矩阵 span</param>
         public unsafe void Update(ReadOnlySpan<Matrix> jointMatrices) {
-            if (jointMatrices.IsEmpty) return;
+            if (jointMatrices.IsEmpty) {
+                return;
+            }
             fixed (Matrix* ptr = jointMatrices) {
                 UpdateCore(ptr, Math.Min(jointMatrices.Length, MaxJointCount));
             }
@@ -94,7 +93,6 @@ namespace Engine.Graphics {
         public unsafe void UpdateCore(Matrix* matricesPtr, int count) {
             GLWrapper.ActiveTexture(TextureUnit.Texture0);
             GLWrapper.BindTexture(TextureTarget.Texture2D, (int)TextureHandle, true);
-
             for (int i = 0; i < count; i++) {
                 Matrix jointMatrix = matricesPtr[i];
 
@@ -108,7 +106,6 @@ namespace Engine.Graphics {
                 // 写入 normalMatrix（offset = i * 32 + 16 floats）
                 WriteMatrixToTextureData(m_textureData, offset + 16, m_normalMatrices[i]);
             }
-
             fixed (float* ptr = m_textureData) {
                 GLWrapper.GL.TexSubImage2D(
                     TextureTarget.Texture2D,
@@ -155,8 +152,9 @@ namespace Engine.Graphics {
         }
 
         public void Dispose() {
-            if (m_disposed) return;
-
+            if (m_disposed) {
+                return;
+            }
             if (TextureHandle != 0) {
                 GLWrapper.GL.DeleteTexture(TextureHandle);
                 TextureHandle = 0;

@@ -1,35 +1,35 @@
-#nullable disable
-
 using Engine.Graphics;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 两骨骼 IK 解析解算法
     /// 适用于手臂、腿部等典型情况
     /// </summary>
-    public class TwoBoneIK : IIKAlgorithm
-    {
+    public class TwoBoneIK : IIKAlgorithm {
         public string Name => "TwoBoneIK";
         public bool SupportsAim => true;
 
-        public void Solve(IKChain chain, IKTarget target,
-            Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
-            IKAlgorithmConfig config = null)
-        {
-            if (chain == null || chain.Length < 2)
+        public void Solve(IKChain chain,
+            IKTarget target,
+            Matrix?[] boneTransforms,
+            Vector3[] worldPositions,
+            Model model,
+            IKAlgorithmConfig config = null) {
+            if (chain == null
+                || chain.Length < 2) {
                 return;
+            }
 
             // 链长度为 2 的情况由 SingleBoneIK 处理
-            if (chain.Length == 2)
+            if (chain.Length == 2) {
                 return;
+            }
 
             // 链长度 > 2 时，必须有 Position
-            if (!target.Position.HasValue)
+            if (!target.Position.HasValue) {
                 return;
-
+            }
             config ??= new IKAlgorithmConfig();
-
             int[] indices = chain.BoneIndices;
             int rootIdx = indices[0];
             int midIdx = indices[1];
@@ -42,9 +42,10 @@ namespace Engine.Animation
             // 计算骨骼长度
             float len1 = Vector3.Distance(rootPos, worldPositions[midIdx]);
             float len2 = Vector3.Distance(worldPositions[midIdx], endPos);
-
-            if (len1 < 0.0001f || len2 < 0.0001f)
+            if (len1 < 0.0001f
+                || len2 < 0.0001f) {
                 return;
+            }
 
             // 目标位置
             Vector3 targetPos = target.Position.Value;
@@ -57,31 +58,23 @@ namespace Engine.Animation
 
             // 计算根骨骼到目标的方向
             Vector3 toTarget = targetPos - rootPos;
-            Vector3 toTargetDir = toTarget.LengthSquared() > 0.0001f
-                ? Vector3.Normalize(toTarget)
-                : Vector3.UnitY;
+            Vector3 toTargetDir = toTarget.LengthSquared() > 0.0001f ? Vector3.Normalize(toTarget) : Vector3.UnitY;
 
             // 计算中间骨骼位置（解析解）
             Vector3 newMidPos;
-
-            if (targetDist >= totalLen)
-            {
+            if (targetDist >= totalLen) {
                 // 目标超出骨骼链长度：完全伸展
                 newMidPos = rootPos + toTargetDir * len1;
             }
-            else if (targetDist <= MathF.Abs(len1 - len2))
-            {
+            else if (targetDist <= MathF.Abs(len1 - len2)) {
                 // 目标太近：折叠
                 newMidPos = rootPos + toTargetDir * len1 * 0.5f;
             }
-            else
-            {
+            else {
                 // 使用余弦定理计算中间骨骼位置
                 // cos(B) = (a² + c² - b²) / (2ac)
                 // 其中 a = len1, b = len2, c = targetDist
-                float cosB = (len1 * len1 + targetDist * targetDist - len2 * len2)
-                            / (2f * len1 * targetDist);
-
+                float cosB = (len1 * len1 + targetDist * targetDist - len2 * len2) / (2f * len1 * targetDist);
                 cosB = Math.Clamp(cosB, -1f, 1f);
                 float angleB = MathF.Acos(cosB);
 
@@ -99,11 +92,11 @@ namespace Engine.Animation
 
                 // 弯曲方向的垂直分量
                 Vector3 bendPerpendicular = Vector3.Cross(forward, bendDir);
-                if (bendPerpendicular.LengthSquared() < 0.0001f)
-                {
+                if (bendPerpendicular.LengthSquared() < 0.0001f) {
                     bendPerpendicular = Vector3.Cross(forward, Vector3.UnitY);
-                    if (bendPerpendicular.LengthSquared() < 0.0001f)
+                    if (bendPerpendicular.LengthSquared() < 0.0001f) {
                         bendPerpendicular = Vector3.Cross(forward, Vector3.UnitX);
+                    }
                 }
                 bendPerpendicular = Vector3.Normalize(bendPerpendicular);
 
@@ -115,13 +108,12 @@ namespace Engine.Animation
             Vector3 midPos = worldPositions[midIdx];
             Vector3 oldRootDiff = midPos - rootPos;
             Vector3 newRootDiff = newMidPos - rootPos;
-
-            if (oldRootDiff.LengthSquared() < 0.0001f || newRootDiff.LengthSquared() < 0.0001f)
+            if (oldRootDiff.LengthSquared() < 0.0001f
+                || newRootDiff.LengthSquared() < 0.0001f) {
                 return;
-
+            }
             Vector3 oldRootDir = Vector3.Normalize(oldRootDiff);
             Vector3 newRootDir = Vector3.Normalize(newRootDiff);
-
             Quaternion rootRotation = IKUtils.RotationBetweenVectors(oldRootDir, newRootDir);
 
             // 转换模型空间旋转到骨骼局部空间
@@ -132,14 +124,11 @@ namespace Engine.Animation
 
             // 重新计算中间骨骼位置（基于新的根骨骼旋转）
             // 更新世界位置用于后续计算
-            Vector3 newMidWorld = Vector3.Transform(
-                midPos - rootPos,
-                rootRotation) + rootPos;
+            Vector3 newMidWorld = Vector3.Transform(midPos - rootPos, rootRotation) + rootPos;
 
             // 计算中间骨骼旋转
             Vector3 oldMidDir = Vector3.Normalize(endPos - midPos);
             Vector3 newMidDir = Vector3.Normalize(targetPos - newMidWorld);
-
             Quaternion midRotation = IKUtils.RotationBetweenVectors(oldMidDir, newMidDir);
 
             // 转换模型空间旋转到骨骼局部空间
@@ -152,8 +141,7 @@ namespace Engine.Animation
             ApplyJointLimits(chain, boneTransforms, model);
 
             // 处理方向约束（瞄准）
-            if (target.AimDirection.HasValue && SupportsAim)
-            {
+            if (target.AimDirection.HasValue && SupportsAim) {
                 ApplyAimConstraint(chain, target, boneTransforms, worldPositions, model, indices);
             }
         }
@@ -161,10 +149,8 @@ namespace Engine.Animation
         /// <summary>
         /// 计算弯曲方向
         /// </summary>
-        public Vector3 CalculateBendDirection(Vector3 root, Vector3 mid, Vector3 target, Vector3? hint)
-        {
-            if (hint.HasValue)
-            {
+        public Vector3 CalculateBendDirection(Vector3 root, Vector3 mid, Vector3 target, Vector3? hint) {
+            if (hint.HasValue) {
                 return hint.Value;
             }
 
@@ -174,32 +160,29 @@ namespace Engine.Animation
 
             // 使用叉积确定弯曲方向
             Vector3 bendDir = Vector3.Cross(rootToTarget, rootToMid);
-
-            if (bendDir.LengthSquared() < 0.0001f)
-            {
+            if (bendDir.LengthSquared() < 0.0001f) {
                 // 如果共线，使用默认方向
                 bendDir = Vector3.Cross(rootToTarget, Vector3.UnitY);
-                if (bendDir.LengthSquared() < 0.0001f)
+                if (bendDir.LengthSquared() < 0.0001f) {
                     bendDir = Vector3.Cross(rootToTarget, Vector3.UnitX);
+                }
             }
-
             return Vector3.Normalize(bendDir);
         }
 
         /// <summary>
         /// 应用关节限制
         /// </summary>
-        public void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model)
-        {
-            if (chain.JointLimits == null || model == null)
+        public void ApplyJointLimits(IKChain chain, Matrix?[] boneTransforms, Model model) {
+            if (chain.JointLimits == null
+                || model == null) {
                 return;
-
-            foreach (int boneIdx in chain.BoneIndices)
-            {
-                var limit = chain.GetJointLimit(boneIdx, model);
-                if (limit != null && boneTransforms[boneIdx].HasValue)
-                {
-                    var transform = boneTransforms[boneIdx].Value;
+            }
+            foreach (int boneIdx in chain.BoneIndices) {
+                JointLimit limit = chain.GetJointLimit(boneIdx, model);
+                if (limit != null
+                    && boneTransforms[boneIdx].HasValue) {
+                    Matrix transform = boneTransforms[boneIdx].Value;
                     boneTransforms[boneIdx] = limit.ApplyLimit(transform);
                 }
             }
@@ -208,12 +191,15 @@ namespace Engine.Animation
         /// <summary>
         /// 应用瞄准约束（方向约束）
         /// </summary>
-        public void ApplyAimConstraint(IKChain chain, IKTarget target,
-            Matrix?[] boneTransforms, Vector3[] worldPositions, Model model, int[] indices)
-        {
-            if (!target.AimDirection.HasValue)
+        public void ApplyAimConstraint(IKChain chain,
+            IKTarget target,
+            Matrix?[] boneTransforms,
+            Vector3[] worldPositions,
+            Model model,
+            int[] indices) {
+            if (!target.AimDirection.HasValue) {
                 return;
-
+            }
             int endIdx = indices[indices.Length - 1];
 
             // 获取瞄准轴
@@ -231,8 +217,7 @@ namespace Engine.Animation
             Quaternion aimRotation = IKUtils.RotationBetweenVectors(currentAimDir, targetDir);
 
             // 应用权重
-            if (target.AimWeight < 1.0f)
-            {
+            if (target.AimWeight < 1.0f) {
                 aimRotation = Quaternion.Slerp(Quaternion.Identity, aimRotation, target.AimWeight);
             }
 

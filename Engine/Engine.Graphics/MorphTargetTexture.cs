@@ -12,7 +12,9 @@ namespace Engine.Graphics {
     /// </summary>
     public class MorphTargetTexture : GraphicsResource {
         public bool m_disposed;
+
         public float[] m_layerData;
+
         // 保留原始数据用于 device reset 后重新上传
         public IReadOnlyList<Vector3>[] m_savedPositions;
         public IReadOnlyList<Vector3>[] m_savedNormals;
@@ -146,7 +148,6 @@ namespace Engine.Graphics {
                 }
                 layerIndex += targetCount;
             }
-
             LayerCount = targetCount * m_activeAttributes.Count;
 
             // 预分配层数据数组
@@ -158,12 +159,10 @@ namespace Engine.Graphics {
         public unsafe void CreateTexture() {
             TextureHandle = (int)GLWrapper.GL.GenTexture();
             GLWrapper.GL.BindTexture(TextureTarget.Texture2DArray, (uint)TextureHandle);
-
             GLWrapper.GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
             GLWrapper.GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
             GLWrapper.GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GLWrapper.GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-
             GLWrapper.GL.TexImage3D(
                 TextureTarget.Texture2DArray,
                 0,
@@ -195,35 +194,52 @@ namespace Engine.Graphics {
             IReadOnlyList<Vector2>[] texCoords1,
             IReadOnlyList<Vector4>[] colors0) {
             GLWrapper.GL.BindTexture(TextureTarget.Texture2DArray, (uint)TextureHandle);
-
             for (int t = 0; t < TargetCount; t++) {
                 // POSITION
-                if (PositionOffset >= 0 && positions != null && t < positions.Length && positions[t] != null) {
+                if (PositionOffset >= 0
+                    && positions != null
+                    && t < positions.Length
+                    && positions[t] != null) {
                     UploadAttributeLayer(positions[t], PositionOffset + t);
                 }
 
                 // NORMAL
-                if (NormalOffset >= 0 && normals != null && t < normals.Length && normals[t] != null) {
+                if (NormalOffset >= 0
+                    && normals != null
+                    && t < normals.Length
+                    && normals[t] != null) {
                     UploadAttributeLayer(normals[t], NormalOffset + t);
                 }
 
                 // TANGENT
-                if (TangentOffset >= 0 && tangents != null && t < tangents.Length && tangents[t] != null) {
+                if (TangentOffset >= 0
+                    && tangents != null
+                    && t < tangents.Length
+                    && tangents[t] != null) {
                     UploadAttributeLayer(tangents[t], TangentOffset + t);
                 }
 
                 // TEXCOORD_0
-                if (TexCoord0Offset >= 0 && texCoords0 != null && t < texCoords0.Length && texCoords0[t] != null) {
+                if (TexCoord0Offset >= 0
+                    && texCoords0 != null
+                    && t < texCoords0.Length
+                    && texCoords0[t] != null) {
                     UploadAttributeLayer(texCoords0[t], TexCoord0Offset + t);
                 }
 
                 // TEXCOORD_1
-                if (TexCoord1Offset >= 0 && texCoords1 != null && t < texCoords1.Length && texCoords1[t] != null) {
+                if (TexCoord1Offset >= 0
+                    && texCoords1 != null
+                    && t < texCoords1.Length
+                    && texCoords1[t] != null) {
                     UploadAttributeLayer(texCoords1[t], TexCoord1Offset + t);
                 }
 
                 // COLOR_0
-                if (Color0Offset >= 0 && colors0 != null && t < colors0.Length && colors0[t] != null) {
+                if (Color0Offset >= 0
+                    && colors0 != null
+                    && t < colors0.Length
+                    && colors0[t] != null) {
                     UploadAttributeLayer(colors0[t], Color0Offset + t);
                 }
             }
@@ -321,9 +337,10 @@ namespace Engine.Graphics {
 
         public override void HandleDeviceReset() {
             CreateTexture();
-            if (m_savedPositions != null || m_savedNormals != null || m_savedTangents != null) {
-                UploadData(m_savedPositions, m_savedNormals, m_savedTangents,
-                    m_savedTexCoords0, m_savedTexCoords1, m_savedColors0);
+            if (m_savedPositions != null
+                || m_savedNormals != null
+                || m_savedTangents != null) {
+                UploadData(m_savedPositions, m_savedNormals, m_savedTangents, m_savedTexCoords0, m_savedTexCoords1, m_savedColors0);
             }
         }
     }

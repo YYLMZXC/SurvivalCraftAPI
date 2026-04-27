@@ -1,12 +1,8 @@
-#nullable disable
-
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// 欧拉角旋转顺序
     /// </summary>
-    public enum EulerRotationOrder
-    {
+    public enum EulerRotationOrder {
         /// <summary>
         /// 先 X 后 Y 再 Z
         /// </summary>

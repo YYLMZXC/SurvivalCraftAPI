@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using SharpGLTF.Schema2;
-using System.Numerics;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 
 namespace Engine.Media {
@@ -51,7 +49,8 @@ namespace Engine.Media {
         public override void LoadFromGltf(GltfMaterial material, ModelData modelData) {
             MaterialChannel? thicknessChannel = material.FindChannel("VolumeThickness");
             MaterialChannel? attenuationChannel = material.FindChannel("VolumeAttenuation");
-            if (thicknessChannel != null || attenuationChannel != null) {
+            if (thicknessChannel != null
+                || attenuationChannel != null) {
                 IsLoaded = true;
                 if (thicknessChannel != null) {
                     ThicknessFactor = GetChannelFactor(thicknessChannel, "ThicknessFactor", 0f);
@@ -60,7 +59,7 @@ namespace Engine.Media {
                 if (attenuationChannel != null) {
                     float attDist = GetChannelFactor(attenuationChannel, "AttenuationDistance", float.MaxValue);
                     AttenuationDistance = attDist == 0f ? float.MaxValue : attDist;
-                    var color = attenuationChannel.Value.Color;
+                    System.Numerics.Vector4 color = attenuationChannel.Value.Color;
                     AttenuationColor = new Vector3(color.X, color.Y, color.Z);
                 }
             }

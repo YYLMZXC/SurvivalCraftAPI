@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text;
 using Engine.Media;
 
@@ -323,21 +322,14 @@ namespace Engine.Graphics {
             if (declaration == null) {
                 return defines;
             }
-
             bool hasJoints = false;
             bool hasWeights = false;
-
             foreach (VertexElement element in declaration.VertexElements) {
                 string semantic = element.SemanticName.ToUpperInvariant();
                 int componentCount = element.Format.GetElementsCount();
-
                 switch (semantic) {
-                    case "NORMAL":
-                        defines.AddVertexAttribute("NORMAL", componentCount);
-                        break;
-                    case "TANGENT":
-                        defines.AddVertexAttribute("TANGENT", componentCount);
-                        break;
+                    case "NORMAL": defines.AddVertexAttribute("NORMAL", componentCount); break;
+                    case "TANGENT": defines.AddVertexAttribute("TANGENT", componentCount); break;
                     case "TEXCOORD":
                         if (element.SemanticIndex == 0) {
                             defines.AddVertexAttribute("TEXCOORD_0", componentCount);
@@ -351,48 +343,39 @@ namespace Engine.Graphics {
                             defines.Add(componentCount == 3 ? "HAS_COLOR_0_VEC3" : "HAS_COLOR_0_VEC4");
                         }
                         break;
-                    case "JOINTS":
-                        hasJoints = true;
-                        break;
-                    case "WEIGHTS":
-                        hasWeights = true;
-                        break;
+                    case "JOINTS": hasJoints = true; break;
+                    case "WEIGHTS": hasWeights = true; break;
                 }
             }
 
             // GPU Skinning
-            if (enableSkinning && hasJoints && hasWeights) {
+            if (enableSkinning
+                && hasJoints
+                && hasWeights) {
                 defines.Add("USE_SKINNING");
                 defines.Add("HAS_JOINTS_0_VEC4");
                 defines.Add("HAS_WEIGHTS_0_VEC4");
                 defines.SetWeightCount(4);
                 defines.SetJointCount(4);
             }
-
             return defines;
         }
 
         /// <summary>
         /// 从 ModelMeshPart 创建顶点着色器 defines
         /// </summary>
-        public static ShaderDefines CreateFromModelMeshPart(ModelMeshPart meshPart,
-            bool enableSkinning = true,
-            bool enableMorphing = true) {
+        public static ShaderDefines CreateFromModelMeshPart(ModelMeshPart meshPart, bool enableSkinning = true, bool enableMorphing = true) {
             if (meshPart?.VertexBuffer == null) {
                 return new ShaderDefines();
             }
-
             VertexDeclaration declaration = meshPart.VertexBuffer.VertexDeclaration;
             ShaderDefines defines = CreateFromVertexDeclaration(declaration, enableSkinning);
-
             if (meshPart.UseInstancing) {
                 defines.Add("USE_INSTANCING");
             }
-
             if (!IsTrianglePrimitive(meshPart.PrimitiveType)) {
                 defines.Add("NOT_TRIANGLE");
             }
-
             if (enableMorphing && meshPart.HasMorphTargets) {
                 defines.SetMorphTargetDefines(
                     meshPart.MorphTargetCount,
@@ -410,7 +393,6 @@ namespace Engine.Graphics {
                     meshPart.MorphTargetColor0Offset
                 );
             }
-
             return defines;
         }
 

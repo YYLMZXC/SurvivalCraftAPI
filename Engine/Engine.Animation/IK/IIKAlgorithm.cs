@@ -1,14 +1,10 @@
-#nullable disable
-
 using Engine.Graphics;
 
-namespace Engine.Animation
-{
+namespace Engine.Animation {
     /// <summary>
     /// IK 算法接口
     /// </summary>
-    public interface IIKAlgorithm
-    {
+    public interface IIKAlgorithm {
         /// <summary>
         /// 算法名称
         /// </summary>
@@ -28,8 +24,11 @@ namespace Engine.Animation
         /// <param name="worldPositions">骨骼世界位置数组</param>
         /// <param name="model">模型对象</param>
         /// <param name="config">算法配置参数</param>
-        public void Solve(IKChain chain, IKTarget target,
-            Matrix?[] boneTransforms, Vector3[] worldPositions, Model model,
+        public void Solve(IKChain chain,
+            IKTarget target,
+            Matrix?[] boneTransforms,
+            Vector3[] worldPositions,
+            Model model,
             IKAlgorithmConfig config = null);
     }
 }

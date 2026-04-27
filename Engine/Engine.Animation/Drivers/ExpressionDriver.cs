@@ -1,15 +1,10 @@
-#nullable disable
-
 using Engine.Graphics;
-using NCalc;
 
-namespace Engine.Animation.Drivers
-{
+namespace Engine.Animation.Drivers {
     /// <summary>
     /// 单个骨骼的表达式配置
     /// </summary>
-    public class BoneExpressionConfig
-    {
+    public class BoneExpressionConfig {
         /// <summary>
         /// 目标骨骼名称
         /// </summary>
@@ -65,8 +60,7 @@ namespace Engine.Animation.Drivers
     /// 表达式驱动器
     /// 使用 NCalc 表达式计算骨骼变换
     /// </summary>
-    public class ExpressionDriver : IAnimationDriver
-    {
+    public class ExpressionDriver : IAnimationDriver {
         public string Name => "Expression";
         public AnimationBlendMode BlendMode { get; set; } = AnimationBlendMode.Override;
 
@@ -88,11 +82,11 @@ namespace Engine.Animation.Drivers
         /// <summary>
         /// 添加骨骼表达式配置
         /// </summary>
-        public void AddBoneConfig(BoneExpressionConfig config)
-        {
-            if (config == null || string.IsNullOrEmpty(config.BoneName))
+        public void AddBoneConfig(BoneExpressionConfig config) {
+            if (config == null
+                || string.IsNullOrEmpty(config.BoneName)) {
                 return;
-
+            }
             m_boneConfigs.Add(config);
             m_cachedTargetBones = null;
 
@@ -111,8 +105,7 @@ namespace Engine.Animation.Drivers
         /// <summary>
         /// 清除所有骨骼配置
         /// </summary>
-        public void ClearBoneConfigs()
-        {
+        public void ClearBoneConfigs() {
             m_boneConfigs.Clear();
             m_cachedTargetBones = null;
         }
@@ -123,15 +116,10 @@ namespace Engine.Animation.Drivers
         public IReadOnlyList<BoneExpressionConfig> BoneConfigs => m_boneConfigs;
 
         // IAnimationDriver 接口实现
-        public string[] TargetBones
-        {
-            get
-            {
-                if (m_cachedTargetBones == null)
-                {
-                    m_cachedTargetBones = m_boneConfigs
-                        .Select(c => c.BoneName)
-                        .ToArray();
+        public string[] TargetBones {
+            get {
+                if (m_cachedTargetBones == null) {
+                    m_cachedTargetBones = m_boneConfigs.Select(c => c.BoneName).ToArray();
                 }
                 return m_cachedTargetBones;
             }
@@ -140,49 +128,40 @@ namespace Engine.Animation.Drivers
         // 当前参数（用于表达式求值）
         public AnimationParameters _currentParameters;
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             _currentParameters = parameters;
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
-            if (_currentParameters == null)
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
+            if (_currentParameters == null) {
                 return;
-
-            foreach (var config in m_boneConfigs)
-            {
-                var bone = model.FindBone(config.BoneName, throwIfNotFound: false);
-                if (bone == null)
+            }
+            foreach (BoneExpressionConfig config in m_boneConfigs) {
+                ModelBone bone = model.FindBone(config.BoneName, false);
+                if (bone == null) {
                     continue;
-
-                try
-                {
+                }
+                try {
                     // 计算变换分量
                     float posX = EvaluateFloat(config.PositionX);
                     float posY = EvaluateFloat(config.PositionY);
                     float posZ = EvaluateFloat(config.PositionZ);
-
                     float rotX = EvaluateFloat(config.RotationX) * MathF.PI / 180f;
                     float rotY = EvaluateFloat(config.RotationY) * MathF.PI / 180f;
                     float rotZ = EvaluateFloat(config.RotationZ) * MathF.PI / 180f;
-
                     float scaleX = EvaluateFloat(config.ScaleX);
                     float scaleY = EvaluateFloat(config.ScaleY);
                     float scaleZ = EvaluateFloat(config.ScaleZ);
 
                     // 构建变换矩阵（缩放 -> 旋转 -> 平移）
-                    var transform =
-                        Matrix.CreateScale(scaleX, scaleY, scaleZ) *
-                        Matrix.CreateRotationX(rotX) *
-                        Matrix.CreateRotationY(rotY) *
-                        Matrix.CreateRotationZ(rotZ) *
-                        Matrix.CreateTranslation(posX, posY, posZ);
-
+                    Matrix transform = Matrix.CreateScale(scaleX, scaleY, scaleZ)
+                        * Matrix.CreateRotationX(rotX)
+                        * Matrix.CreateRotationY(rotY)
+                        * Matrix.CreateRotationZ(rotZ)
+                        * Matrix.CreateTranslation(posX, posY, posZ);
                     boneTransforms[bone.Index] = transform;
                 }
-                catch
-                {
+                catch {
                     // 表达式求值失败时跳过该骨骼
                 }
             }
@@ -191,28 +170,24 @@ namespace Engine.Animation.Drivers
         /// <summary>
         /// 预编译表达式
         /// </summary>
-        public void PrecompileExpression(string expression)
-        {
-            if (string.IsNullOrEmpty(expression))
+        public void PrecompileExpression(string expression) {
+            if (string.IsNullOrEmpty(expression)) {
                 return;
-
-            if (!m_expressionCache.ContainsKey(expression))
-            {
-                try
-                {
-                    var expr = new Expression(expression);
+            }
+            if (!m_expressionCache.ContainsKey(expression)) {
+                try {
+                    Expression expr = new(expression);
                     expr.Options = ExpressionOptions.NoCache;
                     m_expressionCache[expression] = expr;
 
                     // 提取并缓存参数名
-                    var paramNames = expr.GetParameterNames();
+                    List<string> paramNames = expr.GetParameterNames();
                     m_requiredParameters[expression] = paramNames?.ToArray() ?? Array.Empty<string>();
 
                     // 预注册自定义函数（只注册一次）
                     AnimationExpressionFunctions.RegisterFunctions(expr);
                 }
-                catch
-                {
+                catch {
                     // 表达式语法错误，忽略
                 }
             }
@@ -221,42 +196,38 @@ namespace Engine.Animation.Drivers
         /// <summary>
         /// 计算浮点表达式
         /// </summary>
-        public float EvaluateFloat(string expression)
-        {
-            if (string.IsNullOrEmpty(expression))
+        public float EvaluateFloat(string expression) {
+            if (string.IsNullOrEmpty(expression)) {
                 return 0f;
+            }
 
             // 检查是否为常量
-            if (float.TryParse(expression, out float constant))
+            if (float.TryParse(expression, out float constant)) {
                 return constant;
-
-            if (!m_expressionCache.TryGetValue(expression, out var expr))
+            }
+            if (!m_expressionCache.TryGetValue(expression, out Expression expr)) {
                 return 0f;
-
-            try
-            {
+            }
+            try {
                 // 绑定参数 - 使用可复用字典
-                var requiredParams = m_requiredParameters.TryGetValue(expression, out var params2) ? params2 : null;
-                if (requiredParams != null && requiredParams.Length > 0)
-                {
+                string[] requiredParams = m_requiredParameters.TryGetValue(expression, out string[] params2) ? params2 : null;
+                if (requiredParams != null
+                    && requiredParams.Length > 0) {
                     m_reusableParams.Clear();
-                    foreach (var paramName in requiredParams)
-                    {
+                    foreach (string paramName in requiredParams) {
                         m_reusableParams[paramName] = _currentParameters.GetValue(paramName);
                     }
                     expr.Parameters = m_reusableParams;
                 }
-                else
-                {
+                else {
                     expr.Parameters = null;
                 }
 
                 // 求值（函数已在预编译时注册）
-                var result = expr.Evaluate();
+                object result = expr.Evaluate();
                 return Convert.ToSingle(result);
             }
-            catch
-            {
+            catch {
                 return 0f;
             }
         }
@@ -264,14 +235,11 @@ namespace Engine.Animation.Drivers
         /// <summary>
         /// 清除表达式缓存
         /// </summary>
-        public void ClearCache()
-        {
+        public void ClearCache() {
             // 移除事件处理器以避免内存泄漏
-            foreach (var kvp in m_expressionCache)
-            {
+            foreach (KeyValuePair<string, Expression> kvp in m_expressionCache) {
                 AnimationExpressionFunctions.UnregisterFunctions(kvp.Value);
             }
-
             m_expressionCache.Clear();
             m_requiredParameters.Clear();
             m_reusableParams.Clear();

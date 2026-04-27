@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using SharpGLTF.Schema2;
 using GltfMaterial = SharpGLTF.Schema2.Material;
 

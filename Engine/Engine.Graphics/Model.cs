@@ -7,6 +7,12 @@ using Image = SixLabors.ImageSharp.Image;
 
 namespace Engine.Graphics {
     public class Model : IDisposable {
+        /// <summary>
+        /// PBR 渲染器设为 true：sRGB 纹理用 Srgb8Alpha8 格式，GPU 自动 sRGB→线性，shader 输出时转回 sRGB。
+        /// 原版渲染器保持 false：纹理保持 Rgba8888，值直接输出。
+        /// </summary>
+        public static bool LoadTexturesInSrgb { get; set; }
+
         public ModelBone m_rootBone;
 
         public List<ModelBone> m_bones = [];
@@ -149,7 +155,7 @@ namespace Engine.Graphics {
                 using var stream = texInfo.SourceImage.Open();
                 Engine.Media.Image img = Engine.Media.Image.Load(stream);
                 int mipLevels = (int)Math.Floor(Math.Log2(Math.Max(img.Width, img.Height))) + 1;
-                texture = texInfo.IsSrgb
+                texture = LoadTexturesInSrgb && texInfo.IsSrgb
                     ? Texture2D.LoadSrgb(img.m_trueImage, mipLevels)
                     : Texture2D.Load(img, mipLevels);
                 texture.Tag = texInfo.Name;

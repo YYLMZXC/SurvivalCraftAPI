@@ -199,7 +199,7 @@ namespace Engine.Graphics {
         /// </summary>
         public string GetDefinesCode() {
             StringBuilder sb = new(_defines.Count * 32 + 20);
-            sb.AppendLine("#version 300 es");
+            sb.AppendLine($"#version {ShaderCache.GlslVersion} es");
             foreach (string define in _defines) {
                 sb.AppendLine($"#define {define}");
             }

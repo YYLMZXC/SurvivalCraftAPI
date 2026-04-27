@@ -30,6 +30,11 @@ namespace Engine.Graphics {
         public static Action<uint> BindAttributeLocationsCallback { get; set; }
 
         /// <summary>
+        /// GLSL version (default 300). Set to 310 for image load/store support.
+        /// </summary>
+        public static int GlslVersion { get; set; } = 300;
+
+        /// <summary>
         /// Uniform Block 绑定回调（在链接后调用）
         /// </summary>
         public static Action<uint> BindUniformBlockBindingsCallback { get; set; }
@@ -179,7 +184,7 @@ namespace Engine.Graphics {
                 }
             }
             else {
-                sb.AppendLine("#version 300 es");
+                sb.AppendLine($"#version {GlslVersion} es");
             }
 
             // GLSL define

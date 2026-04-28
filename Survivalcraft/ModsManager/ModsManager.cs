@@ -850,9 +850,8 @@ public static class ModsManager {
                 databaseObjects.Descendants("EntityTemplate").Attributes("Guid").Select(a => a.Value),
                 StringComparer.OrdinalIgnoreCase
             );
-
-            // 只遍历根元素的直接子元素（与原代码 toCombineRoot.Elements() 行为一致）
-            foreach (XElement entity in toCombineRoot.Elements().Where(e => e.Name.LocalName == "EntityTemplate")) {
+            //不能只遍历根元素，否则无法识别到嵌套在folder里的EntityTemplate
+            foreach (XElement entity in toCombineRoot.Descendants("EntityTemplate")) {
                 XAttribute guidAttr = entity.Attribute("Guid");
                 bool isNewEntity = guidAttr == null || !existingGuids.Contains(guidAttr.Value);
                 if (isNewEntity) {
@@ -864,6 +863,7 @@ public static class ModsManager {
                         parameterElement.SetAttributeValue("Value", modPackageName);
                         parameterElement.SetAttributeValue("Type", "string");
                         entity.Add(parameterElement);
+                        existingGuids.Add(guidAttr.Value);//防止同一批次的同guid后续元素被误判为新元素
                     }
                 }
             }

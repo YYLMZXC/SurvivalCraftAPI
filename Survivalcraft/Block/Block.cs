@@ -258,6 +258,13 @@ namespace Game {
         public virtual int GetToolLevel(int value) => ToolLevel;
 
         public virtual bool IsCollidable_(int value) => IsCollidable;
+        /// <summary>
+        /// 用于判断身体组件与某特定方块是否可发生碰撞
+        /// </summary>
+        /// <param name="componentBody"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public virtual bool GetIsCollidable(ComponentBody componentBody, int value) => IsCollidable_(value);
 
         public virtual bool IsTransparent_(int value) => IsTransparent;
 

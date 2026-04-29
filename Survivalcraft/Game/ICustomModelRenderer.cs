@@ -15,30 +15,24 @@ namespace Game {
         void Initialize(SubsystemModelsRenderer subsystemModelsRenderer);
 
         /// <summary>
-        /// 开始新帧渲染（设置光源、更新 Scene/Lights UBO 等）
-        /// </summary>
-        void BeginFrame(Camera camera);
-
-        /// <summary>
-        /// 准备阶段调用：扫描所有模型的 mesh part，按材质分类到不同渲染队列
+        /// 开始新帧：准备渲染队列 + 设置光源 + 更新 UBO
         /// 在所有模型 PrepareModel 完成后调用
         /// </summary>
-        void PrepareCustomQueues(Camera camera, List<SubsystemModelsRenderer.ModelData> allModels);
+        void BeginFrame(Camera camera, List<SubsystemModelsRenderer.ModelData> allModels);
 
         /// <summary>
-        /// drawOrder 1 调用：scatter pass + opaque pass + transmission FBO 捕获
+        /// drawOrder 1 调用：scatter pass + opaque pass + 排队阴影 + DrawExtras
         /// 自定义渲染器全权管理 GL 状态和渲染
         /// </summary>
-        void RenderOpaquePass(Camera camera);
+        void RenderOpaquePass();
 
         /// <summary>
-        /// drawOrder 150 调用两次(underwater=false/true)：捕获 transmission FBO，
+        /// drawOrder 201 调用两次(underwater=false/true)：捕获 transmission FBO，
         /// 合并所有透明条目并统一 back-to-front 排序渲染。
         /// 实现可在第一次调用时完成全部工作，第二次调用时 no-op。
         /// </summary>
-        /// <param name="camera">当前相机</param>
         /// <param name="underwater">是否为水后透明物体 pass（实现可忽略此参数）</param>
-        void RenderTransparentPass(Camera camera, bool underwater);
+        void RenderTransparentPass(bool underwater);
 
         /// <summary>
         /// 当前激活的方向光方向（世界空间）

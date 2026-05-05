@@ -410,7 +410,7 @@ namespace Engine.Graphics {
         }
 
         /// <summary>
-        /// 设置 mat3 uniform 值（从 Matrix3x2 转换）
+        /// 设置 mat3 uniform 值（从 System.Numerics.Matrix3x2 转换）
         /// Matrix3x2 转换为 mat3：
         /// | M11 M12 0 |
         /// | M21 M22 0 |

@@ -76,6 +76,11 @@ namespace Engine.Graphics {
                 case ShaderParameterType.Vector3: return 12;
                 case ShaderParameterType.Vector4: return 16;
                 case ShaderParameterType.Matrix: return 64;
+                case ShaderParameterType.Matrix3: return 36;
+                case ShaderParameterType.Int: return 4;
+                case ShaderParameterType.IntVec2: return 8;
+                case ShaderParameterType.IntVec3: return 12;
+                case ShaderParameterType.IntVec4: return 16;
                 default: throw new InvalidOperationException("Unsupported ShaderParameterType.");
             }
         }

@@ -5,15 +5,15 @@ namespace Engine.Graphics {
         Vector3 = 2,
         Vector4 = 3,
         Matrix = 4,
-        Matrix3 = 5,
-        Texture2D = 6,
+        Texture2D = 5,
+        Sampler2D = 6,
         Null = 7,
-        Sampler2D = 8,
-        SamplerCube = 9,
-        Int = 10,
-        IntVec2 = 11,
-        IntVec3 = 12,
-        IntVec4 = 13,
-        Texture2DArray = 14
+        Matrix3 = 8,
+        Int = 9,
+        IntVec2 = 10,
+        IntVec3 = 11,
+        IntVec4 = 12,
+        Texture2DArray = 13,
+        SamplerCube = 14
     }
 }

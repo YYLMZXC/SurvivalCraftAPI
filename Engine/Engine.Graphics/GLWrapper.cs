@@ -760,16 +760,28 @@ namespace Engine.Graphics {
                             GL.Uniform4(shaderParameter.Location, (uint)shaderParameter.Count, shaderParameter.Value);
                             shaderParameter.IsChanged = false;
                             break;
-                        case ShaderParameterType.Matrix3:
-                            GL.UniformMatrix3(shaderParameter.Location, (uint)shaderParameter.Count, false, shaderParameter.Value);
-                            shaderParameter.IsChanged = false;
-                            break;
                         case ShaderParameterType.Matrix:
                             GL.UniformMatrix4(shaderParameter.Location, (uint)shaderParameter.Count, false, shaderParameter.Value);
                             shaderParameter.IsChanged = false;
                             break;
+                        case ShaderParameterType.Matrix3:
+                            GL.UniformMatrix3(shaderParameter.Location, (uint)shaderParameter.Count, false, shaderParameter.Value);
+                            shaderParameter.IsChanged = false;
+                            break;
                         case ShaderParameterType.Int:
                             GL.Uniform1(shaderParameter.Location, (uint)shaderParameter.Count, shaderParameter.IntValue);
+                            shaderParameter.IsChanged = false;
+                            break;
+                        case ShaderParameterType.IntVec2:
+                            GL.Uniform2(shaderParameter.Location, (uint)shaderParameter.Count, shaderParameter.IntValue);
+                            shaderParameter.IsChanged = false;
+                            break;
+                        case ShaderParameterType.IntVec3:
+                            GL.Uniform3(shaderParameter.Location, (uint)shaderParameter.Count, shaderParameter.IntValue);
+                            shaderParameter.IsChanged = false;
+                            break;
+                        case ShaderParameterType.IntVec4:
+                            GL.Uniform4(shaderParameter.Location, (uint)shaderParameter.Count, shaderParameter.IntValue);
                             shaderParameter.IsChanged = false;
                             break;
                         default: throw new InvalidOperationException("Unsupported shader parameter type.");

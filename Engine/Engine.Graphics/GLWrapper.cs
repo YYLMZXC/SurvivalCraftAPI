@@ -852,6 +852,87 @@ namespace Engine.Graphics {
                     num++;
                     shaderParameter.IsChanged = false;
                 }
+                if (shaderParameter.Type == ShaderParameterType.Texture2DArray) {
+                    if (num >= GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) {
+                        throw new InvalidOperationException("Too many simultaneous textures.");
+                    }
+                    ActiveTexture(TextureUnit.Texture0 + num);
+                    if (shaderParameter.IsChanged) {
+                        GL.Uniform1(shaderParameter.Location, num);
+                    }
+                    ShaderParameter samplerParam = shader.m_parameters[num2 + 1];
+                    Texture2D textureArray = (Texture2D)shaderParameter.Resource;
+                    SamplerState samplerState = (SamplerState)samplerParam.Resource;
+                    if (textureArray != null) {
+                        if (samplerState == null) {
+                            break;
+                        }
+                        if (m_activeTexturesByUnit[num] != textureArray.m_texture) {
+                            BindTexture(TextureTarget.Texture2DArray, textureArray.m_texture, true);
+                        }
+                        if (!m_textureSamplerStates.TryGetValue(textureArray.m_texture, out SamplerState value)
+                            || value != samplerState) {
+                            BindTexture(TextureTarget.Texture2DArray, textureArray.m_texture, false);
+                            if (GL_EXT_texture_filter_anisotropic) {
+                                GL.TexParameter(
+                                    TextureTarget.Texture2DArray,
+                                    TextureParameterName.TextureMaxAnisotropy,
+                                    samplerState.FilterMode == TextureFilterMode.Anisotropic ? samplerState.MaxAnisotropy : 1f
+                                );
+                            }
+                            GL.TexParameter(
+                                TextureTarget.Texture2DArray,
+                                TextureParameterName.TextureMinFilter,
+                                (int)TranslateTextureFilterModeMin(samplerState.FilterMode, textureArray.MipLevelsCount > 1)
+                            );
+                            GL.TexParameter(
+                                TextureTarget.Texture2DArray,
+                                TextureParameterName.TextureMagFilter,
+                                (int)TranslateTextureFilterModeMag(samplerState.FilterMode)
+                            );
+                            GL.TexParameter(
+                                TextureTarget.Texture2DArray,
+                                TextureParameterName.TextureWrapS,
+                                (int)TranslateTextureAddressMode(samplerState.AddressModeU)
+                            );
+                            GL.TexParameter(
+                                TextureTarget.Texture2DArray,
+                                TextureParameterName.TextureWrapT,
+                                (int)TranslateTextureAddressMode(samplerState.AddressModeV)
+                            );
+#if !MOBILE && !BROWSER
+                            GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureMinLod, samplerState.MinLod);
+                            GL.TexParameter(TextureTarget.Texture2DArray, TextureParameterName.TextureMaxLod, samplerState.MaxLod);
+#endif
+                            m_textureSamplerStates[textureArray.m_texture] = samplerState;
+                        }
+                    }
+                    else if (m_activeTexturesByUnit[num] != 0) {
+                        BindTexture(TextureTarget.Texture2DArray, 0, true);
+                    }
+                    num++;
+                    shaderParameter.IsChanged = false;
+                }
+                if (shaderParameter.Type == ShaderParameterType.SamplerCube) {
+                    if (num >= GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) {
+                        throw new InvalidOperationException("Too many simultaneous textures.");
+                    }
+                    ActiveTexture(TextureUnit.Texture0 + num);
+                    if (shaderParameter.IsChanged) {
+                        GL.Uniform1(shaderParameter.Location, num);
+                    }
+                    CubemapTexture cubemapTexture = (CubemapTexture)shaderParameter.Resource;
+                    if (cubemapTexture != null) {
+                        if (m_activeTexturesByUnit[num] != cubemapTexture.m_texture) {
+                            BindTexture(TextureTarget.TextureCubeMap, cubemapTexture.m_texture, true);
+                        }
+                    }
+                    else if (m_activeTexturesByUnit[num] != 0) {
+                        BindTexture(TextureTarget.TextureCubeMap, 0, true);
+                    }
+                    num++;
+                    shaderParameter.IsChanged = false;
+                }
                 num2++;
             }
             throw new InvalidOperationException($"Associated SamplerState is not set for texture \"{shaderParameter.Name}\".");

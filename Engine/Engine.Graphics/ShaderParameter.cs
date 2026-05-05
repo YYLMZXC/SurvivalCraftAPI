@@ -453,7 +453,22 @@ namespace Engine.Graphics {
             if (Type == ShaderParameterType.Null) {
                 return;
             }
-            if (Type != ShaderParameterType.Texture2D
+            if ((Type != ShaderParameterType.Texture2D
+                 && Type != ShaderParameterType.Texture2DArray)
+                || Count != 1) {
+                throw new InvalidOperationException("Shader parameter type mismatch.");
+            }
+            if (value != Resource) {
+                Resource = value;
+                IsChanged = true;
+            }
+        }
+
+        public void SetValue(CubemapTexture value) {
+            if (Type == ShaderParameterType.Null) {
+                return;
+            }
+            if (Type != ShaderParameterType.SamplerCube
                 || Count != 1) {
                 throw new InvalidOperationException("Shader parameter type mismatch.");
             }

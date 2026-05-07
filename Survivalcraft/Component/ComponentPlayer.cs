@@ -327,7 +327,6 @@ namespace Game {
                         movingBlocksRaycastResult,
                         out flag
                     );
-                    m_lastActionTime = timeIntervalLastActionTime;
                 }
             }
             float timeIntervalAim = m_subsystemGameInfo.WorldSettings.GameMode == GameMode.Creative ? 0.1f : 1.4f;

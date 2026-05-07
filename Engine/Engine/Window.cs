@@ -581,7 +581,6 @@ namespace Engine {
                 Display.Resize();
 #if !BROWSER
                 Scale = m_view.Size.X > 0f ? m_view.FramebufferSize.X / m_view.Size.X : 1f;
-                Console.WriteLine($"Size: {m_view.Size}, Scale: {Scale}");
 #endif
                 Resized?.Invoke();
             }

@@ -508,13 +508,13 @@ namespace Game {
             if (obj.IsTransparent_(objvalue)) {
                 num -= 10f;
             }
-            if (!obj.GetIsCollidable(ComponentPlayer.ComponentBody, objvalue)) {
+            if (!obj.IsCollidable_(objvalue)) {
                 num -= 10f;
             }
-            if (block.GetIsCollidable(ComponentPlayer.ComponentBody, blockvalue)) {
+            if (block.IsCollidable_(blockvalue)) {
                 num -= 10f;
             }
-            if (block2.GetIsCollidable(ComponentPlayer.ComponentBody, block2value)) {
+            if (block2.IsCollidable_(block2value)) {
                 num -= 10f;
             }
             foreach (PlayerData playersDatum in SubsystemPlayers.PlayersData) {

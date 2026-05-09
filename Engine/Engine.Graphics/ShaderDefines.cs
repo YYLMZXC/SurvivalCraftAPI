@@ -14,15 +14,29 @@ namespace Engine.Graphics {
         public bool m_hashValid;
 
         /// <summary>
+        /// 确定性字符串 hash（string.GetHashCode 在 .NET Core 每次进程不同，不能用于持久化缓存）
+        /// </summary>
+        static int StableStringHash(string s) {
+            unchecked {
+                int h = 0;
+                foreach (char c in s) {
+                    h = h * 31 + c;
+                }
+                return h;
+            }
+        }
+
+        /// <summary>
         /// 增量更新 hash
         /// </summary>
         public void UpdateHash(string define) {
             unchecked {
+                int h = StableStringHash(define);
                 if (m_hashValid) {
-                    m_cachedHash = m_cachedHash * 31 + define.GetHashCode();
+                    m_cachedHash = m_cachedHash * 31 + h;
                 }
                 else {
-                    m_cachedHash = 17 * 31 + define.GetHashCode();
+                    m_cachedHash = 17 * 31 + h;
                     m_hashValid = true;
                 }
             }
@@ -232,7 +246,7 @@ namespace Engine.Graphics {
             unchecked {
                 m_cachedHash = 17;
                 foreach (string define in m_defines) {
-                    m_cachedHash = m_cachedHash * 31 + define.GetHashCode();
+                    m_cachedHash = m_cachedHash * 31 + StableStringHash(define);
                 }
                 m_hashValid = true;
             }

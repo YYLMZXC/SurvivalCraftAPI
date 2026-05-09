@@ -12,15 +12,47 @@ namespace Engine.Graphics {
         public static Dictionary<int, uint> m_shaderObjectCache;
         public static Dictionary<string, Shader> m_programCache;
 
+        static string s_effectiveCacheDir;
+
         /// <summary>
         /// 是否已初始化
         /// </summary>
         public static bool IsInitialized { get; private set; }
 
         /// <summary>
-        /// 二进制缓存目录（由调用者设置）
+        /// 二进制缓存根目录（由调用者设置）
+        /// 实际缓存路径 = 根目录/GPU平台子目录
         /// </summary>
-        public static string CacheDirectory { get; set; }
+        public static string CacheDirectory {
+            get => field;
+            set {
+                field = value;
+                s_effectiveCacheDir = null; // 重置，下次访问时重新计算
+            }
+        }
+
+        /// <summary>
+        /// 获取 GPU 平台相关的有效缓存目录
+        /// 格式: {CacheDirectory}/{vendor}_{renderer_hash}
+        /// </summary>
+        public static string GetEffectiveCacheDirectory() {
+            if (s_effectiveCacheDir != null) {
+                return s_effectiveCacheDir;
+            }
+            if (string.IsNullOrEmpty(CacheDirectory)) {
+                return null;
+            }
+            string vendor = GLWrapper.GL.GetStringS(StringName.Vendor) ?? "unknown";
+            string renderer = GLWrapper.GL.GetStringS(StringName.Renderer) ?? "unknown";
+            string version = GLWrapper.GL.GetStringS(StringName.Version) ?? "unknown";
+
+            // 用 vendor + renderer + version 生成平台标识
+            string platformId = $"{vendor}|{renderer}|{version}";
+            int hash = ComputeHash(platformId);
+            string safeVendor = new(vendor.Take(8).Where(char.IsLetterOrDigit).ToArray());
+            s_effectiveCacheDir = Path.Combine(CacheDirectory, $"{safeVendor}_{hash:X8}");
+            return s_effectiveCacheDir;
+        }
 
         /// <summary>
         /// Attribute Location 绑定回调（在链接前调用）
@@ -309,10 +341,11 @@ namespace Engine.Graphics {
         /// 尝试从二进制缓存加载程序
         /// </summary>
         public static uint TryLoadProgramBinary(string cacheKey) {
-            if (string.IsNullOrEmpty(CacheDirectory)) {
+            string dir = GetEffectiveCacheDirectory();
+            if (dir == null) {
                 return 0;
             }
-            string cacheFile = Path.Combine(CacheDirectory, $"{cacheKey}.bin");
+            string cacheFile = Path.Combine(dir, $"{cacheKey}.bin");
             if (!File.Exists(cacheFile)) {
                 return 0;
             }
@@ -350,12 +383,13 @@ namespace Engine.Graphics {
         /// 保存程序二进制到缓存
         /// </summary>
         public static unsafe void SaveProgramBinary(uint programHandle, string cacheKey) {
-            if (string.IsNullOrEmpty(CacheDirectory)) {
+            string dir = GetEffectiveCacheDirectory();
+            if (dir == null) {
                 return;
             }
             try {
-                if (!Storage.DirectoryExists(CacheDirectory)) {
-                    Storage.CreateDirectory(CacheDirectory);
+                if (!Storage.DirectoryExists(dir)) {
+                    Storage.CreateDirectory(dir);
                 }
                 GLWrapper.GL.GetProgram(programHandle, ProgramPropertyARB.ProgramBinaryLength, out int binaryLength);
                 if (binaryLength <= 0) {
@@ -368,7 +402,7 @@ namespace Engine.Graphics {
                     formatValue = (uint)format;
                 }
                 BitConverter.TryWriteBytes(binary, formatValue);
-                string cacheFile = Path.Combine(CacheDirectory, $"{cacheKey}.bin");
+                string cacheFile = Path.Combine(dir, $"{cacheKey}.bin");
                 Storage.WriteAllBytes(cacheFile, binary);
             }
             catch {

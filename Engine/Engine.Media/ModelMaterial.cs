@@ -65,31 +65,31 @@ namespace Engine.Media {
         /// </summary>
         public void PopulateDefines(IShaderDefineBuilder builder) {
             // Core textures + UV transforms
-            if (BaseColorTexture != null) {
+            if (BaseColorTexture?.HasTexture == true) {
                 builder.AddTextureMap("BASE_COLOR");
                 if (BaseColorTexture.HasUVTransform) {
                     builder.AddUVTransform("BASECOLOR");
                 }
             }
-            if (NormalTexture != null) {
+            if (NormalTexture?.HasTexture == true) {
                 builder.AddTextureMap("NORMAL");
                 if (NormalTexture.HasUVTransform) {
                     builder.AddUVTransform("NORMAL");
                 }
             }
-            if (MetallicRoughnessTexture != null) {
+            if (MetallicRoughnessTexture?.HasTexture == true) {
                 builder.AddTextureMap("METALLIC_ROUGHNESS");
                 if (MetallicRoughnessTexture.HasUVTransform) {
                     builder.AddUVTransform("METALLICROUGHNESS");
                 }
             }
-            if (OcclusionTexture != null) {
+            if (OcclusionTexture?.HasTexture == true) {
                 builder.AddTextureMap("OCCLUSION");
                 if (OcclusionTexture.HasUVTransform) {
                     builder.AddUVTransform("OCCLUSION");
                 }
             }
-            if (EmissiveTexture != null) {
+            if (EmissiveTexture?.HasTexture == true) {
                 builder.AddTextureMap("EMISSIVE");
                 if (EmissiveTexture.HasUVTransform) {
                     builder.AddUVTransform("EMISSIVE");

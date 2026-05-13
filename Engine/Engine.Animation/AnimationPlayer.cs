@@ -663,9 +663,10 @@ namespace Engine.Animation {
             float t0 = times[idx];
             float t1 = times[idx + 1];
             float alpha = (time - t0) / (t1 - t0);
+            // CUBICSPLINE 在加载时由 SharpGLTF 以 30fps 预采样为 LINEAR 关键帧，
+            // 运行时只需线性插值即可逼近原始样条曲线精度。
             return interpolation switch {
                 ModelAnimation.InterpolationType.Step => values[idx],
-                ModelAnimation.InterpolationType.CubicSpline => CubicSplineInterpolate(values, idx, alpha),
                 _ => Vector3.Lerp(values[idx], values[idx + 1], alpha)
             };
         }
@@ -721,7 +722,6 @@ namespace Engine.Animation {
             float alpha = (time - t0) / (t1 - t0);
             return interpolation switch {
                 ModelAnimation.InterpolationType.Step => values[idx],
-                ModelAnimation.InterpolationType.CubicSpline => values[idx],
                 _ => Quaternion.Slerp(values[idx], values[idx + 1], alpha)
             };
         }
@@ -739,10 +739,6 @@ namespace Engine.Animation {
             }
             return times.Length - 1;
         }
-
-        public Vector3 CubicSplineInterpolate(Vector3[] values, int idx, float t) =>
-            // 简化的三次样条插值
-            Vector3.Lerp(values[idx], values[Math.Min(idx + 1, values.Length - 1)], t);
 
         /// <summary>
         /// 估算关键帧间隔（用于循环边界插值）

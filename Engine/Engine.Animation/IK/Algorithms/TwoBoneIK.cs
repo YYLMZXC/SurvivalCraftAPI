@@ -37,11 +37,12 @@ namespace Engine.Animation {
 
             // 获取骨骼位置
             Vector3 rootPos = worldPositions[rootIdx];
+            Vector3 midPos = worldPositions[midIdx];
             Vector3 endPos = worldPositions[endIdx];
 
             // 计算骨骼长度
-            float len1 = Vector3.Distance(rootPos, worldPositions[midIdx]);
-            float len2 = Vector3.Distance(worldPositions[midIdx], endPos);
+            float len1 = Vector3.Distance(rootPos, midPos);
+            float len2 = Vector3.Distance(midPos, endPos);
             if (len1 < 0.0001f
                 || len2 < 0.0001f) {
                 return;
@@ -60,7 +61,7 @@ namespace Engine.Animation {
             Vector3 toTarget = targetPos - rootPos;
             Vector3 toTargetDir = toTarget.LengthSquared() > 0.0001f ? Vector3.Normalize(toTarget) : Vector3.UnitY;
 
-            // 计算中间骨骼位置（解析解）
+            // 计算中间骨骼新位置（余弦定理）
             Vector3 newMidPos;
             if (targetDist >= totalLen) {
                 // 目标超出骨骼链长度：完全伸展
@@ -104,8 +105,7 @@ namespace Engine.Animation {
                 newMidPos = rootPos + forward * midDist + bendPerpendicular * bendOffset;
             }
 
-            // 计算根骨骼旋转
-            Vector3 midPos = worldPositions[midIdx];
+            // 根骨骼旋转：从原方向到新方向
             Vector3 oldRootDiff = midPos - rootPos;
             Vector3 newRootDiff = newMidPos - rootPos;
             if (oldRootDiff.LengthSquared() < 0.0001f
@@ -117,30 +117,18 @@ namespace Engine.Animation {
             Quaternion rootRotation = IKUtils.RotationBetweenVectors(oldRootDir, newRootDir);
 
             // 转换模型空间旋转到骨骼局部空间
-            Quaternion rootLocalRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, rootIdx, rootRotation, model);
+            IKUtils.ApplyModelRotation(boneTransforms, rootIdx, rootRotation, rootPos, model);
 
-            // 应用根骨骼旋转
-            IKUtils.ApplyBoneRotation(boneTransforms, rootIdx, rootLocalRotation);
-
-            // 重新计算中间骨骼位置（基于新的根骨骼旋转）
-            // 更新世界位置用于后续计算
+            // 中间骨骼旋转：根骨骼旋转已改变 mid→end 方向，必须用旋转后的方向
             Vector3 newMidWorld = Vector3.Transform(midPos - rootPos, rootRotation) + rootPos;
-
-            // 计算中间骨骼旋转
-            Vector3 oldMidDir = Vector3.Normalize(endPos - midPos);
+            Vector3 oldMidDir = Vector3.Normalize(Vector3.Transform(endPos - midPos, rootRotation));
             Vector3 newMidDir = Vector3.Normalize(targetPos - newMidWorld);
             Quaternion midRotation = IKUtils.RotationBetweenVectors(oldMidDir, newMidDir);
 
-            // 转换模型空间旋转到骨骼局部空间
-            Quaternion midLocalRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, midIdx, midRotation, model);
+            IKUtils.ApplyModelRotation(boneTransforms, midIdx, midRotation, newMidWorld, model);
 
-            // 应用中间骨骼旋转
-            IKUtils.ApplyBoneRotation(boneTransforms, midIdx, midLocalRotation);
-
-            // 应用关节限制
             ApplyJointLimits(chain, boneTransforms, model);
 
-            // 处理方向约束（瞄准）
             if (target.AimDirection.HasValue && SupportsAim) {
                 ApplyAimConstraint(chain, target, boneTransforms, worldPositions, model, indices);
             }
@@ -154,14 +142,12 @@ namespace Engine.Animation {
                 return hint.Value;
             }
 
-            // 默认使用当前弯曲方向
+            // 用原始中间骨骼位置推导弯曲方向
             Vector3 rootToMid = mid - root;
             Vector3 rootToTarget = target - root;
 
-            // 使用叉积确定弯曲方向
-            Vector3 bendDir = Vector3.Cross(rootToTarget, rootToMid);
+            Vector3 bendDir = Vector3.Cross(rootToMid, rootToTarget);
             if (bendDir.LengthSquared() < 0.0001f) {
-                // 如果共线，使用默认方向
                 bendDir = Vector3.Cross(rootToTarget, Vector3.UnitY);
                 if (bendDir.LengthSquared() < 0.0001f) {
                     bendDir = Vector3.Cross(rootToTarget, Vector3.UnitX);
@@ -221,11 +207,7 @@ namespace Engine.Animation {
                 aimRotation = Quaternion.Slerp(Quaternion.Identity, aimRotation, target.AimWeight);
             }
 
-            // 转换模型空间旋转到骨骼局部空间
-            Quaternion aimLocalRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, endIdx, aimRotation, model);
-
-            // 应用旋转
-            IKUtils.ApplyBoneRotation(boneTransforms, endIdx, aimLocalRotation);
+            IKUtils.ApplyModelRotation(boneTransforms, endIdx, aimRotation, worldPositions[endIdx], model);
         }
     }
 }

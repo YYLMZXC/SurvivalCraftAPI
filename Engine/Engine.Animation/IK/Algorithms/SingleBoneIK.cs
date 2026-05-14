@@ -86,14 +86,10 @@ namespace Engine.Animation {
             }
 
             // 对于两骨骼链，旋转应用到根骨骼
-            // 需要将模型空间旋转转换为根骨骼的局部旋转
+            // 使用 ApplyModelRotation 保持骨骼世界位置不变
             int targetBoneIdx = rootIdx;
 
-            // 转换模型空间旋转到骨骼局部空间
-            Quaternion localRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, targetBoneIdx, modelRotation, model);
-
-            // 应用旋转
-            IKUtils.ApplyBoneRotation(boneTransforms, targetBoneIdx, localRotation);
+            IKUtils.ApplyModelRotation(boneTransforms, targetBoneIdx, modelRotation, rootPos, model);
 
             // 应用关节限制
             ApplyJointLimits(chain, boneTransforms, model);

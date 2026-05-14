@@ -39,41 +39,11 @@ namespace Engine.Animation {
         }
 
         /// <summary>
-        /// 应用骨骼局部旋转增量（叠加到当前旋转上）
-        /// </summary>
-        /// <remarks>
-        /// 旋转应用顺序：newRot = rotation * currentRot（增量旋转叠加）。
-        /// 适用于 CCD/FABRIK 等逐步迭代算法，它们在局部空间计算旋转增量。
-        /// <para>
-        /// 注意：此方法不保证骨骼世界位置不变。对于需要精确控制末端位置的
-        /// 场景（如 TwoBoneIK），应使用 <see cref="ApplyModelRotation"/>。
-        /// </para>
-        /// </remarks>
-        public static void ApplyBoneRotation(Matrix?[] boneTransforms, int boneIndex, Quaternion rotation) {
-            if (!boneTransforms[boneIndex].HasValue) {
-                boneTransforms[boneIndex] = Matrix.CreateFromQuaternion(rotation);
-            }
-            else {
-                Matrix current = boneTransforms[boneIndex].Value;
-                current.Decompose(out Vector3 scale, out Quaternion currentRot, out Vector3 translation);
-                boneTransforms[boneIndex] = Matrix.CreateScale(scale)
-                    * Matrix.CreateFromQuaternion(rotation * currentRot)
-                    * Matrix.CreateTranslation(translation);
-            }
-        }
-
-        /// <summary>
         /// 应用模型空间旋转增量，保持骨骼世界位置不变
         /// </summary>
         /// <remarks>
         /// 在模型空间中围绕骨骼当前位置施加旋转，确保关节不发生位移。
-        /// 用于 IK 求解器需要精确控制末端位置的解析算法（如 TwoBoneIK），
-        /// 这些算法直接计算目标世界旋转而非逐步迭代。
-        /// <para>
-        /// 与 <see cref="ApplyBoneRotation"/> 的区别：
-        /// ApplyBoneRotation 在局部空间叠加旋转增量，不保证世界位置不变；
-        /// 此方法直接构造目标世界变换再转回局部空间，精确保持世界位置。
-        /// </para>
+        /// 所有 IK 算法统一使用此方法应用旋转。
         /// </remarks>
         public static void ApplyModelRotation(
             Matrix?[] boneTransforms, int boneIndex,
@@ -163,28 +133,5 @@ namespace Engine.Animation {
         // ComputeBoneWorldTransform 复用的路径缓冲区
         [ThreadStatic]
         private static int[] s_pathBuffer;
-
-        /// <summary>
-        /// 将模型空间旋转增量转换为骨骼局部旋转增量
-        /// </summary>
-        public static Quaternion ConvertModelRotationToLocal(Matrix?[] boneTransforms, int boneIndex, Quaternion modelRotation, Model model) {
-            ModelBone bone = model.m_bones[boneIndex];
-            if (bone == null
-                || bone.ParentBone == null) {
-                // 根骨骼或无父骨骼，模型空间旋转就是局部旋转
-                return modelRotation;
-            }
-
-            // 获取父骨骼的世界旋转
-            int parentIdx = bone.ParentBone.Index;
-            Matrix parentWorldTransform = ComputeBoneWorldTransform(boneTransforms, parentIdx, model);
-            parentWorldTransform.Decompose(out _, out Quaternion parentWorldRot, out _);
-
-            // 模型空间旋转增量转换为局部空间：
-            // 局部增量 = 父世界旋转的逆 * 模型空间增量 * 父世界旋转
-            // 这样可以让旋转在正确的坐标系中执行
-            Quaternion invParentWorldRot = Quaternion.Inverse(parentWorldRot);
-            return invParentWorldRot * modelRotation * parentWorldRot;
-        }
     }
 }

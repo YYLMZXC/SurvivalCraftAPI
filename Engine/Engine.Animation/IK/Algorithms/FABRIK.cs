@@ -122,33 +122,33 @@ namespace Engine.Animation {
         public void CalculateBoneRotations(IKChain chain, Vector3[] positions, Matrix?[] boneTransforms, Vector3[] worldPositions, Model model) {
             int[] indices = chain.BoneIndices;
             int n = indices.Length;
+            // 累积旋转：父骨骼旋转会传播到子骨骼，必须追踪
+            Quaternion cumulativeRotation = Quaternion.Identity;
             for (int i = 0; i < n - 1; i++) {
                 int boneIdx = indices[i];
 
-                // 原始方向
-                Vector3 oldDiff = worldPositions[indices[i + 1]] - worldPositions[boneIdx];
-                float oldDist = oldDiff.Length();
-                if (oldDist < 0.0001f) {
+                // 原始方向，经累积旋转变换后的当前实际方向
+                Vector3 origDiff = worldPositions[indices[i + 1]] - worldPositions[boneIdx];
+                if (origDiff.LengthSquared() < 0.0001f) {
                     continue;
                 }
-                Vector3 oldDir = oldDiff / oldDist;
+                Vector3 oldDir = Vector3.Normalize(Vector3.Transform(origDiff, cumulativeRotation));
 
-                // 新方向
+                // 新方向（FABRIK 计算的目标位置）
                 Vector3 newDiff = positions[i + 1] - positions[i];
-                float newDist = newDiff.Length();
-                if (newDist < 0.0001f) {
+                if (newDiff.LengthSquared() < 0.0001f) {
                     continue;
                 }
-                Vector3 newDir = newDiff / newDist;
+                Vector3 newDir = Vector3.Normalize(newDiff);
 
                 // 计算旋转
                 Quaternion rotation = IKUtils.RotationBetweenVectors(oldDir, newDir);
 
-                // 转换模型空间旋转到骨骼局部空间
-                Quaternion localRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, boneIdx, rotation, model);
+                // 累积旋转（新旋转在最外层）
+                cumulativeRotation = rotation * cumulativeRotation;
 
-                // 应用旋转
-                IKUtils.ApplyBoneRotation(boneTransforms, boneIdx, localRotation);
+                // 使用 ApplyModelRotation 保持骨骼世界位置不变
+                IKUtils.ApplyModelRotation(boneTransforms, boneIdx, rotation, positions[i], model);
             }
         }
 

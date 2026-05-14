@@ -81,11 +81,8 @@ namespace Engine.Animation {
                     // 创建旋转四元数
                     Quaternion rotation = Quaternion.CreateFromAxisAngle(rotationAxis, angle);
 
-                    // 转换模型空间旋转到骨骼局部空间
-                    Quaternion localRotation = IKUtils.ConvertModelRotationToLocal(boneTransforms, boneIdx, rotation, model);
-
-                    // 应用旋转到骨骼
-                    IKUtils.ApplyBoneRotation(boneTransforms, boneIdx, localRotation);
+                    // 应用模型空间旋转增量（保持骨骼世界位置不变）
+                    IKUtils.ApplyModelRotation(boneTransforms, boneIdx, rotation, m_worldPosCache[boneIdx], model);
 
                     // 应用关节限制
                     ApplyJointLimit(chain, boneTransforms, boneIdx, model);

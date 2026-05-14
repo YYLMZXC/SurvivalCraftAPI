@@ -143,6 +143,14 @@ namespace Engine.Animation.RootMotion {
         public float ImpulseScale { get; set; } = 1.0f;
 
         /// <summary>
+        /// 冲量触发的绝对动画相位（0-1）
+        /// 0.0 = 动画首帧，1.0 = 动画末帧
+        /// 默认 -1 表示自动：正播时使用 endPhase，反播时使用 startPhase
+        /// 例如跳跃冲量在动画 18.2% 处触发：0.182
+        /// </summary>
+        public float ImpulsePhase { get; set; } = -1f;
+
+        /// <summary>
         /// 直接指定冲量值（覆盖动画数据）
         /// </summary>
         public Vector3? ImpulseOverride { get; set; }

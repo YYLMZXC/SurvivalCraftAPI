@@ -30,6 +30,11 @@ namespace Engine.Animation {
         // 当前 Base 层的动画名称和根运动配置
         public string m_currentAnimationName;
         public RootMotionConfig m_currentRootMotionConfig;
+
+        /// <summary>
+        /// 是否有活动的根运动配置
+        /// </summary>
+        public bool HasRootMotion => m_currentRootMotionConfig != null;
         public float m_prevRootMotionTime;
 
         // 状态规则配置（从动画配置文件加载）
@@ -132,6 +137,10 @@ namespace Engine.Animation {
             if (m_template == null) {
                 // 使用简单模板作为后备
                 m_template = AnimationTemplateManager.Get("Simple");
+            }
+
+            if (model.RootBone != null) {
+                RootBoneName = model.RootBone.Name;
             }
 
             // 初始化共享的表达式求值器
@@ -273,7 +282,8 @@ namespace Engine.Animation {
 
             // 检查是否需要更新缓存
             string animName = animation.Name;
-            if (animName != m_currentAnimationName) {
+            bool animChanged = animName != m_currentAnimationName;
+            if (animChanged) {
                 m_currentAnimationName = animName;
                 m_prevRootMotionTime = player.Time;
 
@@ -310,15 +320,55 @@ namespace Engine.Animation {
             Vector3 velocity = Vector3.Zero;
             Vector3? impulse = null;
             TranslationConfig translationConfig = rootMotionConfig.Translation;
-            if (translationConfig.Mode != TranslationMode.None
-                && rootMotionCache.HasTranslationData) {
+            if (translationConfig.Mode != TranslationMode.None) {
                 if (translationConfig.Mode == TranslationMode.AddImpulse) {
-                    bool loopPoint = DetectRootMotionLoopPoint(m_prevRootMotionTime, currentTime, duration, player.Loop);
-                    if (loopPoint) {
-                        impulse = CalculateRootMotionImpulse(translationConfig, rootMotionCache);
+                    // ImpulseOverride 不依赖动画位移数据
+                    bool hasData = translationConfig.ImpulseOverride.HasValue
+                        || rootMotionCache.HasTranslationData;
+                    if (hasData) {
+                        // ImpulsePhase: 绝对动画相位，-1 表示自动（正播用 endPhase，反播用 startPhase）
+                        float startPhase = player.StartPhase;
+                        float endPhase = player.EndPhase;
+                        bool forward = endPhase >= startPhase;
+                        float impulsePhase = translationConfig.ImpulsePhase < 0
+                            ? (forward ? endPhase : startPhase)
+                            : translationConfig.ImpulsePhase;
+
+                        float prevNorm = duration > 0 ? m_prevRootMotionTime / duration : 0f;
+                        float currNorm = duration > 0 ? currentTime / duration : 0f;
+                        bool crossed = false;
+
+                        if (animChanged) {
+                            if (forward && currNorm >= impulsePhase) {
+                                crossed = true;
+                            }
+                            else if (!forward && currNorm <= impulsePhase) {
+                                crossed = true;
+                            }
+                        }
+                        else if (forward) {
+                            if (prevNorm < impulsePhase && currNorm >= impulsePhase) {
+                                crossed = true;
+                            }
+                            else if (player.Loop && currNorm < prevNorm) {
+                                crossed = prevNorm < impulsePhase || currNorm >= impulsePhase;
+                            }
+                        }
+                        else {
+                            if (prevNorm > impulsePhase && currNorm <= impulsePhase) {
+                                crossed = true;
+                            }
+                            else if (player.Loop && currNorm > prevNorm) {
+                                crossed = prevNorm > impulsePhase || currNorm <= impulsePhase;
+                            }
+                        }
+
+                        if (crossed) {
+                            impulse = CalculateRootMotionImpulse(translationConfig, rootMotionCache, startPhase, endPhase);
+                        }
                     }
                 }
-                else {
+                else if (rootMotionCache.HasTranslationData) {
                     velocity = rootMotionCache.GetVelocity(m_prevRootMotionTime, currentTime);
                 }
             }
@@ -331,9 +381,10 @@ namespace Engine.Animation {
             }
             m_prevRootMotionTime = currentTime;
 
-            // 应用位移
+            // 应用位移（只在有实际数据时修改速度，避免 Blend 模式无数据时拉向零）
             if (translationConfig.Mode != TranslationMode.None
-                && Velocity.HasValue) {
+                && Velocity.HasValue
+                && (impulse.HasValue || velocity.LengthSquared() > 0)) {
                 Vector3 vel = Velocity.Value;
                 Quaternion rotation = EntityRotation ?? Quaternion.Identity;
                 m_translationApplier.ApplyTranslation(translationConfig, velocity, impulse, rotation, ref vel, deltaTime);
@@ -348,37 +399,17 @@ namespace Engine.Animation {
         }
 
         /// <summary>
-        /// 检测根运动循环点
-        /// </summary>
-        public bool DetectRootMotionLoopPoint(float prevTime, float currentTime, float duration, bool isLooping) {
-            // 循环回绕
-            if (isLooping
-                && currentTime < prevTime
-                && prevTime > duration * 0.5f) {
-                return true;
-            }
-
-            // 非循环动画完成
-            if (!isLooping
-                && currentTime >= duration
-                && prevTime < duration) {
-                return true;
-            }
-            return false;
-        }
-
-        /// <summary>
         /// 计算根运动冲量
         /// </summary>
-        public Vector3 CalculateRootMotionImpulse(TranslationConfig config, RootMotionCache cache) {
+        public Vector3 CalculateRootMotionImpulse(TranslationConfig config, RootMotionCache cache, float startPhase, float endPhase) {
             // 优先使用配置覆盖值
             if (config.ImpulseOverride.HasValue) {
                 return config.ImpulseOverride.Value;
             }
             return config.ImpulseMethod switch {
-                ImpulseMethod.Peak => cache.GetPeakVelocity(),
-                ImpulseMethod.Weighted => (cache.GetAverageVelocity() + cache.GetPeakVelocity()) * 0.5f,
-                _ => cache.GetAverageVelocity()
+                ImpulseMethod.Peak => cache.GetPeakVelocity(startPhase, endPhase),
+                ImpulseMethod.Weighted => (cache.GetAverageVelocity(startPhase, endPhase) + cache.GetPeakVelocity(startPhase, endPhase)) * 0.5f,
+                _ => cache.GetAverageVelocity(startPhase, endPhase)
             };
         }
 
@@ -567,6 +598,11 @@ namespace Engine.Animation {
                             layer.Deactivate();
                         }
                     }
+
+                    // Base 层停用时清除根运动配置
+                    if (trackConfig.Layer == "Base") {
+                        SetRootMotionConfig(null);
+                    }
                 }
             }
         }
@@ -599,7 +635,8 @@ namespace Engine.Animation {
                     BlendDurationValue = aliasRef.BlendDurationValue,
                     DriverArgs = aliasRef.DriverArgs,
                     Events = aliasRef.Events,
-                    OnComplete = aliasRef.OnComplete
+                    OnComplete = aliasRef.OnComplete,
+                    RootMotion = aliasRef.RootMotion
                 };
                 source = animRef.Source;
             }
@@ -690,6 +727,11 @@ namespace Engine.Animation {
                     m_layerAnimationRef[layerName] = animRef;
                     m_layerLooping[layerName] = loop;
                     m_layerWasPlaying[layerName] = true;
+
+                    // Base 层设置根运动配置
+                    if (layerName == "Base") {
+                        SetRootMotionConfig(animRef.RootMotion);
+                    }
                     return true;
                 }
 
@@ -734,6 +776,11 @@ namespace Engine.Animation {
                 m_layerAnimationRef[layerName] = animRef;
                 m_layerLooping[layerName] = loop;
                 m_layerWasPlaying[layerName] = true;
+
+                // Base 层设置根运动配置
+                if (layerName == "Base") {
+                    SetRootMotionConfig(animRef.RootMotion);
+                }
                 return true;
             }
         }
@@ -861,21 +908,33 @@ namespace Engine.Animation {
             // 1. 层混合
             m_blender.BlendLayers(m_layers, boneTransforms, m_model);
 
-            // 2. KHR_animation_pointer 采样（材质/纹理属性动画）
+            // 2. 根运动位移剥离（根骨骼位移已作为速度/冲量应用，视觉上需清除）
+            if (m_currentRootMotionConfig != null
+                && m_currentRootMotionConfig.Translation.Mode != TranslationMode.None) {
+                ModelBone rootBone = m_model.RootBone;
+                if (rootBone != null
+                    && boneTransforms[rootBone.Index].HasValue) {
+                    Matrix transform = boneTransforms[rootBone.Index].Value;
+                    transform.Decompose(out _, out Quaternion rotation, out _);
+                    boneTransforms[rootBone.Index] = Matrix.CreateFromQuaternion(rotation);
+                }
+            }
+
+            // 3. KHR_animation_pointer 采样（材质/纹理属性动画）
             for (int i = 0; i < m_layers.Length; i++) {
                 if (m_layers[i].IsActive) {
                     m_layers[i].AnimationPlayer?.SamplePointerTargets(m_model);
                 }
             }
 
-            // 3. Morph target 权重采样
+            // 4. Morph target 权重采样
             for (int i = 0; i < m_layers.Length; i++) {
                 if (m_layers[i].IsActive) {
                     m_layers[i].AnimationPlayer?.SampleMorphWeights(m_model);
                 }
             }
 
-            // 4. IK 后处理（在层混合后应用）
+            // 5. IK 后处理（在层混合后应用）
             m_ikSolver?.Solve(boneTransforms, m_model);
         }
 
@@ -959,7 +1018,8 @@ namespace Engine.Animation {
                     BlendDurationValue = blendDuration, // 使用参数值
                     DriverArgs = aliasRef.DriverArgs,
                     Events = aliasRef.Events,
-                    OnComplete = aliasRef.OnComplete
+                    OnComplete = aliasRef.OnComplete,
+                    RootMotion = aliasRef.RootMotion
                 };
             }
             else {

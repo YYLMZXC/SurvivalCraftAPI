@@ -130,10 +130,8 @@ namespace Engine.Animation {
                 return;
             }
 
-            // 自动检测根骨骼名称
-            string detectedName = RootMotionCache.DetectRootBoneName(m_model, RootBoneName);
-            if (!string.IsNullOrEmpty(detectedName)) {
-                RootBoneName = detectedName;
+            if (m_model.RootBone != null) {
+                RootBoneName = m_model.RootBone.Name;
             }
 
             // 启用根运动提取

@@ -170,8 +170,22 @@ namespace Game {
                     m_boneTransforms[i] = null;
                 }
 
+                // RootMotion: 同步物理体速度和旋转
+                ComponentBody body = AnimationController.HasRootMotion
+                    ? Entity.FindComponent<ComponentBody>() : null;
+                if (body != null) {
+                    AnimationController.Velocity = body.Velocity;
+                    AnimationController.EntityRotation = body.Rotation;
+                }
+
                 AnimationController.Update(Time.FrameDuration);
                 AnimationController.ComputeBoneTransforms(m_boneTransforms);
+
+                // RootMotion: 将冲量/速度写回物理体
+                if (body != null && AnimationController.Velocity.HasValue) {
+                    body.Velocity = AnimationController.Velocity.Value;
+                }
+
                 Animated = true;
             }
             // 后备：简单动画播放

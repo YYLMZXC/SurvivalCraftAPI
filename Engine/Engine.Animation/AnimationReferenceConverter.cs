@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Engine.Animation.RootMotion;
 
 namespace Engine.Animation {
     /// <summary>
@@ -32,8 +33,16 @@ namespace Engine.Animation {
                     case "driverargs": reference.DriverArgs = ReadDriverArgs(ref reader, options); break;
                     case "events": reference.Events = JsonSerializer.Deserialize<List<AnimationEventConfig>>(ref reader, options); break;
                     case "oncomplete": reference.OnComplete = JsonSerializer.Deserialize<OnCompleteAction>(ref reader, options); break;
+                    case "rootmotion":
+                        try {
+                            reference.RootMotion = JsonSerializer.Deserialize<RootMotionConfig>(ref reader, options);
+                        }
+                        catch (JsonException) {
+                            // RootMotion 配置格式错误，跳过并使用默认值（无根运动）
+                            reader.Skip();
+                        }
+                        break;
                     default:
-                        // Skip unknown properties
                         reader.Skip(); break;
                 }
             }
@@ -67,6 +76,10 @@ namespace Engine.Animation {
             if (value.OnComplete != null) {
                 writer.WritePropertyName("onComplete");
                 JsonSerializer.Serialize(writer, value.OnComplete, options);
+            }
+            if (value.RootMotion != null) {
+                writer.WritePropertyName("rootMotion");
+                JsonSerializer.Serialize(writer, value.RootMotion, options);
             }
             writer.WriteEndObject();
         }

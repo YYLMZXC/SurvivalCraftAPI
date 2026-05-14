@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Engine.Graphics;
 
 namespace Engine.Animation {
@@ -24,6 +25,8 @@ namespace Engine.Animation {
         // 静态构造函数注册自定义转换器
         static AnimationConfigLoader() {
             s_jsonOptions.Converters.Add(new AnimationReferenceConverter());
+            s_jsonOptions.Converters.Add(new Vector3JsonConverter());
+            s_jsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
 
         /// <summary>

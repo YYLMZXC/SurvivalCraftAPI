@@ -1,3 +1,5 @@
+using Engine.Animation.RootMotion;
+
 namespace Engine.Animation {
     /// <summary>
     /// 动画完成时执行的动作
@@ -84,6 +86,11 @@ namespace Engine.Animation {
         /// 动画完成时执行的动作（非循环动画）
         /// </summary>
         public OnCompleteAction OnComplete { get; set; }
+
+        /// <summary>
+        /// 根运动配置
+        /// </summary>
+        public RootMotionConfig RootMotion { get; set; }
 
         // Cached dynamic properties (avoid repeated allocations)
         public DynamicProperty<float> m_cachedSpeedProperty;

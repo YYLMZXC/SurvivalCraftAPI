@@ -1,5 +1,4 @@
 #nullable disable
-using System;
 using Engine.Animation;
 using Engine.Media;
 using SixLabors.ImageSharp.PixelFormats;
@@ -294,28 +293,6 @@ namespace Engine.Graphics {
                 ModelBone modelBone = m_bones[i];
                 if (modelBone.ParentBone == null) {
                     absoluteTransforms[i] = modelBone.Transform;
-                }
-                else {
-                    Matrix.MultiplyRestricted(
-                        ref modelBone.m_transform,
-                        ref absoluteTransforms[modelBone.ParentBone.Index],
-                        out absoluteTransforms[i]
-                    );
-                }
-            }
-        }
-
-        public void CopyAbsoluteBoneTransformsTo(Matrix[] absoluteTransforms, Matrix matrix) {
-            if (absoluteTransforms == null) {
-                throw new ArgumentNullException(nameof(absoluteTransforms));
-            }
-            if (absoluteTransforms.Length < m_bones.Count) {
-                throw new ArgumentOutOfRangeException(nameof(absoluteTransforms));
-            }
-            for (int i = 0; i < m_bones.Count; i++) {
-                ModelBone modelBone = m_bones[i];
-                if (modelBone.ParentBone == null) {
-                    Matrix.MultiplyRestricted(ref modelBone.m_transform, ref matrix, out absoluteTransforms[i]);
                 }
                 else {
                     Matrix.MultiplyRestricted(

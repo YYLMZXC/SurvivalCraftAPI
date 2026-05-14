@@ -1,5 +1,3 @@
-using Engine.Graphics;
-
 namespace Engine.Animation.RootMotion {
     /// <summary>
     /// 根运动位移数据缓存
@@ -15,49 +13,6 @@ namespace Engine.Animation.RootMotion {
         /// 是否有位移数据
         /// </summary>
         public bool HasTranslationData => m_positionSamples.Count > 1;
-
-        /// <summary>
-        /// 自动检测根骨骼名称
-        /// </summary>
-        /// <param name="model">模型数据</param>
-        /// <param name="preferredName">优先使用的名称</param>
-        /// <returns>检测到的根骨骼名称，或 null</returns>
-        public static string DetectRootBoneName(Model model, string preferredName = null) {
-            // 优先使用配置指定的名称
-            if (!string.IsNullOrEmpty(preferredName)
-                && model.FindBone(preferredName) != null) {
-                return preferredName;
-            }
-
-            // 回退 1：找骨骼树最顶层且有位移动画的骨骼
-            foreach (ModelBone bone in model.Bones) {
-                if (bone.ParentBone == null
-                    && HasTranslationAnimation(model, bone.Name)) {
-                    return bone.Name;
-                }
-            }
-
-            // 回退 2：找第一个有位移动画的骨骼
-            foreach (ModelBone bone in model.Bones) {
-                if (HasTranslationAnimation(model, bone.Name)) {
-                    return bone.Name;
-                }
-            }
-            return null;
-        }
-
-        public static bool HasTranslationAnimation(Model model, string boneName) {
-            // 检查模型的所有动画是否有该骨骼的位移通道
-            foreach (ModelAnimation anim in model.Animations) {
-                foreach (ModelAnimation.AnimationChannel channel in anim.Channels) {
-                    if (channel.TargetBoneName == boneName
-                        && channel.Property == ModelAnimation.AnimationProperty.Translation) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
 
         /// <summary>
         /// 从动画数据构建缓存
@@ -224,6 +179,47 @@ namespace Engine.Animation.RootMotion {
         /// 获取峰值速度（用于 AddImpulse 模式 Peak 方式）
         /// </summary>
         public Vector3 GetPeakVelocity() => m_peakVelocity;
+
+        /// <summary>
+        /// 获取指定相位区间内的平均速度
+        /// </summary>
+        public Vector3 GetAverageVelocity(float startPhase, float endPhase) {
+            if (m_positionSamples.Count < 2 || m_animationDuration <= 0) {
+                return Vector3.Zero;
+            }
+            Vector3 startPos = SamplePosition(startPhase * m_animationDuration);
+            Vector3 endPos = SamplePosition(endPhase * m_animationDuration);
+            float deltaTime = MathF.Abs(endPhase - startPhase) * m_animationDuration;
+            return deltaTime > 0 ? (endPos - startPos) / deltaTime : Vector3.Zero;
+        }
+
+        /// <summary>
+        /// 获取指定相位区间内的峰值速度
+        /// </summary>
+        public Vector3 GetPeakVelocity(float startPhase, float endPhase) {
+            if (m_positionSamples.Count < 2 || m_animationDuration <= 0) {
+                return Vector3.Zero;
+            }
+            float startTime = Math.Min(startPhase, endPhase) * m_animationDuration;
+            float endTime = Math.Max(startPhase, endPhase) * m_animationDuration;
+            Vector3 peakVel = Vector3.Zero;
+            for (int i = 0; i < m_positionSamples.Count - 1; i++) {
+                (float t1, Vector3 p1) = m_positionSamples[i];
+                (float t2, Vector3 p2) = m_positionSamples[i + 1];
+                if (t2 < startTime || t1 > endTime) {
+                    continue;
+                }
+                float dt = t2 - t1;
+                if (dt <= 0) {
+                    continue;
+                }
+                Vector3 vel = (p2 - p1) / dt;
+                if (vel.LengthSquared() > peakVel.LengthSquared()) {
+                    peakVel = vel;
+                }
+            }
+            return peakVel;
+        }
     }
 
     /// <summary>

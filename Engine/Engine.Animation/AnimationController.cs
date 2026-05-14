@@ -316,9 +316,21 @@ namespace Engine.Animation {
                 return;
             }
             AnimationPlayer player = baseLayer.AnimationPlayer;
-            if (player == null
-                || !player.IsPlaying) {
+            if (player == null) {
                 return;
+            }
+            // 非循环动画已完成且非 Blend/Override 模式：直接返回
+            // Blend/Override 模式需要继续调用 TranslationApplier 以减速到零
+            TranslationConfig currentTransConfig = m_currentRootMotionConfig?.Translation;
+            bool isBlendOrOverride = currentTransConfig != null
+                && currentTransConfig.Mode != TranslationMode.None
+                && currentTransConfig.Mode != TranslationMode.AddImpulse;
+            if (!player.IsPlaying) {
+                if (!isBlendOrOverride
+                    || player.Loop
+                    || player.NormalizedTime < 1.0f) {
+                    return;
+                }
             }
             ModelAnimation animation = player.Animation;
             if (animation == null) {
@@ -363,10 +375,22 @@ namespace Engine.Animation {
             float currentTime = player.Time;
             float duration = animation.Duration;
 
-            // 非循环动画已完成：返回零速度
+            // 非循环动画已完成：AddImpulse 模式直接返回
+            // Blend/Override 模式仍需调用 TranslationApplier 以减速到零
             if (!player.Loop
                 && !player.IsPlaying
                 && player.NormalizedTime >= 1.0f) {
+                TranslationConfig completedConfig = m_currentRootMotionConfig?.Translation;
+                if (completedConfig == null
+                    || completedConfig.Mode == TranslationMode.AddImpulse
+                    || completedConfig.Mode == TranslationMode.None) {
+                    return;
+                }
+                // Blend/Override: 用零速度继续调用，让 SmoothDamp 减速
+                Vector3 vel = Velocity ?? Vector3.Zero;
+                Quaternion rotation = EntityRotation ?? Quaternion.Identity;
+                m_translationApplier.ApplyTranslation(completedConfig, Vector3.Zero, null, rotation, ref vel, deltaTime);
+                Velocity = vel;
                 return;
             }
             RootMotionConfig rootMotionConfig = m_currentRootMotionConfig;
@@ -441,10 +465,18 @@ namespace Engine.Animation {
             }
             m_prevRootMotionTime = currentTime;
 
-            // 应用位移（只在有实际数据时修改速度，避免 Blend 模式无数据时拉向零）
-            if (translationConfig.Mode != TranslationMode.None
-                && Velocity.HasValue
-                && (impulse.HasValue || velocity.LengthSquared() > 0)) {
+            // 应用位移
+            // AddImpulse: 仅在有冲量时应用
+            // Blend/Override: 始终应用（包括零速度，确保 SmoothDamp 能减速）
+            bool shouldApply = translationConfig.Mode != TranslationMode.None
+                && Velocity.HasValue;
+            if (translationConfig.Mode == TranslationMode.AddImpulse) {
+                shouldApply = shouldApply && impulse.HasValue;
+            }
+            else {
+                shouldApply = shouldApply && rootMotionCache.HasTranslationData;
+            }
+            if (shouldApply) {
                 Vector3 vel = Velocity.Value;
                 Quaternion rotation = EntityRotation ?? Quaternion.Identity;
                 m_translationApplier.ApplyTranslation(translationConfig, velocity, impulse, rotation, ref vel, deltaTime);
@@ -510,6 +542,8 @@ namespace Engine.Animation {
         public void SetRootMotionConfig(RootMotionConfig config) {
             m_currentRootMotionConfig = config;
             m_currentAnimationName = null; // 重置动画名称，触发缓存更新
+            m_parentChainRotation = Quaternion.Identity;
+            m_translationApplier.Reset();
         }
 
         /// <summary>

@@ -7,6 +7,14 @@ namespace Engine.Animation.RootMotion {
         public Vector3 m_springVelocity; // SpringDamper 内部状态
 
         /// <summary>
+        /// 重置内部状态（配置变更时调用）
+        /// </summary>
+        public void Reset() {
+            m_smoothVelocity = Vector3.Zero;
+            m_springVelocity = Vector3.Zero;
+        }
+
+        /// <summary>
         /// 应用根运动位移
         /// </summary>
         /// <param name="config">位移配置</param>

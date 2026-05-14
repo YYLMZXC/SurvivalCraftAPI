@@ -36,7 +36,9 @@ namespace Engine.Animation.RootMotion {
                     if (localImpulse.HasValue) {
                         Vector3 worldImpulse = Vector3.Transform(localImpulse.Value, entityRotation);
                         worldImpulse = ClampVelocity(worldImpulse, config.MaxImpulse);
-                        velocity += worldImpulse * config.ImpulseScale;
+                        Vector3 delta = worldImpulse * config.ImpulseScale;
+                        delta = ApplyVelocityMask(Vector3.Zero, delta, config.VelocityMask);
+                        velocity += delta;
                     }
                     break;
                 case TranslationMode.Override: {

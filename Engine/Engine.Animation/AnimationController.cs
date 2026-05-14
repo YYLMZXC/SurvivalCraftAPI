@@ -37,6 +37,9 @@ namespace Engine.Animation {
         public bool HasRootMotion => m_currentRootMotionConfig != null;
         public float m_prevRootMotionTime;
 
+        // 缓存的父骨骼链旋转（将动画局部空间速度变换到模型空间）
+        public Quaternion m_parentChainRotation = Quaternion.Identity;
+
         // 状态规则配置（从动画配置文件加载）
         public Dictionary<string, StateTrackConfig> m_stateConfigs;
 
@@ -140,7 +143,7 @@ namespace Engine.Animation {
             }
 
             if (model.RootBone != null) {
-                RootBoneName = model.RootBone.Name;
+                RootBoneName = FindAnimatableRootBoneName(model);
             }
 
             // 初始化共享的表达式求值器
@@ -161,6 +164,48 @@ namespace Engine.Animation {
             foreach ((string name, StateTrackDefinition trackDef) in m_template.StateTracks) {
                 m_stateTracks[name] = new StateTrack(name, trackDef);
             }
+        }
+
+        /// <summary>
+        /// 查找真正有动画数据的根骨骼名
+        /// glTF 中 mesh 节点也会变成 bone，但动画 channel 通常目标是实际骨骼
+        /// 从 RootBone 开始，向下搜索第一个在动画 channels 中出现的骨骼
+        /// </summary>
+        public static string FindAnimatableRootBoneName(Model model) {
+            ModelBone root = model.RootBone;
+            if (root == null) {
+                return "Root";
+            }
+            // 收集所有动画中出现的目标骨骼名
+            HashSet<string> animatedBones = new();
+            foreach (ModelAnimation anim in model.Animations) {
+                if (anim.Channels == null) continue;
+                foreach (ModelAnimation.AnimationChannel ch in anim.Channels) {
+                    if (ch.TargetBoneName != null) {
+                        animatedBones.Add(ch.TargetBoneName);
+                    }
+                }
+            }
+            // 如果 RootBone 本身在动画中出现，直接使用
+            if (animatedBones.Contains(root.Name)) {
+                return root.Name;
+            }
+            // BFS 从 RootBone 子节点中找第一个在动画中出现的
+            Queue<ModelBone> queue = new();
+            foreach (ModelBone child in root.ChildBones) {
+                queue.Enqueue(child);
+            }
+            while (queue.Count > 0) {
+                ModelBone bone = queue.Dequeue();
+                if (animatedBones.Contains(bone.Name)) {
+                    return bone.Name;
+                }
+                foreach (ModelBone child in bone.ChildBones) {
+                    queue.Enqueue(child);
+                }
+            }
+            // 全部没找到，回退到 RootBone 名称
+            return root.Name;
         }
 
         /// <summary>
@@ -283,19 +328,27 @@ namespace Engine.Animation {
             // 检查是否需要更新缓存
             string animName = animation.Name;
             bool animChanged = animName != m_currentAnimationName;
+            // 有效的测量骨骼名：SourceBone 优先，否则用自动检测的 RootBoneName
+            string effectiveBoneName = !string.IsNullOrEmpty(m_currentRootMotionConfig.SourceBone)
+                ? m_currentRootMotionConfig.SourceBone
+                : RootBoneName;
             if (animChanged) {
                 m_currentAnimationName = animName;
                 m_prevRootMotionTime = player.Time;
 
+                // 计算目标骨骼到模型根的父骨骼链旋转
+                // 动画数据在目标骨骼的父局部空间中，需要变换到模型空间
+                m_parentChainRotation = ComputeParentChainRotation(effectiveBoneName);
+
                 // 构建缓存
                 if (!m_rootMotionCaches.TryGetValue(animName, out RootMotionCache motionCache)) {
                     motionCache = new RootMotionCache();
-                    motionCache.BuildFromAnimation(animation, RootBoneName);
+                    motionCache.BuildFromAnimation(animation, effectiveBoneName);
                     m_rootMotionCaches[animName] = motionCache;
                 }
                 if (!m_rootScaleCaches.TryGetValue(animName, out RootScaleCache scaleCache)) {
                     scaleCache = new RootScaleCache();
-                    scaleCache.BuildFromAnimation(animation, RootBoneName);
+                    scaleCache.BuildFromAnimation(animation, effectiveBoneName);
                     m_rootScaleCaches[animName] = scaleCache;
                 }
             }
@@ -364,13 +417,14 @@ namespace Engine.Animation {
                         }
 
                         if (crossed) {
-                            impulse = CalculateRootMotionImpulse(translationConfig, rootMotionCache, startPhase, endPhase);
+                            impulse = CalculateRootMotionImpulse(translationConfig, rootMotionCache, startPhase, endPhase, impulsePhase);
                         }
                     }
                 }
                 else if (rootMotionCache.HasTranslationData) {
                     velocity = rootMotionCache.GetVelocity(m_prevRootMotionTime, currentTime);
-                    // 模型空间 → 实体空间：应用 modelScale 和 rootBoneRotation
+                    // 动画局部空间 → 模型空间 → 实体空间
+                    velocity = Vector3.Transform(velocity, m_parentChainRotation);
                     velocity *= ModelScale;
                     if (RootBoneRotation != 0f) {
                         Quaternion rootRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, RootBoneRotation);
@@ -407,23 +461,47 @@ namespace Engine.Animation {
         /// <summary>
         /// 计算根运动冲量
         /// </summary>
-        public Vector3 CalculateRootMotionImpulse(TranslationConfig config, RootMotionCache cache, float startPhase, float endPhase) {
+        public Vector3 CalculateRootMotionImpulse(TranslationConfig config, RootMotionCache cache,
+            float startPhase, float endPhase, float impulsePhase) {
             // 优先使用配置覆盖值（已在实体空间，不需要变换）
             if (config.ImpulseOverride.HasValue) {
                 return config.ImpulseOverride.Value;
             }
-            // 从动画数据计算：需要 modelScale 缩放 + rootBoneRotation 旋转变换到实体空间
+            // 从动画数据计算：使用 impulsePhase → endPhase 范围
+            float measureStart = impulsePhase > startPhase ? impulsePhase : startPhase;
             Vector3 localImpulse = config.ImpulseMethod switch {
-                ImpulseMethod.Peak => cache.GetPeakVelocity(startPhase, endPhase),
-                ImpulseMethod.Weighted => (cache.GetAverageVelocity(startPhase, endPhase) + cache.GetPeakVelocity(startPhase, endPhase)) * 0.5f,
-                _ => cache.GetAverageVelocity(startPhase, endPhase)
+                ImpulseMethod.Peak => cache.GetPeakVelocity(measureStart, endPhase),
+                ImpulseMethod.Weighted => (cache.GetAverageVelocity(measureStart, endPhase) + cache.GetPeakVelocity(measureStart, endPhase)) * 0.5f,
+                _ => cache.GetAverageVelocity(measureStart, endPhase)
             };
+            // 动画局部空间 → 模型空间 → 实体空间
+            localImpulse = Vector3.Transform(localImpulse, m_parentChainRotation);
             localImpulse *= ModelScale;
             if (RootBoneRotation != 0f) {
                 Quaternion rootRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, RootBoneRotation);
                 localImpulse = Vector3.Transform(localImpulse, rootRot);
             }
             return localImpulse;
+        }
+
+        /// <summary>
+        /// 计算目标骨骼到模型根的父骨骼链旋转
+        /// 动画 translation 数据在目标骨骼的父局部空间中，
+        /// 需要沿父链累积旋转才能变换到模型根空间
+        /// </summary>
+        public Quaternion ComputeParentChainRotation(string boneName) {
+            ModelBone bone = m_model.FindBone(boneName, false);
+            if (bone?.ParentBone == null) {
+                return Quaternion.Identity;
+            }
+            Quaternion accumulated = Quaternion.Identity;
+            ModelBone current = bone.ParentBone;
+            while (current != null) {
+                current.Transform.Decompose(out _, out Quaternion rot, out _);
+                accumulated = rot * accumulated;
+                current = current.ParentBone;
+            }
+            return accumulated;
         }
 
         /// <summary>

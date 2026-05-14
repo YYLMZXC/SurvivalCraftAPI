@@ -210,6 +210,11 @@ namespace Engine.Animation.RootMotion {
     /// </summary>
     public class RootMotionConfig {
         /// <summary>
+        /// 采样运动数据的骨骼名称。为空时使用自动检测（从 RootBone 向下 BFS 查找第一个有动画数据的骨骼）
+        /// </summary>
+        public string SourceBone { get; set; }
+
+        /// <summary>
         /// 位移应用配置
         /// </summary>
         public TranslationConfig Translation { get; set; } = new();

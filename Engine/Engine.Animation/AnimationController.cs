@@ -370,6 +370,12 @@ namespace Engine.Animation {
                 }
                 else if (rootMotionCache.HasTranslationData) {
                     velocity = rootMotionCache.GetVelocity(m_prevRootMotionTime, currentTime);
+                    // 模型空间 → 实体空间：应用 modelScale 和 rootBoneRotation
+                    velocity *= ModelScale;
+                    if (RootBoneRotation != 0f) {
+                        Quaternion rootRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, RootBoneRotation);
+                        velocity = Vector3.Transform(velocity, rootRot);
+                    }
                 }
             }
             Vector3? scale = null;
@@ -402,15 +408,22 @@ namespace Engine.Animation {
         /// 计算根运动冲量
         /// </summary>
         public Vector3 CalculateRootMotionImpulse(TranslationConfig config, RootMotionCache cache, float startPhase, float endPhase) {
-            // 优先使用配置覆盖值
+            // 优先使用配置覆盖值（已在实体空间，不需要变换）
             if (config.ImpulseOverride.HasValue) {
                 return config.ImpulseOverride.Value;
             }
-            return config.ImpulseMethod switch {
+            // 从动画数据计算：需要 modelScale 缩放 + rootBoneRotation 旋转变换到实体空间
+            Vector3 localImpulse = config.ImpulseMethod switch {
                 ImpulseMethod.Peak => cache.GetPeakVelocity(startPhase, endPhase),
                 ImpulseMethod.Weighted => (cache.GetAverageVelocity(startPhase, endPhase) + cache.GetPeakVelocity(startPhase, endPhase)) * 0.5f,
                 _ => cache.GetAverageVelocity(startPhase, endPhase)
             };
+            localImpulse *= ModelScale;
+            if (RootBoneRotation != 0f) {
+                Quaternion rootRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, RootBoneRotation);
+                localImpulse = Vector3.Transform(localImpulse, rootRot);
+            }
+            return localImpulse;
         }
 
         /// <summary>

@@ -1033,24 +1033,33 @@ namespace Engine.Animation {
             // 1. 层混合
             m_blender.BlendLayers(m_layers, boneTransforms, m_model);
 
-            // 2. 根运动位移剥离（根骨骼位移已作为速度/冲量应用，视觉上需清除）
+            // 2. 根运动位移剥离
+            // AddImpulse 模式：不剥离。冲量将动画峰值速度转为实体速度，
+            // 动画和物理轨迹接近，剥离反而阻止自然动画姿态（如收腿）。
+            // Blend/Override 模式：仍需剥离，防止动画位移叠加物理位移。
+            bool isAddImpulse = m_currentRootMotionConfig != null
+                && m_currentRootMotionConfig.Translation.Mode == TranslationMode.AddImpulse;
             if (m_currentRootMotionConfig != null
-                && m_currentRootMotionConfig.Translation.Mode != TranslationMode.None) {
-                // 使用 RootMotion 配置的 sourceBone，而非 m_model.RootBone
-                // glTF 模型中 m_model.RootBone 可能是场景根节点（无动画数据），
-                // 而实际被动画驱动的骨骼是 sourceBone（如 "root"）
+                && m_currentRootMotionConfig.Translation.Mode != TranslationMode.None
+                && !isAddImpulse) {
                 string sourceBoneName = !string.IsNullOrEmpty(m_currentRootMotionConfig.SourceBone)
                     ? m_currentRootMotionConfig.SourceBone
                     : RootBoneName;
-                ModelBone sourceBone = !string.IsNullOrEmpty(sourceBoneName)
+                ModelBone foundBone = !string.IsNullOrEmpty(sourceBoneName)
                     ? m_model.FindBone(sourceBoneName, throwIfNotFound: false)
                     : null;
-                sourceBone ??= m_model.RootBone;
-                if (sourceBone != null
-                    && boneTransforms[sourceBone.Index].HasValue) {
-                    Matrix transform = boneTransforms[sourceBone.Index].Value;
-                    transform.Decompose(out _, out Quaternion rotation, out _);
-                    boneTransforms[sourceBone.Index] = Matrix.CreateFromQuaternion(rotation);
+                ModelBone sourceBone = foundBone ?? m_model.RootBone;
+
+                ModelBone cur = sourceBone;
+                while (cur != null) {
+                    if (boneTransforms[cur.Index].HasValue) {
+                        Matrix t = boneTransforms[cur.Index].Value;
+                        t.Decompose(out _, out Quaternion rot, out _);
+                        Vector3 restTrans = cur.Transform.Translation;
+                        boneTransforms[cur.Index] = Matrix.CreateFromQuaternion(rot) * Matrix.CreateTranslation(restTrans);
+                    }
+                    if (cur == m_model.RootBone) break;
+                    cur = cur.ParentBone;
                 }
             }
 

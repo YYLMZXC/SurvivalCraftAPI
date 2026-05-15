@@ -44,7 +44,7 @@ namespace Game {
         }
 
         // Pre-allocated buffer for joint matrices (avoid GC pressure)
-        private static readonly Matrix[] s_jointMatricesBuffer = new Matrix[SubsystemModelsRenderer.MaxJointsCount];
+        private static Matrix[] s_jointMatricesBuffer;
 
         public List<Model> Models = new();
 
@@ -321,6 +321,10 @@ namespace Game {
         private void CalculateJointMatrices(Model model, Matrix modelTransform) {
             ModelSkin skin = model.Skin;
             if (skin == null) return;
+
+            if (s_jointMatricesBuffer == null || s_jointMatricesBuffer.Length < SubsystemModelsRenderer.MaxJointsCount) {
+                s_jointMatricesBuffer = new Matrix[SubsystemModelsRenderer.MaxJointsCount];
+            }
 
             int jointCount = Math.Min(skin.JointCount, SubsystemModelsRenderer.MaxJointsCount);
 

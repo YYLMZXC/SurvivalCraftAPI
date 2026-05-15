@@ -62,9 +62,10 @@ namespace Game {
         public bool UseCustomRendering;
 
         /// <summary>
-        /// Maximum number of joints per model for GPU skinning
+        /// Maximum number of joints per model for GPU skinning (Uniform-based).
+        /// Determined by GL_MAX_VERTEX_UNIFORM_VECTORS at runtime.
         /// </summary>
-        public const int MaxJointsCount = 64;
+        public static int MaxJointsCount { get; private set; } = 64;
 
         public int MaxInstancesCount = 64;
 
@@ -75,7 +76,7 @@ namespace Game {
         public List<ModelData>[] m_modelsToDraw = [[], [], [], []];
 
         // Pre-allocated buffers for skinning (avoid GC pressure)
-        public readonly Matrix[] m_jointMatricesBuffer = new Matrix[MaxJointsCount];
+        public Matrix[] m_jointMatricesBuffer;
         public readonly List<ModelData> m_nonSkinnedModelsBuffer = [];
         public readonly List<ModelData> m_skinnedModelsBuffer = [];
 
@@ -206,6 +207,8 @@ namespace Game {
             m_subsystemTerrain = Project.FindSubsystem<SubsystemTerrain>(true);
             m_subsystemSky = Project.FindSubsystem<SubsystemSky>(true);
             m_subsystemShadows = Project.FindSubsystem<SubsystemShadows>(true);
+            MaxJointsCount = Math.Min(GLWrapper.GL_MAX_VERTEX_UNIFORM_VECTORS / 4, 128);
+            m_jointMatricesBuffer = new Matrix[MaxJointsCount];
             ModsManager.HookAction(
                 "GetMaxInstancesCount",
                 modLoader => {
@@ -541,13 +544,12 @@ namespace Game {
         /// <param name="invertedView">反转的视图矩阵</param>
         /// <param name="output">输出缓冲区</param>
         /// <returns>实际计算的骨骼数量</returns>
-        public int CalculateJointMatrices(ComponentModel componentModel, Model model, Matrix invertedView, Span<Matrix> output) {
+        public static int CalculateJointMatrices(ComponentModel componentModel, Model model, Matrix invertedView, Span<Matrix> output) {
             ModelSkin skin = model.Skin;
-            int jointCount = Math.Min(skin.JointCount, Math.Min(output.Length, MaxJointsCount));
+            int jointCount = Math.Min(skin.JointCount, output.Length);
 
-            // Warn if model exceeds maximum joint count
-            if (skin.JointCount > MaxJointsCount) {
-                Log.Warning($"Model has {skin.JointCount} joints, but only {MaxJointsCount} are supported. Visual artifacts may occur.");
+            if (skin.JointCount > output.Length) {
+                Log.Warning($"Model has {skin.JointCount} joints, but output buffer only fits {output.Length}. Visual artifacts may occur.");
             }
 
             // Get root bone transform (coordinate conversion) and its inverse

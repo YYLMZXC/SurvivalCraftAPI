@@ -66,6 +66,7 @@ namespace Engine.Graphics {
         public static bool GL_KHR_texture_compression_astc_ldr;
         public static int GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS;
         public static int GL_MAX_TEXTURE_SIZE;
+        public static int GL_MAX_VERTEX_UNIFORM_VECTORS;
 #if ANGLE
         public static bool UsingAngle = true;
 #else
@@ -152,6 +153,7 @@ namespace Engine.Graphics {
                 bits[i] = GL.GetInteger((GetPName)(i + 3410));
             }
             GL.GetInteger(GetPName.MaxTextureSize, out GL_MAX_TEXTURE_SIZE);
+            GL.GetInteger(GetPName.MaxVertexUniformVectors, out GL_MAX_VERTEX_UNIFORM_VECTORS);
             string OpenGLVendor = $"OpenGL ES, Vendor={GL.GetStringS(StringName.Vendor) ?? string.Empty}";
             Display.DeviceDescription =
                 $"{OpenGLVendor}, Renderer={GL.GetStringS(StringName.Renderer) ?? string.Empty}, Version={GL.GetStringS(StringName.Version) ?? string.Empty}, R={bits[0]} G={bits[1]} B={bits[2]} A={bits[3]}, D={bits[4]} S={bits[5]}, MaxTextureSize={GL_MAX_TEXTURE_SIZE}";
@@ -235,6 +237,7 @@ namespace Engine.Graphics {
                 bits[i] = GL.GetInteger((GetPName)(i + 3410));
             }
             GL.GetInteger(GetPName.MaxTextureSize, out GL_MAX_TEXTURE_SIZE);
+            GL.GetInteger(GetPName.MaxVertexUniformVectors, out GL_MAX_VERTEX_UNIFORM_VECTORS);
             Display.DeviceDescription =
                 $"OpenGL ES (Headless), Vendor={GL.GetStringS(StringName.Vendor) ?? string.Empty}, " +
                 $"Renderer={GL.GetStringS(StringName.Renderer) ?? string.Empty}, " +

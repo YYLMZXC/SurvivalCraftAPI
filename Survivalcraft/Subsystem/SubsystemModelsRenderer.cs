@@ -229,19 +229,20 @@ namespace Game {
                 true,
                 MaxInstancesCount
             );
-            // Skinned shaders (support GPU skinning with MaxJointsCount joints)
+            // Skinned shaders: maxInstancesCount=1 because skinned models never batch
+            // This frees uniform space for more joints
             m_shaderSkinnedOpaque = new ModelShader(
                 ShaderCodeManager.GetFast("Shaders/Model.vsh"),
                 ShaderCodeManager.GetFast("Shaders/Model.psh"),
                 false,
-                MaxInstancesCount,
+                1,
                 MaxJointsCount
             );
             m_shaderSkinnedAlphaTested = new ModelShader(
                 ShaderCodeManager.GetFast("Shaders/Model.vsh"),
                 ShaderCodeManager.GetFast("Shaders/Model.psh"),
                 true,
-                MaxInstancesCount,
+                1,
                 MaxJointsCount
             );
         }

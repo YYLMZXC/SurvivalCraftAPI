@@ -1036,12 +1036,21 @@ namespace Engine.Animation {
             // 2. 根运动位移剥离（根骨骼位移已作为速度/冲量应用，视觉上需清除）
             if (m_currentRootMotionConfig != null
                 && m_currentRootMotionConfig.Translation.Mode != TranslationMode.None) {
-                ModelBone rootBone = m_model.RootBone;
-                if (rootBone != null
-                    && boneTransforms[rootBone.Index].HasValue) {
-                    Matrix transform = boneTransforms[rootBone.Index].Value;
+                // 使用 RootMotion 配置的 sourceBone，而非 m_model.RootBone
+                // glTF 模型中 m_model.RootBone 可能是场景根节点（无动画数据），
+                // 而实际被动画驱动的骨骼是 sourceBone（如 "root"）
+                string sourceBoneName = !string.IsNullOrEmpty(m_currentRootMotionConfig.SourceBone)
+                    ? m_currentRootMotionConfig.SourceBone
+                    : RootBoneName;
+                ModelBone sourceBone = !string.IsNullOrEmpty(sourceBoneName)
+                    ? m_model.FindBone(sourceBoneName, throwIfNotFound: false)
+                    : null;
+                sourceBone ??= m_model.RootBone;
+                if (sourceBone != null
+                    && boneTransforms[sourceBone.Index].HasValue) {
+                    Matrix transform = boneTransforms[sourceBone.Index].Value;
                     transform.Decompose(out _, out Quaternion rotation, out _);
-                    boneTransforms[rootBone.Index] = Matrix.CreateFromQuaternion(rotation);
+                    boneTransforms[sourceBone.Index] = Matrix.CreateFromQuaternion(rotation);
                 }
             }
 

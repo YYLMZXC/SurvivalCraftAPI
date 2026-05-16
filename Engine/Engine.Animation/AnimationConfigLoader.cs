@@ -312,6 +312,14 @@ namespace Engine.Animation {
                     if (layerConfig?.Bones != null) {
                         layer.BoneMask = layerConfig.Bones.Length > 0 ? layerConfig.Bones : null;
                     }
+                    // 应用过渡曲线
+                    if (!string.IsNullOrEmpty(layerConfig.BlendCurve)) {
+                        BlendCurve curve = layerConfig.BlendCurve.Equals("smoothstep", StringComparison.OrdinalIgnoreCase)
+                            ? BlendCurve.Smoothstep
+                            : BlendCurve.Linear;
+                        layer.Curve = curve;
+                        layer.m_transition.Curve = curve;
+                    }
                     if (layerConfig?.Driver != null) {
                         IAnimationDriver driver = CreateDriver(layerConfig.Driver.Type);
                         if (driver != null) {

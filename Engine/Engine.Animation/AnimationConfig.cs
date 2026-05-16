@@ -128,6 +128,11 @@ namespace Engine.Animation {
         /// 层驱动器配置
         /// </summary>
         public DriverConfig Driver { get; set; }
+
+        /// <summary>
+        /// 过渡曲线：linear 或 smoothstep
+        /// </summary>
+        public string BlendCurve { get; set; } = "linear";
     }
 
     /// <summary>

@@ -22,6 +22,20 @@ namespace Engine.Animation {
     }
 
     /// <summary>
+    /// 过渡曲线类型
+    /// </summary>
+    public enum BlendCurve {
+        /// <summary>
+        /// 线性插值
+        /// </summary>
+        Linear,
+        /// <summary>
+        /// 平滑过渡（smoothstep: t*t*(3-2t)）
+        /// </summary>
+        Smoothstep
+    }
+
+    /// <summary>
     /// 动画过渡，负责管理两个动画之间的平滑过渡
     /// </summary>
     public class AnimationTransition {
@@ -53,6 +67,11 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 过渡曲线
+        /// </summary>
+        public BlendCurve Curve { get; set; } = BlendCurve.Linear;
+
+        /// <summary>
         /// 已过渡时间（秒）
         /// </summary>
         public float ElapsedTime => m_elapsedTime;
@@ -60,7 +79,19 @@ namespace Engine.Animation {
         /// <summary>
         /// 过渡进度 (0-1)
         /// </summary>
-        public float Progress => m_duration > 0 ? Math.Min(1f, m_elapsedTime / m_duration) : 1f;
+        public float Progress => m_duration > 0 ? ApplyCurve(Math.Min(1f, m_elapsedTime / m_duration), Curve) : 1f;
+
+        /// <summary>
+        /// 应用过渡曲线
+        /// </summary>
+        public static float ApplyCurve(float t, BlendCurve curve) {
+            if (t <= 0f) return 0f;
+            if (t >= 1f) return 1f;
+            return curve switch {
+                BlendCurve.Smoothstep => t * t * (3f - 2f * t),
+                _ => t
+            };
+        }
 
         /// <summary>
         /// 过渡是否正在进行

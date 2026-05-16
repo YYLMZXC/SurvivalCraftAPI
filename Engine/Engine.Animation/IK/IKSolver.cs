@@ -508,6 +508,36 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 检测多条 IK 链之间的骨骼冲突
+        /// </summary>
+        /// <returns>冲突列表（链名 → 冲突的骨骼索引列表）</returns>
+        public List<(string ChainA, string ChainB, int BoneIndex)> ValidateChains() {
+            List<(string ChainA, string ChainB, int BoneIndex)> conflicts = new();
+            List<string> chainNames = new(m_chains.Keys);
+            for (int i = 0; i < chainNames.Count; i++) {
+                for (int j = i + 1; j < chainNames.Count; j++) {
+                    IKChain chainA = m_chains[chainNames[i]];
+                    IKChain chainB = m_chains[chainNames[j]];
+                    foreach (int boneIdx in chainA.BoneIndices) {
+                        foreach (int otherIdx in chainB.BoneIndices) {
+                            if (boneIdx == otherIdx) {
+                                conflicts.Add((chainNames[i], chainNames[j], boneIdx));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (conflicts.Count > 0) {
+                Log.Warning($"[IK] Found {conflicts.Count} bone conflict(s) across chains:");
+                foreach ((string a, string b, int bone) in conflicts) {
+                    Log.Warning($"  Bone {bone}: shared by '{a}' and '{b}'");
+                }
+            }
+            return conflicts;
+        }
+
+        /// <summary>
         /// 平滑阻尼向量（临界阻尼平滑）
         /// </summary>
         public static Vector3 SmoothDampVector3(Vector3 current, Vector3 target, ref Vector3 velocity, float smoothTime) {

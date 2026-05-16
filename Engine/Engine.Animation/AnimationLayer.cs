@@ -55,6 +55,11 @@ namespace Engine.Animation {
         public float Weight { get; set; } = 1f;
 
         /// <summary>
+        /// 过渡曲线（用于激活/停用渐变）
+        /// </summary>
+        public BlendCurve Curve { get; set; } = BlendCurve.Linear;
+
+        /// <summary>
         /// 是否有活动内容（动画或驱动器）且已激活
         /// </summary>
         public bool IsActive => (m_active || m_deactivating || m_activating || m_holdPose)
@@ -311,7 +316,7 @@ namespace Engine.Animation {
             // 更新激活渐变过渡（Override 模式的权重渐入）
             if (m_activating) {
                 m_activateElapsed += deltaTime;
-                float progress = m_activateDuration > 0 ? m_activateElapsed / m_activateDuration : 1f;
+                float progress = m_activateDuration > 0 ? AnimationTransition.ApplyCurve(m_activateElapsed / m_activateDuration, Curve) : 1f;
                 if (progress >= 1f) {
                     // 过渡完成，设置目标权重
                     Weight = m_targetWeight;
@@ -330,7 +335,7 @@ namespace Engine.Animation {
             // 更新停用渐变过渡（Override 模式的权重渐变）
             if (m_deactivating) {
                 m_deactivateElapsed += deltaTime;
-                float progress = m_deactivateDuration > 0 ? m_deactivateElapsed / m_deactivateDuration : 1f;
+                float progress = m_deactivateDuration > 0 ? AnimationTransition.ApplyCurve(m_deactivateElapsed / m_deactivateDuration, Curve) : 1f;
                 if (progress >= 1f) {
                     // 过渡完成，停用层并恢复原始权重
                     Weight = m_originalWeight;
@@ -380,8 +385,7 @@ namespace Engine.Animation {
             if (m_activating
                 && m_activateSourceTransforms != null
                 && model != null) {
-                float progress = m_activateDuration > 0 ? m_activateElapsed / m_activateDuration : 1f;
-                progress = Math.Clamp(progress, 0f, 1f);
+                float progress = m_activateDuration > 0 ? AnimationTransition.ApplyCurve(Math.Clamp(m_activateElapsed / m_activateDuration, 0f, 1f), Curve) : 1f;
 
                 // 采样目标动画
                 m_animationPlayer?.SampleBoneTransforms(boneTransforms);

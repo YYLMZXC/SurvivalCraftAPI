@@ -20,7 +20,7 @@ namespace Game.Animation.Drivers {
         } = "Head";
 
         // IAnimationDriver 接口实现
-        public string[] TargetBones => m_cachedTargetBones ??= new[] { TargetBoneName };
+        public string[] TargetBones => m_cachedTargetBones ??= [TargetBoneName];
         public string[] m_cachedTargetBones;
 
         // 配置参数

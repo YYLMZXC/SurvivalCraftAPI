@@ -1,20 +1,26 @@
-#nullable disable
 using Engine;
 using Engine.Animation;
 using Engine.Graphics;
 
-namespace Game.Animation.Drivers
-{
+namespace Game.Animation.Drivers {
     /// <summary>
     /// 四足死亡驱动器 - 处理完整的死亡动画（全身倒下 + 头部下垂）
     /// </summary>
-    public class FourLeggedDeathDriver : IAnimationDriver
-    {
+    public class FourLeggedDeathDriver : IAnimationDriver {
         public string Name => "FourLeggedDeath";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         public string[] TargetBones => mTargetBones;
-        private string[] mTargetBones = new[] { "Body", "Head", "Neck", "Leg1", "Leg2", "Leg3", "Leg4" };
+
+        string[] mTargetBones = [
+            "Body",
+            "Head",
+            "Neck",
+            "Leg1",
+            "Leg2",
+            "Leg3",
+            "Leg4"
+        ];
 
         // 参数名称
         public string DeathPhaseParam { get; set; } = "DeathPhase";
@@ -36,21 +42,20 @@ namespace Game.Animation.Drivers
         public float DeathBodyDrop { get; set; } = 0.5f; // 身体下沉高度
         public float DeathBodyRise { get; set; } = 0.2f; // 身体抬起高度
 
-        private float _deathPhase;
-        private Vector3 _deathCauseOffset;
-        private float _bodyHeight;
-        private Vector3 _bodyRight;
-        private float _rotationY;
-        private Vector3 _position;
+        float _deathPhase;
+        Vector3 _deathCauseOffset;
+        float _bodyHeight;
+        Vector3 _bodyRight;
+        float _rotationY;
+        Vector3 _position;
 
         // 从 WalkDriver 读取的腿部角度
-        private float _legAngle1;
-        private float _legAngle2;
-        private float _legAngle3;
-        private float _legAngle4;
+        float _legAngle1;
+        float _legAngle2;
+        float _legAngle3;
+        float _legAngle4;
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             _deathPhase = parameters.GetFloat(DeathPhaseParam);
             _deathCauseOffset = parameters.GetVector3(DeathCauseOffsetParam);
             _bodyHeight = parameters.GetFloat(BodyHeightParam);
@@ -65,48 +70,43 @@ namespace Game.Animation.Drivers
             _legAngle4 = parameters.GetFloat(LegAngle4Param);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
-            if (_deathPhase <= 0f) return;
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
+            if (_deathPhase <= 0f) {
+                return;
+            }
 
             // 计算侧翻方向
             float rollDirection = Vector3.Dot(_bodyRight, _deathCauseOffset) > 0f ? 1 : -1;
             float rollAngle = MathUtils.DegToRad(DeathRollAngle) * _deathPhase * rollDirection;
 
             // Body 骨骼 - 侧翻倒下
-            var bodyBone = model.FindBone("Body");
-            if (bodyBone != null)
-            {
-                boneTransforms[bodyBone.Index] =
-                    Matrix.CreateTranslation(-DeathBodyDrop * _bodyHeight * Vector3.UnitY * _deathPhase)
+            ModelBone bodyBone = model.FindBone("Body");
+            if (bodyBone != null) {
+                boneTransforms[bodyBone.Index] = Matrix.CreateTranslation(-DeathBodyDrop * _bodyHeight * Vector3.UnitY * _deathPhase)
                     * Matrix.CreateFromYawPitchRoll(_rotationY, 0f, rollAngle)
                     * Matrix.CreateTranslation(DeathBodyRise * _bodyHeight * Vector3.UnitY * _deathPhase)
                     * Matrix.CreateTranslation(_position);
             }
 
             // Head 骨骼 - 头部下垂
-            var headBone = model.FindBone("Head");
-            if (headBone != null)
-            {
+            ModelBone headBone = model.FindBone("Head");
+            if (headBone != null) {
                 boneTransforms[headBone.Index] = Matrix.CreateRotationX(MathUtils.DegToRad(DeathHeadAngle) * _deathPhase);
             }
 
             // Neck 骨骼 - 重置
-            var neckBone = model.FindBone("Neck", false);
-            if (neckBone != null)
-            {
+            ModelBone neckBone = model.FindBone("Neck", false);
+            if (neckBone != null) {
                 boneTransforms[neckBone.Index] = Matrix.Identity;
             }
 
             // Legs 骨骼 - 从当前角度平滑过渡到放松状态
             // 原始实现: m_legAngle * (1 - DeathPhase)
             float deathFactor = 1f - _deathPhase;
-            float[] legAngles = { _legAngle1, _legAngle2, _legAngle3, _legAngle4 };
-            for (int i = 0; i < 4; i++)
-            {
-                var bone = model.FindBone($"Leg{i + 1}", false);
-                if (bone != null)
-                {
+            float[] legAngles = [_legAngle1, _legAngle2, _legAngle3, _legAngle4];
+            for (int i = 0; i < 4; i++) {
+                ModelBone bone = model.FindBone($"Leg{i + 1}", false);
+                if (bone != null) {
                     // 腿部角度逐渐减小到 0（放松状态）
                     boneTransforms[bone.Index] = Matrix.CreateRotationX(legAngles[i] * deathFactor);
                 }

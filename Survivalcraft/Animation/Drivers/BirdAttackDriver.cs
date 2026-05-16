@@ -1,21 +1,18 @@
-#nullable disable
 using Engine;
 using Engine.Animation;
 using Engine.Graphics;
 
-namespace Game.Animation.Drivers
-{
+namespace Game.Animation.Drivers {
     /// <summary>
     /// 鸟类攻击驱动器 - 处理攻击时的头部/颈部动画
     /// 注意：腿部踢击动画由 BirdWalkDriver 或 BirdFlyDriver 处理，此驱动器只处理头部/颈部
     /// </summary>
-    public class BirdAttackDriver : IAnimationDriver
-    {
+    public class BirdAttackDriver : IAnimationDriver {
         public string Name => "BirdAttack";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         public string[] TargetBones => mTargetBones;
-        private string[] mTargetBones = new[] { "Head", "Neck" };
+        string[] mTargetBones = ["Head", "Neck"];
 
         // 参数名称
         public string KickPhaseParam { get; set; } = "KickPhase";
@@ -30,17 +27,16 @@ namespace Game.Animation.Drivers
         // 可配置属性
         public float PeckAngle { get; set; } = 1.25f; // 啄食角度（弧度）
 
-        private float _kickPhase;
-        private float _peckPhase;
-        private float _lookAngleX;
-        private float _lookAngleY;
-        private Vector3 _rotation;
-        private float _phase;
-        private bool _isOnGround;
-        private float _immersionFactor;
+        float _kickPhase;
+        float _peckPhase;
+        float _lookAngleX;
+        float _lookAngleY;
+        Vector3 _rotation;
+        float _phase;
+        bool _isOnGround;
+        float _immersionFactor;
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             _kickPhase = parameters.GetFloat(KickPhaseParam);
             _peckPhase = parameters.GetFloat(PeckPhaseParam);
             _lookAngleX = parameters.GetFloat(LookAngleXParam);
@@ -51,8 +47,7 @@ namespace Game.Animation.Drivers
             _immersionFactor = parameters.GetFloat(ImmersionFactorParam);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
             // 原始代码逻辑:
             // num4 = 0
             // if (Standing || Immersion > 0): num4 = 0.5 * Sin(π * 2 * MovementPhase / 2)
@@ -60,14 +55,12 @@ namespace Game.Animation.Drivers
             // num4 -= 1.25 * (1 - (cos >= 0 ? cos : -0.5 * cos))
             // num4 += LookAngleY
             // num5 = -num4 (之前计算的站立摆动，但在攻击时不使用)
-
             float yaw = _lookAngleX / 2f;
             float yaw2 = _lookAngleX / 2f;
 
             // 颈部基础摆动（站立时）
             float num4 = 0f;
-            if (_isOnGround || _immersionFactor > 0f)
-            {
+            if (_isOnGround || _immersionFactor > 0f) {
                 // 原始: num4 = 0.5f * Sin(π * 2f * MovementPhase / 2f) = Sin(π * MovementPhase)
                 num4 = 0.5f * MathF.Sin(MathF.PI * _phase);
             }
@@ -82,23 +75,19 @@ namespace Game.Animation.Drivers
             float neckPitch = num4 - peckAmount + _lookAngleY;
 
             // 头部: num5 = -num4 (站立时), 无 peckAmount，但有 Clamp(vector.Y) 和 vector.Z
-            float num5 = -num4;  // 站立摆动反向
+            float num5 = -num4; // 站立摆动反向
             float headPitch = num5 + Math.Clamp(_rotation.Y, -(float)Math.PI / 4f, (float)Math.PI / 4f);
 
             // Neck 骨骼
-            var neckBone = model.FindBone("Neck", false);
-            if (neckBone != null)
-            {
-                boneTransforms[neckBone.Index] =
-                    Matrix.CreateFromYawPitchRoll(yaw2, neckPitch, 0f);
+            ModelBone neckBone = model.FindBone("Neck", false);
+            if (neckBone != null) {
+                boneTransforms[neckBone.Index] = Matrix.CreateFromYawPitchRoll(yaw2, neckPitch, 0f);
             }
 
             // Head 骨骼
-            var headBone = model.FindBone("Head");
-            if (headBone != null)
-            {
-                boneTransforms[headBone.Index] =
-                    Matrix.CreateFromYawPitchRoll(yaw, headPitch, _rotation.Z);
+            ModelBone headBone = model.FindBone("Head");
+            if (headBone != null) {
+                boneTransforms[headBone.Index] = Matrix.CreateFromYawPitchRoll(yaw, headPitch, _rotation.Z);
             }
         }
     }

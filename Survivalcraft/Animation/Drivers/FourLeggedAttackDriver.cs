@@ -1,20 +1,17 @@
-#nullable disable
 using Engine;
 using Engine.Animation;
 using Engine.Graphics;
 
-namespace Game.Animation.Drivers
-{
+namespace Game.Animation.Drivers {
     /// <summary>
     /// 四足攻击驱动器 - 处理攻击（顶撞）动画
     /// </summary>
-    public class FourLeggedAttackDriver : IAnimationDriver
-    {
+    public class FourLeggedAttackDriver : IAnimationDriver {
         public string Name => "FourLeggedAttack";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         public string[] TargetBones => mTargetBones;
-        private string[] mTargetBones = new[] { "Head", "Neck" };
+        string[] mTargetBones = ["Head", "Neck"];
 
         // 参数名称
         public string ButtFactorParam { get; set; } = "ButtFactor";
@@ -32,35 +29,32 @@ namespace Game.Animation.Drivers
         public float ButtAngle { get; set; } = 40f;
         public float ButtSigmoidK { get; set; } = 4f;
 
-        private float _buttFactor;
-        private float _buttPhase;
-        private float _lookAngleX;
-        private float _lookAngleY;
+        float _buttFactor;
+        float _buttPhase;
+        float _lookAngleX;
+        float _lookAngleY;
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             _buttFactor = parameters.GetFloat(ButtFactorParam);
             _buttPhase = parameters.GetFloat(ButtPhaseParam);
             _lookAngleX = parameters.GetFloat(LookAngleXParam);
             _lookAngleY = parameters.GetFloat(LookAngleYParam);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
-            var neckBone = model.FindBone("Neck", false);
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
+            ModelBone neckBone = model.FindBone("Neck", false);
             bool hasNeck = neckBone != null;
-
-            var headBone = model.FindBone("Head");
-            if (headBone == null) return;
+            ModelBone headBone = model.FindBone("Head");
+            if (headBone == null) {
+                return;
+            }
 
             // 基础角度
             float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
             float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
             float lookAngleX = Math.Clamp(_lookAngleX, -maxAngleX, maxAngleX);
             float lookAngleY = Math.Clamp(_lookAngleY, -maxAngleY, maxAngleY);
-
-            if (hasNeck)
-            {
+            if (hasNeck) {
                 lookAngleX *= HeadRatio;
                 lookAngleY *= HeadRatio;
             }
@@ -70,20 +64,13 @@ namespace Game.Animation.Drivers
             // 原始实现：攻击时将 X 分量插值到 0（头部不左右转动）
             lookAngleX = lookAngleX + (0f - lookAngleX) * _buttFactor;
             lookAngleY = lookAngleY + (buttY - lookAngleY) * _buttFactor;
-
-            boneTransforms[headBone.Index] =
-                Matrix.CreateRotationX(lookAngleY) *
-                Matrix.CreateRotationZ(-lookAngleX);
+            boneTransforms[headBone.Index] = Matrix.CreateRotationX(lookAngleY) * Matrix.CreateRotationZ(-lookAngleX);
 
             // 颈部 - 原始实现中攻击动画只影响头部，不影响颈部
-            if (hasNeck)
-            {
+            if (hasNeck) {
                 float neckAngleX = Math.Clamp(_lookAngleX * NeckRatio, -maxAngleX, maxAngleX);
                 float neckAngleY = Math.Clamp(_lookAngleY * NeckRatio, -maxAngleY, maxAngleY);
-
-                boneTransforms[neckBone.Index] =
-                    Matrix.CreateRotationX(neckAngleY) *
-                    Matrix.CreateRotationZ(-neckAngleX);
+                boneTransforms[neckBone.Index] = Matrix.CreateRotationX(neckAngleY) * Matrix.CreateRotationZ(-neckAngleX);
             }
         }
     }

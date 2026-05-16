@@ -1,20 +1,17 @@
-#nullable disable
 using Engine;
 using Engine.Animation;
 using Engine.Graphics;
 
-namespace Game.Animation.Drivers
-{
+namespace Game.Animation.Drivers {
     /// <summary>
     /// 不能飞的鸟类行走驱动器 - 处理行走时的腿部摆动、身体晃动和头部摆动
     /// </summary>
-    public class FlightlessBirdWalkDriver : IAnimationDriver
-    {
+    public class FlightlessBirdWalkDriver : IAnimationDriver {
         public string Name => "FlightlessBirdWalk";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         public string[] TargetBones => mTargetBones;
-        private string[] mTargetBones = new[] { "Body", "Leg1", "Leg2", "Head", "Neck" };
+        string[] mTargetBones = ["Body", "Leg1", "Leg2", "Head", "Neck"];
 
         // 参数名称
         public string PhaseParam { get; set; } = "MovementPhase";
@@ -44,39 +41,38 @@ namespace Game.Animation.Drivers
         public float HeadBobAngle { get; set; } = 5f; // 头部摆动角度（度）
         public float HeadMaxAngleX { get; set; } = 90f;
         public float HeadMinAngleY { get; set; } = -90f; // 向下最大角度（负值）
-        public float HeadMaxAngleY { get; set; } = 50f;  // 向上最大角度
+        public float HeadMaxAngleY { get; set; } = 50f; // 向上最大角度
         public float HeadRatio { get; set; } = 0.6f;
         public float NeckRatio { get; set; } = 0.4f;
 
-        private float _phase;
-        private float _bob;
-        private float _rotationY;
-        private Vector3 _position;
-        private float _lookAngleX;
-        private float _lookAngleY;
-        private float _walkBobHeight;
-        private float _walkLegsAngle;
-        private float _speed;
-        private float _walkSpeed;
-        private bool _isOnGround;
-        private float _immersionFactor;
+        float _phase;
+        float _bob;
+        float _rotationY;
+        Vector3 _position;
+        float _lookAngleX;
+        float _lookAngleY;
+        float _walkBobHeight;
+        float _walkLegsAngle;
+        float _speed;
+        float _walkSpeed;
+        bool _isOnGround;
+        float _immersionFactor;
 
         // 踢腿攻击参数
-        private float _kickPhase;
-        private float _kickFactor;
+        float _kickPhase;
+        float _kickFactor;
 
         // 平滑过渡
-        private float _currentLegAngle1 = 0f;
-        private float _currentLegAngle2 = 0f;
-        private float _currentHeadAngleY = 0f;
-        private float _deltaTime = 1f / 60f; // 默认帧时间
-        private bool _firstUpdate = true;
+        float _currentLegAngle1;
+        float _currentLegAngle2;
+        float _currentHeadAngleY;
+        float _deltaTime = 1f / 60f; // 默认帧时间
+        bool _firstUpdate = true;
 
         // 保存参数引用（用于输出腿部角度）
-        private AnimationParameters _parameters;
+        AnimationParameters _parameters;
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             _parameters = parameters; // 保存参数引用（用于在 SampleTransforms 中输出）
             _deltaTime = MathUtils.Max(deltaTime, 0.001f); // 保存帧时间，最小值 0.001
             _phase = parameters.GetFloat(PhaseParam);
@@ -97,19 +93,16 @@ namespace Game.Animation.Drivers
             _kickFactor = parameters.GetFloat(KickFactorParam);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
             // 计算腿部角度
             float legAngle1 = 0f;
             float legAngle2 = 0f;
             float headBobY = 0f;
-
-            if (_phase != 0f && (_isOnGround || _immersionFactor > 0f))
-            {
+            if (_phase != 0f
+                && (_isOnGround || _immersionFactor > 0f)) {
                 // 速度超过 0.75 * WalkSpeed 时角度增大 1.5 倍
                 float legAngle = _walkLegsAngle > 0 ? _walkLegsAngle : LegAngle;
-                if (_speed > 0.75f * _walkSpeed)
-                {
+                if (_speed > 0.75f * _walkSpeed) {
                     legAngle *= 1.5f;
                 }
 
@@ -125,59 +118,49 @@ namespace Game.Animation.Drivers
 
             // 踢腿攻击动画混合
             // 原始代码: if (m_kickFactor != 0f) num = Lerp(num, kickAngle, kickFactor)
-            if (_kickFactor > 0f)
-            {
+            if (_kickFactor > 0f) {
                 float kickAngle = MathUtils.DegToRad(60f) * MathF.Sin(MathF.PI * MathUtils.Sigmoid(_kickPhase, 5f));
                 legAngle1 = MathUtils.Lerp(legAngle1, kickAngle, _kickFactor);
             }
 
             // 平滑过渡
             float smoothFactor = MathUtils.Min(SmoothSpeed * _deltaTime, 1f);
-            if (_firstUpdate)
-            {
+            if (_firstUpdate) {
                 _currentLegAngle1 = legAngle1;
                 _currentLegAngle2 = legAngle2;
                 _currentHeadAngleY = headBobY;
                 _firstUpdate = false;
             }
-            else
-            {
+            else {
                 _currentLegAngle1 += smoothFactor * (legAngle1 - _currentLegAngle1);
                 _currentLegAngle2 += smoothFactor * (legAngle2 - _currentLegAngle2);
                 _currentHeadAngleY += smoothFactor * (headBobY - _currentHeadAngleY);
             }
 
             // Body 骨骼
-            var bodyBone = model.FindBone("Body");
-            if (bodyBone != null)
-            {
-                boneTransforms[bodyBone.Index] =
-                    Matrix.CreateRotationY(_rotationY) *
-                    Matrix.CreateTranslation(_position.X, _position.Y + _bob, _position.Z);
+            ModelBone bodyBone = model.FindBone("Body");
+            if (bodyBone != null) {
+                boneTransforms[bodyBone.Index] = Matrix.CreateRotationY(_rotationY)
+                    * Matrix.CreateTranslation(_position.X, _position.Y + _bob, _position.Z);
             }
 
             // 腿部骨骼
-            var leg1Bone = model.FindBone("Leg1");
-            if (leg1Bone != null)
-            {
+            ModelBone leg1Bone = model.FindBone("Leg1");
+            if (leg1Bone != null) {
                 boneTransforms[leg1Bone.Index] = Matrix.CreateRotationX(_currentLegAngle1);
             }
-
-            var leg2Bone = model.FindBone("Leg2");
-            if (leg2Bone != null)
-            {
+            ModelBone leg2Bone = model.FindBone("Leg2");
+            if (leg2Bone != null) {
                 boneTransforms[leg2Bone.Index] = Matrix.CreateRotationX(_currentLegAngle2);
             }
 
             // 头部和颈部
-            var neckBone = model.FindBone("Neck", false);
+            ModelBone neckBone = model.FindBone("Neck", false);
             bool hasNeck = neckBone != null;
-
-            var headBone = model.FindBone("Head");
-            if (headBone != null)
-            {
+            ModelBone headBone = model.FindBone("Head");
+            if (headBone != null) {
                 float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
-                float minAngleY = MathUtils.DegToRad(HeadMinAngleY);  // 不对称限制
+                float minAngleY = MathUtils.DegToRad(HeadMinAngleY); // 不对称限制
                 float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
 
                 // 原始代码: vector2.Y += m_headAngleY; 然后再分配比例
@@ -188,41 +171,28 @@ namespace Game.Animation.Drivers
                 // 限制角度（Y轴使用不对称限制）
                 totalLookAngleX = Math.Clamp(totalLookAngleX, -maxAngleX, maxAngleX);
                 totalLookAngleY = Math.Clamp(totalLookAngleY, minAngleY, maxAngleY);
-
                 float headAngleX = totalLookAngleX;
                 float headAngleY = totalLookAngleY;
-
-                if (hasNeck)
-                {
+                if (hasNeck) {
                     // 原始代码: vector2 = 0.6f * vector2 (头部 60%)
                     headAngleX = totalLookAngleX * HeadRatio;
                     headAngleY = totalLookAngleY * HeadRatio;
                 }
-
-                boneTransforms[headBone.Index] =
-                    Matrix.CreateRotationX(headAngleY) *
-                    Matrix.CreateRotationZ(-headAngleX);
+                boneTransforms[headBone.Index] = Matrix.CreateRotationX(headAngleY) * Matrix.CreateRotationZ(-headAngleX);
             }
-
-            if (hasNeck)
-            {
+            if (hasNeck) {
                 float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
-                float minAngleY = MathUtils.DegToRad(HeadMinAngleY);  // 不对称限制
+                float minAngleY = MathUtils.DegToRad(HeadMinAngleY); // 不对称限制
                 float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
 
                 // 原始代码: vector3 = 0.4f * vector2 (颈部 40%)
                 float totalLookAngleY = _lookAngleY + _currentHeadAngleY;
                 float totalLookAngleX = _lookAngleX;
-
                 totalLookAngleX = Math.Clamp(totalLookAngleX, -maxAngleX, maxAngleX);
                 totalLookAngleY = Math.Clamp(totalLookAngleY, minAngleY, maxAngleY);
-
                 float neckAngleX = totalLookAngleX * NeckRatio;
                 float neckAngleY = totalLookAngleY * NeckRatio;
-
-                boneTransforms[neckBone.Index] =
-                    Matrix.CreateRotationX(neckAngleY) *
-                    Matrix.CreateRotationZ(-neckAngleX);
+                boneTransforms[neckBone.Index] = Matrix.CreateRotationX(neckAngleY) * Matrix.CreateRotationZ(-neckAngleX);
             }
 
             // 输出腿部角度到参数（用于死亡动画）

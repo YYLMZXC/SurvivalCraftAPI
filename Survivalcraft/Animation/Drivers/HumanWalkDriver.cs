@@ -1,20 +1,17 @@
-#nullable disable
 using Engine;
 using Engine.Animation;
 using Engine.Graphics;
 
-namespace Game.Animation.Drivers
-{
+namespace Game.Animation.Drivers {
     /// <summary>
     /// 人类行走驱动器 - 处理行走时的腿部摆动、手部摆动、身体晃动和头部追踪
     /// </summary>
-    public class HumanWalkDriver : IAnimationDriver
-    {
+    public class HumanWalkDriver : IAnimationDriver {
         public string Name => "HumanWalk";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         public string[] TargetBones => mTargetBones;
-        private string[] mTargetBones = new[] { "Body", "Head", "Leg1", "Leg2", "Hand1", "Hand2" };
+        string[] mTargetBones = ["Body", "Head", "Leg1", "Leg2", "Hand1", "Hand2"];
 
         // 参数名称
         public string PhaseParam { get; set; } = "MovementPhase";
@@ -47,35 +44,34 @@ namespace Game.Animation.Drivers
         public float FlyVelocityScale { get; set; } = 0.03f;
         public float FlyVelocityMax { get; set; } = 0.5f;
 
-        private float _phase;
-        private float _bob;
-        private float _rotationY;
-        private Vector3 _position;
-        private float _lookAngleX;
-        private float _lookAngleY;
-        private float _walkLegsAngle;
-        private float _walkBobHeight;
-        private float _headingOffset;
-        private float _crouchFactor;
-        private bool _isCreativeFly;
-        private float _lastTurnOrderX;
-        private int _entityHash;
-        private float _velocityXZ;
-        private float _totalElapsedGameTime;
-        private float _gameTimeDelta;
-        private float _lieDownFactor;
+        float _phase;
+        float _bob;
+        float _rotationY;
+        Vector3 _position;
+        float _lookAngleX;
+        float _lookAngleY;
+        float _walkLegsAngle;
+        float _walkBobHeight;
+        float _headingOffset;
+        float _crouchFactor;
+        bool _isCreativeFly;
+        float _lastTurnOrderX;
+        int _entityHash;
+        float _velocityXZ;
+        float _totalElapsedGameTime;
+        float _gameTimeDelta;
+        float _lieDownFactor;
 
         // 平滑过渡
-        private float _currentBob = 0f;
-        private Vector2 _currentHeadAngles = Vector2.Zero;
-        private Vector2 _currentHandAngles1 = Vector2.Zero;
-        private Vector2 _currentHandAngles2 = Vector2.Zero;
-        private Vector2 _currentLegAngles1 = Vector2.Zero;
-        private Vector2 _currentLegAngles2 = Vector2.Zero;
-        private bool _firstUpdate = true;
+        float _currentBob;
+        Vector2 _currentHeadAngles = Vector2.Zero;
+        Vector2 _currentHandAngles1 = Vector2.Zero;
+        Vector2 _currentHandAngles2 = Vector2.Zero;
+        Vector2 _currentLegAngles1 = Vector2.Zero;
+        Vector2 _currentLegAngles2 = Vector2.Zero;
+        bool _firstUpdate = true;
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             _phase = parameters.GetFloat(PhaseParam);
             _bob = parameters.GetFloat(BobParam);
             _rotationY = parameters.GetFloat(RotationYParam);
@@ -96,20 +92,17 @@ namespace Game.Animation.Drivers
 
             // 平滑过渡 Bob
             float smoothFactor = MathUtils.Min(SmoothSpeed * deltaTime, 1f);
-            if (_firstUpdate)
-            {
+            if (_firstUpdate) {
                 _currentBob = _bob;
                 _firstUpdate = false;
             }
-            else
-            {
+            else {
                 _currentBob += smoothFactor * (_bob - _currentBob);
             }
 
             // ========== 计算并更新角度 ==========
             // 原始代码中这些计算在 AnimateCreature 中，每帧都会执行（即使在躺下时）
             // 这样死亡时的角度值是从上一帧继承的
-
             float num = MathF.Sin((float)Math.PI * 2f * _phase);
             float noiseTime = (float)MathUtils.Remainder(0.75 * _totalElapsedGameTime + (_entityHash & 0xFFFF), 10000.0);
 
@@ -117,17 +110,14 @@ namespace Game.Animation.Drivers
             float legAngleX1 = 0f, legAngleX2 = 0f, legAngleY1 = 0f, legAngleY2 = 0f;
             // 计算手部角度
             float handAngleX1 = 0f, handAngleY1 = 0f, handAngleX2 = 0f, handAngleY2 = 0f;
-
-            if (_isCreativeFly)
-            {
+            if (_isCreativeFly) {
                 float velocityOffset = MathUtils.Min(FlyVelocityScale * _velocityXZ * _velocityXZ, FlyVelocityMax);
                 legAngleX1 = -0.1f - velocityOffset;
                 legAngleX2 = legAngleX1;
                 legAngleY1 = MathUtils.Lerp(0f, 0.25f, SimplexNoise.Noise(1.07f * noiseTime + 400f));
                 legAngleY2 = 0f - MathUtils.Lerp(0f, 0.25f, SimplexNoise.Noise(0.93f * noiseTime + 500f));
             }
-            else if (_phase != 0f)
-            {
+            else if (_phase != 0f) {
                 handAngleX1 = -HandSwingAngle * num;
                 handAngleX2 = HandSwingAngle * num;
                 legAngleX1 = _walkLegsAngle * num;
@@ -151,11 +141,7 @@ namespace Game.Animation.Drivers
                 -MathUtils.DegToRad(HeadMaxAngleX),
                 MathUtils.DegToRad(HeadMaxAngleX)
             );
-            float targetHeadY = Math.Clamp(
-                headNoiseY + _lookAngleY,
-                -MathUtils.DegToRad(HeadMaxAngleY),
-                MathUtils.DegToRad(HeadMaxAngleY)
-            );
+            float targetHeadY = Math.Clamp(headNoiseY + _lookAngleY, -MathUtils.DegToRad(HeadMaxAngleY), MathUtils.DegToRad(HeadMaxAngleY));
 
             // 平滑过渡（使用实际的 GameTimeDelta）
             float angleSmoothFactor = MathUtils.Min(SmoothSpeed * _gameTimeDelta, 1f);
@@ -166,8 +152,7 @@ namespace Game.Animation.Drivers
             _currentLegAngles2 += angleSmoothFactor * (new Vector2(legAngleX2, legAngleY2) - _currentLegAngles2);
 
             // 蹲下时腿部角度减半
-            if (_crouchFactor == 1f)
-            {
+            if (_crouchFactor == 1f) {
                 _currentLegAngles1 *= 0.5f;
                 _currentLegAngles2 *= 0.5f;
             }
@@ -180,12 +165,10 @@ namespace Game.Animation.Drivers
             parameters.SetVector2("HumanLegAngles2", _currentLegAngles2);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
             // 原始代码：if (m_lieDownFactorModel == 0f) { ... } else { 死亡/躺下逻辑 }
             // 如果躺下，由 HumanDeathDriver 处理
-            if (_lieDownFactor > 0f)
-            {
+            if (_lieDownFactor > 0f) {
                 return;
             }
 
@@ -193,73 +176,53 @@ namespace Game.Animation.Drivers
             float crouchSigmoid = MathUtils.Sigmoid(_crouchFactor, 4f);
 
             // 计算身体位置（考虑蹲下）
-            Vector3 bodyPosition = new(
-                _position.X,
-                _position.Y + _currentBob - MathUtils.Lerp(0f, CrouchBodyDrop, crouchSigmoid),
-                _position.Z
-            );
+            Vector3 bodyPosition = new(_position.X, _position.Y + _currentBob - MathUtils.Lerp(0f, CrouchBodyDrop, crouchSigmoid), _position.Z);
 
             // 腿部平移和缩放（蹲下时）
             Vector3 legTranslate = new(0f, MathUtils.Lerp(0f, 7f, crouchSigmoid), MathUtils.Lerp(0f, 28f, crouchSigmoid));
             Vector3 legScale = new(1f, 1f, MathUtils.Lerp(1f, CrouchLegScale, crouchSigmoid));
 
             // 设置 Body 骨骼
-            var bodyBone = model.FindBone("Body");
-            if (bodyBone != null)
-            {
+            ModelBone bodyBone = model.FindBone("Body");
+            if (bodyBone != null) {
                 float bodyRotationY = _rotationY + _headingOffset;
-                boneTransforms[bodyBone.Index] =
-                    Matrix.CreateRotationY(bodyRotationY) *
-                    Matrix.CreateTranslation(bodyPosition);
+                boneTransforms[bodyBone.Index] = Matrix.CreateRotationY(bodyRotationY) * Matrix.CreateTranslation(bodyPosition);
             }
 
             // 设置 Head 骨骼
-            var headBone = model.FindBone("Head");
-            if (headBone != null)
-            {
-                boneTransforms[headBone.Index] =
-                    Matrix.CreateRotationX(_currentHeadAngles.Y) *
-                    Matrix.CreateRotationZ(-_currentHeadAngles.X);
+            ModelBone headBone = model.FindBone("Head");
+            if (headBone != null) {
+                boneTransforms[headBone.Index] = Matrix.CreateRotationX(_currentHeadAngles.Y) * Matrix.CreateRotationZ(-_currentHeadAngles.X);
             }
 
             // 设置 Hand1 骨骼
-            var hand1Bone = model.FindBone("Hand1");
-            if (hand1Bone != null)
-            {
-                boneTransforms[hand1Bone.Index] =
-                    Matrix.CreateRotationY(_currentHandAngles1.Y) *
-                    Matrix.CreateRotationX(_currentHandAngles1.X);
+            ModelBone hand1Bone = model.FindBone("Hand1");
+            if (hand1Bone != null) {
+                boneTransforms[hand1Bone.Index] = Matrix.CreateRotationY(_currentHandAngles1.Y) * Matrix.CreateRotationX(_currentHandAngles1.X);
             }
 
             // 设置 Hand2 骨骼
-            var hand2Bone = model.FindBone("Hand2");
-            if (hand2Bone != null)
-            {
-                boneTransforms[hand2Bone.Index] =
-                    Matrix.CreateRotationY(_currentHandAngles2.Y) *
-                    Matrix.CreateRotationX(_currentHandAngles2.X);
+            ModelBone hand2Bone = model.FindBone("Hand2");
+            if (hand2Bone != null) {
+                boneTransforms[hand2Bone.Index] = Matrix.CreateRotationY(_currentHandAngles2.Y) * Matrix.CreateRotationX(_currentHandAngles2.X);
             }
 
             // 设置 Leg1 骨骼
-            var leg1Bone = model.FindBone("Leg1");
-            if (leg1Bone != null)
-            {
-                boneTransforms[leg1Bone.Index] =
-                    Matrix.CreateRotationY(_currentLegAngles1.Y) *
-                    Matrix.CreateRotationX(_currentLegAngles1.X) *
-                    Matrix.CreateTranslation(legTranslate) *
-                    Matrix.CreateScale(legScale);
+            ModelBone leg1Bone = model.FindBone("Leg1");
+            if (leg1Bone != null) {
+                boneTransforms[leg1Bone.Index] = Matrix.CreateRotationY(_currentLegAngles1.Y)
+                    * Matrix.CreateRotationX(_currentLegAngles1.X)
+                    * Matrix.CreateTranslation(legTranslate)
+                    * Matrix.CreateScale(legScale);
             }
 
             // 设置 Leg2 骨骼
-            var leg2Bone = model.FindBone("Leg2");
-            if (leg2Bone != null)
-            {
-                boneTransforms[leg2Bone.Index] =
-                    Matrix.CreateRotationY(_currentLegAngles2.Y) *
-                    Matrix.CreateRotationX(_currentLegAngles2.X) *
-                    Matrix.CreateTranslation(legTranslate) *
-                    Matrix.CreateScale(legScale);
+            ModelBone leg2Bone = model.FindBone("Leg2");
+            if (leg2Bone != null) {
+                boneTransforms[leg2Bone.Index] = Matrix.CreateRotationY(_currentLegAngles2.Y)
+                    * Matrix.CreateRotationX(_currentLegAngles2.X)
+                    * Matrix.CreateTranslation(legTranslate)
+                    * Matrix.CreateScale(legScale);
             }
         }
     }

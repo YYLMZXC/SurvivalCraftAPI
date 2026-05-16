@@ -1,24 +1,29 @@
-#nullable disable
 using Engine;
 using Engine.Animation;
 using Engine.Graphics;
 
-namespace Game.Animation.Drivers
-{
+namespace Game.Animation.Drivers {
     /// <summary>
     /// 四足行走驱动器 - 处理行走动画（Body + Legs + Head 摆动）
-    ///
     /// 驱动器自己管理相位，根据 Speed 和 DeltaTime 计算 MovementPhase。
     /// 这样可以避免组件和配置文件之间的循环依赖。
     /// </summary>
-    public class FourLeggedWalkDriver : IAnimationDriver
-    {
+    public class FourLeggedWalkDriver : IAnimationDriver {
         public string Name => "FourLeggedWalk";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Override;
 
         // 目标骨骼 - 行走时需要控制的所有骨骼
         public string[] TargetBones => mTargetBones;
-        private string[] mTargetBones = new[] { "Body", "Leg1", "Leg2", "Leg3", "Leg4", "Head", "Neck" };
+
+        string[] mTargetBones = [
+            "Body",
+            "Leg1",
+            "Leg2",
+            "Leg3",
+            "Leg4",
+            "Head",
+            "Neck"
+        ];
 
         // 输入参数名称
         public string SpeedParam { get; set; } = "Speed";
@@ -46,9 +51,9 @@ namespace Game.Animation.Drivers
         // ========== 可配置的动画参数 ==========
 
         // 步态相位偏移 (Leg1, Leg2, Leg3, Leg4)
-        public float[] WalkPhases { get; set; } = { 0.0f, 0.5f, 0.25f, 0.75f };
-        public float[] TrotPhases { get; set; } = { 0.0f, 0.5f, 0.5f, 0.0f };
-        public float[] CanterPhases { get; set; } = { 0.0f, 0.25f, 0.15f, 0.4f };
+        public float[] WalkPhases { get; set; } = [0.0f, 0.5f, 0.25f, 0.75f];
+        public float[] TrotPhases { get; set; } = [0.0f, 0.5f, 0.5f, 0.0f];
+        public float[] CanterPhases { get; set; } = [0.0f, 0.25f, 0.15f, 0.4f];
 
         // 步态速度系数（从原始组件代码提取）
         // Canter: 0.7f, Trot/Walk: 1.0f
@@ -77,46 +82,42 @@ namespace Game.Animation.Drivers
         public string BobHeightParam { get; set; } = "WalkBobHeight";
 
         // 内部状态
-        private float _phase = 0f;
-        private float _speed;
-        private float _deltaTime;
-        private float _walkSpeed;
-        private float _animationSpeed = 1f;
-        private float _frontAngle;
-        private float _hindAngle;
-        private int _gait;
-        private float _rotationY;
-        private Vector3 _position;
-        private float _canterLegsAngleFactor;
-        private bool _isOnGround;
-        private float _immersionFactor;
-        private float _lookAngleX;
-        private float _lookAngleY;
-        private float _bobHeight;
+        float _phase;
+        float _speed;
+        float _deltaTime;
+        float _walkSpeed;
+        float _animationSpeed = 1f;
+        float _frontAngle;
+        float _hindAngle;
+        int _gait;
+        float _rotationY;
+        Vector3 _position;
+        float _canterLegsAngleFactor;
+        bool _isOnGround;
+        float _immersionFactor;
+        float _lookAngleX;
+        float _lookAngleY;
+        float _bobHeight;
 
         // 平滑过渡用的当前角度
-        private float _legAngle1 = 0f;
-        private float _legAngle2 = 0f;
-        private float _legAngle3 = 0f;
-        private float _legAngle4 = 0f;
-        private float _headAngleY = 0f;
-        private float _currentBob = 0f;
+        float _legAngle1;
+        float _legAngle2;
+        float _legAngle3;
+        float _legAngle4;
+        float _headAngleY;
+        float _currentBob;
 
         // 首次更新标记
-        private bool _firstUpdate = true;
+        bool _firstUpdate = true;
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             // 读取输入参数（缺失时使用默认值）
             _speed = parameters.GetFloat(SpeedParam);
             _deltaTime = parameters.GetFloat(DeltaTimeParam);
             _walkSpeed = parameters.GetFloat(WalkSpeedParam);
 
             // AnimationSpeed 缺失时使用默认值 1.0f
-            _animationSpeed = parameters.HasParameter(AnimationSpeedParam)
-                ? parameters.GetFloat(AnimationSpeedParam)
-                : 1.0f;
-
+            _animationSpeed = parameters.HasParameter(AnimationSpeedParam) ? parameters.GetFloat(AnimationSpeedParam) : 1.0f;
             _frontAngle = parameters.GetFloat(FrontAngleParam);
             _hindAngle = parameters.GetFloat(HindAngleParam);
             _gait = (int)parameters.GetFloat(GaitParam);
@@ -133,20 +134,17 @@ namespace Game.Animation.Drivers
             // 原始代码：
             // - Canter: MovementAnimationPhase += speed * dt * 0.7f * m_walkAnimationSpeed
             // - Trot/Walk: MovementAnimationPhase += speed * dt * m_walkAnimationSpeed
-            float speedFactor = _gait switch
-            {
-                2 => CanterSpeedFactor,  // Canter
-                1 => TrotSpeedFactor,    // Trot
-                _ => WalkSpeedFactor     // Walk
+            float speedFactor = _gait switch {
+                2 => CanterSpeedFactor, // Canter
+                1 => TrotSpeedFactor, // Trot
+                _ => WalkSpeedFactor // Walk
             };
 
             // 更新相位（只有移动时才更新）
-            if (MathF.Abs(_speed) > 0.2f)
-            {
+            if (MathF.Abs(_speed) > 0.2f) {
                 _phase += _speed * _deltaTime * speedFactor * _animationSpeed;
             }
-            else
-            {
+            else {
                 // 速度太低时重置相位
                 _phase = 0f;
             }
@@ -156,17 +154,14 @@ namespace Game.Animation.Drivers
 
             // 计算腿部角度
             float targetAngle1 = 0f, targetAngle2 = 0f, targetAngle3 = 0f, targetAngle4 = 0f;
-
-            if (_phase != 0f && (_isOnGround || _immersionFactor > 0f))
-            {
+            if (_phase != 0f
+                && (_isOnGround || _immersionFactor > 0f)) {
                 // 获取对应步态的相位偏移
-                float[] phaseOffsets = _gait switch
-                {
+                float[] phaseOffsets = _gait switch {
                     2 => CanterPhases,
                     1 => TrotPhases,
                     _ => WalkPhases
                 };
-
                 if (_gait == 2) // Canter
                 {
                     float factor = _canterLegsAngleFactor > 0 ? _canterLegsAngleFactor : 1.5f;
@@ -175,8 +170,7 @@ namespace Game.Animation.Drivers
                     targetAngle3 = _hindAngle * factor * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[2]));
                     targetAngle4 = _hindAngle * factor * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[3]));
                 }
-                else
-                {
+                else {
                     targetAngle1 = _frontAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[0]));
                     targetAngle2 = _frontAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[1]));
                     targetAngle3 = _hindAngle * MathF.Sin(2f * MathF.PI * (_phase + phaseOffsets[2]));
@@ -186,10 +180,8 @@ namespace Game.Animation.Drivers
 
             // 计算行走时的头部摆动
             float targetHeadY = 0f;
-            if (_phase != 0f)
-            {
-                targetHeadY = _gait switch
-                {
+            if (_phase != 0f) {
+                targetHeadY = _gait switch {
                     2 => MathUtils.DegToRad(CanterHeadAngle) * MathF.Sin(CanterHeadFrequency * MathF.PI * _phase),
                     1 => MathUtils.DegToRad(TrotHeadAngle) * MathF.Sin(TrotHeadFrequency * MathF.PI * _phase),
                     _ => MathUtils.DegToRad(WalkHeadAngle) * MathF.Sin(WalkHeadFrequency * MathF.PI * _phase)
@@ -198,13 +190,11 @@ namespace Game.Animation.Drivers
 
             // 计算 Bob（根据步态不同）
             float targetBob = 0f;
-            if (_phase != 0f)
-            {
-                targetBob = _gait switch
-                {
-                    2 => -_bobHeight * 1.5f * MathF.Sin(2f * MathF.PI * _phase),  // Canter: 正弦，1.5倍
-                    1 => _bobHeight * 1.5f * MathUtils.Sqr(MathF.Sin(2f * MathF.PI * _phase)),  // Trot: 平方，正向
-                    _ => -_bobHeight * MathUtils.Sqr(MathF.Sin(2f * MathF.PI * _phase))  // Walk: 平方，负向
+            if (_phase != 0f) {
+                targetBob = _gait switch {
+                    2 => -_bobHeight * 1.5f * MathF.Sin(2f * MathF.PI * _phase), // Canter: 正弦，1.5倍
+                    1 => _bobHeight * 1.5f * MathUtils.Sqr(MathF.Sin(2f * MathF.PI * _phase)), // Trot: 平方，正向
+                    _ => -_bobHeight * MathUtils.Sqr(MathF.Sin(2f * MathF.PI * _phase)) // Walk: 平方，负向
                 };
             }
 
@@ -212,8 +202,7 @@ namespace Game.Animation.Drivers
             float smoothFactor = MathUtils.Min(SmoothSpeed * deltaTime, 1f);
 
             // 首次更新时直接设置目标值，避免从 0 平滑过渡导致的闪烁
-            if (_firstUpdate)
-            {
+            if (_firstUpdate) {
                 _legAngle1 = targetAngle1;
                 _legAngle2 = targetAngle2;
                 _legAngle3 = targetAngle3;
@@ -222,8 +211,7 @@ namespace Game.Animation.Drivers
                 _currentBob = targetBob;
                 _firstUpdate = false;
             }
-            else
-            {
+            else {
                 _legAngle1 += smoothFactor * (targetAngle1 - _legAngle1);
                 _legAngle2 += smoothFactor * (targetAngle2 - _legAngle2);
                 _legAngle3 += smoothFactor * (targetAngle3 - _legAngle3);
@@ -239,62 +227,47 @@ namespace Game.Animation.Drivers
             parameters.SetFloat(LegAngle4OutputParam, _legAngle4);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
             // Body 骨骼（包含位置和旋转）
-            var bodyBone = model.FindBone("Body");
-            if (bodyBone != null)
-            {
-                boneTransforms[bodyBone.Index] =
-                    Matrix.CreateRotationY(_rotationY) *
-                    Matrix.CreateTranslation(_position.X, _position.Y + _currentBob, _position.Z);
+            ModelBone bodyBone = model.FindBone("Body");
+            if (bodyBone != null) {
+                boneTransforms[bodyBone.Index] = Matrix.CreateRotationY(_rotationY)
+                    * Matrix.CreateTranslation(_position.X, _position.Y + _currentBob, _position.Z);
             }
 
             // 腿部骨骼
-            for (int i = 0; i < 4; i++)
-            {
-                var boneName = $"Leg{i + 1}";
-                var bone = model.FindBone(boneName, false);
-                if (bone != null)
-                {
-                    float angle = i switch
-                    {
+            for (int i = 0; i < 4; i++) {
+                string boneName = $"Leg{i + 1}";
+                ModelBone bone = model.FindBone(boneName, false);
+                if (bone != null) {
+                    float angle = i switch {
                         0 => _legAngle1,
                         1 => _legAngle2,
                         2 => _legAngle3,
                         _ => _legAngle4
                     };
-
                     boneTransforms[bone.Index] = Matrix.CreateRotationX(angle);
                 }
             }
 
             // 头部和颈部 - 行走时的头部摆动 + 头部追踪
-            var neckBone = model.FindBone("Neck", false);
+            ModelBone neckBone = model.FindBone("Neck", false);
             bool hasNeck = neckBone != null;
-
-            var headBone = model.FindBone("Head");
-            if (headBone != null)
-            {
+            ModelBone headBone = model.FindBone("Head");
+            if (headBone != null) {
                 float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
                 float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
                 float lookAngleX = Math.Clamp(_lookAngleX, -maxAngleX, maxAngleX);
                 float lookAngleY = Math.Clamp(_lookAngleY + _headAngleY, -maxAngleY, maxAngleY);
-
-                if (hasNeck)
-                {
+                if (hasNeck) {
                     lookAngleX *= HeadRatio;
                     lookAngleY *= HeadRatio;
                 }
-
-                boneTransforms[headBone.Index] =
-                    Matrix.CreateRotationX(lookAngleY) *
-                    Matrix.CreateRotationZ(-lookAngleX);
+                boneTransforms[headBone.Index] = Matrix.CreateRotationX(lookAngleY) * Matrix.CreateRotationZ(-lookAngleX);
             }
 
             // 颈部动画
-            if (hasNeck)
-            {
+            if (hasNeck) {
                 float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
                 float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);
                 // 原始代码: 先 Clamp 总角度，再乘以比例分配
@@ -302,10 +275,7 @@ namespace Game.Animation.Drivers
                 float totalLookAngleY = Math.Clamp(_lookAngleY + _headAngleY, -maxAngleY, maxAngleY);
                 float lookAngleX = totalLookAngleX * NeckRatio;
                 float lookAngleY = totalLookAngleY * NeckRatio;
-
-                boneTransforms[neckBone.Index] =
-                    Matrix.CreateRotationX(lookAngleY) *
-                    Matrix.CreateRotationZ(-lookAngleX);
+                boneTransforms[neckBone.Index] = Matrix.CreateRotationX(lookAngleY) * Matrix.CreateRotationZ(-lookAngleX);
             }
         }
     }

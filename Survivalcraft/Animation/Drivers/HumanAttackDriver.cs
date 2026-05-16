@@ -1,20 +1,17 @@
-#nullable disable
 using Engine;
 using Engine.Animation;
 using Engine.Graphics;
 
-namespace Game.Animation.Drivers
-{
+namespace Game.Animation.Drivers {
     /// <summary>
     /// 人类攻击驱动器 - 处理左右手交替出拳动画
     /// </summary>
-    public class HumanAttackDriver : IAnimationDriver
-    {
+    public class HumanAttackDriver : IAnimationDriver {
         public string Name => "HumanAttack";
         public AnimationBlendMode BlendMode => AnimationBlendMode.Additive;
 
         public string[] TargetBones => mTargetBones;
-        private string[] mTargetBones = new[] { "Hand1", "Hand2" };
+        string[] mTargetBones = ["Hand1", "Hand2"];
 
         // 参数名称
         public string PunchPhaseParam { get; set; } = "PunchPhase";
@@ -25,23 +22,23 @@ namespace Game.Animation.Drivers
         public float PunchAngle { get; set; } = 90f; // 出拳角度（度）
         public float SmoothSpeed { get; set; } = 12f;
 
-        private float _punchPhase;
-        private int _punchCounter;
-        private float _gameTimeDelta;
+        float _punchPhase;
+        int _punchCounter;
+        float _gameTimeDelta;
 
-        private float _currentPunchAngle1 = 0f;
-        private float _currentPunchAngle2 = 0f;
+        float _currentPunchAngle1;
+        float _currentPunchAngle2;
 
-        public void Update(float deltaTime, AnimationParameters parameters)
-        {
+        public void Update(float deltaTime, AnimationParameters parameters) {
             _punchPhase = parameters.GetFloat(PunchPhaseParam);
             _punchCounter = (int)parameters.GetFloat(PunchCounterParam);
             _gameTimeDelta = parameters.GetFloat(GameTimeDeltaParam);
         }
 
-        public void SampleTransforms(Matrix?[] boneTransforms, Model model)
-        {
-            if (_punchPhase <= 0f) return;
+        public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
+            if (_punchPhase <= 0f) {
+                return;
+            }
 
             // 计算出拳角度
             float punchAngle = -MathUtils.DegToRad(PunchAngle) * MathF.Sin((float)Math.PI * 2f * MathUtils.Sigmoid(_punchPhase, 4f));
@@ -57,16 +54,14 @@ namespace Game.Animation.Drivers
             _currentPunchAngle2 += smoothFactor * (targetAngle2 - _currentPunchAngle2);
 
             // 设置 Hand1 骨骼
-            var hand1Bone = model.FindBone("Hand1");
-            if (hand1Bone != null)
-            {
+            ModelBone hand1Bone = model.FindBone("Hand1");
+            if (hand1Bone != null) {
                 boneTransforms[hand1Bone.Index] = Matrix.CreateRotationX(_currentPunchAngle1);
             }
 
             // 设置 Hand2 骨骼
-            var hand2Bone = model.FindBone("Hand2");
-            if (hand2Bone != null)
-            {
+            ModelBone hand2Bone = model.FindBone("Hand2");
+            if (hand2Bone != null) {
                 boneTransforms[hand2Bone.Index] = Matrix.CreateRotationX(_currentPunchAngle2);
             }
         }

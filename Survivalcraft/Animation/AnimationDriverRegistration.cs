@@ -30,6 +30,14 @@ namespace Game.Animation
                 if (s_registered)
                     return;
 
+                // 注册基础驱动器
+                AnimationDriverManager.Register("LookAt", typeof(LookAtDriver));
+                AnimationDriverManager.Register("LookAtDriver", typeof(LookAtDriver));
+                AnimationDriverManager.Register("Death", typeof(DeathDriver));
+                AnimationDriverManager.Register("DeathDriver", typeof(DeathDriver));
+                AnimationDriverManager.Register("Expression", typeof(ExpressionDriver));
+                AnimationDriverManager.Register("ExpressionDriver", typeof(ExpressionDriver));
+
                 // 注册四足动物驱动器
                 AnimationDriverManager.Register("FourLeggedWalk", typeof(FourLeggedWalkDriver));
                 AnimationDriverManager.Register("FourLeggedWalkDriver", typeof(FourLeggedWalkDriver));

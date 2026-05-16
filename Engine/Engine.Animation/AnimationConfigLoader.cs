@@ -361,19 +361,6 @@ namespace Engine.Animation {
                 return driver;
             }
 
-            // 回退到硬编码的引擎层驱动器
-            driver = type switch {
-                "LookAtDriver" => new Drivers.LookAtDriver(),
-                "LookAt" => new Drivers.LookAtDriver(),
-                "DeathDriver" => new Drivers.DeathDriver(),
-                "Death" => new Drivers.DeathDriver(),
-                "ExpressionDriver" => new Drivers.ExpressionDriver(),
-                _ => null
-            };
-            if (driver != null) {
-                return driver;
-            }
-
             // 最后尝试通过反射创建
             //return CreateGameDriver(type);
             throw new Exception($"Driver \"{type}\" not found");

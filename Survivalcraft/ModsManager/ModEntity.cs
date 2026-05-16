@@ -326,7 +326,7 @@ namespace Game {
                     }
                 }
             ); //获取mod文件内的dll文件（不包括Assets目录内的dll）
-            return [.. assemblies];
+            return assemblies.ToArray();
         }
 
         public virtual void HandleAssembly(Assembly assembly) {

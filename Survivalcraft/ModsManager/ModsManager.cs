@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
 using Engine;
+using Engine.Graphics;
 using Engine.Serialization;
 using Game;
 using Game.IContentReader;
@@ -410,6 +411,7 @@ public static class ModsManager {
         if (!Storage.DirectoryExists(ModsPath)) {
             Storage.CreateDirectory(ModsPath);
         }
+        ShaderCache.CacheDirectory = Storage.CombinePaths(DocPath, "ShaderCaches");
         ModHooks.Clear();
         ModListAll.Clear();
         ModList.Clear();

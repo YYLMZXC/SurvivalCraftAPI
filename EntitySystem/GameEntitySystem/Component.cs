@@ -19,6 +19,8 @@ namespace GameEntitySystem {
 
         public virtual IEnumerable<Entity> GetOwnedEntities() => ReadOnlyList<Entity>.Empty;
 
+        public Component() { }
+
         public virtual void OnEntityAdded() { }
 
         public virtual void OnEntityRemoved() { }

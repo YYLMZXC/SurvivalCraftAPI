@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace GameEntitySystem {
     public class EntityToIdMap {
-        Dictionary<Entity, int> m_map;
+        public Dictionary<Entity, int> m_map;
 
-        internal EntityToIdMap(Dictionary<Entity, int> map) => m_map = map;
+        public EntityToIdMap(Dictionary<Entity, int> map) => m_map = map;
 
         [Obsolete("Use Entity.Id instead.", true)]
         public int FindId(Entity entity) {

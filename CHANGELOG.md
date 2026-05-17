@@ -2,6 +2,42 @@
 
 > 说明：此更新日志和发布页的更新日志略有不同
 
+## API 1.9.1 (2026-05-17)
+
+### 新增
+
+* 几乎完整的 glTF 格式模型支持。  
+几乎完整是因为游戏自带着色器限制，部分功能仅通过游戏本体无法展示，为此我们开发了一个配套模组 [ModelPbrShader](https://github.com/XiaofengdiZhu/ModelPbrShaderForSC)，推荐下载使用（需要设备支持 OpenGL ES 3.2）
+
+> 因为新的动画系统（兼容原版生物模型硬编码动画与 glTF 模型动画），现在第一次加载原版生物也会比之前慢的多，会偶尔产生非常轻微的卡顿
+
+### 改进
+
+* 如果有模组因非手动原因禁用，会在游戏启动时弹出提示
+* 模组详情对话框会显示哪些依赖模组缺失了
+* 采用来自JoãoCraft24的新西班牙语翻译
+* 删除旧中文语言包
+* 改进一些翻译
+
+### 修复
+
+* 修复一些界面打不开的问题
+* 修复窗口缩放计算错误导致 Linux 平台鼠标可能无法正常使用的问题
+* 修复 Linux 平台原生文件对话框库加载失败的问题
+* 修复一个可能导致玩家创建失败的问题
+* 修复一个导致导出的存档无法被原版导入的问题
+* 避免因移动日志文件失败而导致不将日志写入日志文件
+
+### 对于开发者
+
+* 对于新增的 glTF 格式模型支持，你可以参考 [SurvivalcraftTemplateModForAPI](https://github.com/XiaofengdiZhu/SurvivalcraftTemplateModForAPI) 和 [AdvancedGltfFoxMod](https://github.com/XiaofengdiZhu/AdvancedGltfFoxModForSC) 来添加模型、配置动画；通过前面两个示例模组项目来学习是最快的，你还可以选择阅读以下文档来学习：
+  * [glTF 生物模组开发教程](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/GltfCreatureModTutorial.md)
+  * [动画配置 JSON 参考](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/AnimationConfigReference.md)
+  * [动画系统高级主题](https://gitee.com/SC-SPM/SurvivalcraftApi/blob/SCAPI1.9/docs/AnimationAdvancedTopics.md)
+* 为方块添加可供重写的方法 `GetIsCollidable`，可判断身体组件与某特定方块是否可发生碰撞
+
+> 本次更新几乎完全由 [Claude Code](https://claude.com/product/claude-code) + [智谱 GLM-5.1](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.1) 完成
+
 ## API 1.9.0.2 (2026-04-03)
 
 ### 修复

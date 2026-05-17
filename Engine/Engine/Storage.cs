@@ -12,9 +12,11 @@ using System.Runtime.InteropServices.JavaScript;
 #pragma warning disable CA1416
 #elif WINDOWS || LINUX
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using NativeFileDialogCore;
+#if LINUX
+using System.Runtime.InteropServices;
 #endif
+#endif // WINDOWS || LINUX
 using System.Reflection;
 #endif // !ANDROID
 using System.Text;

@@ -580,7 +580,7 @@ namespace Engine {
             if (m_state != State.Uncreated) {
                 Display.Resize();
 #if !BROWSER
-                Scale = m_view.Size.X > 0f ? m_view.FramebufferSize.X / m_view.Size.X : 1f;
+                Scale = m_view.Size.X > 0 ? (float)m_view.FramebufferSize.X / m_view.Size.X : 1f;
 #endif
                 Resized?.Invoke();
             }

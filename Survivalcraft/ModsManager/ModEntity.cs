@@ -326,7 +326,7 @@ namespace Game {
                     }
                 }
             ); //获取mod文件内的dll文件（不包括Assets目录内的dll）
-            return [.. assemblies];
+            return assemblies.ToArray();
         }
 
         public virtual void HandleAssembly(Assembly assembly) {
@@ -419,7 +419,8 @@ namespace Game {
                 else {
                     IsDisabled = true;
                     DisableReason = ModDisableReason.DependencyError;
-                    Log.Error($"[{modInfo.Name}] Failed to find dependency {name}");
+                    string versionStr = string.IsNullOrEmpty(range.OriginalString) ? string.Empty : $"Required version: {range}";
+                    Log.Error($"[{modInfo.Name}] Failed to find dependency: Package Name \"{name}\", {versionStr}");
                     return;
                 }
             }

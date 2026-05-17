@@ -29,6 +29,12 @@ namespace Engine {
         const bool m_isAndroidPlatform = true;
 #endif
 
+        /// <summary>
+        /// Content 加载回调
+        /// 参数：ContentManager 中绝对路径
+        /// </summary>
+        public static Func<string, Stream> LoadContentStreamCallback { get; set; }
+
         public static void Initialize() {
 #if LINUX
             // NativeFileDialogCore on Linux uses DllImport("nfd64"), but the NuGet package

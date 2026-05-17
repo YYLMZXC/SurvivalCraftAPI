@@ -7,6 +7,7 @@ namespace Game {
         public string m_versionString = string.Empty;
 
         public bool m_versionStringTrial;
+        public bool m_disabledModsNotShowed = true;
 
         public ButtonWidget m_disableSafeModeButton;
         public ButtonWidget m_showBulletinButton;
@@ -22,8 +23,6 @@ namespace Game {
         public StackPanelWidget m_rightBottomBar;
 
         public const string fName = "MainMenuScreen";
-
-        private bool m_initialized;
 
         public MainMenuScreen() {
             XElement node = ContentManager.Get<XElement>("Screens/MainMenuScreen");
@@ -68,6 +67,10 @@ namespace Game {
             }
             m_leftBottomBar.MarginLeft = SettingsManager.AdaptEdgeToEdgeDisplay ? Window.DisplayCutoutInsets.X * ScreensManager.FinalUiScale : 0f;
             m_rightBottomBar.MarginRight = SettingsManager.AdaptEdgeToEdgeDisplay ? Window.DisplayCutoutInsets.Z * ScreensManager.FinalUiScale : 0f;
+            if (m_disabledModsNotShowed) {
+                m_disabledModsNotShowed = false;
+                ModsManager.ShowDisabledModsDialog();
+            }
         }
 
         public override void Leave() {
@@ -75,22 +78,6 @@ namespace Game {
         }
 
         public override void Update() {
-            if (!m_initialized) {//检查哪些模组被禁用，并弹窗提示
-                m_initialized = true;
-                bool hasDisabledMods = false;
-                ModsManageContentScreen modsManageContentScreen = ScreensManager.FindScreen<ModsManageContentScreen>("ModsManageContent");
-                foreach (ModEntity modEntity in ModsManager.ModListAll) {
-                    if (modEntity.IsDisabled) {
-                        hasDisabledMods = true;
-                        DialogsManager.ShowDialog(modsManageContentScreen,
-                            new ModDetailsDialog(modsManageContentScreen, modEntity)
-                        );
-                    }
-                }
-                if (hasDisabledMods) {
-                    ScreensManager.SwitchScreen(modsManageContentScreen);
-                }
-            }
             Keyboard.BackButtonQuitsApp = !MarketplaceManager.IsTrialMode;
             if (string.IsNullOrEmpty(m_versionString)
                 || MarketplaceManager.IsTrialMode != m_versionStringTrial) {

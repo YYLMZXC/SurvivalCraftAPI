@@ -1151,12 +1151,39 @@ public static class ModsManager {
                 k++;
             }
         }
-        string newPath = $"{path.Substring(0, path.LastIndexOf('.'))}({LanguageControl.Get(fName, 63)}).scmod";
+        string newPath = $"{path.Substring(0, path.LastIndexOf('.'))}({LanguageControl.Get("ModsManageContentScreen", 63)}).scmod";
         FileStream fileStream = new(Storage.GetSystemPath(newPath), FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
         fileStream.Write(buff2, 0, buff2.Length);
         fileStream.Flush();
         stream.Dispose();
         fileStream.Dispose();
         return true;
+    }
+
+    public static void ShowDisabledModsDialog() {
+        StringBuilder sb = new();
+        foreach (ModEntity entity in ModListAll) {
+            if (entity.IsDisabled
+                && entity.DisableReason >= ModDisableReason.NoModInfo) {
+                sb.AppendLine(Storage.GetFileName(entity.ModFilePath));
+            }
+        }
+        if (sb.Length > 0) {
+            sb.Insert(0, $"{LanguageControl.Get(fName, "7")}\n");
+            DialogsManager.ShowDialog(
+                null,
+                new MessageDialog(
+                    LanguageControl.Warning,
+                    sb.ToString(),
+                    LanguageControl.Yes,
+                    LanguageControl.No,
+                    button => {
+                        if (button == MessageDialogButton.Button1) {
+                            ScreensManager.SwitchScreen("ModsManageContent");
+                        }
+                    }
+                )
+            );
+        }
     }
 }

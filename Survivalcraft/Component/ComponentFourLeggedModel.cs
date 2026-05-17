@@ -14,6 +14,14 @@ namespace Game {
         public SubsystemAudio m_subsystemAudio;
         public SubsystemSoundMaterials m_subsystemSoundMaterials;
 
+        public ModelBone m_bodyBone;
+        public ModelBone m_neckBone;
+        public ModelBone m_headBone;
+        public ModelBone m_leg1Bone;
+        public ModelBone m_leg2Bone;
+        public ModelBone m_leg3Bone;
+        public ModelBone m_leg4Bone;
+
         public float m_walkAnimationSpeed;
         public float m_canterLegsAngleFactor;
         public float m_walkFrontLegsAngle;
@@ -29,6 +37,12 @@ namespace Game {
         public float m_buttFactor;
         public float m_buttPhase;
         public float m_footstepsPhase;
+
+        public float m_legAngle1;
+        public float m_legAngle2;
+        public float m_legAngle3;
+        public float m_legAngle4;
+        public float m_headAngleY;
 
         public override float AttackPhase {
             get => m_buttPhase;
@@ -180,8 +194,18 @@ namespace Game {
 
         public override void SetModel(Model model) {
             base.SetModel(model);
-            if (IsSet) return;
-
+            if (IsSet) {
+                return;
+            }
+            if (Model != null) {
+                m_bodyBone = Model.FindBone("Body");
+                m_neckBone = Model.FindBone("Neck", false);
+                m_headBone = Model.FindBone("Head");
+                m_leg1Bone = Model.FindBone("Leg1");
+                m_leg2Bone = Model.FindBone("Leg2");
+                m_leg3Bone = Model.FindBone("Leg3");
+                m_leg4Bone = Model.FindBone("Leg4");
+            }
             // 配置驱动器参数
             if (AnimationController != null) {
                 // 把 Database.xml 中的参数传递给驱动器（会覆盖动画配置文件中的设置）

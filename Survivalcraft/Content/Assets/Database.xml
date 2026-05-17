@@ -4251,7 +4251,7 @@
           <Parameter Name="Class" Guid="784d4fb2-8fbb-47ee-b066-b445e947834b" Value="Game.ComponentFishModel" Type="string" />
           <Parameter Name="SwimAnimationSpeed" Description="[DescriptionAttribute:332]" Guid="94b8c34f-0208-4a3d-8a21-a2d0480426f7" Value="1" Type="float" />
           <Parameter Name="BoundingSphereRadius" Guid="dfaddf0f-b94e-41b0-8ed5-5dabe3fdadd1" Value="1" Type="float" />
-          <Parameter Name="AnimationConfigPath" Guid="a1b2c3d4-e5f6-7890-abcd-ef1234567890" Value="Animations/Fish" Type="string" />
+          <Parameter Name="AnimationConfigPath" Guid="6b14a679-d602-45b5-8eda-a4149683139d" Value="Animations/Fish" Type="string" />
         </ComponentTemplate>
         <ComponentTemplate Name="BlockHighlight" Description="[DescriptionAttribute:333]" Guid="3a86f5a6-1d85-4f4c-8c3b-de5bdcbd1505" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="5103b421-e482-4625-9ae1-e9b9e61fdf38" Value="Game.ComponentBlockHighlight" Type="string" />

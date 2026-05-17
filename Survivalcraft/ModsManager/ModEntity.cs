@@ -419,7 +419,8 @@ namespace Game {
                 else {
                     IsDisabled = true;
                     DisableReason = ModDisableReason.DependencyError;
-                    Log.Error($"[{modInfo.Name}] Failed to find dependency {name}");
+                    string versionStr = string.IsNullOrEmpty(range.OriginalString) ? string.Empty : " Required version: " + range.OriginalString;
+                    Log.Error($"[{modInfo.Name}] Failed to find dependency \"{name}\".{versionStr}");
                     return;
                 }
             }

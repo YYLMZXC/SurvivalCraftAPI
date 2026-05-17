@@ -23,6 +23,8 @@ namespace Game {
 
         public const string fName = "MainMenuScreen";
 
+        private bool m_initialized;
+
         public MainMenuScreen() {
             XElement node = ContentManager.Get<XElement>("Screens/MainMenuScreen");
             LoadContents(this, node);
@@ -73,6 +75,22 @@ namespace Game {
         }
 
         public override void Update() {
+            if (!m_initialized) {//检查哪些模组被禁用，并弹窗提示
+                m_initialized = true;
+                bool hasDisabledMods = false;
+                ModsManageContentScreen modsManageContentScreen = ScreensManager.FindScreen<ModsManageContentScreen>("ModsManageContent");
+                foreach (ModEntity modEntity in ModsManager.ModListAll) {
+                    if (modEntity.IsDisabled) {
+                        hasDisabledMods = true;
+                        DialogsManager.ShowDialog(modsManageContentScreen,
+                            new ModDetailsDialog(modsManageContentScreen, modEntity)
+                        );
+                    }
+                }
+                if (hasDisabledMods) {
+                    ScreensManager.SwitchScreen(modsManageContentScreen);
+                }
+            }
             Keyboard.BackButtonQuitsApp = !MarketplaceManager.IsTrialMode;
             if (string.IsNullOrEmpty(m_versionString)
                 || MarketplaceManager.IsTrialMode != m_versionStringTrial) {

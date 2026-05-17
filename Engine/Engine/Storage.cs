@@ -12,6 +12,7 @@ using System.Runtime.InteropServices.JavaScript;
 #pragma warning disable CA1416
 #elif WINDOWS || LINUX
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using NativeFileDialogCore;
 #endif
 using System.Reflection;
@@ -29,6 +30,21 @@ namespace Engine {
 #endif
 
         public static void Initialize() {
+#if LINUX
+            // NativeFileDialogCore on Linux uses DllImport("nfd64"), but the NuGet package
+            // provides the native library as libnfd.so. Map the name to resolve correctly.
+            NativeLibrary.SetDllImportResolver(
+                typeof(Dialog).Assembly,
+                (name, assembly, path) => {
+                    if (name == "nfd64") {
+                        if (NativeLibrary.TryLoad("libnfd", assembly, path, out nint handle)) {
+                            return handle;
+                        }
+                    }
+                    return nint.Zero;
+                }
+            );
+#endif
 #if BROWSER
             MountOPFS("/__root__");
 #endif

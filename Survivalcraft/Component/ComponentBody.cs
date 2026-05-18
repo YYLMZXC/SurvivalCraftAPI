@@ -350,8 +350,8 @@ namespace Game {
             WaterDrag = valuesDictionary.GetValue<Vector2>("WaterDrag");
             WaterSwayAngle = valuesDictionary.GetValue<float>("WaterSwayAngle");
             WaterTurnSpeed = valuesDictionary.GetValue<float>("WaterTurnSpeed");
-            WaterSwayAxis = valuesDictionary.GetValue<Vector3>("WaterSwayAxis");
-            WaterTurnAxis = valuesDictionary.GetValue<Vector3>("WaterTurnAxis");
+            WaterSwayAxis = valuesDictionary.GetValue<Vector3>("WaterSwayAxis", Vector3.UnitX);
+            WaterTurnAxis = valuesDictionary.GetValue<Vector3>("WaterTurnAxis", Vector3.UnitY);
             CanEmbedInIce = valuesDictionary.GetValue<bool>("CanEmbedInIce");
             Velocity = valuesDictionary.GetValue<Vector3>("Velocity").FixNaN();
             m_embeddedInIceCounter = valuesDictionary.GetValue("EmbeddedInIceCounter", 0);

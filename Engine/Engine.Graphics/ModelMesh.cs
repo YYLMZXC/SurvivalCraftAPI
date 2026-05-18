@@ -25,6 +25,22 @@ namespace Engine.Graphics {
             IndexBuffer indexBuffer,
             int startIndex,
             int indicesCount,
+            BoundingBox boundingBox) => NewMeshPart(
+            vertexBuffer,
+            indexBuffer,
+            startIndex,
+            indicesCount,
+            boundingBox,
+            -1,
+            PrimitiveType.TriangleList,
+            null,
+            0
+        );
+
+        public ModelMeshPart NewMeshPart(VertexBuffer vertexBuffer,
+            IndexBuffer indexBuffer,
+            int startIndex,
+            int indicesCount,
             BoundingBox boundingBox,
             int materialIndex = -1,
             PrimitiveType primitiveType = PrimitiveType.TriangleList,

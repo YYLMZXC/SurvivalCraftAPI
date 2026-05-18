@@ -38,10 +38,15 @@ namespace Game {
         public float m_buttPhase;
         public float m_footstepsPhase;
 
+        [Obsolete("This will not be used anymore.")]
         public float m_legAngle1;
+        [Obsolete("This will not be used anymore.")]
         public float m_legAngle2;
+        [Obsolete("This will not be used anymore.")]
         public float m_legAngle3;
+        [Obsolete("This will not be used anymore.")]
         public float m_legAngle4;
+        [Obsolete("This will not be used anymore.")]
         public float m_headAngleY;
 
         public override float AttackPhase {

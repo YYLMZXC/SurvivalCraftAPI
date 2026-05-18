@@ -6,28 +6,23 @@ using TemplatesDatabase;
 namespace Game {
     public class ComponentFlightlessBirdModel : ComponentCreatureModel {
         public ModelBone m_bodyBone;
-
         public ModelBone m_neckBone;
-
         public ModelBone m_headBone;
-
         public ModelBone m_leg1Bone;
-
         public ModelBone m_leg2Bone;
 
         public float m_walkAnimationSpeed;
-
         public float m_walkLegsAngle;
-
         public float m_walkBobHeight;
-
         public float m_feedFactor;
-
         public float m_footstepsPhase;
-
         public float m_kickFactor;
-
         public float m_kickPhase;
+
+        [Obsolete("This will not be used anymore.")]
+        public float m_legAngle1;
+        [Obsolete("This will not be used anymore.")]
+        public float m_legAngle2;
 
         public override float AttackPhase {
             get => m_kickPhase;

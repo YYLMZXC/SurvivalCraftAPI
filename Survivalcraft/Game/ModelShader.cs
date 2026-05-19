@@ -132,6 +132,15 @@ namespace Game {
             }
         }
 
+        public ModelShader(string vsc, string psc, bool useAlphaThreshold, int maxInstancesCount = 1) : base(
+            vsc,
+            psc,
+            maxInstancesCount,
+            PrepareShaderMacros(useAlphaThreshold, maxInstancesCount)
+        ) {
+            SetParameter();
+        }
+
         public ModelShader(string vsc, string psc, bool useAlphaThreshold, int maxInstancesCount = 1, int maxJointsCount = 0) : base(
             vsc,
             psc,
@@ -142,12 +151,22 @@ namespace Game {
             SetParameter();
         }
 
-        public ModelShader(string vsc, string psc, bool useAlphaThreshold, int maxInstancesCount, ShaderMacro[] shaderMacros) : base(
+        public ModelShader(string vsc, string psc, bool useAlphaThreshold, int maxInstancesCount = 1, ShaderMacro[] shaderMacros = null) : base(
             vsc,
             psc,
             maxInstancesCount,
-            PrepareShaderMacros(useAlphaThreshold, maxInstancesCount, 0, shaderMacros)
+            PrepareShaderMacros(useAlphaThreshold, maxInstancesCount, shaderMacros)
         ) {
+            SetParameter();
+        }
+
+        public ModelShader(string vsc, string psc, bool useAlphaThreshold, int maxInstancesCount = 1, int maxJointsCount = 0, ShaderMacro[] shaderMacros = null) : base(
+            vsc,
+            psc,
+            maxInstancesCount,
+            PrepareShaderMacros(useAlphaThreshold, maxInstancesCount, maxJointsCount, shaderMacros)
+        ) {
+            m_maxJointsCount = maxJointsCount;
             SetParameter();
         }
 
@@ -180,6 +199,9 @@ namespace Game {
             m_worldViewProjectionMatrixParameter.SetValue(Transforms.WorldViewProjection, InstancesCount);
             m_worldMatrixParameter.SetValue(Transforms.World, InstancesCount);
         }
+
+        public static ShaderMacro[] PrepareShaderMacros(bool useAlphaThreshold, int maxInstancesCount, ShaderMacro[] shaderMacros = null) =>
+            PrepareShaderMacros(useAlphaThreshold, maxInstancesCount, 0, shaderMacros);
 
         public static ShaderMacro[] PrepareShaderMacros(bool useAlphaThreshold, int maxInstancesCount, int maxJointsCount, ShaderMacro[] shaderMacros = null) {
             List<ShaderMacro> list = new();

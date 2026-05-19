@@ -81,9 +81,6 @@ namespace Engine.Animation {
                 // Bind parameters
                 BindParameters(expression, expr, parameters);
 
-                // Register custom functions
-                AnimationExpressionFunctions.RegisterFunctions(expr);
-
                 // Evaluate
                 object result = expr.Evaluate();
                 return ConvertResult<T>(result);
@@ -176,6 +173,9 @@ namespace Engine.Animation {
                 // Extract and cache parameter names
                 List<string> paramNames = expr.GetParameterNames();
                 m_requiredParameters[cacheKey] = paramNames?.ToArray() ?? Array.Empty<string>();
+
+                // Register custom functions once per expression
+                AnimationExpressionFunctions.RegisterFunctions(expr);
             }
             return expr;
         }

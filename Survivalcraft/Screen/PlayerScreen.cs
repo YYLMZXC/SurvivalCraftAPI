@@ -8,9 +8,9 @@ using TemplatesDatabase;
 namespace Game {
     public class PlayerScreen : Screen {
         public enum Mode {
-            Initial,
-            Add,
-            Edit
+            Initial = 0,
+            Add = 1,
+            Edit = 2
         }
 
         public class InputDeviceWidget : LabelWidget {

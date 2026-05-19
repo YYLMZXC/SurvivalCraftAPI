@@ -4,10 +4,10 @@ using Engine.Graphics;
 namespace Game {
     public class FurnitureDesignWidget : Widget {
         public enum ViewMode {
-            Side,
-            Top,
-            Front,
-            Perspective
+            Side = 0,
+            Top = 1,
+            Front = 2,
+            Perspective = 3
         }
 
         public static string fName = "FurnitureDesignWidget";

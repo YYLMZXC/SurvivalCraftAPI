@@ -11,16 +11,16 @@ using Color = Engine.Color;
 namespace Game {
     public class CommunityContentScreen : Screen {
         public enum Order {
-            ByRank,
-            ByTime,
-            ByBoutique,
-            ByHide
+            ByRank = 0,
+            ByTime = 1,
+            ByBoutique = 2,
+            ByHide = 3
         }
 
         public enum SearchType {
-            ByName,
-            ByAuthor,
-            ByUserId
+            ByName = 0,
+            ByAuthor = 1,
+            ByUserId = 2
         }
 
         public TreeViewWidget m_treePanel;

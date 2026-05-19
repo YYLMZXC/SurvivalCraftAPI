@@ -6,9 +6,9 @@ using TemplatesDatabase;
 namespace Game {
     public class PlayerData : IDisposable {
         public enum SpawnMode {
-            InitialIntro,
-            InitialNoIntro,
-            Respawn
+            InitialIntro = 0,
+            InitialNoIntro = 1,
+            Respawn = 2
         }
 
         public static string fName = "PlayerData";

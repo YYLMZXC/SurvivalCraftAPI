@@ -15,10 +15,10 @@ using Android.App;
 namespace Game {
     public class LoadingScreen : Screen {
         public enum LogType {
-            Info,
-            Warning,
-            Error,
-            Advice
+            Info = 0,
+            Warning = 1,
+            Error = 2,
+            Advice = 3
         }
 
         class LogItem(LogType type, string log) {

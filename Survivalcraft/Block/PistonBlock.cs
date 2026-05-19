@@ -176,7 +176,7 @@ namespace Game {
 
         public static PistonMode GetMode(int data) => (PistonMode)((data >> 1) & 3);
 
-        public static int SetMode(int data, PistonMode mode) => (data & -7) | ((int)(mode & (PistonMode)3) << 1);
+        public static int SetMode(int data, PistonMode mode) => (data & -7) | (((int)mode & 3) << 1);
 
         public static int GetFace(int data) => (data >> 3) & 7;
 

@@ -3,14 +3,14 @@ namespace Engine.Media {
         /// <summary>
         /// Collada 格式 (.dae)
         /// </summary>
-        Collada,
+        Collada = 0,
         /// <summary>
         /// glTF 文本格式 (.gltf)
         /// </summary>
-        Gltf,
+        Gltf = 1,
         /// <summary>
         /// glTF 二进制格式 (.glb)
         /// </summary>
-        Glb
+        Glb = 2
     }
 }

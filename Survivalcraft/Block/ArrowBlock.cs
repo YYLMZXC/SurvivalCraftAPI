@@ -3,17 +3,16 @@ using Engine.Graphics;
 
 namespace Game {
     public class ArrowBlock : Block {
-        [Flags]
         public enum ArrowType {
-            WoodenArrow,
-            StoneArrow,
-            IronArrow,
-            DiamondArrow,
-            FireArrow,
-            IronBolt,
-            DiamondBolt,
-            ExplosiveBolt,
-            CopperArrow
+            WoodenArrow = 0,
+            StoneArrow = 1,
+            IronArrow = 2,
+            DiamondArrow = 3,
+            FireArrow = 4,
+            IronBolt = 5,
+            DiamondBolt = 6,
+            ExplosiveBolt = 7,
+            CopperArrow = 8
         }
 
         public static int Index = 192;
@@ -271,6 +270,6 @@ namespace Game {
 
         public static ArrowType GetArrowType(int data) => (ArrowType)(data & 0xF);
 
-        public static int SetArrowType(int data, ArrowType arrowType) => (data & -16) | (int)(arrowType & (ArrowType)15);
+        public static int SetArrowType(int data, ArrowType arrowType) => (data & -16) | ((int)arrowType & 15);
     }
 }

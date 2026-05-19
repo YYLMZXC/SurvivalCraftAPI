@@ -3,11 +3,10 @@ using Engine.Graphics;
 
 namespace Game {
     public abstract class StairsBlock : Block, IPaintableBlock {
-        [Flags]
         public enum CornerType {
-            None,
-            OneQuarter,
-            ThreeQuarters
+            None = 0,
+            OneQuarter = 1,
+            ThreeQuarters = 2
         }
 
         public BlockMesh m_standaloneUncoloredBlockMesh = new();
@@ -428,7 +427,7 @@ namespace Game {
 
         public static CornerType GetCornerType(int data) => (CornerType)((data >> 3) & 3);
 
-        public static int SetCornerType(int data, CornerType cornerType) => (data & -25) | ((int)(cornerType & (CornerType)3) << 3);
+        public static int SetCornerType(int data, CornerType cornerType) => (data & -25) | (((int)cornerType & 3) << 3);
 
         public static int? GetColor(int data) {
             if ((data & 0x20) != 0) {

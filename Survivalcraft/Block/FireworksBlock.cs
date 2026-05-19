@@ -4,16 +4,15 @@ using Engine.Graphics;
 
 namespace Game {
     public class FireworksBlock : Block {
-        [Flags]
         public enum Shape {
-            SmallBurst,
-            LargeBurst,
-            Circle,
-            Disc,
-            Ball,
-            ShortTrails,
-            LongTrails,
-            FlatTrails
+            SmallBurst = 0,
+            LargeBurst = 1,
+            Circle = 2,
+            Disc = 3,
+            Ball = 4,
+            ShortTrails = 5,
+            LongTrails = 6,
+            FlatTrails = 7
         }
 
         public static int Index = 215;
@@ -255,6 +254,7 @@ namespace Game {
 
         public static Shape GetShape(int data) => (Shape)(data & 7);
 
+        // ReSharper disable once BitwiseOperatorOnEnumWithoutFlags
         public static int SetShape(int data, Shape shape) => (data & -8) | (int)(shape & Shape.FlatTrails);
 
         public static int GetAltitude(int data) => (data >> 3) & 1;

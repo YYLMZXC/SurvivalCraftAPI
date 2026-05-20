@@ -67,7 +67,7 @@ namespace Game {
         /// </summary>
         public static int MaxJointsCount { get; private set; } = 64;
 
-        public int MaxInstancesCount = 64;
+        public int MaxInstancesCount = 32;
 
         public Dictionary<ComponentModel, ModelData> m_componentModels = [];
 
@@ -207,7 +207,16 @@ namespace Game {
             m_subsystemTerrain = Project.FindSubsystem<SubsystemTerrain>(true);
             m_subsystemSky = Project.FindSubsystem<SubsystemSky>(true);
             m_subsystemShadows = Project.FindSubsystem<SubsystemShadows>(true);
-            MaxJointsCount = Math.Min(GLWrapper.GL_MAX_VERTEX_UNIFORM_VECTORS / 4, 128);
+            // Dynamic uniform budget calculation
+            // Non-array vertex shader uniforms: 12 vec4 (material, lights, fog, glymul)
+            // Skinned shader has 8 extra vec4 (2 fixed mat4: world[1] + wvp[1])
+            // Safety margin: 4 vec4 for driver overhead
+            const int NonArrayOverhead = 12;
+            const int SkinnedExtraOverhead = 8;
+            const int SafetyMargin = 4;
+            int available = GLWrapper.GL_MAX_VERTEX_UNIFORM_VECTORS - NonArrayOverhead - SafetyMargin;
+            MaxInstancesCount = Math.Clamp(available / 8, 1, 64);
+            MaxJointsCount = Math.Clamp((available - SkinnedExtraOverhead) / 4, 1, 128);
             m_jointMatricesBuffer = new Matrix[MaxJointsCount];
             ModsManager.HookAction(
                 "GetMaxInstancesCount",

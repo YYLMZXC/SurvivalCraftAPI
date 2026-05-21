@@ -15,6 +15,7 @@ namespace Game {
 
         public string m_idleSound;
 
+        public string m_rareIdleSound;
         public string m_painSound;
 
         public string m_moanSound;
@@ -28,6 +29,10 @@ namespace Game {
         public string m_attackSound;
 
         public float m_idleSoundMinDistance;
+
+        public float m_rareIdleSoundMinDistance;
+
+        public float m_rareIdleSoundProbability;
 
         public float m_painSoundMinDistance;
 
@@ -48,15 +53,18 @@ namespace Game {
         public double m_lastPukeSoundTime = -1000.0;
 
         public virtual void PlayIdleSound(bool skipIfRecentlyPlayed) {
-            if (!string.IsNullOrEmpty(m_idleSound)
-                && m_subsystemTime.GameTime > m_lastSoundTime + (skipIfRecentlyPlayed ? 12f : 1f)) {
+            bool flag = !string.IsNullOrEmpty(m_rareIdleSound) && m_random.Bool(m_rareIdleSoundProbability);
+            string text = (flag ? m_rareIdleSound : m_idleSound);
+            float num = (flag ? m_rareIdleSoundMinDistance : m_idleSoundMinDistance);
+            if (!string.IsNullOrEmpty(text)
+                && m_subsystemTime.GameTime > m_lastSoundTime + (double)(skipIfRecentlyPlayed ? 12f : 1f)) {
                 m_lastSoundTime = m_subsystemTime.GameTime;
                 m_subsystemAudio.PlayRandomSound(
-                    m_idleSound,
+                    text,
                     1f,
                     m_random.Float(-0.1f, 0.1f),
                     m_componentCreature.ComponentBody.Position,
-                    m_idleSoundMinDistance,
+                    num,
                     false
                 );
             }
@@ -161,6 +169,7 @@ namespace Game {
             m_subsystemSoundMaterials = Project.FindSubsystem<SubsystemSoundMaterials>(true);
             m_componentCreature = Entity.FindComponent<ComponentCreature>(true);
             m_idleSound = valuesDictionary.GetValue<string>("IdleSound");
+            m_rareIdleSound = valuesDictionary.GetValue<string>("RareIdleSound");
             m_painSound = valuesDictionary.GetValue<string>("PainSound");
             m_moanSound = valuesDictionary.GetValue<string>("MoanSound");
             m_sneezeSound = valuesDictionary.GetValue<string>("SneezeSound");
@@ -168,6 +177,8 @@ namespace Game {
             m_pukeSound = valuesDictionary.GetValue<string>("PukeSound");
             m_attackSound = valuesDictionary.GetValue<string>("AttackSound");
             m_idleSoundMinDistance = valuesDictionary.GetValue<float>("IdleSoundMinDistance");
+            m_rareIdleSoundMinDistance = valuesDictionary.GetValue<float>("RareIdleSoundMinDistance");
+            m_rareIdleSoundProbability = valuesDictionary.GetValue<float>("RareIdleSoundProbability");
             m_painSoundMinDistance = valuesDictionary.GetValue<float>("PainSoundMinDistance");
             m_moanSoundMinDistance = valuesDictionary.GetValue<float>("MoanSoundMinDistance");
             m_sneezeSoundMinDistance = valuesDictionary.GetValue<float>("SneezeSoundMinDistance");

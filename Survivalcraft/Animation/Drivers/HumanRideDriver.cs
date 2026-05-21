@@ -134,7 +134,7 @@ namespace Game.Animation.Drivers {
             }
 
             // 设置 Body 骨骼
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 boneTransforms[bodyBone.Index] = Matrix.CreateRotationY(bodyRotationY)
                     * Matrix.CreateTranslation(bodyPosition.X, bodyPosition.Y + _mountBob, bodyPosition.Z);
@@ -145,14 +145,14 @@ namespace Game.Animation.Drivers {
             float crouchSigmoid = MathUtils.Sigmoid(_crouchFactor, 4f);
             Vector3 legTranslate = new(0f, MathUtils.Lerp(0f, 7f, crouchSigmoid), MathUtils.Lerp(0f, 28f, crouchSigmoid));
             Vector3 legScale = new(1f, 1f, MathUtils.Lerp(1f, 0.5f, crouchSigmoid));
-            ModelBone leg1Bone = model.FindBone("Leg1");
+            ModelBone leg1Bone = model.FindBone("Leg1", false);
             if (leg1Bone != null) {
                 boneTransforms[leg1Bone.Index] = Matrix.CreateRotationY(_currentLegAngles1.Y)
                     * Matrix.CreateRotationX(_currentLegAngles1.X)
                     * Matrix.CreateTranslation(legTranslate)
                     * Matrix.CreateScale(legScale);
             }
-            ModelBone leg2Bone = model.FindBone("Leg2");
+            ModelBone leg2Bone = model.FindBone("Leg2", false);
             if (leg2Bone != null) {
                 boneTransforms[leg2Bone.Index] = Matrix.CreateRotationY(_currentLegAngles2.Y)
                     * Matrix.CreateRotationX(_currentLegAngles2.X)
@@ -161,11 +161,11 @@ namespace Game.Animation.Drivers {
             }
 
             // 设置 Hand 骨骼
-            ModelBone hand1Bone = model.FindBone("Hand1");
+            ModelBone hand1Bone = model.FindBone("Hand1", false);
             if (hand1Bone != null) {
                 boneTransforms[hand1Bone.Index] = Matrix.CreateRotationY(_currentHandAngles1.Y) * Matrix.CreateRotationX(_currentHandAngles1.X);
             }
-            ModelBone hand2Bone = model.FindBone("Hand2");
+            ModelBone hand2Bone = model.FindBone("Hand2", false);
             if (hand2Bone != null) {
                 boneTransforms[hand2Bone.Index] = Matrix.CreateRotationY(_currentHandAngles2.Y) * Matrix.CreateRotationX(_currentHandAngles2.X);
             }

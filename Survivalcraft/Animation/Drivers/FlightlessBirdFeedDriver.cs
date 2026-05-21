@@ -61,7 +61,7 @@ namespace Game.Animation.Drivers {
             }
             ModelBone neckBone = model.FindBone("Neck", false);
             bool hasNeck = neckBone != null;
-            ModelBone headBone = model.FindBone("Head");
+            ModelBone headBone = model.FindBone("Head", false);
             if (headBone == null) {
                 return;
             }

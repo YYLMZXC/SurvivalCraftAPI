@@ -544,12 +544,12 @@ namespace Game {
                 return;
             }
             if (Model != null) {
-                m_bodyBone = Model.FindBone("Body");
-                m_headBone = Model.FindBone("Head");
-                m_leg1Bone = Model.FindBone("Leg1");
-                m_leg2Bone = Model.FindBone("Leg2");
-                m_hand1Bone = Model.FindBone("Hand1");
-                m_hand2Bone = Model.FindBone("Hand2");
+                m_bodyBone = Model.FindBone("Body", false);
+                m_headBone = Model.FindBone("Head", false);
+                m_leg1Bone = Model.FindBone("Leg1", false);
+                m_leg2Bone = Model.FindBone("Leg2", false);
+                m_hand1Bone = Model.FindBone("Hand1", false);
+                m_hand2Bone = Model.FindBone("Hand2", false);
             }
             else {
                 m_bodyBone = null;

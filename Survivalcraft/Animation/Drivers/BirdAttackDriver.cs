@@ -85,7 +85,7 @@ namespace Game.Animation.Drivers {
             }
 
             // Head 骨骼
-            ModelBone headBone = model.FindBone("Head");
+            ModelBone headBone = model.FindBone("Head", false);
             if (headBone != null) {
                 boneTransforms[headBone.Index] = Matrix.CreateFromYawPitchRoll(yaw, headPitch, _rotation.Z);
             }

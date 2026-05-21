@@ -80,7 +80,7 @@ namespace Game.Animation.Drivers {
             float rollAngle = MathUtils.DegToRad(DeathRollAngle) * _deathPhase * rollDirection;
 
             // Body 骨骼 - 侧翻倒下
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 boneTransforms[bodyBone.Index] = Matrix.CreateTranslation(-DeathBodyDrop * _bodyHeight * Vector3.UnitY * _deathPhase)
                     * Matrix.CreateFromYawPitchRoll(_rotationY, 0f, rollAngle)
@@ -89,7 +89,7 @@ namespace Game.Animation.Drivers {
             }
 
             // Head 骨骼 - 头部下垂
-            ModelBone headBone = model.FindBone("Head");
+            ModelBone headBone = model.FindBone("Head", false);
             if (headBone != null) {
                 boneTransforms[headBone.Index] = Matrix.CreateRotationX(MathUtils.DegToRad(DeathHeadAngle) * _deathPhase);
             }

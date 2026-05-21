@@ -153,9 +153,9 @@ namespace Game {
                 return;
             }
             if (Model != null) {
-                m_bodyBone = Model.FindBone("Body");
-                m_tail1Bone = Model.FindBone("Tail1");
-                m_tail2Bone = Model.FindBone("Tail2");
+                m_bodyBone = Model.FindBone("Body", false);
+                m_tail1Bone = Model.FindBone("Tail1", false);
+                m_tail2Bone = Model.FindBone("Tail2", false);
                 m_jawBone = Model.FindBone("Jaw", false);
             }
             else {

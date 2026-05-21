@@ -183,32 +183,32 @@ namespace Game.Animation.Drivers {
             Vector3 legScale = new(1f, 1f, MathUtils.Lerp(1f, CrouchLegScale, crouchSigmoid));
 
             // 设置 Body 骨骼
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 float bodyRotationY = _rotationY + _headingOffset;
                 boneTransforms[bodyBone.Index] = Matrix.CreateRotationY(bodyRotationY) * Matrix.CreateTranslation(bodyPosition);
             }
 
             // 设置 Head 骨骼
-            ModelBone headBone = model.FindBone("Head");
+            ModelBone headBone = model.FindBone("Head", false);
             if (headBone != null) {
                 boneTransforms[headBone.Index] = Matrix.CreateRotationX(_currentHeadAngles.Y) * Matrix.CreateRotationZ(-_currentHeadAngles.X);
             }
 
             // 设置 Hand1 骨骼
-            ModelBone hand1Bone = model.FindBone("Hand1");
+            ModelBone hand1Bone = model.FindBone("Hand1", false);
             if (hand1Bone != null) {
                 boneTransforms[hand1Bone.Index] = Matrix.CreateRotationY(_currentHandAngles1.Y) * Matrix.CreateRotationX(_currentHandAngles1.X);
             }
 
             // 设置 Hand2 骨骼
-            ModelBone hand2Bone = model.FindBone("Hand2");
+            ModelBone hand2Bone = model.FindBone("Hand2", false);
             if (hand2Bone != null) {
                 boneTransforms[hand2Bone.Index] = Matrix.CreateRotationY(_currentHandAngles2.Y) * Matrix.CreateRotationX(_currentHandAngles2.X);
             }
 
             // 设置 Leg1 骨骼
-            ModelBone leg1Bone = model.FindBone("Leg1");
+            ModelBone leg1Bone = model.FindBone("Leg1", false);
             if (leg1Bone != null) {
                 boneTransforms[leg1Bone.Index] = Matrix.CreateRotationY(_currentLegAngles1.Y)
                     * Matrix.CreateRotationX(_currentLegAngles1.X)
@@ -217,7 +217,7 @@ namespace Game.Animation.Drivers {
             }
 
             // 设置 Leg2 骨骼
-            ModelBone leg2Bone = model.FindBone("Leg2");
+            ModelBone leg2Bone = model.FindBone("Leg2", false);
             if (leg2Bone != null) {
                 boneTransforms[leg2Bone.Index] = Matrix.CreateRotationY(_currentLegAngles2.Y)
                     * Matrix.CreateRotationX(_currentLegAngles2.X)

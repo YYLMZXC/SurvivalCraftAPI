@@ -211,13 +211,13 @@ namespace Game {
                 return;
             }
             if (Model != null) {
-                m_bodyBone = Model.FindBone("Body");
+                m_bodyBone = Model.FindBone("Body", false);
                 m_neckBone = Model.FindBone("Neck", false);
-                m_headBone = Model.FindBone("Head");
-                m_leg1Bone = Model.FindBone("Leg1");
-                m_leg2Bone = Model.FindBone("Leg2");
-                m_leg3Bone = Model.FindBone("Leg3");
-                m_leg4Bone = Model.FindBone("Leg4");
+                m_headBone = Model.FindBone("Head", false);
+                m_leg1Bone = Model.FindBone("Leg1", false);
+                m_leg2Bone = Model.FindBone("Leg2", false);
+                m_leg3Bone = Model.FindBone("Leg3", false);
+                m_leg4Bone = Model.FindBone("Leg4", false);
             }
             // 配置驱动器参数
             if (AnimationController != null) {

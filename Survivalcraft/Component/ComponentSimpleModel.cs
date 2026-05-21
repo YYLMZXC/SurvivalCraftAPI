@@ -35,15 +35,6 @@ namespace Game {
                     rootTransform = correctionRotation * rootTransform;
                 }
 
-                // 应用模型缩放（从动画配置中读取）
-                float scale = ModelScale;
-                if (AnimationController != null && AnimationController.ModelScale != 1f) {
-                    scale = AnimationController.ModelScale;
-                }
-                if (scale != 1f) {
-                    rootTransform = Matrix.CreateScale(scale) * rootTransform;
-                }
-
                 // 叠加实体变换
                 m_boneTransforms[Model.RootBone.Index] = rootTransform * entityTransform;
                 return;

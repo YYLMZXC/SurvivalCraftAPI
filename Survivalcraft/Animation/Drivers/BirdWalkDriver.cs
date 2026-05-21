@@ -74,18 +74,18 @@ namespace Game.Animation.Drivers {
 
             // Body 骨骼
             // 原始: Matrix.CreateFromYawPitchRoll(vector.X, 0f, 0f) * Matrix.CreateTranslation(position + Bob)
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 boneTransforms[bodyBone.Index] = Matrix.CreateFromYawPitchRoll(_rotation.X, 0f, 0f)
                     * Matrix.CreateTranslation(_position.X, _position.Y + _bob, _position.Z);
             }
 
             // 腿部骨骼
-            ModelBone leg1Bone = model.FindBone("Leg1");
+            ModelBone leg1Bone = model.FindBone("Leg1", false);
             if (leg1Bone != null) {
                 boneTransforms[leg1Bone.Index] = Matrix.CreateRotationX(legAngle1);
             }
-            ModelBone leg2Bone = model.FindBone("Leg2");
+            ModelBone leg2Bone = model.FindBone("Leg2", false);
             if (leg2Bone != null) {
                 boneTransforms[leg2Bone.Index] = Matrix.CreateRotationX(legAngle2);
             }
@@ -111,7 +111,7 @@ namespace Game.Animation.Drivers {
                 num4 = 0.5f * MathF.Sin(MathF.PI * _phase);
             }
             float num5 = -num4;
-            ModelBone headBone = model.FindBone("Head");
+            ModelBone headBone = model.FindBone("Head", false);
             if (headBone != null) {
                 // 头部 pitch: num5 + Clamp(vector.Y, ...)
                 float headPitch = num5 + Math.Clamp(_rotation.Y, -(float)Math.PI / 4f, (float)Math.PI / 4f);

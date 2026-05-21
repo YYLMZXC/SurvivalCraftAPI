@@ -64,7 +64,7 @@ namespace Game.Animation.Drivers {
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
             // Body 骨骼
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 // 位置下沉（如果嵌入冰中）
                 float yOffset = -_digInDepth;
@@ -129,7 +129,7 @@ namespace Game.Animation.Drivers {
             }
 
             // Tail1 骨骼
-            ModelBone tail1Bone2 = model.FindBone("Tail1");
+            ModelBone tail1Bone2 = model.FindBone("Tail1", false);
             if (tail1Bone2 != null) {
                 Matrix transform = Matrix.Identity;
                 if (_currentTail1Z != 0f) {
@@ -142,7 +142,7 @@ namespace Game.Animation.Drivers {
             }
 
             // Tail2 骨骼
-            ModelBone tail2Bone2 = model.FindBone("Tail2");
+            ModelBone tail2Bone2 = model.FindBone("Tail2", false);
             if (tail2Bone2 != null) {
                 Matrix transform = Matrix.Identity;
                 if (_currentTail2Z != 0f) {

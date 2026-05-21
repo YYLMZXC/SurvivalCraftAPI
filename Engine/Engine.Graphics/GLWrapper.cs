@@ -508,6 +508,8 @@ namespace Engine.Graphics {
             if (framebuffer != m_framebuffer) {
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, (uint)framebuffer);
                 m_framebuffer = framebuffer;
+                m_viewport = null;
+                m_scissorRectangle = null;
             }
         }
 
@@ -569,7 +571,7 @@ namespace Engine.Graphics {
                 || viewport.Y != m_viewport.Value.Y
                 || viewport.Width != m_viewport.Value.Width
                 || viewport.Height != m_viewport.Value.Height) {
-                int y = Display.RenderTarget == null ? Display.BackbufferSize.Y - viewport.Y - viewport.Height : viewport.Y;
+                int y = Display.RenderTarget == null && m_mainFramebuffer == 0 ? Display.BackbufferSize.Y - viewport.Y - viewport.Height : viewport.Y;
                 GL.Viewport(viewport.X, y, (uint)viewport.Width, (uint)viewport.Height);
             }
             if (!m_viewport.HasValue
@@ -588,7 +590,7 @@ namespace Engine.Graphics {
                     return;
                 }
             }
-            if (Display.RenderTarget == null) {
+            if (Display.RenderTarget == null && m_mainFramebuffer == 0) {
                 scissorRectangle.Top = Display.BackbufferSize.Y - scissorRectangle.Top - scissorRectangle.Height;
             }
             GL.Scissor(scissorRectangle.Left, scissorRectangle.Top, (uint)scissorRectangle.Width, (uint)scissorRectangle.Height);

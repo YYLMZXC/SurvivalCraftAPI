@@ -29,7 +29,10 @@ namespace Game {
 
         public static Vector2 WalkingVelocity => _backend?.WalkingVelocity ?? default;
 
-        public static void Initialize() => _backend?.Initialize();
+        public static void Initialize() {
+            Window.Closed += Shutdown;
+            _backend?.Initialize();
+        }
 
         public static void StartVr() => _backend?.StartVr();
 
@@ -68,6 +71,17 @@ namespace Game {
         public static void EndFrame() => _backend?.EndFrame();
 
         public static void Update() => _backend?.Update();
+
+        public static void Shutdown() {
+            if (_backend == null) return;
+            try {
+                _backend.Dispose();
+            }
+            catch (Exception ex) {
+                Log.Error($"VR shutdown error: {ex}");
+            }
+            _backend = null;
+        }
 
         public static int SwapchainWidth => _backend?.SwapchainWidth ?? 0;
 

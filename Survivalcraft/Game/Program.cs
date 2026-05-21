@@ -209,7 +209,7 @@ namespace Game {
                     return;
                 }
                 int origMainFbo = GLWrapper.m_mainFramebuffer;
-                Display.VrViewportOverride = new Point2(VrManager.SwapchainWidth, VrManager.SwapchainHeight);
+                Display.BackbufferSizeOverride = new Point2(VrManager.SwapchainWidth, VrManager.SwapchainHeight);
                 try {
                     for (int eye = 0; eye < 2; eye++) {
                         VrEye vrEye = (VrEye)eye;
@@ -219,9 +219,9 @@ namespace Game {
                         Camera.StaticVrCameraPosition = eyeFrame.CameraPosition;
                         GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
                         GLWrapper.BindFramebuffer(eyeFrame.Fbo);
-                        // TODO VR: Viewport/Scissor 用 raw GL 因 ApplyViewportScissor 有 Y-flip 逻辑对 FBO 不适用
-                        GLWrapper.GL.Viewport(0, 0, (uint)VrManager.SwapchainWidth, (uint)VrManager.SwapchainHeight);
-                        GLWrapper.GL.Scissor(0, 0, (uint)VrManager.SwapchainWidth, (uint)VrManager.SwapchainHeight);
+                        var vrViewport = new Viewport(0, 0, VrManager.SwapchainWidth, VrManager.SwapchainHeight);
+                        var vrScissor = new Rectangle(0, 0, VrManager.SwapchainWidth, VrManager.SwapchainHeight);
+                        GLWrapper.ApplyViewportScissor(vrViewport, vrScissor, true);
                         GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
                         GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
                         Window.RaiseFrame();
@@ -234,11 +234,9 @@ namespace Game {
                     Camera.StaticVrEye = null;
                     Camera.StaticVrViewMatrix = null;
                     Camera.StaticVrCameraPosition = null;
-                    Display.VrViewportOverride = null;
+                    Display.BackbufferSizeOverride = null;
                     GLWrapper.m_mainFramebuffer = origMainFbo;
                     GLWrapper.BindFramebuffer(0);
-                    GLWrapper.m_viewport = null;
-                    GLWrapper.m_scissorRectangle = null;
                 }
             };
         }

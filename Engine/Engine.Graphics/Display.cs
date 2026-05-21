@@ -46,7 +46,7 @@ namespace Engine.Graphics {
             }
         }
 
-        public static Point2? VrViewportOverride;
+        public static Point2? BackbufferSizeOverride;
 
         public static RenderTarget2D RenderTarget {
             get => m_renderTarget;
@@ -57,7 +57,7 @@ namespace Engine.Graphics {
                     ScissorRectangle = new Rectangle(0, 0, value.Width, value.Height);
                 }
                 else {
-                    Point2 size = VrViewportOverride ?? BackbufferSize;
+                    Point2 size = BackbufferSizeOverride ?? BackbufferSize;
                     Viewport = new Viewport(0, 0, size.X, size.Y);
                     ScissorRectangle = new Rectangle(0, 0, size.X, size.Y);
                 }

@@ -98,7 +98,6 @@ namespace Engine.Graphics {
             // Raw GL 调用绕过了 GLWrapper 缓存，必须使缓存失效
             GLWrapper.m_framebuffer = -1;
             GLWrapper.BindFramebuffer(GLWrapper.m_mainFramebuffer);
-            GLWrapper.m_viewport = null;
         }
 
         public override void HandleDeviceLost() {

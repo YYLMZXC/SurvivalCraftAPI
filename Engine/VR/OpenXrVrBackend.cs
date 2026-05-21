@@ -1,4 +1,4 @@
-using System;
+#if WINDOWS || ANDROID
 using System.Runtime.InteropServices;
 using Engine.Graphics;
 using Silk.NET.OpenGLES;
@@ -976,3 +976,4 @@ namespace Engine {
         }
     }
 }
+#endif

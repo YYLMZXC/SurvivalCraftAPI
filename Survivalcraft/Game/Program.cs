@@ -162,102 +162,24 @@ namespace Game {
                 InputMethod.Initialize(Process.GetCurrentProcess().MainWindowHandle);
                 InputMethod.Enabled = false;
                 try {
-                    var vrBackend = new Engine.VR.WindowsOpenXrVrBackend();
-                    VrManager.SetBackend(vrBackend);
+                    VrManager.SetBackend(new Engine.VR.WindowsOpenXrVrBackend());
                     VrManager.Initialize();
                 }
                 catch (Exception ex) {
                     Log.Error($"VR init error: {ex}");
                 }
-                Window.VrCheck = () => VrManager.IsVrStarted;
-                Window.VrFrameLoop = () => {
-                    if (!VrManager.BeginFrame()) {
-                        Window.RaiseFrame();
-                        return;
-                    }
-                    int origMainFbo = GLWrapper.m_mainFramebuffer;
-                    Display.VrViewportOverride = new Point2(VrManager.SwapchainWidth, VrManager.SwapchainHeight);
-                    try {
-                        for (int eye = 0; eye < 2; eye++) {
-                            VrEye vrEye = (VrEye)eye;
-                            EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
-                            Camera.StaticVrEye = vrEye;
-                            Camera.StaticVrViewMatrix = eyeFrame.ViewMatrix;
-                            Camera.StaticVrCameraPosition = eyeFrame.CameraPosition;
-                            GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
-                            GLWrapper.BindFramebuffer(eyeFrame.Fbo);
-                            // TODO VR: Viewport/Scissor 用 raw GL 因 ApplyViewportScissor 有 Y-flip 逻辑对 FBO 不适用
-                            GLWrapper.GL.Viewport(0, 0, (uint)VrManager.SwapchainWidth, (uint)VrManager.SwapchainHeight);
-                            GLWrapper.GL.Scissor(0, 0, (uint)VrManager.SwapchainWidth, (uint)VrManager.SwapchainHeight);
-                            GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
-                            GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-                            Window.RaiseFrame();
-                            VrManager.ReleaseEye(vrEye);
-                        }
-                        VrManager.EndFrame();
-                        VrManager.Update();
-                    }
-                    finally {
-                        Camera.StaticVrEye = null;
-                        Camera.StaticVrViewMatrix = null;
-                        Camera.StaticVrCameraPosition = null;
-                        Display.VrViewportOverride = null;
-                        GLWrapper.m_mainFramebuffer = origMainFbo;
-                        GLWrapper.BindFramebuffer(0);
-                        GLWrapper.m_viewport = null;
-                        GLWrapper.m_scissorRectangle = null;
-                    }
-                };
+                SetupVrFrameLoop();
             };
 #elif ANDROID
             Window.Created += () => {
                 try {
-                    var vrBackend = new Engine.VR.AndroidOpenXrVrBackend();
-                    VrManager.SetBackend(vrBackend);
+                    VrManager.SetBackend(new Engine.VR.AndroidOpenXrVrBackend());
                     VrManager.Initialize();
                 }
                 catch (Exception ex) {
                     Log.Error($"VR init error: {ex}");
                 }
-                Window.VrCheck = () => VrManager.IsVrStarted;
-                Window.VrFrameLoop = () => {
-                    if (!VrManager.BeginFrame()) {
-                        Window.RaiseFrame();
-                        return;
-                    }
-                    int origMainFbo = GLWrapper.m_mainFramebuffer;
-                    Display.VrViewportOverride = new Point2(VrManager.SwapchainWidth, VrManager.SwapchainHeight);
-                    try {
-                        for (int eye = 0; eye < 2; eye++) {
-                            VrEye vrEye = (VrEye)eye;
-                            EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
-                            Camera.StaticVrEye = vrEye;
-                            Camera.StaticVrViewMatrix = eyeFrame.ViewMatrix;
-                            Camera.StaticVrCameraPosition = eyeFrame.CameraPosition;
-                            GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
-                            GLWrapper.BindFramebuffer(eyeFrame.Fbo);
-                            // TODO VR: Viewport/Scissor 用 raw GL 因 ApplyViewportScissor 有 Y-flip 逻辑对 FBO 不适用
-                            GLWrapper.GL.Viewport(0, 0, (uint)VrManager.SwapchainWidth, (uint)VrManager.SwapchainHeight);
-                            GLWrapper.GL.Scissor(0, 0, (uint)VrManager.SwapchainWidth, (uint)VrManager.SwapchainHeight);
-                            GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
-                            GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-                            Window.RaiseFrame();
-                            VrManager.ReleaseEye(vrEye);
-                        }
-                        VrManager.EndFrame();
-                        VrManager.Update();
-                    }
-                    finally {
-                        Camera.StaticVrEye = null;
-                        Camera.StaticVrViewMatrix = null;
-                        Camera.StaticVrCameraPosition = null;
-                        Display.VrViewportOverride = null;
-                        GLWrapper.m_mainFramebuffer = origMainFbo;
-                        GLWrapper.BindFramebuffer(0);
-                        GLWrapper.m_viewport = null;
-                        GLWrapper.m_scissorRectangle = null;
-                    }
-                };
+                SetupVrFrameLoop();
             };
 #endif
             EntryPoint();
@@ -278,6 +200,48 @@ namespace Game {
             //];
         }
 #endif // !ANDROID
+
+        public static void SetupVrFrameLoop() {
+            Window.VrCheck = () => VrManager.IsVrStarted;
+            Window.VrFrameLoop = () => {
+                if (!VrManager.BeginFrame()) {
+                    Window.RaiseFrame();
+                    return;
+                }
+                int origMainFbo = GLWrapper.m_mainFramebuffer;
+                Display.VrViewportOverride = new Point2(VrManager.SwapchainWidth, VrManager.SwapchainHeight);
+                try {
+                    for (int eye = 0; eye < 2; eye++) {
+                        VrEye vrEye = (VrEye)eye;
+                        EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
+                        Camera.StaticVrEye = vrEye;
+                        Camera.StaticVrViewMatrix = eyeFrame.ViewMatrix;
+                        Camera.StaticVrCameraPosition = eyeFrame.CameraPosition;
+                        GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
+                        GLWrapper.BindFramebuffer(eyeFrame.Fbo);
+                        // TODO VR: Viewport/Scissor 用 raw GL 因 ApplyViewportScissor 有 Y-flip 逻辑对 FBO 不适用
+                        GLWrapper.GL.Viewport(0, 0, (uint)VrManager.SwapchainWidth, (uint)VrManager.SwapchainHeight);
+                        GLWrapper.GL.Scissor(0, 0, (uint)VrManager.SwapchainWidth, (uint)VrManager.SwapchainHeight);
+                        GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
+                        GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                        Window.RaiseFrame();
+                        VrManager.ReleaseEye(vrEye);
+                    }
+                    VrManager.EndFrame();
+                    VrManager.Update();
+                }
+                finally {
+                    Camera.StaticVrEye = null;
+                    Camera.StaticVrViewMatrix = null;
+                    Camera.StaticVrCameraPosition = null;
+                    Display.VrViewportOverride = null;
+                    GLWrapper.m_mainFramebuffer = origMainFbo;
+                    GLWrapper.BindFramebuffer(0);
+                    GLWrapper.m_viewport = null;
+                    GLWrapper.m_scissorRectangle = null;
+                }
+            };
+        }
 
         [STAThread]
         public static void EntryPoint() {

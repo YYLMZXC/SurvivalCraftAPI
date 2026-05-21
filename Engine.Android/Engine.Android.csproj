@@ -3,6 +3,8 @@
     <Import Project="..\build\Android.props" />
     <ItemGroup>
         <PackageReference Include="Xamarin.AndroidX.Core" Version="1.18.0" />
+        <PackageReference Include="Silk.NET.OpenXR" Version="2.23.0" />
+        <PackageReference Include="Silk.NET.OpenXR.Extensions.KHR" Version="2.23.0" />
         <PackageReference Remove="Silk.NET.Input" />
     </ItemGroup>
     <ItemGroup>

@@ -1,4 +1,4 @@
-namespace Game {
+namespace Engine {
     public enum VrControllerButton {
         Trigger = 0,
         Grip = 1,

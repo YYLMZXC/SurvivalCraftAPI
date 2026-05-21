@@ -5,7 +5,15 @@ namespace Game {
     public abstract class Camera {
         public GameWidget GameWidget { get; set; }
 
-        public VrEye? Eye { get; set; }
+        public static VrEye? StaticVrEye;
+        public static Matrix? StaticVrViewMatrix;
+        public static Vector3? StaticVrCameraPosition;
+
+        VrEye? m_eye;
+        public VrEye? Eye {
+            get => StaticVrEye ?? m_eye;
+            set => m_eye = value;
+        }
 
         public abstract Vector3 ViewPosition { get; }
 

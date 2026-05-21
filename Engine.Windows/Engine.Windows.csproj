@@ -10,6 +10,9 @@
     <ItemGroup>
         <PackageReference Include="NativeFileDialogCore" Version="1.0.3" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="VR\*.cs" Link="VR\%(Filename).cs" />
+    </ItemGroup>
     <ItemGroup Condition="'$(UseAngle)' == 'true'">
         <Compile Include="..\Engine\Engine.Graphics\EGL.cs" Link="Engine.Graphics\EGL.cs" />
         <None Update="libEGL.dll">

@@ -7,5 +7,6 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="EngineActivity.cs"/>
+        <Compile Include="VR\*.cs" Link="VR\%(Filename).cs" />
     </ItemGroup>
 </Project>

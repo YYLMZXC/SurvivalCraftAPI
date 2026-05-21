@@ -1232,6 +1232,9 @@ namespace Engine.Graphics {
                 return;
             }
             string messageText = Marshal.PtrToStringAnsi(message, length);
+            if (messageText == "GL_INVALID_OPERATION error generated. Function glGetQueryObjectiv is deprecated and not available in preview contexts.") {
+                return;
+            }
             Console.WriteLine($"[{type.ToString().Substring(9)}] {messageText}");
             if (type == GLEnum.DebugTypeError) {
                 Debugger.Break();

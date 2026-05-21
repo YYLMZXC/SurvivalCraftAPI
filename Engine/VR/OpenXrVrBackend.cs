@@ -1,0 +1,978 @@
+using System;
+using System.Runtime.InteropServices;
+using Engine.Graphics;
+using Silk.NET.OpenGLES;
+using Silk.NET.OpenXR;
+using Silk.NET.OpenXR.Extensions.KHR;
+using XrAction = Silk.NET.OpenXR.Action;
+
+namespace Engine {
+    public abstract unsafe class OpenXrVrBackend : IVrBackend {
+        XR m_xr;
+        Instance m_instance;
+        ulong m_systemId;
+        Session m_session;
+        Space m_playSpace;
+        KhrOpenglEnable m_glExt;
+        SessionState m_sessionState;
+
+        // Swapchains
+        readonly Swapchain[] m_swapchains = new Swapchain[2];
+        uint[][] m_swapchainImages = [[], []];
+        uint[] m_swapchainFbos = [0, 0];
+        uint[] m_swapchainDepthRbs = [0, 0];
+        uint m_acquiredImageIndex;
+
+        // Frame state
+        FrameState m_frameState;
+        View[] m_views;
+        CompositionLayerProjectionView[] m_layerViews;
+
+        // Config
+        uint m_swapchainWidth;
+        uint m_swapchainHeight;
+
+        // Actions
+        ActionSet m_actionSet;
+        readonly XrAction[] m_triggerActions = new XrAction[2];
+        readonly XrAction[] m_gripActions = new XrAction[2];
+        readonly XrAction[] m_menuActions = new XrAction[2];
+        readonly XrAction[] m_stickXActions = new XrAction[2];
+        readonly XrAction[] m_stickYActions = new XrAction[2];
+        readonly XrAction[] m_poseActions = new XrAction[2];
+        readonly Space[] m_controllerSpaces = new Space[2];
+
+        // Controller state
+        ControllerState[] m_controllers = [default, default];
+        ControllerState[] m_lastControllers = [default, default];
+
+        // HMD state
+        Matrix m_hmdMatrix;
+        Matrix m_hmdMatrixInverted;
+        Vector3 m_hmdMatrixYpr;
+        Matrix m_hmdLastMatrix;
+        Matrix m_hmdLastMatrixInverted;
+        Vector3 m_hmdLastMatrixYpr;
+        Vector2 m_headMove;
+
+        const uint GL_RGBA8 = 0x8058;
+
+        // Platform abstract methods
+        protected abstract StructureType GraphicsBindingType { get; }
+        protected abstract int GetGraphicsBindingSize();
+        protected abstract void PopulateGraphicsBinding(void* bindingPtr);
+
+        struct ControllerState {
+            public bool IsConnected;
+            public Vector2 Stick;
+            public float Trigger;
+            public float LastTrigger;
+            public bool Grip;
+            public bool LastGrip;
+            public bool Menu;
+            public bool LastMenu;
+            public Matrix Matrix;
+        }
+
+        // IVrBackend properties
+        public bool IsAvailable { get; private set; }
+        public bool IsStarted { get; private set; }
+        public Matrix HmdMatrix => m_hmdMatrix;
+        public Matrix HmdMatrixInverted => m_hmdMatrixInverted;
+        public Vector3 HmdMatrixYpr => m_hmdMatrixYpr;
+        public Matrix HmdLastMatrix => m_hmdLastMatrix;
+        public Matrix HmdLastMatrixInverted => m_hmdLastMatrixInverted;
+        public Vector3 HmdLastMatrixYpr => m_hmdLastMatrixYpr;
+        public Vector2 HeadMove => m_headMove;
+        public int SwapchainWidth => (int)m_swapchainWidth;
+        public int SwapchainHeight => (int)m_swapchainHeight;
+        public RenderTarget2D VrRenderTarget => null;
+
+        static void WriteFixedString(byte* dest, string src, int maxLen) {
+            int len = Math.Min(src.Length, maxLen - 1);
+            for (int i = 0; i < len; i++) {
+                dest[i] = (byte)src[i];
+            }
+            dest[len] = 0;
+        }
+
+        static ulong MakeVersion(ushort major, ushort minor, ushort patch) =>
+            ((ulong)major << 48) | ((ulong)minor << 32) | ((ulong)patch << 16);
+
+        static float ApplyDeadZone(float value, float deadZone) =>
+            MathF.Sign(value) * MathF.Max(MathF.Abs(value) - deadZone, 0f) / MathF.Max(1f - deadZone, 0.001f);
+
+        static Vector2 ApplyDeadZone(Vector2 value, float deadZone) {
+            return new Vector2(
+                ApplyDeadZone(value.X, deadZone),
+                ApplyDeadZone(value.Y, deadZone)
+            );
+        }
+
+        public void Initialize() {
+            try {
+                DoInitialize();
+            }
+            catch (Exception e) {
+                Log.Error($"OpenXR initialization failed: {e.Message}");
+                IsAvailable = false;
+            }
+        }
+
+        void DoInitialize() {
+            m_xr = XR.GetApi();
+
+            // 1. Check extension
+            if (!m_xr.IsInstanceExtensionPresent(null, "XR_KHR_opengl_enable")) {
+                Log.Error("XR_KHR_opengl_enable extension not available");
+                return;
+            }
+
+            // 2. Create Instance
+            byte* extName = (byte*)Marshal.StringToHGlobalAnsi("XR_KHR_opengl_enable");
+            try {
+                ApplicationInfo appInfo = new() {
+                    ApplicationVersion = 1,
+                    EngineVersion = 1,
+                    ApiVersion = MakeVersion(1, 0, 0)
+                };
+                WriteFixedString(appInfo.ApplicationName, "Survivalcraft", 128);
+                WriteFixedString(appInfo.EngineName, "Survivalcraft", 128);
+
+                InstanceCreateInfo createInfo = new() {
+                    Type = StructureType.InstanceCreateInfo,
+                    ApplicationInfo = appInfo,
+                    EnabledExtensionCount = 1,
+                    EnabledExtensionNames = &extName
+                };
+
+                Result result = m_xr.CreateInstance(ref createInfo, ref m_instance);
+                if (result != Result.Success) {
+                    Log.Error($"xrCreateInstance failed: {result}");
+                    return;
+                }
+            }
+            finally {
+                Marshal.FreeHGlobal((nint)extName);
+            }
+
+            // 3. Get System
+            SystemGetInfo systemInfo = new() {
+                Type = StructureType.SystemGetInfo,
+                FormFactor = FormFactor.HeadMountedDisplay
+            };
+            {
+                Result result = m_xr.GetSystem(m_instance, ref systemInfo, ref m_systemId);
+                if (result != Result.Success) {
+                    Log.Error($"xrGetSystem failed: {result}");
+                    return;
+                }
+            }
+
+            // 4. Load OpenGL extension + check requirements
+            if (!m_xr.TryGetInstanceExtension<KhrOpenglEnable>(null, m_instance, out m_glExt)) {
+                Log.Error("Failed to load XR_KHR_opengl_enable extension");
+                return;
+            }
+
+            GraphicsRequirementsOpenGLKHR glReqs = new() {
+                Type = StructureType.GraphicsRequirementsOpenglKhr
+            };
+            {
+                Result result = m_glExt.GetOpenGlgraphicsRequirements(m_instance, m_systemId, ref glReqs);
+                if (result != Result.Success) {
+                    Log.Error($"GetOpenGLGraphicsRequirements failed: {result}");
+                    return;
+                }
+            }
+
+            // 5. Enumerate view configurations
+            ViewConfigurationView[] configViews = new ViewConfigurationView[2];
+            for (int i = 0; i < 2; i++) {
+                configViews[i] = new() { Type = StructureType.ViewConfigurationView };
+            }
+            {
+                uint viewCount = 2;
+                m_xr.EnumerateViewConfigurationView(
+                    m_instance, m_systemId,
+                    ViewConfigurationType.PrimaryStereo,
+                    viewCount, ref viewCount,
+                    ref configViews[0]);
+                m_swapchainWidth = configViews[0].RecommendedImageRectWidth;
+                m_swapchainHeight = configViews[0].RecommendedImageRectHeight;
+            }
+
+            Log.Information($"OpenXR swapchain size: {m_swapchainWidth}x{m_swapchainHeight}");
+            IsAvailable = true;
+        }
+
+        public void StartVr() {
+            if (!IsAvailable || IsStarted) return;
+
+            try {
+                DoStartVr();
+                IsStarted = true;
+                Log.Information("OpenXR VR started");
+            }
+            catch (Exception e) {
+                Log.Error($"OpenXR StartVr failed: {e.Message}");
+            }
+        }
+
+        void DoStartVr() {
+            GL gl = Graphics.GLWrapper.GL;
+
+            // 1. Create session with platform graphics binding
+            CreateSessionWithGraphicsBinding();
+
+            // 2. Create LOCAL reference space
+            ReferenceSpaceCreateInfo spaceInfo = new() {
+                Type = StructureType.ReferenceSpaceCreateInfo,
+                ReferenceSpaceType = ReferenceSpaceType.Local,
+                PoseInReferenceSpace = new() {
+                    Orientation = new() { X = 0, Y = 0, Z = 0, W = 1 },
+                    Position = new() { X = 0, Y = 0, Z = 0 }
+                }
+            };
+            {
+                Result result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
+                if (result != Result.Success) {
+                    Log.Error($"xrCreateReferenceSpace failed: {result}");
+                    return;
+                }
+            }
+
+            // 3. Create swapchains
+            for (int eye = 0; eye < 2; eye++) {
+                CreateSwapchain(eye);
+            }
+
+            // 4. Init view arrays
+            m_views = new View[2];
+            m_layerViews = new CompositionLayerProjectionView[2];
+            for (int i = 0; i < 2; i++) {
+                m_views[i] = new() { Type = StructureType.View };
+                m_layerViews[i] = new() { Type = StructureType.CompositionLayerProjectionView };
+            }
+
+            // 5. Create actions and bindings
+            CreateActions();
+
+            m_sessionState = SessionState.Idle;
+        }
+
+        void CreateSessionWithGraphicsBinding() {
+            int bindingSize = GetGraphicsBindingSize();
+            byte* bindingMem = stackalloc byte[bindingSize];
+            MemClear(bindingMem, bindingSize);
+            *(StructureType*)bindingMem = GraphicsBindingType;
+            PopulateGraphicsBinding(bindingMem);
+
+            SessionCreateInfo sessionCreateInfo = new() {
+                Type = StructureType.SessionCreateInfo,
+                Next = bindingMem,
+                SystemId = m_systemId
+            };
+
+            Result result = m_xr.CreateSession(m_instance, ref sessionCreateInfo, ref m_session);
+            if (result != Result.Success) {
+                Log.Error($"xrCreateSession failed: {result}");
+            }
+        }
+
+        static void MemClear(void* ptr, int size) {
+            byte* p = (byte*)ptr;
+            for (int i = 0; i < size; i++) {
+                p[i] = 0;
+            }
+        }
+
+        void CreateSwapchain(int eye) {
+            GL gl = Graphics.GLWrapper.GL;
+
+            SwapchainCreateInfo swapchainInfo = new() {
+                Type = StructureType.SwapchainCreateInfo,
+                UsageFlags = SwapchainUsageFlags.ColorAttachmentBit | SwapchainUsageFlags.SampledBit,
+                Format = GL_RGBA8,
+                SampleCount = 1,
+                Width = m_swapchainWidth,
+                Height = m_swapchainHeight,
+                FaceCount = 1,
+                ArraySize = 1,
+                MipCount = 1
+            };
+
+            Result result = m_xr.CreateSwapchain(m_session, ref swapchainInfo, ref m_swapchains[eye]);
+            if (result != Result.Success) {
+                Log.Error($"xrCreateSwapchain failed for eye {eye}: {result}");
+                return;
+            }
+
+            // Enumerate swapchain images
+            uint imageCount = 0;
+            m_xr.EnumerateSwapchainImages(m_swapchains[eye], 0, ref imageCount, ref *(SwapchainImageBaseHeader*)null);
+
+            SwapchainImageOpenGLKHR[] images = new SwapchainImageOpenGLKHR[imageCount];
+            for (int i = 0; i < imageCount; i++) {
+                images[i] = new() { Type = StructureType.SwapchainImageOpenglKhr };
+            }
+            fixed (SwapchainImageOpenGLKHR* pImages = images) {
+                m_xr.EnumerateSwapchainImages(m_swapchains[eye], imageCount, ref imageCount, ref *(SwapchainImageBaseHeader*)pImages);
+            }
+
+            m_swapchainImages[eye] = new uint[imageCount];
+            for (int i = 0; i < imageCount; i++) {
+                m_swapchainImages[eye][i] = images[i].Image;
+            }
+
+            // Create FBO for this eye
+            CreateFBO(eye);
+        }
+
+        void CreateFBO(int eye) {
+            GL gl = Graphics.GLWrapper.GL;
+
+            gl.GenFramebuffers(1, out uint fbo);
+            gl.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+
+            gl.GenRenderbuffers(1, out uint depthRb);
+            gl.BindRenderbuffer(RenderbufferTarget.Renderbuffer, depthRb);
+            gl.RenderbufferStorage(RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent24, m_swapchainWidth, m_swapchainHeight);
+            gl.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, depthRb);
+
+            gl.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, m_swapchainImages[eye][0], 0);
+
+            gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+
+            m_swapchainFbos[eye] = fbo;
+            m_swapchainDepthRbs[eye] = depthRb;
+        }
+
+        void CreateActions() {
+            // Create action set
+            ActionSetCreateInfo actionSetInfo = new() {
+                Type = StructureType.ActionSetCreateInfo,
+                Priority = 0
+            };
+            WriteFixedString(actionSetInfo.ActionSetName, "gameplay", 64);
+            WriteFixedString(actionSetInfo.LocalizedActionSetName, "Gameplay", 128);
+
+            Result result = m_xr.CreateActionSet(m_instance, ref actionSetInfo, ref m_actionSet);
+            if (result != Result.Success) {
+                Log.Error($"xrCreateActionSet failed: {result}");
+                return;
+            }
+
+            // Per-hand actions: trigger, grip, menu, stick, pose
+            string[] handPaths = ["left", "right"];
+            for (int hand = 0; hand < 2; hand++) {
+                // Trigger (Float)
+                CreateActionFloat($"trigger_{handPaths[hand]}", $"Trigger {handPaths[hand]}", out m_triggerActions[hand]);
+                // Grip (Float -> bool)
+                CreateActionFloat($"grip_{handPaths[hand]}", $"Grip {handPaths[hand]}", out m_gripActions[hand]);
+                // Menu (Boolean)
+                CreateActionBool($"menu_{handPaths[hand]}", $"Menu {handPaths[hand]}", out m_menuActions[hand]);
+                // Stick (two separate float actions since GetActionStateVector2f doesn't exist)
+                CreateActionFloat($"stick_x_{handPaths[hand]}", $"Stick X {handPaths[hand]}", out m_stickXActions[hand]);
+                CreateActionFloat($"stick_y_{handPaths[hand]}", $"Stick Y {handPaths[hand]}", out m_stickYActions[hand]);
+                // Pose
+                CreateActionPose($"pose_{handPaths[hand]}", $"Pose {handPaths[hand]}", out m_poseActions[hand]);
+            }
+
+            // Suggest bindings for /interaction_profiles/khr_simple_controller
+            SuggestBindings();
+
+            // Attach action set
+            SessionActionSetsAttachInfo attachInfo = new() {
+                Type = StructureType.SessionActionSetsAttachInfo,
+                CountActionSets = 1
+            };
+            fixed (ActionSet* pSet = &m_actionSet) {
+                attachInfo.ActionSets = pSet;
+                m_xr.AttachSessionActionSets(m_session, ref attachInfo);
+            }
+
+            // Create action spaces for controller poses
+            for (int hand = 0; hand < 2; hand++) {
+                ActionSpaceCreateInfo actionSpaceInfo = new() {
+                    Type = StructureType.ActionSpaceCreateInfo,
+                    Action = m_poseActions[hand],
+                    SubactionPath = 0,
+                    PoseInActionSpace = new() {
+                        Orientation = new() { X = 0, Y = 0, Z = 0, W = 1 },
+                        Position = new() { X = 0, Y = 0, Z = 0 }
+                    }
+                };
+                m_xr.CreateActionSpace(m_session, ref actionSpaceInfo, ref m_controllerSpaces[hand]);
+            }
+        }
+
+        void CreateActionFloat(string name, string localizedName, out XrAction action) {
+            ActionCreateInfo info = new() {
+                Type = StructureType.ActionCreateInfo,
+                ActionType = ActionType.FloatInput,
+                CountSubactionPaths = 0
+            };
+            WriteFixedString(info.ActionName, name, 64);
+            WriteFixedString(info.LocalizedActionName, localizedName, 128);
+            action = default;
+            m_xr.CreateAction(m_actionSet, ref info, ref action);
+        }
+
+        void CreateActionBool(string name, string localizedName, out XrAction action) {
+            ActionCreateInfo info = new() {
+                Type = StructureType.ActionCreateInfo,
+                ActionType = ActionType.BooleanInput,
+                CountSubactionPaths = 0
+            };
+            WriteFixedString(info.ActionName, name, 64);
+            WriteFixedString(info.LocalizedActionName, localizedName, 128);
+            action = default;
+            m_xr.CreateAction(m_actionSet, ref info, ref action);
+        }
+
+        void CreateActionPose(string name, string localizedName, out XrAction action) {
+            ActionCreateInfo info = new() {
+                Type = StructureType.ActionCreateInfo,
+                ActionType = ActionType.PoseInput,
+                CountSubactionPaths = 0
+            };
+            WriteFixedString(info.ActionName, name, 64);
+            WriteFixedString(info.LocalizedActionName, localizedName, 128);
+            action = default;
+            m_xr.CreateAction(m_actionSet, ref info, ref action);
+        }
+
+        void SuggestBindings() {
+            // Binding paths for khr_simple_controller
+            // Left hand
+            string[] leftPaths = [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/value",
+                "/user/hand/left/input/menu/click",
+                "/user/hand/left/input/thumbstick/x",
+                "/user/hand/left/input/thumbstick/y",
+                "/user/hand/left/input/grip/pose"
+            ];
+            // Right hand
+            string[] rightPaths = [
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/value",
+                "/user/hand/right/input/menu/click",
+                "/user/hand/right/input/thumbstick/x",
+                "/user/hand/right/input/thumbstick/y",
+                "/user/hand/right/input/grip/pose"
+            ];
+
+            int bindingCount = 12;
+            ActionSuggestedBinding[] bindings = new ActionSuggestedBinding[bindingCount];
+            XrAction[] allActions = [
+                m_triggerActions[0], m_gripActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0],
+                m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1]
+            ];
+            string[] allPaths = [.. leftPaths, .. rightPaths];
+
+            ulong[] pathHandles = new ulong[bindingCount];
+            for (int i = 0; i < bindingCount; i++) {
+                Result r = m_xr.StringToPath(m_instance, allPaths[i], ref pathHandles[i]);
+                if (r != Result.Success) {
+                    Log.Error($"xrStringToPath failed for '{allPaths[i]}': {r}");
+                    return;
+                }
+                bindings[i] = new ActionSuggestedBinding {
+                    Action = allActions[i],
+                    Binding = pathHandles[i]
+                };
+            }
+
+            // Get profile path
+            ulong profilePath = 0;
+            m_xr.StringToPath(m_instance, "/interaction_profiles/khr_simple_controller", ref profilePath);
+
+            InteractionProfileSuggestedBinding suggestedBindings = new() {
+                Type = StructureType.InteractionProfileSuggestedBinding,
+                InteractionProfile = profilePath,
+                CountSuggestedBindings = (uint)bindingCount
+            };
+            fixed (ActionSuggestedBinding* pBindings = bindings) {
+                suggestedBindings.SuggestedBindings = pBindings;
+                m_xr.SuggestInteractionProfileBinding(m_instance, in suggestedBindings);
+            }
+        }
+
+        // --- Frame loop ---
+
+        public bool BeginFrame() {
+            if (!IsStarted) return false;
+
+            PollEvents();
+
+            if (m_sessionState == SessionState.LossPending || m_sessionState == SessionState.Exiting) {
+                IsStarted = false;
+                return false;
+            }
+
+            if (m_sessionState != SessionState.Focused && m_sessionState != SessionState.Synchronized
+                && m_sessionState != SessionState.Visible) {
+                // Idle/Ready: just poll events, don't call frame functions
+                return false;
+            }
+
+            FrameWaitInfo waitInfo = new() { Type = StructureType.FrameWaitInfo };
+            m_frameState = new() { Type = StructureType.FrameState };
+            Result result = m_xr.WaitFrame(m_session, ref waitInfo, ref m_frameState);
+            if (result != Result.Success) return false;
+
+            FrameBeginInfo beginInfo = new() { Type = StructureType.FrameBeginInfo };
+            m_xr.BeginFrame(m_session, ref beginInfo);
+
+            if (m_frameState.ShouldRender == 0) return true;
+
+            // Locate views
+            ViewLocateInfo viewLocateInfo = new() {
+                Type = StructureType.ViewLocateInfo,
+                ViewConfigurationType = ViewConfigurationType.PrimaryStereo,
+                DisplayTime = m_frameState.PredictedDisplayTime,
+                Space = m_playSpace
+            };
+
+            ViewState viewState = new() { Type = StructureType.ViewState };
+            uint viewCount = 2;
+            m_xr.LocateView(m_session, ref viewLocateInfo, ref viewState, viewCount, ref viewCount, ref m_views[0]);
+
+            // Update HMD state
+            UpdateHmdState();
+
+            // Sync actions
+            SyncActions();
+
+            // Update controller states
+            UpdateControllers();
+
+            return true;
+        }
+
+        public EyeFrame GetEyeFrame(VrEye eye) {
+            int eyeIndex = (int)eye;
+
+            SwapchainImageAcquireInfo acquireInfo = new() { Type = StructureType.SwapchainImageAcquireInfo };
+            m_xr.AcquireSwapchainImage(m_swapchains[eyeIndex], ref acquireInfo, ref m_acquiredImageIndex);
+
+            SwapchainImageWaitInfo waitInfo = new() {
+                Type = StructureType.SwapchainImageWaitInfo,
+                Timeout = 1000000000
+            };
+            m_xr.WaitSwapchainImage(m_swapchains[eyeIndex], ref waitInfo);
+
+            // Re-attach the acquired texture to the FBO
+            GL gl = Graphics.GLWrapper.GL;
+            uint texture = m_swapchainImages[eyeIndex][m_acquiredImageIndex];
+            gl.BindFramebuffer(FramebufferTarget.Framebuffer, m_swapchainFbos[eyeIndex]);
+            gl.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, texture, 0);
+
+            // Build view and projection matrices
+            Matrix viewMatrix = CreateViewMatrix(m_views[eyeIndex].Pose);
+            Matrix projMatrix = CreateProjectionMatrix(m_views[eyeIndex].Fov, 0.1f, 2048f);
+
+            Vector3 camPos = new(
+                m_views[eyeIndex].Pose.Position.X,
+                m_views[eyeIndex].Pose.Position.Y,
+                m_views[eyeIndex].Pose.Position.Z
+            );
+
+            return new EyeFrame {
+                Fbo = (int)m_swapchainFbos[eyeIndex],
+                ViewMatrix = viewMatrix,
+                ProjectionMatrix = projMatrix,
+                CameraPosition = camPos
+            };
+        }
+
+        public void ReleaseEye(VrEye eye) {
+            SwapchainImageReleaseInfo releaseInfo = new() { Type = StructureType.SwapchainImageReleaseInfo };
+            m_xr.ReleaseSwapchainImage(m_swapchains[(int)eye], ref releaseInfo);
+        }
+
+        public void EndFrame() {
+            if (!IsStarted) return;
+
+            if (m_frameState.ShouldRender != 0) {
+                for (int i = 0; i < 2; i++) {
+                    m_layerViews[i].Pose = m_views[i].Pose;
+                    m_layerViews[i].Fov = m_views[i].Fov;
+                    m_layerViews[i].SubImage = new() {
+                        Swapchain = m_swapchains[i],
+                        ImageRect = new() {
+                            Offset = new() { X = 0, Y = 0 },
+                            Extent = new() { Width = (int)m_swapchainWidth, Height = (int)m_swapchainHeight }
+                        },
+                        ImageArrayIndex = 0
+                    };
+                }
+
+                CompositionLayerProjection layer = new() {
+                    Type = StructureType.CompositionLayerProjection,
+                    Space = m_playSpace,
+                    ViewCount = 2
+                };
+
+                // fixed block must cover EndFrame call to prevent GC moving managed arrays
+                fixed (CompositionLayerProjectionView* pViews = m_layerViews) {
+                    layer.Views = pViews;
+                    CompositionLayerBaseHeader* pLayer = (CompositionLayerBaseHeader*)&layer;
+                    FrameEndInfo endInfo = new() {
+                        Type = StructureType.FrameEndInfo,
+                        DisplayTime = m_frameState.PredictedDisplayTime,
+                        EnvironmentBlendMode = EnvironmentBlendMode.Opaque,
+                        LayerCount = 1,
+                        Layers = &pLayer
+                    };
+                    m_xr.EndFrame(m_session, ref endInfo);
+                }
+            }
+            else {
+                FrameEndInfo endInfo = new() {
+                    Type = StructureType.FrameEndInfo,
+                    DisplayTime = m_frameState.PredictedDisplayTime,
+                    EnvironmentBlendMode = EnvironmentBlendMode.Opaque,
+                    LayerCount = 0,
+                    Layers = null
+                };
+                m_xr.EndFrame(m_session, ref endInfo);
+            }
+        }
+
+        // --- HMD state ---
+
+        void UpdateHmdState() {
+            // Save last state
+            m_hmdLastMatrix = m_hmdMatrix;
+            m_hmdLastMatrixInverted = m_hmdMatrixInverted;
+            m_hmdLastMatrixYpr = m_hmdMatrixYpr;
+
+            if (m_views == null) return;
+
+            // Mid-point between two eye positions for HMD position
+            Vector3f leftPos = m_views[0].Pose.Position;
+            Vector3f rightPos = m_views[1].Pose.Position;
+            float midX = (leftPos.X + rightPos.X) * 0.5f;
+            float midY = (leftPos.Y + rightPos.Y) * 0.5f;
+            float midZ = (leftPos.Z + rightPos.Z) * 0.5f;
+
+            // Use left eye orientation for HMD orientation
+            Quaternionf orientation = m_views[0].Pose.Orientation;
+            Quaternion q = new(orientation.X, orientation.Y, orientation.Z, orientation.W);
+            Matrix rotMatrix = q.ToMatrix();
+            Matrix transMatrix = Matrix.CreateTranslation(midX, midY, midZ);
+            m_hmdMatrix = rotMatrix * transMatrix;
+            m_hmdMatrixInverted = Matrix.Invert(m_hmdMatrix);
+
+            // Extract YPR from quaternion
+            Vector3 ypr = q.ToYawPitchRoll();
+            m_hmdMatrixYpr = new Vector3(ypr.X, ypr.Y, ypr.Z);
+
+            // Head move from difference
+            m_headMove = new Vector2(
+                m_hmdMatrix.M41 - m_hmdLastMatrix.M41,
+                m_hmdMatrix.M43 - m_hmdLastMatrix.M43
+            );
+        }
+
+        // --- Controller input ---
+
+        void SyncActions() {
+            ActiveActionSet activeActionSet = new() {
+                ActionSet = m_actionSet,
+                SubactionPath = 0
+            };
+            ActionsSyncInfo syncInfo = new() {
+                Type = StructureType.ActionsSyncInfo,
+                CountActiveActionSets = 1,
+                ActiveActionSets = &activeActionSet
+            };
+            m_xr.SyncAction(m_session, in syncInfo);
+        }
+
+        void UpdateControllers() {
+            for (int hand = 0; hand < 2; hand++) {
+                // Save last state
+                m_lastControllers[hand] = m_controllers[hand];
+
+                // Check pose action space location to determine connectivity
+                SpaceLocation location = new() { Type = StructureType.SpaceLocation };
+                Result locateResult = m_xr.LocateSpace(m_controllerSpaces[hand], m_playSpace, m_frameState.PredictedDisplayTime, ref location);
+
+                bool isConnected = locateResult == Result.Success
+                    && (location.LocationFlags & SpaceLocationFlags.PositionValidBit) != 0
+                    && (location.LocationFlags & SpaceLocationFlags.OrientationValidBit) != 0;
+
+                m_controllers[hand].IsConnected = isConnected;
+
+                if (!isConnected) continue;
+
+                // Controller matrix from pose
+                m_controllers[hand].Matrix = PoseToMatrix(location.Pose);
+
+                // Trigger
+                ActionStateFloat triggerState = GetFloatState(m_triggerActions[hand]);
+                m_controllers[hand].Trigger = triggerState.CurrentState;
+
+                // Grip (float -> bool >= 0.5)
+                ActionStateFloat gripState = GetFloatState(m_gripActions[hand]);
+                m_controllers[hand].Grip = gripState.CurrentState >= 0.5f;
+
+                // Menu
+                ActionStateBoolean menuState = GetBoolState(m_menuActions[hand]);
+                m_controllers[hand].Menu = menuState.CurrentState != 0;
+
+                // Stick (separate X/Y float actions)
+                ActionStateFloat stickXState = GetFloatState(m_stickXActions[hand]);
+                ActionStateFloat stickYState = GetFloatState(m_stickYActions[hand]);
+                m_controllers[hand].Stick = new Vector2(stickXState.CurrentState, stickYState.CurrentState);
+            }
+        }
+
+        ActionStateFloat GetFloatState(XrAction action) {
+            ActionStateGetInfo getInfo = new() {
+                Type = StructureType.ActionStateGetInfo,
+                Action = action,
+                SubactionPath = 0
+            };
+            ActionStateFloat state = new() { Type = StructureType.ActionStateFloat };
+            m_xr.GetActionStateFloat(m_session, in getInfo, ref state);
+            return state;
+        }
+
+        ActionStateBoolean GetBoolState(XrAction action) {
+            ActionStateGetInfo getInfo = new() {
+                Type = StructureType.ActionStateGetInfo,
+                Action = action,
+                SubactionPath = 0
+            };
+            ActionStateBoolean state = new() { Type = StructureType.ActionStateBoolean };
+            m_xr.GetActionStateBoolean(m_session, in getInfo, ref state);
+            return state;
+        }
+
+        // --- IVrBackend controller methods ---
+
+        public bool IsControllerPresent(VrController controller) =>
+            m_controllers[(int)controller].IsConnected;
+
+        public Matrix GetControllerMatrix(VrController controller) =>
+            m_controllers[(int)controller].Matrix;
+
+        public Vector2 GetStickPosition(VrController controller, float deadZone = 0f) {
+            Vector2 raw = m_controllers[(int)controller].Stick;
+            return deadZone > 0f ? ApplyDeadZone(raw, deadZone) : raw;
+        }
+
+        public Vector2? GetTouchpadPosition(VrController controller, float deadZone = 0f) => null;
+
+        public float GetTriggerPosition(VrController controller, float deadZone = 0f) {
+            float raw = m_controllers[(int)controller].Trigger;
+            return deadZone > 0f ? ApplyDeadZone(raw, deadZone) : raw;
+        }
+
+        public bool IsButtonDown(VrController controller, VrControllerButton button) {
+            int idx = (int)controller;
+            return button switch {
+                VrControllerButton.Trigger => m_controllers[idx].Trigger >= 0.5f,
+                VrControllerButton.Grip => m_controllers[idx].Grip,
+                VrControllerButton.Menu => m_controllers[idx].Menu,
+                _ => false
+            };
+        }
+
+        public bool IsButtonDownOnce(VrController controller, VrControllerButton button) {
+            int idx = (int)controller;
+            return button switch {
+                VrControllerButton.Trigger => m_controllers[idx].Trigger >= 0.5f && m_lastControllers[idx].Trigger < 0.5f,
+                VrControllerButton.Grip => m_controllers[idx].Grip && !m_lastControllers[idx].Grip,
+                VrControllerButton.Menu => m_controllers[idx].Menu && !m_lastControllers[idx].Menu,
+                _ => false
+            };
+        }
+
+        // --- Eye transforms ---
+
+        public Matrix GetEyeToHeadTransform(VrEye eye) {
+            if (m_views == null) return Matrix.Identity;
+            Posef pose = m_views[(int)eye].Pose;
+            return PoseToMatrix(pose);
+        }
+
+        public Matrix GetProjectionMatrix(VrEye eye, float near, float far) {
+            if (m_views == null) return Matrix.Identity;
+            return CreateProjectionMatrix(m_views[(int)eye].Fov, near, far);
+        }
+
+        // --- Update (called once per frame for edge detection) ---
+
+        public void Update() {
+            // Controller last-state is already updated in UpdateControllers
+            // via m_lastControllers copy before current state overwrite.
+        }
+
+        // --- Event handling ---
+
+        void PollEvents() {
+            EventDataBuffer eventData = new() { Type = StructureType.EventDataBuffer };
+            while (m_xr.PollEvent(m_instance, ref eventData) == Result.Success) {
+                if (eventData.Type == StructureType.EventDataSessionStateChanged) {
+                    EventDataSessionStateChanged* sessionEvent = (EventDataSessionStateChanged*)&eventData;
+                    m_sessionState = sessionEvent->State;
+                    HandleSessionStateChange();
+                }
+            }
+        }
+
+        void HandleSessionStateChange() {
+            Log.Information($"[VR] Session state: {m_sessionState}");
+            switch (m_sessionState) {
+                case SessionState.Ready:
+                    BeginSession();
+                    break;
+                case SessionState.Stopping:
+                    EndSession();
+                    break;
+                case SessionState.LossPending:
+                case SessionState.Exiting:
+                    IsStarted = false;
+                    break;
+            }
+        }
+
+        void BeginSession() {
+            SessionBeginInfo beginInfo = new() {
+                Type = StructureType.SessionBeginInfo,
+                PrimaryViewConfigurationType = ViewConfigurationType.PrimaryStereo
+            };
+            Result result = m_xr.BeginSession(m_session, ref beginInfo);
+            Log.Information($"[VR] xrBeginSession: {result}");
+            if (result == Result.Success) {
+                m_sessionState = SessionState.Synchronized;
+                Log.Information($"[VR] Session state: Synchronized (implicit)");
+            }
+        }
+
+        void EndSession() {
+            m_xr.EndSession(m_session);
+        }
+
+        // --- Matrix utilities ---
+
+        static Matrix PoseToMatrix(Posef pose) {
+            Quaternion q = new(pose.Orientation.X, pose.Orientation.Y, pose.Orientation.Z, pose.Orientation.W);
+            Matrix rotMatrix = q.ToMatrix();
+            Matrix transMatrix = Matrix.CreateTranslation(pose.Position.X, pose.Position.Y, pose.Position.Z);
+            return rotMatrix * transMatrix;
+        }
+
+        static Matrix CreateViewMatrix(Posef pose) {
+            // View matrix = inverse of camera world transform
+            Matrix world = PoseToMatrix(pose);
+            return Matrix.Invert(world);
+        }
+
+        static Matrix CreateProjectionMatrix(Fovf fov, float nearZ, float farZ) {
+            float tanLeft = MathF.Tan(fov.AngleLeft);
+            float tanRight = MathF.Tan(fov.AngleRight);
+            float tanUp = MathF.Tan(fov.AngleUp);
+            float tanDown = MathF.Tan(fov.AngleDown);
+            float tanWidth = tanRight - tanLeft;
+            float tanHeight = tanUp - tanDown;
+
+            // OpenGL convention: clip Z = [-1, 1]
+            float m00 = 2.0f / tanWidth;
+            float m11 = 2.0f / tanHeight;
+            float m02 = (tanRight + tanLeft) / tanWidth;
+            float m12 = (tanUp + tanDown) / tanHeight;
+            float m22 = -(farZ + nearZ) / (farZ - nearZ);
+            float m23 = -(2.0f * farZ * nearZ) / (farZ - nearZ);
+
+            return new Matrix(
+                m00, 0, 0, 0,
+                0, m11, 0, 0,
+                m02, m12, m22, -1,
+                0, 0, m23, 0
+            );
+        }
+
+        // --- WalkingVelocity (not tracked by OpenXR) ---
+
+        public Vector2 WalkingVelocity => Vector2.Zero;
+
+        // --- Lifecycle ---
+
+        public void StopVr() {
+            if (!IsStarted) return;
+
+            GL gl = Graphics.GLWrapper.GL;
+
+            // Destroy controller spaces
+            for (int i = 0; i < 2; i++) {
+                if (m_controllerSpaces[i].Handle != 0) {
+                    m_xr.DestroySpace(m_controllerSpaces[i]);
+                    m_controllerSpaces[i] = default;
+                }
+            }
+
+            // Destroy actions
+            for (int hand = 0; hand < 2; hand++) {
+                if (m_triggerActions[hand].Handle != 0) m_xr.DestroyAction(m_triggerActions[hand]);
+                if (m_gripActions[hand].Handle != 0) m_xr.DestroyAction(m_gripActions[hand]);
+                if (m_menuActions[hand].Handle != 0) m_xr.DestroyAction(m_menuActions[hand]);
+                if (m_stickXActions[hand].Handle != 0) m_xr.DestroyAction(m_stickXActions[hand]);
+                if (m_stickYActions[hand].Handle != 0) m_xr.DestroyAction(m_stickYActions[hand]);
+                if (m_poseActions[hand].Handle != 0) m_xr.DestroyAction(m_poseActions[hand]);
+            }
+
+            if (m_actionSet.Handle != 0) {
+                m_xr.DestroyActionSet(m_actionSet);
+                m_actionSet = default;
+            }
+
+            // Destroy swapchains, FBOs, depth renderbuffers
+            for (int i = 0; i < 2; i++) {
+                if (m_swapchains[i].Handle != 0) {
+                    m_xr.DestroySwapchain(m_swapchains[i]);
+                    m_swapchains[i] = default;
+                }
+                if (m_swapchainFbos[i] != 0) {
+                    gl.DeleteFramebuffer(m_swapchainFbos[i]);
+                    m_swapchainFbos[i] = 0;
+                }
+                if (m_swapchainDepthRbs[i] != 0) {
+                    gl.DeleteRenderbuffer(m_swapchainDepthRbs[i]);
+                    m_swapchainDepthRbs[i] = 0;
+                }
+            }
+
+            if (m_playSpace.Handle != 0) {
+                m_xr.DestroySpace(m_playSpace);
+                m_playSpace = default;
+            }
+            if (m_session.Handle != 0) {
+                m_xr.DestroySession(m_session);
+                m_session = default;
+            }
+
+            IsStarted = false;
+        }
+
+        public void Dispose() {
+            StopVr();
+
+            if (m_instance.Handle != 0) {
+                m_xr.DestroyInstance(m_instance);
+                m_instance = default;
+            }
+            m_glExt?.Dispose();
+            m_xr?.Dispose();
+
+            IsAvailable = false;
+            GC.SuppressFinalize(this);
+        }
+    }
+}

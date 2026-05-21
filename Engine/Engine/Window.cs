@@ -394,6 +394,10 @@ namespace Engine {
 
         public static event Action Frame;
 
+        public static Func<bool> VrCheck { get; set; }
+
+        public static Action VrFrameLoop { get; set; }
+
         public static event Action<UnhandledExceptionInfo> UnhandledException;
 
         public static event Action<Uri> HandleUri;
@@ -534,6 +538,10 @@ namespace Engine {
             m_restarting = true;
         }
 
+        public static void RaiseFrame() {
+            Frame?.Invoke();
+        }
+
         static void LoadHandler() {
             InitializeAll();
             SubscribeToEvents();
@@ -621,16 +629,26 @@ namespace Engine {
 
         static void RenderFrameHandler(double lastRenderDelta) {
             m_lastRenderDelta = (float)lastRenderDelta;
-            BeforeFrameAll();
-            Frame?.Invoke();
-            AfterFrameAll();
+
+            if (VrCheck != null && VrCheck()) {
+                BeforeFrameAll();
+                VrFrameLoop?.Invoke();
+                AfterFrameAll();
+            }
+            else {
+                BeforeFrameAll();
+                Frame?.Invoke();
+                AfterFrameAll();
+            }
 
             if (!m_closing) {
+                if (VrCheck == null || !VrCheck()) {
 #if ANGLE
-                Egl.SwapBuffers(GLWrapper.m_eglDisplay, GLWrapper.m_eglSurface);
+                    Egl.SwapBuffers(GLWrapper.m_eglDisplay, GLWrapper.m_eglSurface);
 #elif !BROWSER
-                m_view.SwapBuffers();
+                    m_view.SwapBuffers();
 #endif
+                }
             }
             else if(!m_closingRequested){
                 m_closingRequested = true;

@@ -18,7 +18,9 @@ namespace Game {
             m_brightnessSlider = Children.Find<SliderWidget>("BrightnessSlider");
             m_viewAngleSlider = Children.Find<SliderWidget>("ViewAngleSlider");
             m_vrPanel = Children.Find<ContainerWidget>("VrPanel");
+#if !WINDOWS && !ANDROID
             m_vrPanel.IsVisible = false;
+#endif
         }
 
         public override void Update() {
@@ -28,7 +30,11 @@ namespace Game {
             if (m_viewAngleSlider.IsSliding) {
                 SettingsManager.ViewAngle = m_viewAngleSlider.Value;
             }
-            m_virtualRealityButton.IsEnabled = false;
+            m_virtualRealityButton.IsEnabled = VrManager.IsVrAvailable;
+            if (m_virtualRealityButton.IsClicked) {
+                SettingsManager.UseVr = !SettingsManager.UseVr;
+            }
+            m_virtualRealityButton.IsChecked = SettingsManager.UseVr;
             m_virtualRealityButton.Text = SettingsManager.UseVr ? "Enabled" : "Disabled";
             m_brightnessSlider.Value = SettingsManager.Brightness;
             m_brightnessSlider.Text = MathF.Round(SettingsManager.Brightness * 10f).ToString(CultureInfo.InvariantCulture);

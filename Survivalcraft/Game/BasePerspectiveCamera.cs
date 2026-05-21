@@ -31,7 +31,14 @@ namespace Game {
 
         public bool m_viewFrustumValid;
 
-        public override Vector3 ViewPosition => m_viewPosition;
+        public Matrix? m_vrViewOverride;
+
+        public Vector3? m_vrCameraPositionOverride;
+
+        public override Vector3 ViewPosition =>
+            m_vrCameraPositionOverride ?? (Camera.StaticVrCameraPosition.HasValue
+                ? m_viewPosition + Camera.StaticVrCameraPosition.Value
+                : m_viewPosition);
 
         public override Vector3 ViewDirection => m_viewDirection;
 
@@ -42,6 +49,12 @@ namespace Game {
         public override Matrix ViewMatrix //视图矩阵，包含观测的位置，方向，垂直Y方向
         {
             get {
+                if (m_vrViewOverride.HasValue) {
+                    return m_vrViewOverride.Value;
+                }
+                if (Camera.StaticVrViewMatrix.HasValue) {
+                    return Matrix.CreateTranslation(-m_viewPosition) * Camera.StaticVrViewMatrix.Value;
+                }
                 if (!m_viewMatrix.HasValue) {
                     m_viewMatrix = Matrix.CreateLookAt(m_viewPosition, m_viewPosition + m_viewDirection, m_viewUp);
                 }
@@ -63,16 +76,18 @@ namespace Game {
             get {
                 if (!m_projectionMatrix.HasValue) {
                     m_projectionMatrix = CalculateBaseProjectionMatrix();
-                    ViewWidget viewWidget = GameWidget.ViewWidget;
-                    if (!viewWidget.ScalingRenderTargetSize.HasValue) {
-                        m_projectionMatrix *= MatrixUtils.CreateScaleTranslation(
-                                0.5f * viewWidget.ActualSize.X,
-                                -0.5f * viewWidget.ActualSize.Y,
-                                viewWidget.ActualSize.X / 2f,
-                                viewWidget.ActualSize.Y / 2f
-                            )
-                            * viewWidget.GlobalTransform
-                            * MatrixUtils.CreateScaleTranslation(2f / Display.Viewport.Width, -2f / Display.Viewport.Height, -1f, 1f);
+                    if (!Camera.StaticVrEye.HasValue) {
+                        ViewWidget viewWidget = GameWidget.ViewWidget;
+                        if (!viewWidget.ScalingRenderTargetSize.HasValue) {
+                            m_projectionMatrix *= MatrixUtils.CreateScaleTranslation(
+                                    0.5f * viewWidget.ActualSize.X,
+                                    -0.5f * viewWidget.ActualSize.Y,
+                                    viewWidget.ActualSize.X / 2f,
+                                    viewWidget.ActualSize.Y / 2f
+                                )
+                                * viewWidget.GlobalTransform
+                                * MatrixUtils.CreateScaleTranslation(2f / Display.Viewport.Width, -2f / Display.Viewport.Height, -1f, 1f);
+                        }
                     }
                 }
                 return m_projectionMatrix.Value;
@@ -173,7 +188,21 @@ namespace Game {
             }
         }
 
+        public void SetVrEyeOverride(VrEye eye, Matrix viewMatrix, Matrix projectionMatrix, Vector3 cameraPosition) {
+            Eye = eye;
+            m_vrViewOverride = viewMatrix;
+            m_vrCameraPositionOverride = cameraPosition;
+        }
+
+        public void ClearVrEyeOverride() {
+            Eye = null;
+            m_vrViewOverride = null;
+            m_vrCameraPositionOverride = null;
+        }
+
         public override void PrepareForDrawing() {
+            m_vrViewOverride = null;
+            m_vrCameraPositionOverride = null;
             m_viewMatrix = null;
             m_invertedViewMatrix = null;
             m_projectionMatrix = null;

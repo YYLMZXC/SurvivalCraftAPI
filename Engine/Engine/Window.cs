@@ -642,13 +642,11 @@ namespace Engine {
             }
 
             if (!m_closing) {
-                if (VrCheck == null || !VrCheck()) {
 #if ANGLE
-                    Egl.SwapBuffers(GLWrapper.m_eglDisplay, GLWrapper.m_eglSurface);
+                Egl.SwapBuffers(GLWrapper.m_eglDisplay, GLWrapper.m_eglSurface);
 #elif !BROWSER
-                    m_view.SwapBuffers();
+                m_view.SwapBuffers();
 #endif
-                }
             }
             else if(!m_closingRequested){
                 m_closingRequested = true;

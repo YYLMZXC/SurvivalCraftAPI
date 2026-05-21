@@ -211,6 +211,7 @@ namespace Game {
                 int origMainFbo = GLWrapper.m_mainFramebuffer;
                 Display.BackbufferSizeOverride = new Point2(VrManager.SwapchainWidth, VrManager.SwapchainHeight);
                 try {
+                    int leftEyeFbo = 0;
                     for (int eye = 0; eye < 2; eye++) {
                         VrEye vrEye = (VrEye)eye;
                         EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
@@ -225,7 +226,11 @@ namespace Game {
                         GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
                         GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
                         Window.RaiseFrame();
-                        VrManager.ReleaseEye(vrEye);
+                        if (eye == 0) leftEyeFbo = eyeFrame.Fbo;
+                    }
+                    BlitVrToDesktop(leftEyeFbo);
+                    for (int eye = 0; eye < 2; eye++) {
+                        VrManager.ReleaseEye((VrEye)eye);
                     }
                     VrManager.EndFrame();
                     VrManager.Update();
@@ -239,6 +244,42 @@ namespace Game {
                     GLWrapper.BindFramebuffer(0);
                 }
             };
+        }
+
+        static void BlitVrToDesktop(int vrFbo) {
+            Point2 winSize = Display.BackbufferSize;
+            int vrW = VrManager.SwapchainWidth;
+            int vrH = VrManager.SwapchainHeight;
+            float vrAspect = (float)vrW / vrH;
+            float winAspect = (float)winSize.X / winSize.Y;
+
+            int drawW, drawH, offsetX, offsetY;
+            if (winAspect > vrAspect) {
+                drawH = winSize.Y;
+                drawW = (int)(winSize.Y * vrAspect);
+                offsetX = (winSize.X - drawW) / 2;
+                offsetY = 0;
+            }
+            else {
+                drawW = winSize.X;
+                drawH = (int)(winSize.X / vrAspect);
+                offsetX = 0;
+                offsetY = (winSize.Y - drawH) / 2;
+            }
+
+            GLWrapper.m_mainFramebuffer = 0;
+            GLWrapper.BindFramebuffer(0);
+            GLWrapper.ClearColor(Vector4.Zero);
+            GLWrapper.ApplyViewportScissor(
+                new Viewport(0, 0, winSize.X, winSize.Y),
+                new Rectangle(0, 0, winSize.X, winSize.Y), true);
+            GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit);
+            GLWrapper.GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)vrFbo);
+            GLWrapper.GL.BlitFramebuffer(
+                0, 0, vrW, vrH,
+                offsetX, offsetY, offsetX + drawW, offsetY + drawH,
+                ClearBufferMask.ColorBufferBit,
+                BlitFramebufferFilter.Linear);
         }
 
         [STAThread]

@@ -162,6 +162,19 @@ namespace Game {
                 }
             );
             AddLoadAction(
+                delegate {
+                    VrManager.Initialize();
+                    if (VrManager.IsVrAvailable && SettingsManager.UseVr) {
+                        try {
+                            VrManager.StartVr();
+                        }
+                        catch (Exception ex) {
+                            Log.Error($"VR start error: {ex}");
+                        }
+                    }
+                }
+            );
+            AddLoadAction(
                 delegate { //检查所有Mod依赖项
                     //根据加载顺序排序后的结果
                     ModsManager.ModList.Clear();

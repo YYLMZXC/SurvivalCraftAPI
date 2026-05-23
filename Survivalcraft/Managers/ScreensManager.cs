@@ -111,11 +111,11 @@ namespace Game {
 
         public static void Draw() {
             Utilities.Dispose(ref m_uiRenderTarget);
-            LayoutAndDrawWidgets();
 
             if (VrManager.IsVrStarted && CurrentScreen is not GameScreen) {
                 RenderVrMenu();
             }
+            LayoutAndDrawWidgets();
         }
 
         static void RenderVrMenu() {
@@ -138,6 +138,8 @@ namespace Game {
 
             int origFbo = GLWrapper.m_mainFramebuffer;
             Point2? origOverride = Display.BackbufferSizeOverride;
+            Viewport origViewport = Display.Viewport;
+            Rectangle origScissor = Display.ScissorRectangle;
 
             try {
                 for (int eye = 0; eye < 2; eye++) {
@@ -165,6 +167,8 @@ namespace Game {
                 GLWrapper.m_mainFramebuffer = origFbo;
                 GLWrapper.BindFramebuffer(origFbo);
                 Display.BackbufferSizeOverride = origOverride;
+                Display.Viewport = origViewport;
+                Display.ScissorRectangle = origScissor;
 
                 for (int eye = 0; eye < 2; eye++) {
                     VrManager.ReleaseEye((VrEye)eye);

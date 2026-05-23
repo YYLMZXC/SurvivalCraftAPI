@@ -27,7 +27,7 @@ namespace Game {
         public bool IsControlledByVr {
             get {
                 if (VrManager.IsVrStarted) {
-                    return (m_componentPlayer.GameWidget.Input.Devices & WidgetInputDevice.VrControllers) != 0;
+                    return (m_componentPlayer.GameWidget.Input.Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None;
                 }
                 return false;
             }
@@ -48,7 +48,16 @@ namespace Game {
             SplitSourceSlotIndex = slotIndex;
         }
 
-        public virtual Ray3? CalculateVrHandRay() => null;
+        public virtual Ray3? CalculateVrHandRay() {
+            if (VrManager.IsControllerPresent(VrController.Right)) {
+                Camera activeCamera = m_componentPlayer.GameWidget.ActiveCamera;
+                Matrix matrix = VrManager.HmdMatrixInverted
+                    * Matrix.CreateWorld(activeCamera.ViewPosition, activeCamera.ViewDirection, activeCamera.ViewUp);
+                Matrix matrix2 = VrManager.GetControllerMatrix(VrController.Right) * matrix;
+                return new Ray3(matrix2.Translation + matrix2.Forward * 0.078125f, matrix2.Forward);
+            }
+            return null;
+        }
 
         public virtual void Update(float dt) {
             m_playerInput = default;

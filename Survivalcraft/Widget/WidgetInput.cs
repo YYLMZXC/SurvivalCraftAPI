@@ -679,6 +679,9 @@ namespace Game {
                 if ((Devices & WidgetInputDevice.Gamepads) != 0) {
                     UpdateInputFromGamepads();
                 }
+                if ((Devices & WidgetInputDevice.VrControllers) != 0 && VrManager.IsVrStarted) {
+                    UpdateInputFromVrControllers();
+                }
                 if ((Devices & WidgetInputDevice.Touch) != 0) {
                     UpdateInputFromTouch();
                 }
@@ -714,6 +717,10 @@ namespace Game {
                 int count2 = texturedBatch2D2.TriangleVertices.Count;
                 texturedBatch2D2.QueueQuad(corner3, corner4, 0f, Vector2.Zero, Vector2.One, Color.White);
                 texturedBatch2D2.TransformTriangles(Widget.GlobalTransform, count2);
+            }
+            if (VrCursorPosition.HasValue) {
+                dc.CursorPrimitivesRenderer2D.FlatBatch(0, null, null, null).QueueDisc(
+                    VrCursorPosition.Value, new Vector2(10f, 10f), 0f, Color.White);
             }
         }
 
@@ -959,6 +966,103 @@ namespace Game {
                     m_touchCleared = false;
                     m_touchDragInProgress = false;
                     m_touchHoldInProgress = false;
+                }
+            }
+        }
+
+        public virtual void UpdateInputFromVrControllers() {
+            VrCursorPosition = null;
+            if (VrQuadMatrix.HasValue) {
+                Matrix quadMatrix = VrQuadMatrix.Value;
+                Matrix controllerMatrix = VrManager.GetControllerMatrix(VrController.Right);
+                Plane plane = new(quadMatrix.Translation, quadMatrix.Translation + quadMatrix.Right, quadMatrix.Translation + quadMatrix.Up);
+                Ray3 ray = new(controllerMatrix.Translation, controllerMatrix.Forward);
+                float? intersection = ray.Intersection(plane);
+                if (intersection.HasValue) {
+                    Vector3 vector = ray.Position + intersection.Value * ray.Direction - quadMatrix.Translation;
+                    float x = Vector3.Dot(vector, Vector3.Normalize(quadMatrix.Right)) / quadMatrix.Right.Length() * Widget.ActualSize.X;
+                    float y = (1f - Vector3.Dot(vector, Vector3.Normalize(quadMatrix.Up)) / quadMatrix.Up.Length()) * Widget.ActualSize.Y;
+                    VrCursorPosition = Vector2.Transform(new Vector2(x, y), Widget.GlobalTransform);
+                }
+            }
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadLeft)) {
+                Left = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadRight)) {
+                Right = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadUp)) {
+                Up = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadDown)) {
+                Down = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadLeft)) {
+                Left = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadRight)) {
+                Right = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadUp)) {
+                Up = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadDown)) {
+                Down = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.Grip)) {
+                Back = true;
+                Cancel = true;
+            }
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.Touchpad)
+                || IsVrButtonDownOnce(VrController.Left, VrControllerButton.Trigger)
+                || IsVrButtonDownOnce(VrController.Right, VrControllerButton.Touchpad)
+                || IsVrButtonDownOnce(VrController.Right, VrControllerButton.Trigger)) {
+                Any = true;
+            }
+            if (IsVrCursorVisible && VrCursorPosition.HasValue) {
+                if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadUp)) {
+                    Scroll = new Vector3(VrCursorPosition.Value, 1f);
+                }
+                if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadDown)) {
+                    Scroll = new Vector3(VrCursorPosition.Value, -1f);
+                }
+                if (IsVrButtonDown(VrController.Right, VrControllerButton.Trigger)) {
+                    Press = VrCursorPosition.Value;
+                }
+                if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.Trigger)) {
+                    Ok = true;
+                    Tap = VrCursorPosition.Value;
+                    m_vrDownPoint = VrCursorPosition.Value;
+                    m_vrDragTime = Time.FrameStartTime;
+                }
+                if (!IsVrButtonDown(VrController.Right, VrControllerButton.Trigger)
+                    && m_vrDownPoint.HasValue) {
+                    if (GetVrTriggerPosition(VrController.Left, 0f) > 0.5f) {
+                        SpecialClick = new Segment2(m_vrDownPoint.Value, VrCursorPosition.Value);
+                    }
+                    else {
+                        Click = new Segment2(m_vrDownPoint.Value, VrCursorPosition.Value);
+                    }
+                }
+            }
+            if (!IsVrButtonDown(VrController.Right, VrControllerButton.Trigger)) {
+                m_vrDragInProgress = false;
+                m_vrDownPoint = null;
+            }
+            if (m_vrDragInProgress && VrCursorPosition.HasValue) {
+                Drag = VrCursorPosition;
+                return;
+            }
+            if (IsVrButtonDown(VrController.Right, VrControllerButton.Trigger) && m_vrDownPoint.HasValue && VrCursorPosition.HasValue) {
+                if (Vector2.Distance(m_vrDownPoint.Value, VrCursorPosition.Value) > SettingsManager.MinimumDragDistance * Widget.GlobalScale) {
+                    m_vrDragInProgress = true;
+                    Drag = m_vrDownPoint.Value;
+                    DragMode = DragMode.AllItems;
+                    return;
+                }
+                if (Time.FrameStartTime - m_vrDragTime > SettingsManager.MinimumHoldDuration) {
+                    Hold = m_vrDownPoint.Value;
+                    HoldTime = (float)(Time.FrameStartTime - m_vrDragTime);
                 }
             }
         }

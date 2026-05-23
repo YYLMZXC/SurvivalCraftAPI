@@ -163,23 +163,19 @@ namespace Game {
                 InputMethod.Enabled = false;
                 try {
                     VrManager.SetBackend(new Engine.VR.WindowsOpenXrVrBackend());
-                    VrManager.Initialize();
                 }
                 catch (Exception ex) {
                     Log.Error($"VR init error: {ex}");
                 }
-                SetupVrFrameLoop();
             };
 #elif ANDROID
             Window.Created += () => {
                 try {
                     VrManager.SetBackend(new Engine.VR.AndroidOpenXrVrBackend());
-                    VrManager.Initialize();
                 }
                 catch (Exception ex) {
                     Log.Error($"VR init error: {ex}");
                 }
-                SetupVrFrameLoop();
             };
 #endif
             EntryPoint();
@@ -200,23 +196,6 @@ namespace Game {
             //];
         }
 #endif // !ANDROID
-
-        public static void SetupVrFrameLoop() {
-            Window.VrCheck = () => VrManager.IsVrStarted;
-            Window.VrFrameLoop = () => {
-                if (!VrManager.BeginFrame()) {
-                    Window.RaiseFrame();
-                    return;
-                }
-                try {
-                    Window.RaiseFrame();
-                }
-                finally {
-                    VrManager.EndFrame();
-                    VrManager.Update();
-                }
-            };
-        }
 
         public static void DisableVrCameras() {
             if (GameManager.Project == null) return;
@@ -294,14 +273,6 @@ namespace Game {
             );
             try {
                 SettingsManager.Initialize();
-                if (VrManager.IsVrAvailable && SettingsManager.UseVr) {
-                    try {
-                        VrManager.StartVr();
-                    }
-                    catch (Exception ex) {
-                        Log.Error($"VR start error: {ex}");
-                    }
-                }
                 ExternalContentManager.Initialize();
                 MusicManager.Initialize();
                 ScreensManager.Initialize();
@@ -317,6 +288,7 @@ namespace Game {
             LastFrameTime = (float)(Time.RealTime - m_frameBeginTime);
             LastCpuFrameTime = (float)(m_cpuEndTime - m_frameBeginTime);
             m_frameBeginTime = Time.RealTime;
+            bool vrFrame = VrManager.IsVrStarted && VrManager.BeginFrame();
 #if !MOBILE && !BROWSER
             if (Keyboard.IsKeyDownOnce(Key.F11)) {
                 SettingsManager.WindowMode = SettingsManager.WindowMode == WindowMode.Fullscreen ? WindowMode.Resizable : WindowMode.Fullscreen;
@@ -393,6 +365,10 @@ namespace Game {
                     BrowserInterop.FirstFramePrepared();
                 }
 #endif
+                if (vrFrame) {
+                    VrManager.EndFrame();
+                    VrManager.Update();
+                }
             }
         }
 

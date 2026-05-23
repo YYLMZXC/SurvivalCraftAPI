@@ -51,7 +51,8 @@ namespace Game {
             WidgetInputDevice.GamePad1,
             WidgetInputDevice.GamePad2,
             WidgetInputDevice.GamePad3,
-            WidgetInputDevice.GamePad4
+            WidgetInputDevice.GamePad4,
+            WidgetInputDevice.VrControllers
         ];
 
         public static ReadOnlyList<WidgetInputDevice> AllInputDevices => new(m_allInputDevices);
@@ -263,6 +264,8 @@ namespace Game {
                 case WidgetInputDevice.GamePad4:
                     return LanguageControl.Get(fName, 8)
                         + (GamePad.IsConnected(3) ? "" : LanguageControl.Get(fName, 9));
+                case WidgetInputDevice.VrControllers:
+                    return "Virtual Reality" + (VrManager.IsVrAvailable ? "" : " (not found)");
                 default: return LanguageControl.Get(fName, 10);
             }
         }

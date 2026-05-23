@@ -32,7 +32,14 @@ namespace Game {
             }
             m_virtualRealityButton.IsEnabled = VrManager.IsVrAvailable;
             if (m_virtualRealityButton.IsClicked) {
-                SettingsManager.UseVr = !SettingsManager.UseVr;
+                if (SettingsManager.UseVr) {
+                    SettingsManager.UseVr = false;
+                    VrManager.StopVr();
+                }
+                else {
+                    SettingsManager.UseVr = true;
+                    VrManager.StartVr();
+                }
             }
             m_virtualRealityButton.IsChecked = SettingsManager.UseVr;
             m_virtualRealityButton.Text = SettingsManager.UseVr ? "Enabled" : "Disabled";

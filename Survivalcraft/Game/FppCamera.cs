@@ -25,10 +25,12 @@ namespace Game {
             Vector3 translation = VrManager.HmdMatrix.Translation;
             Vector3 position = GameWidget.Target.ComponentBody.Position;
             float num = position.Y + MathUtils.Clamp(translation.Y, 0.2f, GameWidget.Target.ComponentBody.BoxSize.Y - 0.1f);
+            Vector3 hmdMatrixYpr = VrManager.HmdMatrixYpr;
             Vector3 vector = GameWidget.Target.ComponentCreatureModel.EyeRotation.ToYawPitchRoll();
+            float num2 = vector.X - hmdMatrixYpr.X;
             Matrix identity = Matrix.Identity;
             identity.Translation = new Vector3(position.X, num, position.Z);
-            identity.OrientationMatrix = VrManager.HmdMatrix * Matrix.CreateRotationY(vector.X);
+            identity.OrientationMatrix = VrManager.HmdMatrix * Matrix.CreateRotationY(num2);
             SetupPerspectiveCamera(identity.Translation, identity.Forward, identity.Up);
         }
     }

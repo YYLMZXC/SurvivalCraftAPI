@@ -75,6 +75,7 @@ namespace Game {
         public static void Shutdown() {
             if (_backend == null) return;
             try {
+                Program.DisableVrCameras();
                 _backend.Dispose();
             }
             catch (Exception ex) {

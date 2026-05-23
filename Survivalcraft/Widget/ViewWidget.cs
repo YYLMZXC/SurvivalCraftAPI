@@ -1,5 +1,6 @@
 using Engine;
 using Engine.Graphics;
+using Silk.NET.OpenGLES;
 
 namespace Game {
     public class ViewWidget : TouchInputWidget, IDragTargetWidget {
@@ -119,6 +120,10 @@ namespace Game {
         }
 
         public virtual void DrawToScreen(DrawContext dc) {
+            if (GameWidget.ActiveCamera is VrGameCamera vrCamera) {
+                DrawToScreenVr(vrCamera);
+                return;
+            }
             GameWidget.ActiveCamera.PrepareForDrawing();
             RenderTarget2D renderTarget = Display.RenderTarget;
             SetupScalingRenderTarget();
@@ -136,6 +141,96 @@ namespace Game {
                     return false;
                 }
             );
+        }
+
+        void DrawToScreenVr(VrGameCamera vrCamera) {
+            int vrW = VrManager.SwapchainWidth;
+            int vrH = VrManager.SwapchainHeight;
+            int leftEyeFbo = 0;
+            int origFbo = GLWrapper.m_mainFramebuffer;
+            Point2? origOverride = Display.BackbufferSizeOverride;
+            RenderTarget2D origRenderTarget = Display.RenderTarget;
+
+            try {
+                for (int eye = 0; eye < 2; eye++) {
+                    VrEye vrEye = (VrEye)eye;
+                    EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
+                    vrCamera.SetEye(vrEye, eyeFrame);
+
+                    Display.BackbufferSizeOverride = new Point2(vrW, vrH);
+                    GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
+                    GLWrapper.BindFramebuffer(eyeFrame.Fbo);
+                    Display.RenderTarget = null;
+                    Display.Viewport = new Viewport(0, 0, vrW, vrH);
+                    Display.ScissorRectangle = new Rectangle(0, 0, vrW, vrH);
+                    GLWrapper.ApplyViewportScissor(
+                        new Viewport(0, 0, vrW, vrH),
+                        new Rectangle(0, 0, vrW, vrH), true);
+                    GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
+                    GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+                    vrCamera.PrepareForDrawing();
+                    m_subsystemDrawing.Draw(vrCamera);
+
+                    if (eye == 0) leftEyeFbo = eyeFrame.Fbo;
+                }
+
+                Display.BackbufferSizeOverride = origOverride;
+                GLWrapper.m_mainFramebuffer = origFbo;
+                GLWrapper.BindFramebuffer(origFbo);
+                Display.RenderTarget = origRenderTarget;
+
+                BlitVrEyeToDesktop(leftEyeFbo, vrW, vrH);
+            }
+            finally {
+                Display.BackbufferSizeOverride = origOverride;
+                GLWrapper.m_mainFramebuffer = origFbo;
+                GLWrapper.BindFramebuffer(origFbo);
+                Display.RenderTarget = origRenderTarget;
+
+                for (int eye = 0; eye < 2; eye++) {
+                    VrManager.ReleaseEye((VrEye)eye);
+                }
+            }
+
+            ModsManager.HookAction(
+                "DrawToScreen",
+                loader => {
+                    loader.DrawToScreen(this, null);
+                    return false;
+                }
+            );
+        }
+
+        static void BlitVrEyeToDesktop(int srcFbo, int vrW, int vrH) {
+            if (srcFbo == 0) return;
+            Point2 winSize = Display.BackbufferSize;
+            float vrAspect = (float)vrW / vrH;
+            float winAspect = (float)winSize.X / winSize.Y;
+            int drawW, drawH, offsetX, offsetY;
+            if (winAspect > vrAspect) {
+                drawH = winSize.Y;
+                drawW = (int)(winSize.Y * vrAspect);
+                offsetX = (winSize.X - drawW) / 2;
+                offsetY = 0;
+            }
+            else {
+                drawW = winSize.X;
+                drawH = (int)(winSize.X / vrAspect);
+                offsetX = 0;
+                offsetY = (winSize.Y - drawH) / 2;
+            }
+            GLWrapper.ClearColor(Vector4.Zero);
+            GLWrapper.ApplyViewportScissor(
+                new Viewport(0, 0, winSize.X, winSize.Y),
+                new Rectangle(0, 0, winSize.X, winSize.Y), true);
+            GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit);
+            GLWrapper.GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)srcFbo);
+            GLWrapper.GL.BlitFramebuffer(
+                0, 0, vrW, vrH,
+                offsetX, offsetY, offsetX + drawW, offsetY + drawH,
+                ClearBufferMask.ColorBufferBit,
+                BlitFramebufferFilter.Linear);
         }
     }
 }

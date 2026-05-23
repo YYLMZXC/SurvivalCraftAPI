@@ -8,6 +8,7 @@ public class GameWidget : CanvasWidget {
     public Dictionary<Camera, Func<GameWidget, bool>> m_isCameraEnable = new();
 
     public Camera m_activeCamera;
+    public VrGameCamera m_vrGameCamera;
 
     public ViewWidget ViewWidget { get; set; }
 
@@ -35,6 +36,9 @@ public class GameWidget : CanvasWidget {
                 Camera activeCamera = m_activeCamera;
                 m_activeCamera = value;
                 m_activeCamera.Activate(activeCamera);
+            }
+            if (VrManager.IsVrStarted && value is BasePerspectiveCamera && m_vrGameCamera == null) {
+                EnableVrCamera();
             }
         }
     }
@@ -130,12 +134,30 @@ public class GameWidget : CanvasWidget {
         return false;
     }
 
-    public bool IsEntityFirstPersonTarget(Entity entity) {
-        if (IsEntityTarget(entity)) {
-            return ActiveCamera is FppCamera;
+    public bool IsEntityFirstPersonTarget(Entity entity) => IsEntityTarget(entity)
+        && ActiveCamera is FppCamera or VrGameCamera { InnerCamera: FppCamera };
+
+    public void EnableVrCamera() {
+        if (m_vrGameCamera != null || !(m_activeCamera is BasePerspectiveCamera)) {
+            return;
         }
-        return false;
+        Camera prev = m_activeCamera;
+        m_vrGameCamera = new VrGameCamera((BasePerspectiveCamera)m_activeCamera) { GameWidget = this };
+        m_activeCamera = m_vrGameCamera;
+        m_activeCamera.Activate(prev);
     }
+
+    public void DisableVrCamera() {
+        if (m_vrGameCamera == null) {
+            return;
+        }
+        Camera prev = m_activeCamera;
+        m_activeCamera = m_vrGameCamera.InnerCamera;
+        m_activeCamera.Activate(prev);
+        m_vrGameCamera = null;
+    }
+
+    public VrGameCamera VrCamera => m_vrGameCamera;
 
     public override void Update() {
         WidgetInputDevice widgetInputDevice = DetermineInputDevices();

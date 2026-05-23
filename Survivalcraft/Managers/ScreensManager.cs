@@ -1,5 +1,6 @@
 using Engine;
 using Engine.Graphics;
+using Silk.NET.OpenGLES;
 
 namespace Game {
     public static class ScreensManager {
@@ -19,6 +20,7 @@ namespace Game {
         public static RenderTarget2D m_uiRenderTarget;
         public static Vector3 m_vrQuadPosition;
         public static Matrix m_vrQuadMatrix;
+        public static VrMenuCamera m_vrMenuCamera = new();
         public static float DebugUiScale = 1f;
 
         public static ContainerWidget RootWidget { get; set; }
@@ -111,6 +113,62 @@ namespace Game {
         public static void Draw() {
             Utilities.Dispose(ref m_uiRenderTarget);
             LayoutAndDrawWidgets();
+
+            if (VrManager.IsVrStarted && CurrentScreen is not GameScreen) {
+                RenderVrMenu();
+            }
+        }
+
+        static void RenderVrMenu() {
+            int vrW = VrManager.SwapchainWidth;
+            int vrH = VrManager.SwapchainHeight;
+
+            if (m_uiRenderTarget == null
+                || m_uiRenderTarget.Width != vrW
+                || m_uiRenderTarget.Height != vrH) {
+                Utilities.Dispose(ref m_uiRenderTarget);
+                m_uiRenderTarget = new RenderTarget2D(vrW, vrH, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
+            }
+
+            Display.RenderTarget = m_uiRenderTarget;
+            Display.Clear(Color.Transparent, 1f, 0);
+            LayoutAndDrawWidgets();
+            Display.RenderTarget = null;
+
+            AnimateVrQuad();
+
+            int origFbo = GLWrapper.m_mainFramebuffer;
+            Point2? origOverride = Display.BackbufferSizeOverride;
+
+            for (int eye = 0; eye < 2; eye++) {
+                VrEye vrEye = (VrEye)eye;
+                EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
+                m_vrMenuCamera.SetEye(vrEye, eyeFrame);
+
+                Display.BackbufferSizeOverride = new Point2(vrW, vrH);
+                GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
+                GLWrapper.BindFramebuffer(eyeFrame.Fbo);
+                Display.RenderTarget = null;
+                Display.Viewport = new Viewport(0, 0, vrW, vrH);
+                Display.ScissorRectangle = new Rectangle(0, 0, vrW, vrH);
+                GLWrapper.ApplyViewportScissor(
+                    new Viewport(0, 0, vrW, vrH),
+                    new Rectangle(0, 0, vrW, vrH), true);
+                GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
+                GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+                DrawVrBackground();
+                DrawVrQuad();
+                m_pr3.Flush(m_vrMenuCamera.ViewMatrix * m_vrMenuCamera.ProjectionMatrix);
+            }
+
+            GLWrapper.m_mainFramebuffer = origFbo;
+            GLWrapper.BindFramebuffer(origFbo);
+            Display.BackbufferSizeOverride = origOverride;
+
+            for (int eye = 0; eye < 2; eye++) {
+                VrManager.ReleaseEye((VrEye)eye);
+            }
         }
 
         public static void UpdateAnimation() {

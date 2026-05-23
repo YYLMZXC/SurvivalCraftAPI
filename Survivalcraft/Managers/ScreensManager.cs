@@ -20,7 +20,6 @@ namespace Game {
         public static RenderTarget2D m_uiRenderTarget;
         public static Vector3 m_vrQuadPosition;
         public static Matrix m_vrQuadMatrix;
-        public static VrMenuCamera m_vrMenuCamera = new();
         public static float DebugUiScale = 1f;
 
         public static ContainerWidget RootWidget { get; set; }
@@ -140,34 +139,36 @@ namespace Game {
             int origFbo = GLWrapper.m_mainFramebuffer;
             Point2? origOverride = Display.BackbufferSizeOverride;
 
-            for (int eye = 0; eye < 2; eye++) {
-                VrEye vrEye = (VrEye)eye;
-                EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
-                m_vrMenuCamera.SetEye(vrEye, eyeFrame);
+            try {
+                for (int eye = 0; eye < 2; eye++) {
+                    VrEye vrEye = (VrEye)eye;
+                    EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
 
-                Display.BackbufferSizeOverride = new Point2(vrW, vrH);
-                GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
-                GLWrapper.BindFramebuffer(eyeFrame.Fbo);
-                Display.RenderTarget = null;
-                Display.Viewport = new Viewport(0, 0, vrW, vrH);
-                Display.ScissorRectangle = new Rectangle(0, 0, vrW, vrH);
-                GLWrapper.ApplyViewportScissor(
-                    new Viewport(0, 0, vrW, vrH),
-                    new Rectangle(0, 0, vrW, vrH), true);
-                GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
-                GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                    Display.BackbufferSizeOverride = new Point2(vrW, vrH);
+                    GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
+                    GLWrapper.BindFramebuffer(eyeFrame.Fbo);
+                    Display.RenderTarget = null;
+                    Display.Viewport = new Viewport(0, 0, vrW, vrH);
+                    Display.ScissorRectangle = new Rectangle(0, 0, vrW, vrH);
+                    GLWrapper.ApplyViewportScissor(
+                        new Viewport(0, 0, vrW, vrH),
+                        new Rectangle(0, 0, vrW, vrH), true);
+                    GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
+                    GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-                DrawVrBackground();
-                DrawVrQuad();
-                m_pr3.Flush(m_vrMenuCamera.ViewMatrix * m_vrMenuCamera.ProjectionMatrix);
+                    DrawVrBackground();
+                    DrawVrQuad();
+                    m_pr3.Flush(eyeFrame.ViewMatrix * eyeFrame.ProjectionMatrix);
+                }
             }
+            finally {
+                GLWrapper.m_mainFramebuffer = origFbo;
+                GLWrapper.BindFramebuffer(origFbo);
+                Display.BackbufferSizeOverride = origOverride;
 
-            GLWrapper.m_mainFramebuffer = origFbo;
-            GLWrapper.BindFramebuffer(origFbo);
-            Display.BackbufferSizeOverride = origOverride;
-
-            for (int eye = 0; eye < 2; eye++) {
-                VrManager.ReleaseEye((VrEye)eye);
+                for (int eye = 0; eye < 2; eye++) {
+                    VrManager.ReleaseEye((VrEye)eye);
+                }
             }
         }
 
@@ -253,7 +254,7 @@ namespace Game {
         public static void AnimateVrQuad() {
             if (Time.FrameIndex >= 5) {
                 float num = 6f;
-                Matrix hmdMatrix = Matrix.Identity;
+                Matrix hmdMatrix = VrManager.HmdMatrix;
                 Vector3 vector = hmdMatrix.Translation
                     + num * (Vector3.Normalize(hmdMatrix.Forward * new Vector3(1f, 0f, 1f)) + new Vector3(0f, 0.1f, 0f));
                 if (m_vrQuadPosition == Vector3.Zero) {
@@ -297,7 +298,7 @@ namespace Game {
         }
 
         public static void DrawVrBackground() {
-            Matrix hmdMatrix = Matrix.Identity;
+            Matrix hmdMatrix = VrManager.HmdMatrix;
             TexturedBatch3D batch = m_pr3.TexturedBatch(ContentManager.Get<Texture2D>("Textures/Star"));
             Random.Seed(0);
             for (int i = 0; i < 1500; i++) {

@@ -120,8 +120,8 @@ namespace Game {
         }
 
         public virtual void DrawToScreen(DrawContext dc) {
-            if (GameWidget.ActiveCamera is VrGameCamera vrCamera) {
-                DrawToScreenVr(vrCamera);
+            if (VrManager.IsVrStarted && GameWidget.ActiveCamera is BasePerspectiveCamera camera) {
+                DrawToScreenVr(camera);
                 return;
             }
             GameWidget.ActiveCamera.PrepareForDrawing();
@@ -143,7 +143,7 @@ namespace Game {
             );
         }
 
-        void DrawToScreenVr(VrGameCamera vrCamera) {
+        void DrawToScreenVr(BasePerspectiveCamera camera) {
             int vrW = VrManager.SwapchainWidth;
             int vrH = VrManager.SwapchainHeight;
             int leftEyeFbo = 0;
@@ -155,7 +155,8 @@ namespace Game {
                 for (int eye = 0; eye < 2; eye++) {
                     VrEye vrEye = (VrEye)eye;
                     EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
-                    vrCamera.SetEye(vrEye, eyeFrame);
+                    camera.Eye = vrEye;
+                    camera.PrepareForDrawing();
 
                     Display.BackbufferSizeOverride = new Point2(vrW, vrH);
                     GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
@@ -169,11 +170,11 @@ namespace Game {
                     GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
                     GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-                    vrCamera.PrepareForDrawing();
-                    m_subsystemDrawing.Draw(vrCamera);
+                    m_subsystemDrawing.Draw(camera);
 
                     if (eye == 0) leftEyeFbo = eyeFrame.Fbo;
                 }
+                camera.Eye = null;
 
                 Display.BackbufferSizeOverride = origOverride;
                 GLWrapper.m_mainFramebuffer = origFbo;
@@ -183,6 +184,7 @@ namespace Game {
                 BlitVrEyeToDesktop(leftEyeFbo, vrW, vrH);
             }
             finally {
+                camera.Eye = null;
                 Display.BackbufferSizeOverride = origOverride;
                 GLWrapper.m_mainFramebuffer = origFbo;
                 GLWrapper.BindFramebuffer(origFbo);

@@ -798,8 +798,20 @@ namespace Engine {
 
         public Matrix GetEyeToHeadTransform(VrEye eye) {
             if (m_views == null) return Matrix.Identity;
-            Posef pose = m_views[(int)eye].Pose;
-            return PoseToMatrix(pose);
+            // Return only the IPD position offset, not the full view pose.
+            // The rotation is already applied via HmdMatrix in the camera's CreateLookAt;
+            // including it here would cause double rotation (roll inversion).
+            Posef eyePose = m_views[(int)eye].Pose;
+            Vector3f leftPos = m_views[0].Pose.Position;
+            Vector3f rightPos = m_views[1].Pose.Position;
+            float midX = (leftPos.X + rightPos.X) * 0.5f;
+            float midY = (leftPos.Y + rightPos.Y) * 0.5f;
+            float midZ = (leftPos.Z + rightPos.Z) * 0.5f;
+            return Matrix.CreateTranslation(
+                eyePose.Position.X - midX,
+                eyePose.Position.Y - midY,
+                eyePose.Position.Z - midZ
+            );
         }
 
         public Matrix GetProjectionMatrix(VrEye eye, float near, float far) {

@@ -222,7 +222,9 @@ namespace Game {
             if (GameManager.Project == null) return;
             SubsystemGameWidgets subsystemGameWidgets = GameManager.Project.FindSubsystem<SubsystemGameWidgets>(true);
             foreach (GameWidget gameWidget in subsystemGameWidgets.GameWidgets) {
-                gameWidget.DisableVrCamera();
+                if (gameWidget.ActiveCamera is BasePerspectiveCamera camera) {
+                    camera.Eye = null;
+                }
             }
         }
 

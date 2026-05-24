@@ -6,6 +6,20 @@ namespace Game {
     public class VrManager {
         static IVrBackend _backend;
 
+        struct VrTouchTracker {
+            public bool ClickActive;
+            public Vector2 ClickStartStick;
+            public float ClickStartTime;
+            public int ClickStartFrame;
+            public bool MoveActive;
+            public Vector2 MoveStartStick;
+            public float MoveStartTime;
+            public int MoveStartFrame;
+            public Vector2 LastStick;
+        }
+
+        static VrTouchTracker[] m_touchTrackers = [default, default];
+
         public static void SetBackend(IVrBackend backend) => _backend = backend;
 
         public static bool IsVrAvailable => _backend?.IsAvailable ?? false;
@@ -61,7 +75,93 @@ namespace Game {
 
         public static bool IsButtonDownOnce(VrController controller, VrControllerButton button) => _backend?.IsButtonDownOnce(controller, button) ?? false;
 
-        public static TouchInput? GetTouchInput(VrController controller) => null; // TODO: VR 控制器触摸板输入未实现
+        public static TouchInput? GetTouchInput(VrController controller) {
+            if (!IsVrStarted) return null;
+            int idx = (int)controller;
+            ref VrTouchTracker tracker = ref m_touchTrackers[idx];
+
+            Vector2 stick = GetStickPosition(controller, 0f);
+            bool clicked = IsButtonDown(controller, VrControllerButton.Touchpad);
+            float now = (float)Time.FrameStartTime;
+            int frame = Time.FrameIndex;
+
+            const float MOVE_THRESHOLD = 0.3f;
+            const float TAP_MAX_DURATION = 0.3f;
+            const float HOLD_MIN_DURATION = 0.5f;
+
+            bool stickDeflected = stick.LengthSquared() > MOVE_THRESHOLD * MOVE_THRESHOLD;
+
+            TouchInput? result = null;
+
+            if (clicked) {
+                if (!tracker.ClickActive) {
+                    tracker.ClickActive = true;
+                    tracker.MoveActive = false;
+                    tracker.ClickStartStick = stick;
+                    tracker.ClickStartTime = now;
+                    tracker.ClickStartFrame = frame;
+                }
+                float duration = now - tracker.ClickStartTime;
+                if (duration >= HOLD_MIN_DURATION) {
+                    Vector2 totalMove = stick - tracker.ClickStartStick;
+                    result = new TouchInput {
+                        InputType = TouchInputType.Hold,
+                        Position = tracker.ClickStartStick,
+                        Move = stick - tracker.LastStick,
+                        TotalMove = totalMove,
+                        TotalMoveLimited = ClampMove(totalMove),
+                        Duration = duration,
+                        DurationFrames = frame - tracker.ClickStartFrame
+                    };
+                }
+            }
+            else {
+                if (tracker.ClickActive) {
+                    tracker.ClickActive = false;
+                    float duration = now - tracker.ClickStartTime;
+                    if (duration < TAP_MAX_DURATION) {
+                        result = new TouchInput {
+                            InputType = TouchInputType.Tap,
+                            Position = tracker.ClickStartStick,
+                            Move = Vector2.Zero,
+                            TotalMove = stick - tracker.ClickStartStick,
+                            TotalMoveLimited = ClampMove(stick - tracker.ClickStartStick),
+                            Duration = duration,
+                            DurationFrames = frame - tracker.ClickStartFrame
+                        };
+                    }
+                }
+                if (result == null && stickDeflected) {
+                    if (!tracker.MoveActive) {
+                        tracker.MoveActive = true;
+                        tracker.MoveStartStick = stick;
+                        tracker.MoveStartTime = now;
+                        tracker.MoveStartFrame = frame;
+                    }
+                    Vector2 totalMove = stick - tracker.MoveStartStick;
+                    result = new TouchInput {
+                        InputType = TouchInputType.Move,
+                        Position = stick,
+                        Move = stick - tracker.LastStick,
+                        TotalMove = totalMove,
+                        TotalMoveLimited = ClampMove(totalMove),
+                        Duration = now - tracker.MoveStartTime,
+                        DurationFrames = frame - tracker.MoveStartFrame
+                    };
+                }
+                else if (result == null) {
+                    tracker.MoveActive = false;
+                }
+            }
+
+            tracker.LastStick = stick;
+            return result;
+        }
+
+        static Vector2 ClampMove(Vector2 v) {
+            float len = v.Length();
+            return len > 1f ? v * (1f / len) : v;
+        }
 
         public static bool BeginFrame() => _backend?.BeginFrame() ?? false;
 

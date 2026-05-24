@@ -40,6 +40,7 @@ namespace Engine {
         readonly XrAction[] m_stickXActions = new XrAction[2];
         readonly XrAction[] m_stickYActions = new XrAction[2];
         readonly XrAction[] m_poseActions = new XrAction[2];
+        readonly XrAction[] m_stickClickActions = new XrAction[2];
         readonly Space[] m_controllerSpaces = new Space[2];
 
         // Controller state
@@ -71,6 +72,8 @@ namespace Engine {
             public bool LastGrip;
             public bool Menu;
             public bool LastMenu;
+            public bool StickClick;
+            public bool LastStickClick;
             public Matrix Matrix;
         }
 
@@ -377,6 +380,8 @@ namespace Engine {
                 CreateActionFloat($"stick_y_{handPaths[hand]}", $"Stick Y {handPaths[hand]}", out m_stickYActions[hand]);
                 // Pose
                 CreateActionPose($"pose_{handPaths[hand]}", $"Pose {handPaths[hand]}", out m_poseActions[hand]);
+                // Stick click (Boolean)
+                CreateActionBool($"stick_click_{handPaths[hand]}", $"Stick Click {handPaths[hand]}", out m_stickClickActions[hand]);
             }
 
             // Suggest bindings for /interaction_profiles/khr_simple_controller
@@ -444,59 +449,99 @@ namespace Engine {
         }
 
         void SuggestBindings() {
-            // Binding paths for khr_simple_controller
-            // Left hand
-            string[] leftPaths = [
+            XrAction[] allActions = [
+                m_triggerActions[0], m_gripActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
+                m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1]
+            ];
+
+            // Meta Quest Touch
+            SuggestProfileBindings("/interaction_profiles/oculus/touch_controller", allActions, [
                 "/user/hand/left/input/trigger/value",
                 "/user/hand/left/input/squeeze/value",
                 "/user/hand/left/input/menu/click",
                 "/user/hand/left/input/thumbstick/x",
                 "/user/hand/left/input/thumbstick/y",
-                "/user/hand/left/input/grip/pose"
-            ];
-            // Right hand
-            string[] rightPaths = [
+                "/user/hand/left/input/grip/pose",
+                "/user/hand/left/input/thumbstick/click",
                 "/user/hand/right/input/trigger/value",
                 "/user/hand/right/input/squeeze/value",
-                "/user/hand/right/input/menu/click",
+                "/user/hand/right/input/system/click",
                 "/user/hand/right/input/thumbstick/x",
                 "/user/hand/right/input/thumbstick/y",
-                "/user/hand/right/input/grip/pose"
-            ];
+                "/user/hand/right/input/grip/pose",
+                "/user/hand/right/input/thumbstick/click"
+            ]);
 
-            int bindingCount = 12;
-            ActionSuggestedBinding[] bindings = new ActionSuggestedBinding[bindingCount];
-            XrAction[] allActions = [
-                m_triggerActions[0], m_gripActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0],
-                m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1]
-            ];
-            string[] allPaths = [.. leftPaths, .. rightPaths];
+            // HTC Vive
+            SuggestProfileBindings("/interaction_profiles/htc/vive_controller", allActions, [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/click",
+                "/user/hand/left/input/menu/click",
+                "/user/hand/left/input/trackpad/x",
+                "/user/hand/left/input/trackpad/y",
+                "/user/hand/left/input/grip/pose",
+                "/user/hand/left/input/trackpad/click",
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/click",
+                "/user/hand/right/input/menu/click",
+                "/user/hand/right/input/trackpad/x",
+                "/user/hand/right/input/trackpad/y",
+                "/user/hand/right/input/grip/pose",
+                "/user/hand/right/input/trackpad/click"
+            ]);
 
-            ulong[] pathHandles = new ulong[bindingCount];
-            for (int i = 0; i < bindingCount; i++) {
-                Result r = m_xr.StringToPath(m_instance, allPaths[i], ref pathHandles[i]);
+            // Valve Index
+            SuggestProfileBindings("/interaction_profiles/valve/index_controller", allActions, [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/value",
+                "/user/hand/left/input/system/click",
+                "/user/hand/left/input/thumbstick/x",
+                "/user/hand/left/input/thumbstick/y",
+                "/user/hand/left/input/grip/pose",
+                "/user/hand/left/input/trackpad/force",
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/value",
+                "/user/hand/right/input/system/click",
+                "/user/hand/right/input/thumbstick/x",
+                "/user/hand/right/input/thumbstick/y",
+                "/user/hand/right/input/grip/pose",
+                "/user/hand/right/input/trackpad/force"
+            ]);
+        }
+
+        void SuggestProfileBindings(string profilePath, XrAction[] actions, string[] paths) {
+            int count = actions.Length;
+            ActionSuggestedBinding[] bindings = new ActionSuggestedBinding[count];
+            ulong[] pathHandles = new ulong[count];
+            bool valid = true;
+            for (int i = 0; i < count; i++) {
+                Result r = m_xr.StringToPath(m_instance, paths[i], ref pathHandles[i]);
                 if (r != Result.Success) {
-                    Log.Error($"xrStringToPath failed for '{allPaths[i]}': {r}");
-                    return;
+                    Log.Warning($"xrStringToPath failed for '{paths[i]}': {r}");
+                    valid = false;
+                    break;
                 }
                 bindings[i] = new ActionSuggestedBinding {
-                    Action = allActions[i],
+                    Action = actions[i],
                     Binding = pathHandles[i]
                 };
             }
+            if (!valid) return;
 
-            // Get profile path
-            ulong profilePath = 0;
-            m_xr.StringToPath(m_instance, "/interaction_profiles/khr_simple_controller", ref profilePath);
+            ulong profile = 0;
+            m_xr.StringToPath(m_instance, profilePath, ref profile);
 
             InteractionProfileSuggestedBinding suggestedBindings = new() {
                 Type = StructureType.InteractionProfileSuggestedBinding,
-                InteractionProfile = profilePath,
-                CountSuggestedBindings = (uint)bindingCount
+                InteractionProfile = profile,
+                CountSuggestedBindings = (uint)count
             };
             fixed (ActionSuggestedBinding* pBindings = bindings) {
                 suggestedBindings.SuggestedBindings = pBindings;
-                m_xr.SuggestInteractionProfileBinding(m_instance, in suggestedBindings);
+                Result r = m_xr.SuggestInteractionProfileBinding(m_instance, in suggestedBindings);
+                if (r != Result.Success) {
+                    Log.Warning($"SuggestBindings failed for {profilePath}: {r}");
+                }
             }
         }
 
@@ -725,6 +770,10 @@ namespace Engine {
                 ActionStateBoolean menuState = GetBoolState(m_menuActions[hand]);
                 m_controllers[hand].Menu = menuState.CurrentState != 0;
 
+                // Stick click
+                ActionStateBoolean stickClickState = GetBoolState(m_stickClickActions[hand]);
+                m_controllers[hand].StickClick = stickClickState.CurrentState != 0;
+
                 // Stick (separate X/Y float actions)
                 ActionStateFloat stickXState = GetFloatState(m_stickXActions[hand]);
                 ActionStateFloat stickYState = GetFloatState(m_stickYActions[hand]);
@@ -767,7 +816,10 @@ namespace Engine {
             return deadZone > 0f ? ApplyDeadZone(raw, deadZone) : raw;
         }
 
-        public Vector2? GetTouchpadPosition(VrController controller, float deadZone = 0f) => null;
+        public Vector2? GetTouchpadPosition(VrController controller, float deadZone = 0f) {
+            Vector2 raw = m_controllers[(int)controller].Stick;
+            return deadZone > 0f ? ApplyDeadZone(raw, deadZone) : raw;
+        }
 
         public float GetTriggerPosition(VrController controller, float deadZone = 0f) {
             float raw = m_controllers[(int)controller].Trigger;
@@ -780,6 +832,14 @@ namespace Engine {
                 VrControllerButton.Trigger => m_controllers[idx].Trigger >= 0.5f,
                 VrControllerButton.Grip => m_controllers[idx].Grip,
                 VrControllerButton.Menu => m_controllers[idx].Menu,
+                VrControllerButton.Touchpad => m_controllers[idx].StickClick,
+                VrControllerButton.TouchpadCenter => m_controllers[idx].StickClick
+                    && MathF.Abs(m_controllers[idx].Stick.X) < 0.3f
+                    && MathF.Abs(m_controllers[idx].Stick.Y) < 0.3f,
+                VrControllerButton.TouchpadLeft => m_controllers[idx].Stick.X < -0.5f,
+                VrControllerButton.TouchpadRight => m_controllers[idx].Stick.X > 0.5f,
+                VrControllerButton.TouchpadUp => m_controllers[idx].Stick.Y > 0.5f,
+                VrControllerButton.TouchpadDown => m_controllers[idx].Stick.Y < -0.5f,
                 _ => false
             };
         }
@@ -790,6 +850,14 @@ namespace Engine {
                 VrControllerButton.Trigger => m_controllers[idx].Trigger >= 0.5f && m_lastControllers[idx].Trigger < 0.5f,
                 VrControllerButton.Grip => m_controllers[idx].Grip && !m_lastControllers[idx].Grip,
                 VrControllerButton.Menu => m_controllers[idx].Menu && !m_lastControllers[idx].Menu,
+                VrControllerButton.Touchpad => m_controllers[idx].StickClick && !m_lastControllers[idx].StickClick,
+                VrControllerButton.TouchpadCenter => m_controllers[idx].StickClick && !m_lastControllers[idx].StickClick
+                    && MathF.Abs(m_controllers[idx].Stick.X) < 0.3f
+                    && MathF.Abs(m_controllers[idx].Stick.Y) < 0.3f,
+                VrControllerButton.TouchpadLeft => m_controllers[idx].Stick.X < -0.5f && m_lastControllers[idx].Stick.X >= -0.4f,
+                VrControllerButton.TouchpadRight => m_controllers[idx].Stick.X > 0.5f && m_lastControllers[idx].Stick.X <= 0.4f,
+                VrControllerButton.TouchpadUp => m_controllers[idx].Stick.Y > 0.5f && m_lastControllers[idx].Stick.Y <= 0.4f,
+                VrControllerButton.TouchpadDown => m_controllers[idx].Stick.Y < -0.5f && m_lastControllers[idx].Stick.Y >= -0.4f,
                 _ => false
             };
         }
@@ -937,6 +1005,7 @@ namespace Engine {
                 if (m_menuActions[hand].Handle != 0) m_xr.DestroyAction(m_menuActions[hand]);
                 if (m_stickXActions[hand].Handle != 0) m_xr.DestroyAction(m_stickXActions[hand]);
                 if (m_stickYActions[hand].Handle != 0) m_xr.DestroyAction(m_stickYActions[hand]);
+                if (m_stickClickActions[hand].Handle != 0) m_xr.DestroyAction(m_stickClickActions[hand]);
                 if (m_poseActions[hand].Handle != 0) m_xr.DestroyAction(m_poseActions[hand]);
             }
 

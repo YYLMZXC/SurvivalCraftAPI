@@ -224,6 +224,26 @@ namespace Game {
                     0,
                     indices.Count
                 );
+                if (m_geometry.Draws != null) {
+                    foreach (KeyValuePair<Texture2D, TerrainGeometry> kvp in m_geometry.Draws) {
+                        if (kvp.Value == m_geometry) continue;
+                        m_shader.GetParameter("u_texture").SetValue(kvp.Key);
+                        foreach (TerrainGeometrySubset subset in kvp.Value.Subsets) {
+                            if (subset.Vertices.Count == 0) continue;
+                            Display.DrawUserIndexed(
+                                PrimitiveType.TriangleList,
+                                m_shader,
+                                TerrainVertex.VertexDeclaration,
+                                subset.Vertices.Array,
+                                0,
+                                subset.Vertices.Count,
+                                subset.Indices.Array,
+                                0,
+                                subset.Indices.Count
+                            );
+                        }
+                    }
+                }
             }
         }
 

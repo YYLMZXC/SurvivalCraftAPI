@@ -240,20 +240,25 @@ namespace Engine {
             // 1. Create session with platform graphics binding
             CreateSessionWithGraphicsBinding();
 
-            // 2. Create LOCAL reference space
+            // 2. Create reference space — Stage (floor-level) preferred, fallback to Local (eye-level)
             ReferenceSpaceCreateInfo spaceInfo = new() {
                 Type = StructureType.ReferenceSpaceCreateInfo,
-                ReferenceSpaceType = ReferenceSpaceType.Local,
                 PoseInReferenceSpace = new() {
                     Orientation = new() { X = 0, Y = 0, Z = 0, W = 1 },
                     Position = new() { X = 0, Y = 0, Z = 0 }
                 }
             };
             {
+                spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Stage;
                 Result result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
                 if (result != Result.Success) {
-                    Log.Error($"xrCreateReferenceSpace failed: {result}");
-                    return;
+                    Log.Warning($"Stage reference space unavailable ({result}), falling back to Local");
+                    spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Local;
+                    result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
+                    if (result != Result.Success) {
+                        Log.Error($"xrCreateReferenceSpace failed: {result}");
+                        return;
+                    }
                 }
             }
 

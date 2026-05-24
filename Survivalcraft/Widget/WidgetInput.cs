@@ -1014,7 +1014,8 @@ namespace Game {
             if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadDown)) {
                 Down = true;
             }
-            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.Grip)) {
+            if (IsVrCursorVisible
+                && IsVrButtonDownOnce(VrController.Right, VrControllerButton.Grip)) {
                 Back = true;
                 Cancel = true;
             }

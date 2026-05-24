@@ -8,6 +8,9 @@ namespace Engine {
         TouchpadLeft = 5,
         TouchpadRight = 6,
         TouchpadUp = 7,
-        TouchpadDown = 8
+        TouchpadDown = 8,
+        Primary = 9,
+        Secondary = 10,
+        Thumbrest = 11
     }
 }

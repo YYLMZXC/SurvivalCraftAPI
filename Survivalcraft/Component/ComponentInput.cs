@@ -367,20 +367,26 @@ namespace Game {
                         ? CalculateVrHandRay()
                         : m_playerInput.Interact;
                 }
-                m_playerInput.ToggleMount |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadUp);
-                m_playerInput.ToggleCrouch |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadDown);
+                m_playerInput.ToggleMount |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Secondary)
+                    | input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadUp);
+                m_playerInput.ToggleCrouch |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Primary)
+                    | input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadDown);
                 m_playerInput.EditItem |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Grip);
-                m_playerInput.ToggleCreativeFly |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadUp);
-                if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadLeft)) {
+                m_playerInput.ToggleCreativeFly |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Thumbrest)
+                    | input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadUp);
+                if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Secondary)
+                    || input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadLeft)) {
                     m_playerInput.ScrollInventory--;
                 }
-                if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadRight)) {
+                if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Primary)
+                    || input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadRight)) {
                     m_playerInput.ScrollInventory++;
                 }
                 m_playerInput.Drop |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Grip);
             }
             if (!DialogsManager.HasDialogs(m_componentPlayer.GuiWidget)) {
-                m_playerInput.ToggleInventory |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Menu);
+                m_playerInput.ToggleInventory |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Menu)
+                    | input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Menu);
             }
         }
 

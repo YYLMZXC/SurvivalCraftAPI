@@ -41,6 +41,11 @@ namespace Engine {
         readonly XrAction[] m_stickYActions = new XrAction[2];
         readonly XrAction[] m_poseActions = new XrAction[2];
         readonly XrAction[] m_stickClickActions = new XrAction[2];
+        readonly XrAction[] m_primaryActions = new XrAction[2];
+        readonly XrAction[] m_secondaryActions = new XrAction[2];
+        readonly XrAction[] m_thumbrestActions = new XrAction[2];
+        readonly XrAction[] m_trackpadXActions = new XrAction[2];
+        readonly XrAction[] m_trackpadYActions = new XrAction[2];
         readonly Space[] m_controllerSpaces = new Space[2];
 
         // Controller state
@@ -66,6 +71,7 @@ namespace Engine {
         struct ControllerState {
             public bool IsConnected;
             public Vector2 Stick;
+            public Vector2 Trackpad;
             public float Trigger;
             public float LastTrigger;
             public bool Grip;
@@ -74,6 +80,12 @@ namespace Engine {
             public bool LastMenu;
             public bool StickClick;
             public bool LastStickClick;
+            public bool Primary;
+            public bool LastPrimary;
+            public bool Secondary;
+            public bool LastSecondary;
+            public bool Thumbrest;
+            public bool LastThumbrest;
             public Matrix Matrix;
         }
 
@@ -382,6 +394,15 @@ namespace Engine {
                 CreateActionPose($"pose_{handPaths[hand]}", $"Pose {handPaths[hand]}", out m_poseActions[hand]);
                 // Stick click (Boolean)
                 CreateActionBool($"stick_click_{handPaths[hand]}", $"Stick Click {handPaths[hand]}", out m_stickClickActions[hand]);
+                // Primary button (X on left, A on right)
+                CreateActionBool($"primary_{handPaths[hand]}", $"Primary {handPaths[hand]}", out m_primaryActions[hand]);
+                // Secondary button (Y on left, B on right)
+                CreateActionBool($"secondary_{handPaths[hand]}", $"Secondary {handPaths[hand]}", out m_secondaryActions[hand]);
+                // Thumbrest touch
+                CreateActionBool($"thumbrest_{handPaths[hand]}", $"Thumbrest {handPaths[hand]}", out m_thumbrestActions[hand]);
+                // Trackpad (separate from thumbstick, for controllers like Index)
+                CreateActionFloat($"trackpad_x_{handPaths[hand]}", $"Trackpad X {handPaths[hand]}", out m_trackpadXActions[hand]);
+                CreateActionFloat($"trackpad_y_{handPaths[hand]}", $"Trackpad Y {handPaths[hand]}", out m_trackpadYActions[hand]);
             }
 
             // Suggest bindings for /interaction_profiles/khr_simple_controller
@@ -451,7 +472,9 @@ namespace Engine {
         void SuggestBindings() {
             XrAction[] allActions = [
                 m_triggerActions[0], m_gripActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
-                m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1]
+                m_primaryActions[0], m_secondaryActions[0], m_thumbrestActions[0],
+                m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
+                m_primaryActions[1], m_secondaryActions[1], m_thumbrestActions[1]
             ];
 
             // Meta Quest Touch
@@ -463,17 +486,29 @@ namespace Engine {
                 "/user/hand/left/input/thumbstick/y",
                 "/user/hand/left/input/aim/pose",
                 "/user/hand/left/input/thumbstick/click",
+                "/user/hand/left/input/x/click",
+                "/user/hand/left/input/y/click",
+                "/user/hand/left/input/thumbrest/touch",
                 "/user/hand/right/input/trigger/value",
                 "/user/hand/right/input/squeeze/value",
                 "/user/hand/right/input/system/click",
                 "/user/hand/right/input/thumbstick/x",
                 "/user/hand/right/input/thumbstick/y",
                 "/user/hand/right/input/aim/pose",
-                "/user/hand/right/input/thumbstick/click"
+                "/user/hand/right/input/thumbstick/click",
+                "/user/hand/right/input/a/click",
+                "/user/hand/right/input/b/click",
+                "/user/hand/right/input/thumbrest/touch"
             ]);
 
-            // HTC Vive
-            SuggestProfileBindings("/interaction_profiles/htc/vive_controller", allActions, [
+            // HTC Vive (trackpad is both Stick and Trackpad)
+            XrAction[] viveActions = [
+                m_triggerActions[0], m_gripActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
+                m_trackpadXActions[0], m_trackpadYActions[0],
+                m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
+                m_trackpadXActions[1], m_trackpadYActions[1]
+            ];
+            SuggestProfileBindings("/interaction_profiles/htc/vive_controller", viveActions, [
                 "/user/hand/left/input/trigger/value",
                 "/user/hand/left/input/squeeze/click",
                 "/user/hand/left/input/menu/click",
@@ -481,17 +516,29 @@ namespace Engine {
                 "/user/hand/left/input/trackpad/y",
                 "/user/hand/left/input/aim/pose",
                 "/user/hand/left/input/trackpad/click",
+                "/user/hand/left/input/trackpad/x",
+                "/user/hand/left/input/trackpad/y",
                 "/user/hand/right/input/trigger/value",
                 "/user/hand/right/input/squeeze/click",
                 "/user/hand/right/input/menu/click",
                 "/user/hand/right/input/trackpad/x",
                 "/user/hand/right/input/trackpad/y",
                 "/user/hand/right/input/aim/pose",
-                "/user/hand/right/input/trackpad/click"
+                "/user/hand/right/input/trackpad/click",
+                "/user/hand/right/input/trackpad/x",
+                "/user/hand/right/input/trackpad/y"
             ]);
 
-            // Valve Index
-            SuggestProfileBindings("/interaction_profiles/valve/index_controller", allActions, [
+            // Valve Index (trackpad + A/B buttons, no X/Y/thumbrest)
+            XrAction[] indexActions = [
+                m_triggerActions[0], m_gripActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
+                m_primaryActions[0], m_secondaryActions[0],
+                m_trackpadXActions[0], m_trackpadYActions[0],
+                m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
+                m_primaryActions[1], m_secondaryActions[1],
+                m_trackpadXActions[1], m_trackpadYActions[1]
+            ];
+            SuggestProfileBindings("/interaction_profiles/valve/index_controller", indexActions, [
                 "/user/hand/left/input/trigger/value",
                 "/user/hand/left/input/squeeze/value",
                 "/user/hand/left/input/system/click",
@@ -499,13 +546,117 @@ namespace Engine {
                 "/user/hand/left/input/thumbstick/y",
                 "/user/hand/left/input/aim/pose",
                 "/user/hand/left/input/trackpad/force",
+                "/user/hand/left/input/a/click",
+                "/user/hand/left/input/b/click",
+                "/user/hand/left/input/trackpad/x",
+                "/user/hand/left/input/trackpad/y",
                 "/user/hand/right/input/trigger/value",
                 "/user/hand/right/input/squeeze/value",
                 "/user/hand/right/input/system/click",
                 "/user/hand/right/input/thumbstick/x",
                 "/user/hand/right/input/thumbstick/y",
                 "/user/hand/right/input/aim/pose",
-                "/user/hand/right/input/trackpad/force"
+                "/user/hand/right/input/trackpad/force",
+                "/user/hand/right/input/a/click",
+                "/user/hand/right/input/b/click",
+                "/user/hand/right/input/trackpad/x",
+                "/user/hand/right/input/trackpad/y"
+            ]);
+
+            // Meta Quest Touch Pro (superset of Quest Touch, same button paths)
+            SuggestProfileBindings("/interaction_profiles/meta/touch_controller_pro", allActions, [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/value",
+                "/user/hand/left/input/menu/click",
+                "/user/hand/left/input/thumbstick/x",
+                "/user/hand/left/input/thumbstick/y",
+                "/user/hand/left/input/aim/pose",
+                "/user/hand/left/input/thumbstick/click",
+                "/user/hand/left/input/x/click",
+                "/user/hand/left/input/y/click",
+                "/user/hand/left/input/thumbrest/touch",
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/value",
+                "/user/hand/right/input/system/click",
+                "/user/hand/right/input/thumbstick/x",
+                "/user/hand/right/input/thumbstick/y",
+                "/user/hand/right/input/aim/pose",
+                "/user/hand/right/input/thumbstick/click",
+                "/user/hand/right/input/a/click",
+                "/user/hand/right/input/b/click",
+                "/user/hand/right/input/thumbrest/touch"
+            ]);
+
+            // Meta Quest Touch Plus (Quest 3, same button paths)
+            SuggestProfileBindings("/interaction_profiles/meta/touch_controller_plus", allActions, [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/value",
+                "/user/hand/left/input/menu/click",
+                "/user/hand/left/input/thumbstick/x",
+                "/user/hand/left/input/thumbstick/y",
+                "/user/hand/left/input/aim/pose",
+                "/user/hand/left/input/thumbstick/click",
+                "/user/hand/left/input/x/click",
+                "/user/hand/left/input/y/click",
+                "/user/hand/left/input/thumbrest/touch",
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/value",
+                "/user/hand/right/input/system/click",
+                "/user/hand/right/input/thumbstick/x",
+                "/user/hand/right/input/thumbstick/y",
+                "/user/hand/right/input/aim/pose",
+                "/user/hand/right/input/thumbstick/click",
+                "/user/hand/right/input/a/click",
+                "/user/hand/right/input/b/click",
+                "/user/hand/right/input/thumbrest/touch"
+            ]);
+
+            // Pico 4
+            SuggestProfileBindings("/interaction_profiles/bytedance/pico4_controller", allActions, [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/value",
+                "/user/hand/left/input/menu/click",
+                "/user/hand/left/input/thumbstick/x",
+                "/user/hand/left/input/thumbstick/y",
+                "/user/hand/left/input/aim/pose",
+                "/user/hand/left/input/thumbstick/click",
+                "/user/hand/left/input/x/click",
+                "/user/hand/left/input/y/click",
+                "/user/hand/left/input/thumbrest/touch",
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/value",
+                "/user/hand/right/input/system/click",
+                "/user/hand/right/input/thumbstick/x",
+                "/user/hand/right/input/thumbstick/y",
+                "/user/hand/right/input/aim/pose",
+                "/user/hand/right/input/thumbstick/click",
+                "/user/hand/right/input/a/click",
+                "/user/hand/right/input/b/click",
+                "/user/hand/right/input/thumbrest/touch"
+            ]);
+
+            // HTC Vive Focus 3
+            SuggestProfileBindings("/interaction_profiles/htc/vive_focus3_controller", allActions, [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/value",
+                "/user/hand/left/input/menu/click",
+                "/user/hand/left/input/thumbstick/x",
+                "/user/hand/left/input/thumbstick/y",
+                "/user/hand/left/input/aim/pose",
+                "/user/hand/left/input/thumbstick/click",
+                "/user/hand/left/input/x/click",
+                "/user/hand/left/input/y/click",
+                "/user/hand/left/input/thumbrest/touch",
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/value",
+                "/user/hand/right/input/system/click",
+                "/user/hand/right/input/thumbstick/x",
+                "/user/hand/right/input/thumbstick/y",
+                "/user/hand/right/input/aim/pose",
+                "/user/hand/right/input/thumbstick/click",
+                "/user/hand/right/input/a/click",
+                "/user/hand/right/input/b/click",
+                "/user/hand/right/input/thumbrest/touch"
             ]);
         }
 
@@ -778,6 +929,23 @@ namespace Engine {
                 ActionStateFloat stickXState = GetFloatState(m_stickXActions[hand]);
                 ActionStateFloat stickYState = GetFloatState(m_stickYActions[hand]);
                 m_controllers[hand].Stick = new Vector2(stickXState.CurrentState, stickYState.CurrentState);
+
+                // Primary (X on left, A on right)
+                ActionStateBoolean primaryState = GetBoolState(m_primaryActions[hand]);
+                m_controllers[hand].Primary = primaryState.CurrentState != 0;
+
+                // Secondary (Y on left, B on right)
+                ActionStateBoolean secondaryState = GetBoolState(m_secondaryActions[hand]);
+                m_controllers[hand].Secondary = secondaryState.CurrentState != 0;
+
+                // Thumbrest touch
+                ActionStateBoolean thumbrestState = GetBoolState(m_thumbrestActions[hand]);
+                m_controllers[hand].Thumbrest = thumbrestState.CurrentState != 0;
+
+                // Trackpad (separate from thumbstick, for controllers like Index)
+                ActionStateFloat trackpadXState = GetFloatState(m_trackpadXActions[hand]);
+                ActionStateFloat trackpadYState = GetFloatState(m_trackpadYActions[hand]);
+                m_controllers[hand].Trackpad = new Vector2(trackpadXState.CurrentState, trackpadYState.CurrentState);
             }
         }
 
@@ -817,7 +985,7 @@ namespace Engine {
         }
 
         public Vector2? GetTouchpadPosition(VrController controller, float deadZone = 0f) {
-            Vector2 raw = m_controllers[(int)controller].Stick;
+            Vector2 raw = m_controllers[(int)controller].Trackpad;
             return deadZone > 0f ? ApplyDeadZone(raw, deadZone) : raw;
         }
 
@@ -836,10 +1004,13 @@ namespace Engine {
                 VrControllerButton.TouchpadCenter => m_controllers[idx].StickClick
                     && MathF.Abs(m_controllers[idx].Stick.X) < 0.3f
                     && MathF.Abs(m_controllers[idx].Stick.Y) < 0.3f,
-                VrControllerButton.TouchpadLeft => m_controllers[idx].Stick.X < -0.5f,
-                VrControllerButton.TouchpadRight => m_controllers[idx].Stick.X > 0.5f,
-                VrControllerButton.TouchpadUp => m_controllers[idx].Stick.Y > 0.5f,
-                VrControllerButton.TouchpadDown => m_controllers[idx].Stick.Y < -0.5f,
+                VrControllerButton.TouchpadLeft => m_controllers[idx].Trackpad.X < -0.5f,
+                VrControllerButton.TouchpadRight => m_controllers[idx].Trackpad.X > 0.5f,
+                VrControllerButton.TouchpadUp => m_controllers[idx].Trackpad.Y > 0.5f,
+                VrControllerButton.TouchpadDown => m_controllers[idx].Trackpad.Y < -0.5f,
+                VrControllerButton.Primary => m_controllers[idx].Primary,
+                VrControllerButton.Secondary => m_controllers[idx].Secondary,
+                VrControllerButton.Thumbrest => m_controllers[idx].Thumbrest,
                 _ => false
             };
         }
@@ -854,10 +1025,13 @@ namespace Engine {
                 VrControllerButton.TouchpadCenter => m_controllers[idx].StickClick && !m_lastControllers[idx].StickClick
                     && MathF.Abs(m_controllers[idx].Stick.X) < 0.3f
                     && MathF.Abs(m_controllers[idx].Stick.Y) < 0.3f,
-                VrControllerButton.TouchpadLeft => m_controllers[idx].Stick.X < -0.5f && m_lastControllers[idx].Stick.X >= -0.4f,
-                VrControllerButton.TouchpadRight => m_controllers[idx].Stick.X > 0.5f && m_lastControllers[idx].Stick.X <= 0.4f,
-                VrControllerButton.TouchpadUp => m_controllers[idx].Stick.Y > 0.5f && m_lastControllers[idx].Stick.Y <= 0.4f,
-                VrControllerButton.TouchpadDown => m_controllers[idx].Stick.Y < -0.5f && m_lastControllers[idx].Stick.Y >= -0.4f,
+                VrControllerButton.TouchpadLeft => m_controllers[idx].Trackpad.X < -0.5f && m_lastControllers[idx].Trackpad.X >= -0.4f,
+                VrControllerButton.TouchpadRight => m_controllers[idx].Trackpad.X > 0.5f && m_lastControllers[idx].Trackpad.X <= 0.4f,
+                VrControllerButton.TouchpadUp => m_controllers[idx].Trackpad.Y > 0.5f && m_lastControllers[idx].Trackpad.Y <= 0.4f,
+                VrControllerButton.TouchpadDown => m_controllers[idx].Trackpad.Y < -0.5f && m_lastControllers[idx].Trackpad.Y >= -0.4f,
+                VrControllerButton.Primary => m_controllers[idx].Primary && !m_lastControllers[idx].Primary,
+                VrControllerButton.Secondary => m_controllers[idx].Secondary && !m_lastControllers[idx].Secondary,
+                VrControllerButton.Thumbrest => m_controllers[idx].Thumbrest && !m_lastControllers[idx].Thumbrest,
                 _ => false
             };
         }
@@ -1007,6 +1181,11 @@ namespace Engine {
                 if (m_stickYActions[hand].Handle != 0) m_xr.DestroyAction(m_stickYActions[hand]);
                 if (m_stickClickActions[hand].Handle != 0) m_xr.DestroyAction(m_stickClickActions[hand]);
                 if (m_poseActions[hand].Handle != 0) m_xr.DestroyAction(m_poseActions[hand]);
+                if (m_primaryActions[hand].Handle != 0) m_xr.DestroyAction(m_primaryActions[hand]);
+                if (m_secondaryActions[hand].Handle != 0) m_xr.DestroyAction(m_secondaryActions[hand]);
+                if (m_thumbrestActions[hand].Handle != 0) m_xr.DestroyAction(m_thumbrestActions[hand]);
+                if (m_trackpadXActions[hand].Handle != 0) m_xr.DestroyAction(m_trackpadXActions[hand]);
+                if (m_trackpadYActions[hand].Handle != 0) m_xr.DestroyAction(m_trackpadYActions[hand]);
             }
 
             if (m_actionSet.Handle != 0) {

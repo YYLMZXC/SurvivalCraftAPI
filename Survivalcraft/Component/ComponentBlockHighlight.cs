@@ -35,9 +35,15 @@ namespace Game {
 
         public virtual void Update(float dt) {
             Camera activeCamera = m_componentPlayer.GameWidget.ActiveCamera;
-            Ray3 ray = new(activeCamera.ViewPosition, activeCamera.ViewDirection);
+            Ray3? ray = m_componentPlayer.ComponentInput.IsControlledByVr
+                ? m_componentPlayer.ComponentInput.CalculateVrHandRay()
+                : new Ray3(activeCamera.ViewPosition, activeCamera.ViewDirection);
             NearbyEditableCell = null;
-            m_highlightRaycastResult = m_componentPlayer.ComponentMiner.Raycast(ray, RaycastMode.Digging);
+            if (ray == null) {
+                m_highlightRaycastResult = null;
+                return;
+            }
+            m_highlightRaycastResult = m_componentPlayer.ComponentMiner.Raycast(ray.Value, RaycastMode.Digging);
             if (!(m_highlightRaycastResult is TerrainRaycastResult terrainRaycastResult)) {
                 return;
             }

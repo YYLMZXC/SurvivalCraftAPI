@@ -147,53 +147,16 @@ namespace Game {
             int vrW = VrManager.SwapchainWidth;
             int vrH = VrManager.SwapchainHeight;
             int leftEyeFbo = 0;
-            int origFbo = GLWrapper.m_mainFramebuffer;
-            Point2? origOverride = Display.BackbufferSizeOverride;
-            RenderTarget2D origRenderTarget = Display.RenderTarget;
 
-            try {
-                for (int eye = 0; eye < 2; eye++) {
-                    VrEye vrEye = (VrEye)eye;
-                    EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
-                    camera.Eye = vrEye;
-                    camera.PrepareForDrawing();
+            VrManager.RenderToEyes((vrEye, eyeFrame) => {
+                camera.Eye = vrEye;
+                camera.PrepareForDrawing();
+                m_subsystemDrawing.Draw(camera);
+                if (vrEye == VrEye.Left) leftEyeFbo = eyeFrame.Fbo;
+            });
+            camera.Eye = null;
 
-                    Display.BackbufferSizeOverride = new Point2(vrW, vrH);
-                    GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
-                    GLWrapper.BindFramebuffer(eyeFrame.Fbo);
-                    Display.RenderTarget = null;
-                    Display.Viewport = new Viewport(0, 0, vrW, vrH);
-                    Display.ScissorRectangle = new Rectangle(0, 0, vrW, vrH);
-                    GLWrapper.ApplyViewportScissor(
-                        new Viewport(0, 0, vrW, vrH),
-                        new Rectangle(0, 0, vrW, vrH), true);
-                    GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
-                    GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-                    m_subsystemDrawing.Draw(camera);
-
-                    if (eye == 0) leftEyeFbo = eyeFrame.Fbo;
-                }
-                camera.Eye = null;
-
-                Display.BackbufferSizeOverride = origOverride;
-                GLWrapper.m_mainFramebuffer = origFbo;
-                GLWrapper.BindFramebuffer(origFbo);
-                Display.RenderTarget = origRenderTarget;
-
-                BlitVrEyeToDesktop(leftEyeFbo, vrW, vrH);
-            }
-            finally {
-                camera.Eye = null;
-                Display.BackbufferSizeOverride = origOverride;
-                GLWrapper.m_mainFramebuffer = origFbo;
-                GLWrapper.BindFramebuffer(origFbo);
-                Display.RenderTarget = origRenderTarget;
-
-                for (int eye = 0; eye < 2; eye++) {
-                    VrManager.ReleaseEye((VrEye)eye);
-                }
-            }
+            BlitVrEyeToDesktop(leftEyeFbo, vrW, vrH);
 
             ModsManager.HookAction(
                 "DrawToScreen",

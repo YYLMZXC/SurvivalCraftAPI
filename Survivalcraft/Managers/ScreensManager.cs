@@ -1,6 +1,5 @@
 using Engine;
 using Engine.Graphics;
-using Silk.NET.OpenGLES;
 
 namespace Game {
     public static class ScreensManager {
@@ -136,44 +135,11 @@ namespace Game {
 
             AnimateVrQuad();
 
-            int origFbo = GLWrapper.m_mainFramebuffer;
-            Point2? origOverride = Display.BackbufferSizeOverride;
-            Viewport origViewport = Display.Viewport;
-            Rectangle origScissor = Display.ScissorRectangle;
-
-            try {
-                for (int eye = 0; eye < 2; eye++) {
-                    VrEye vrEye = (VrEye)eye;
-                    EyeFrame eyeFrame = VrManager.GetEyeFrame(vrEye);
-
-                    Display.BackbufferSizeOverride = new Point2(vrW, vrH);
-                    GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
-                    GLWrapper.BindFramebuffer(eyeFrame.Fbo);
-                    Display.RenderTarget = null;
-                    Display.Viewport = new Viewport(0, 0, vrW, vrH);
-                    Display.ScissorRectangle = new Rectangle(0, 0, vrW, vrH);
-                    GLWrapper.ApplyViewportScissor(
-                        new Viewport(0, 0, vrW, vrH),
-                        new Rectangle(0, 0, vrW, vrH), true);
-                    GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
-                    GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-                    DrawVrBackground();
-                    DrawVrQuad();
-                    m_pr3.Flush(eyeFrame.ViewMatrix * eyeFrame.ProjectionMatrix);
-                }
-            }
-            finally {
-                GLWrapper.m_mainFramebuffer = origFbo;
-                GLWrapper.BindFramebuffer(origFbo);
-                Display.BackbufferSizeOverride = origOverride;
-                Display.Viewport = origViewport;
-                Display.ScissorRectangle = origScissor;
-
-                for (int eye = 0; eye < 2; eye++) {
-                    VrManager.ReleaseEye((VrEye)eye);
-                }
-            }
+            VrManager.RenderToEyes((vrEye, eyeFrame) => {
+                DrawVrBackground();
+                DrawVrQuad();
+                m_pr3.Flush(eyeFrame.ViewMatrix * eyeFrame.ProjectionMatrix);
+            });
         }
 
         public static void UpdateAnimation() {

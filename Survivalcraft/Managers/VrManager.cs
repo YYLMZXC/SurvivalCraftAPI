@@ -1,5 +1,6 @@
 using Engine;
 using Engine.Graphics;
+using Silk.NET.OpenGLES;
 
 namespace Game {
     public class VrManager {
@@ -87,5 +88,48 @@ namespace Game {
         public static int SwapchainWidth => _backend?.SwapchainWidth ?? 0;
 
         public static int SwapchainHeight => _backend?.SwapchainHeight ?? 0;
+
+        public static void RenderToEyes(Action<VrEye, EyeFrame> renderAction) {
+            int vrW = SwapchainWidth;
+            int vrH = SwapchainHeight;
+            int origFbo = GLWrapper.m_mainFramebuffer;
+            Point2? origOverride = Display.BackbufferSizeOverride;
+            Viewport origViewport = Display.Viewport;
+            Rectangle origScissor = Display.ScissorRectangle;
+            RenderTarget2D origRenderTarget = Display.RenderTarget;
+
+            try {
+                for (int eye = 0; eye < 2; eye++) {
+                    VrEye vrEye = (VrEye)eye;
+                    EyeFrame eyeFrame = GetEyeFrame(vrEye);
+
+                    Display.BackbufferSizeOverride = new Point2(vrW, vrH);
+                    GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
+                    GLWrapper.BindFramebuffer(eyeFrame.Fbo);
+                    Display.RenderTarget = null;
+                    Viewport vp = new(0, 0, vrW, vrH);
+                    Rectangle sc = new(0, 0, vrW, vrH);
+                    Display.Viewport = vp;
+                    Display.ScissorRectangle = sc;
+                    GLWrapper.ApplyViewportScissor(vp, sc, true);
+                    GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
+                    GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+                    renderAction(vrEye, eyeFrame);
+                }
+            }
+            finally {
+                GLWrapper.m_mainFramebuffer = origFbo;
+                GLWrapper.BindFramebuffer(origFbo);
+                Display.BackbufferSizeOverride = origOverride;
+                Display.Viewport = origViewport;
+                Display.ScissorRectangle = origScissor;
+                Display.RenderTarget = origRenderTarget;
+
+                for (int eye = 0; eye < 2; eye++) {
+                    ReleaseEye((VrEye)eye);
+                }
+            }
+        }
     }
 }

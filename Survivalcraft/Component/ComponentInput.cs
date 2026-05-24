@@ -337,7 +337,9 @@ namespace Game {
                 Vector3 hmdMatrixYpr = VrManager.HmdMatrixYpr;
                 Vector3 hmdLastMatrixYpr = VrManager.HmdLastMatrixYpr;
                 Vector3 vector2 = hmdMatrixYpr - hmdLastMatrixYpr;
-                m_playerInput.VrLook = new Vector2(vector2.X, hmdMatrixYpr.Y);
+                if (!(m_componentPlayer.GameWidget.ActiveCamera is TppCamera)) {
+                    m_playerInput.VrLook = new Vector2(vector2.X, hmdMatrixYpr.Y);
+                }
                 TouchInput? touchInput2 = VrManager.GetTouchInput(VrController.Right);
                 Vector2 zero2 = Vector2.Zero;
                 if (touchInput2.HasValue) {

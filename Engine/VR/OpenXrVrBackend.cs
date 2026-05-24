@@ -461,14 +461,14 @@ namespace Engine {
                 "/user/hand/left/input/menu/click",
                 "/user/hand/left/input/thumbstick/x",
                 "/user/hand/left/input/thumbstick/y",
-                "/user/hand/left/input/grip/pose",
+                "/user/hand/left/input/aim/pose",
                 "/user/hand/left/input/thumbstick/click",
                 "/user/hand/right/input/trigger/value",
                 "/user/hand/right/input/squeeze/value",
                 "/user/hand/right/input/system/click",
                 "/user/hand/right/input/thumbstick/x",
                 "/user/hand/right/input/thumbstick/y",
-                "/user/hand/right/input/grip/pose",
+                "/user/hand/right/input/aim/pose",
                 "/user/hand/right/input/thumbstick/click"
             ]);
 
@@ -479,14 +479,14 @@ namespace Engine {
                 "/user/hand/left/input/menu/click",
                 "/user/hand/left/input/trackpad/x",
                 "/user/hand/left/input/trackpad/y",
-                "/user/hand/left/input/grip/pose",
+                "/user/hand/left/input/aim/pose",
                 "/user/hand/left/input/trackpad/click",
                 "/user/hand/right/input/trigger/value",
                 "/user/hand/right/input/squeeze/click",
                 "/user/hand/right/input/menu/click",
                 "/user/hand/right/input/trackpad/x",
                 "/user/hand/right/input/trackpad/y",
-                "/user/hand/right/input/grip/pose",
+                "/user/hand/right/input/aim/pose",
                 "/user/hand/right/input/trackpad/click"
             ]);
 
@@ -497,14 +497,14 @@ namespace Engine {
                 "/user/hand/left/input/system/click",
                 "/user/hand/left/input/thumbstick/x",
                 "/user/hand/left/input/thumbstick/y",
-                "/user/hand/left/input/grip/pose",
+                "/user/hand/left/input/aim/pose",
                 "/user/hand/left/input/trackpad/force",
                 "/user/hand/right/input/trigger/value",
                 "/user/hand/right/input/squeeze/value",
                 "/user/hand/right/input/system/click",
                 "/user/hand/right/input/thumbstick/x",
                 "/user/hand/right/input/thumbstick/y",
-                "/user/hand/right/input/grip/pose",
+                "/user/hand/right/input/aim/pose",
                 "/user/hand/right/input/trackpad/force"
             ]);
         }

@@ -276,6 +276,8 @@ namespace Game {
 
         public Matrix? VrQuadMatrix { get; set; }
 
+        public Vector2? VrCursorLocalPosition { get; set; }
+
         public bool IsVrCursorVisible {
             get {
                 if (m_isVrCursorVisible) {
@@ -718,9 +720,10 @@ namespace Game {
                 texturedBatch2D2.QueueQuad(corner3, corner4, 0f, Vector2.Zero, Vector2.One, Color.White);
                 texturedBatch2D2.TransformTriangles(Widget.GlobalTransform, count2);
             }
-            if (VrCursorPosition.HasValue) {
+            if (VrCursorLocalPosition.HasValue) {
+                Vector2 screenPos = Vector2.Transform(VrCursorLocalPosition.Value, Widget.GlobalTransform);
                 dc.CursorPrimitivesRenderer2D.FlatBatch(0, null, null, null).QueueDisc(
-                    VrCursorPosition.Value, new Vector2(10f, 10f), 0f, Color.White);
+                    screenPos, new Vector2(10f, 10f), 0f, Color.White);
             }
         }
 
@@ -972,6 +975,7 @@ namespace Game {
 
         public virtual void UpdateInputFromVrControllers() {
             VrCursorPosition = null;
+            VrCursorLocalPosition = null;
             if (VrQuadMatrix.HasValue) {
                 Matrix quadMatrix = VrQuadMatrix.Value;
                 Matrix controllerMatrix = VrManager.GetControllerMatrix(VrController.Right);
@@ -982,6 +986,7 @@ namespace Game {
                     Vector3 vector = ray.Position + intersection.Value * ray.Direction - quadMatrix.Translation;
                     float x = Vector3.Dot(vector, Vector3.Normalize(quadMatrix.Right)) / quadMatrix.Right.Length() * Widget.ActualSize.X;
                     float y = (1f - Vector3.Dot(vector, Vector3.Normalize(quadMatrix.Up)) / quadMatrix.Up.Length()) * Widget.ActualSize.Y;
+                    VrCursorLocalPosition = new Vector2(x, y);
                     VrCursorPosition = Vector2.Transform(new Vector2(x, y), Widget.GlobalTransform);
                 }
             }

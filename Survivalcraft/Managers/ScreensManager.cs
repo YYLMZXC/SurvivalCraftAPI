@@ -120,12 +120,24 @@ namespace Game {
         static void RenderVrMenu() {
             int vrW = VrManager.SwapchainWidth;
             int vrH = VrManager.SwapchainHeight;
+            Point2 desktopSize = Display.BackbufferSize;
+            float desktopAspect = (float)desktopSize.X / desktopSize.Y;
+            float vrAspect = (float)vrW / vrH;
+            int rtW, rtH;
+            if (desktopAspect > vrAspect) {
+                rtW = vrW;
+                rtH = (int)MathF.Ceiling(vrW / desktopAspect);
+            }
+            else {
+                rtH = vrH;
+                rtW = (int)MathF.Ceiling(vrH * desktopAspect);
+            }
 
             if (m_uiRenderTarget == null
-                || m_uiRenderTarget.Width != vrW
-                || m_uiRenderTarget.Height != vrH) {
+                || m_uiRenderTarget.Width != rtW
+                || m_uiRenderTarget.Height != rtH) {
                 Utilities.Dispose(ref m_uiRenderTarget);
-                m_uiRenderTarget = new RenderTarget2D(vrW, vrH, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
+                m_uiRenderTarget = new RenderTarget2D(rtW, rtH, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
             }
 
             Display.RenderTarget = m_uiRenderTarget;

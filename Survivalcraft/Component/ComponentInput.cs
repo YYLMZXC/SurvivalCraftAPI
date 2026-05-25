@@ -313,11 +313,15 @@ namespace Game {
                 Vector2 xZ = Vector3.TransformNormal(new Vector3(VrManager.WalkingVelocity.X, 0f, VrManager.WalkingVelocity.Y), m).XZ;
                 Vector3 value = Vector3.TransformNormal(new Vector3(VrManager.HeadMove.X, 0f, VrManager.HeadMove.Y), m);
                 Vector3 zero = Vector3.Zero;
-                zero += 0.5f * new Vector3(Vector2.Dot(xZ, v), 0f, Vector2.Dot(xZ, v2));
+                if (m_componentPlayer.GameWidget.ActiveCamera is FppCamera) {
+                    zero += 0.5f * new Vector3(Vector2.Dot(xZ, v), 0f, Vector2.Dot(xZ, v2));
+                }
                 zero += new Vector3(2f * vrStickPosition.X, 2f * vrStickPosition2.Y, 2f * vrStickPosition.Y);
                 m_playerInput.Move += zero;
                 m_playerInput.CrouchMove += zero;
-                m_playerInput.VrMove = value;
+                if (m_componentPlayer.GameWidget.ActiveCamera is FppCamera) {
+                    m_playerInput.VrMove = value;
+                }
                 TouchInput? touchInput = VrManager.GetTouchInput(VrController.Left);
                 if (touchInput.HasValue
                     && num3 > 0f) {
@@ -337,7 +341,7 @@ namespace Game {
                 Vector3 hmdMatrixYpr = VrManager.HmdMatrixYpr;
                 Vector3 hmdLastMatrixYpr = VrManager.HmdLastMatrixYpr;
                 Vector3 vector2 = hmdMatrixYpr - hmdLastMatrixYpr;
-                if (!(m_componentPlayer.GameWidget.ActiveCamera is TppCamera or OrbitCamera)) {
+                if (m_componentPlayer.GameWidget.ActiveCamera is FppCamera) {
                     m_playerInput.VrLook = new Vector2(vector2.X, hmdMatrixYpr.Y);
                 }
                 TouchInput? touchInput2 = VrManager.GetTouchInput(VrController.Right);

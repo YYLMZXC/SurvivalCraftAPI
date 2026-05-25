@@ -390,10 +390,19 @@ namespace Game {
                     m_playerInput.ScrollInventory++;
                 }
                 m_playerInput.Drop |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Grip);
+                // Vive touchpad: right pad down
+                m_playerInput.SwitchCameraMode |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadDown);
             }
             if (!DialogsManager.HasDialogs(m_componentPlayer.GuiWidget)) {
-                m_playerInput.ToggleInventory |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Menu)
-                    | input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Menu);
+                if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Menu)
+                    || input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Menu)) {
+                    input.Back = true;
+                }
+                // Vive left touchpad left / Quest left thumbrest
+                m_playerInput.ToggleInventory |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadLeft)
+                    | input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Thumbrest);
+                // Vive left touchpad right
+                m_playerInput.ToggleClothing |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadRight);
             }
         }
 

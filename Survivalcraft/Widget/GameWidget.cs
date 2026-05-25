@@ -155,6 +155,13 @@ public class GameWidget : CanvasWidget {
         }
     }
 
+    public override void ArrangeOverride() {
+        base.ArrangeOverride();
+        GuiWidget.IsDrawEnabled = true;
+        ViewWidget.RenderGuiToTexture();
+        GuiWidget.IsDrawEnabled = false;
+    }
+
     public WidgetInputDevice DetermineInputDevices() {
         bool flag = false;
         foreach (PlayerData playersDatum in PlayerData.SubsystemPlayers.PlayersData) {

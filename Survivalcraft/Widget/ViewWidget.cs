@@ -7,6 +7,8 @@ namespace Game {
         public SubsystemDrawing m_subsystemDrawing;
 
         public RenderTarget2D m_scalingRenderTarget;
+        public PrimitivesRenderer3D m_vrGuiPr3 = new();
+        RenderTarget2D m_vrGuiRenderTarget;
 
         public static RenderTarget2D ScreenTexture = new(Window.Size.X, Window.Size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
 
@@ -46,6 +48,7 @@ namespace Game {
         public override void Dispose() {
             base.Dispose();
             Utilities.Dispose(ref m_scalingRenderTarget);
+            Utilities.Dispose(ref m_vrGuiRenderTarget);
         }
 
         public virtual void DragOver(Widget dragWidget, object data) { }
@@ -124,6 +127,7 @@ namespace Game {
                 DrawToScreenVr(camera);
                 return;
             }
+            GameWidget.GuiWidget.IsDrawEnabled = true;
             GameWidget.ActiveCamera.PrepareForDrawing();
             RenderTarget2D renderTarget = Display.RenderTarget;
             SetupScalingRenderTarget();
@@ -146,17 +150,55 @@ namespace Game {
         void DrawToScreenVr(BasePerspectiveCamera camera) {
             int vrW = VrManager.SwapchainWidth;
             int vrH = VrManager.SwapchainHeight;
-            int leftEyeFbo = 0;
+            int desktopFbo = GLWrapper.m_mainFramebuffer;
 
-            VrManager.RenderToEyes((vrEye, eyeFrame) => {
-                camera.Eye = vrEye;
-                camera.PrepareForDrawing();
-                m_subsystemDrawing.Draw(camera);
-                if (vrEye == VrEye.Left) leftEyeFbo = eyeFrame.Fbo;
-            });
-            camera.Eye = null;
+            // GUI texture pre-rendered in GameWidget.ArrangeOverride.
+            // GuiWidget.IsDrawEnabled is false (skipped in CollateDrawItems).
 
-            BlitVrEyeToDesktop(leftEyeFbo, vrW, vrH);
+            try {
+                VrManager.RenderToEyes((vrEye, eyeFrame) => {
+                    camera.Eye = vrEye;
+                    camera.PrepareForDrawing();
+                    m_subsystemDrawing.Draw(camera);
+
+                    if (m_vrGuiRenderTarget == null) return;
+
+                    // Compute GUI quad from HMD (same technique as VR menu in ScreensManager)
+                    Matrix hmd = VrManager.HmdMatrix;
+                    Vector3 hmdFwd = hmd.Forward * new Vector3(1f, 0f, 1f);
+                    if (hmdFwd.LengthSquared() < 0.001f) return;
+
+                    float dist = 6f;
+                    Vector3 center = hmd.Translation + dist * (Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.1f, 0f));
+                    Vector2 size = new(m_vrGuiRenderTarget.Width / (float)m_vrGuiRenderTarget.Height, 1f);
+                    size /= MathUtils.Max(size.X, size.Y);
+                    size *= 7.5f;
+                    Vector3 faceDir = Vector3.Normalize(hmd.Translation - center);
+                    Vector3 qRight = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, faceDir)) * size.X;
+                    Vector3 qUp = Vector3.Normalize(Vector3.Cross(faceDir, qRight)) * size.Y;
+                    Vector3 corner = center - 0.5f * qRight - 0.5f * qUp;
+
+                    // Draw GUI texture as 3D quad
+                    TexturedBatch3D guiBatch = m_vrGuiPr3.TexturedBatch(
+                        m_vrGuiRenderTarget,
+                        false, 0,
+                        DepthStencilState.None,
+                        RasterizerState.CullNoneScissor,
+                        BlendState.AlphaBlend,
+                        SamplerState.LinearClamp
+                    );
+                    ScreensManager.QueueQuad(guiBatch, corner, qRight, qUp, Color.White);
+                    m_vrGuiPr3.Flush(eyeFrame.ViewMatrix * eyeFrame.ProjectionMatrix);
+
+                    // Blit to desktop before swapchain is released
+                    if (vrEye == VrEye.Left) {
+                        BlitVrEyeToDesktop(eyeFrame.Fbo, desktopFbo, vrW, vrH);
+                    }
+                });
+            }
+            finally {
+                camera.Eye = null;
+            }
 
             ModsManager.HookAction(
                 "DrawToScreen",
@@ -167,7 +209,25 @@ namespace Game {
             );
         }
 
-        static void BlitVrEyeToDesktop(int srcFbo, int vrW, int vrH) {
+        /// <summary>
+        ///     Render GuiWidget to VR texture. Caller must ensure GuiWidget.IsDrawEnabled is true.
+        /// </summary>
+        public void RenderGuiToTexture() {
+            Point2 size = new(Display.Viewport.Width, Display.Viewport.Height);
+            if (m_vrGuiRenderTarget == null
+                || m_vrGuiRenderTarget.Width != size.X
+                || m_vrGuiRenderTarget.Height != size.Y) {
+                Utilities.Dispose(ref m_vrGuiRenderTarget);
+                m_vrGuiRenderTarget = new RenderTarget2D(size.X, size.Y, 1, ColorFormat.Rgba8888, DepthFormat.None);
+            }
+            RenderTarget2D prevRT = Display.RenderTarget;
+            Display.RenderTarget = m_vrGuiRenderTarget;
+            Display.Clear(Color.Transparent, 1f, 0);
+            Widget.DrawWidgetsHierarchy(GameWidget.GuiWidget);
+            Display.RenderTarget = prevRT;
+        }
+
+        static void BlitVrEyeToDesktop(int srcFbo, int dstFbo, int vrW, int vrH) {
             if (srcFbo == 0) return;
             Point2 winSize = Display.BackbufferSize;
             float vrAspect = (float)vrW / vrH;
@@ -185,6 +245,7 @@ namespace Game {
                 offsetX = 0;
                 offsetY = (winSize.Y - drawH) / 2;
             }
+            GLWrapper.GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, (uint)dstFbo);
             GLWrapper.ClearColor(Vector4.Zero);
             GLWrapper.ApplyViewportScissor(
                 new Viewport(0, 0, winSize.X, winSize.Y),
@@ -196,6 +257,7 @@ namespace Game {
                 offsetX, offsetY, offsetX + drawW, offsetY + drawH,
                 ClearBufferMask.ColorBufferBit,
                 BlitFramebufferFilter.Linear);
+            GLWrapper.GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)dstFbo);
         }
     }
 }

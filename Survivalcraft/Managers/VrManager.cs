@@ -5,6 +5,7 @@ using Silk.NET.OpenGLES;
 namespace Game {
     public class VrManager {
         static IVrBackend _backend;
+        static bool m_frameActive;
 
         struct VrTouchTracker {
             public bool ClickActive;
@@ -25,6 +26,8 @@ namespace Game {
         public static bool IsVrAvailable => _backend?.IsAvailable ?? false;
 
         public static bool IsVrStarted => _backend?.IsStarted ?? false;
+
+        public static bool IsFrameActive => m_frameActive;
 
         public static RenderTarget2D VrRenderTarget => _backend?.VrRenderTarget;
 
@@ -51,7 +54,10 @@ namespace Game {
 
         public static void StartVr() => _backend?.StartVr();
 
-        public static void StopVr() => _backend?.StopVr();
+        public static void StopVr() {
+            _backend?.StopVr();
+            m_frameActive = false;
+        }
 
         public static void WaitGetPoses() { }
 
@@ -163,13 +169,19 @@ namespace Game {
             return len > 1f ? v * (1f / len) : v;
         }
 
-        public static bool BeginFrame() => _backend?.BeginFrame() ?? false;
+        public static bool BeginFrame() {
+            m_frameActive = _backend?.BeginFrame() ?? false;
+            return m_frameActive;
+        }
 
         public static EyeFrame GetEyeFrame(VrEye eye) => _backend?.GetEyeFrame(eye) ?? default;
 
         public static void ReleaseEye(VrEye eye) => _backend?.ReleaseEye(eye);
 
-        public static void EndFrame() => _backend?.EndFrame();
+        public static void EndFrame() {
+            _backend?.EndFrame();
+            m_frameActive = false;
+        }
 
         public static void Update() => _backend?.Update();
 
@@ -190,6 +202,7 @@ namespace Game {
         public static int SwapchainHeight => _backend?.SwapchainHeight ?? 0;
 
         public static void RenderToEyes(Action<VrEye, EyeFrame> renderAction) {
+            if (!m_frameActive) return;
             int vrW = SwapchainWidth;
             int vrH = SwapchainHeight;
             int origFbo = GLWrapper.m_mainFramebuffer;

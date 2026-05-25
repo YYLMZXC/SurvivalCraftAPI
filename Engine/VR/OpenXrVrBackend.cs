@@ -225,6 +225,9 @@ namespace Engine {
             if (!IsAvailable || IsStarted) return;
 
             try {
+                if (m_instance.Handle == 0) {
+                    DoInitialize();
+                }
                 DoStartVr();
                 IsStarted = true;
                 Log.Information("OpenXR VR started");
@@ -1169,7 +1172,41 @@ namespace Engine {
 
             GL gl = Graphics.GLWrapper.GL;
 
-            // Destroy controller spaces
+            for (int i = 0; i < 2; i++) {
+                if (m_swapchains[i].Handle != 0) {
+                    m_xr.DestroySwapchain(m_swapchains[i]);
+                    m_swapchains[i] = default;
+                }
+                if (m_swapchainFbos[i] != 0) {
+                    gl.DeleteFramebuffer(m_swapchainFbos[i]);
+                    m_swapchainFbos[i] = 0;
+                }
+                if (m_swapchainDepthRbs[i] != 0) {
+                    gl.DeleteRenderbuffer(m_swapchainDepthRbs[i]);
+                    m_swapchainDepthRbs[i] = 0;
+                }
+            }
+
+            DestroySessionResources();
+
+            if (m_instance.Handle != 0) {
+                m_xr.DestroyInstance(m_instance);
+                m_instance = default;
+            }
+            m_glExt?.Dispose();
+            m_xr?.Dispose();
+
+            IsStarted = false;
+            // Keep IsAvailable true so StartVr can reinitialize
+        }
+
+        public void Dispose() {
+            StopVr();
+            IsAvailable = false;
+            GC.SuppressFinalize(this);
+        }
+
+        void DestroySessionResources() {
             for (int i = 0; i < 2; i++) {
                 if (m_controllerSpaces[i].Handle != 0) {
                     m_xr.DestroySpace(m_controllerSpaces[i]);
@@ -1177,7 +1214,6 @@ namespace Engine {
                 }
             }
 
-            // Destroy actions
             for (int hand = 0; hand < 2; hand++) {
                 if (m_triggerActions[hand].Handle != 0) m_xr.DestroyAction(m_triggerActions[hand]);
                 if (m_gripActions[hand].Handle != 0) m_xr.DestroyAction(m_gripActions[hand]);
@@ -1198,22 +1234,6 @@ namespace Engine {
                 m_actionSet = default;
             }
 
-            // Destroy swapchains, FBOs, depth renderbuffers
-            for (int i = 0; i < 2; i++) {
-                if (m_swapchains[i].Handle != 0) {
-                    m_xr.DestroySwapchain(m_swapchains[i]);
-                    m_swapchains[i] = default;
-                }
-                if (m_swapchainFbos[i] != 0) {
-                    gl.DeleteFramebuffer(m_swapchainFbos[i]);
-                    m_swapchainFbos[i] = 0;
-                }
-                if (m_swapchainDepthRbs[i] != 0) {
-                    gl.DeleteRenderbuffer(m_swapchainDepthRbs[i]);
-                    m_swapchainDepthRbs[i] = 0;
-                }
-            }
-
             if (m_playSpace.Handle != 0) {
                 m_xr.DestroySpace(m_playSpace);
                 m_playSpace = default;
@@ -1222,22 +1242,6 @@ namespace Engine {
                 m_xr.DestroySession(m_session);
                 m_session = default;
             }
-
-            IsStarted = false;
-        }
-
-        public void Dispose() {
-            StopVr();
-
-            if (m_instance.Handle != 0) {
-                m_xr.DestroyInstance(m_instance);
-                m_instance = default;
-            }
-            m_glExt?.Dispose();
-            m_xr?.Dispose();
-
-            IsAvailable = false;
-            GC.SuppressFinalize(this);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Engine;
+using Engine.Graphics;
 using Game;
 using GameEntitySystem;
 
@@ -8,6 +9,8 @@ public class GameWidget : CanvasWidget {
     public Dictionary<Camera, Func<GameWidget, bool>> m_isCameraEnable = new();
 
     public Camera m_activeCamera;
+    public RenderTarget2D m_vrGuiRenderTarget;
+    public PrimitivesRenderer2D m_vrCursorRenderer;
 
     public ViewWidget ViewWidget { get; set; }
 
@@ -160,9 +163,11 @@ public class GameWidget : CanvasWidget {
 
     public override void ArrangeOverride() {
         base.ArrangeOverride();
-        GuiWidget.IsDrawEnabled = true;
-        ViewWidget.RenderGuiToTexture();
-        GuiWidget.IsDrawEnabled = false;
+        if (VrManager.IsVrStarted) {
+            GuiWidget.IsDrawEnabled = true;
+            RenderGuiToTexture();
+            GuiWidget.IsDrawEnabled = false;
+        }
     }
 
     public WidgetInputDevice DetermineInputDevices() {
@@ -204,5 +209,35 @@ public class GameWidget : CanvasWidget {
             return false;
         }
         return true;
+    }
+
+    public void RenderGuiToTexture() {
+        Point2 size = new(Display.Viewport.Width, Display.Viewport.Height);
+        if (m_vrGuiRenderTarget == null
+            || m_vrGuiRenderTarget.Width != size.X
+            || m_vrGuiRenderTarget.Height != size.Y) {
+            Utilities.Dispose(ref m_vrGuiRenderTarget);
+            m_vrGuiRenderTarget = new RenderTarget2D(size.X, size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
+        }
+        m_vrCursorRenderer ??= new PrimitivesRenderer2D();
+        RenderTarget2D prevRT = Display.RenderTarget;
+        Display.RenderTarget = m_vrGuiRenderTarget;
+        Display.Clear(Color.Transparent, 1f, 0);
+        DrawWidgetsHierarchy(GuiWidget);
+
+        // Draw VR cursor disc on top of GUI texture
+        if (Input.IsVrCursorVisible && Input.VrCursorLocalPosition.HasValue) {
+            Vector2 screenPos = Vector2.Transform(Input.VrCursorLocalPosition.Value, GuiWidget.GlobalTransform);
+            m_vrCursorRenderer.FlatBatch(0, null, null, null).QueueDisc(
+                screenPos, new Vector2(10f, 10f), 0f, Color.White);
+            m_vrCursorRenderer.Flush();
+        }
+
+        Display.RenderTarget = prevRT;
+    }
+
+    public override void Dispose() {
+        base.Dispose();
+        Utilities.Dispose(ref m_vrGuiRenderTarget);
     }
 }

@@ -30,19 +30,21 @@ namespace Game {
             if (m_viewAngleSlider.IsSliding) {
                 SettingsManager.ViewAngle = m_viewAngleSlider.Value;
             }
-            m_virtualRealityButton.IsEnabled = VrManager.IsVrAvailable;
             if (m_virtualRealityButton.IsClicked) {
                 if (SettingsManager.UseVr) {
                     SettingsManager.UseVr = false;
-                    VrManager.StopVr();
+                    if (VrManager.IsVrAvailable) {
+                        VrManager.StopVr();
+                    }
                 }
                 else {
                     SettingsManager.UseVr = true;
-                    VrManager.StartVr();
+                    if (VrManager.IsVrAvailable) {
+                        VrManager.StartVr();
+                    }
                 }
             }
-            m_virtualRealityButton.IsChecked = SettingsManager.UseVr;
-            m_virtualRealityButton.Text = SettingsManager.UseVr ? "Enabled" : "Disabled";
+            m_virtualRealityButton.Text = SettingsManager.UseVr ? LanguageControl.Enable : LanguageControl.Disable;
             m_brightnessSlider.Value = SettingsManager.Brightness;
             m_brightnessSlider.Text = MathF.Round(SettingsManager.Brightness * 10f).ToString(CultureInfo.InvariantCulture);
             m_viewAngleSlider.Value = SettingsManager.ViewAngle;

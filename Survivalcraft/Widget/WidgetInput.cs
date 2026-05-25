@@ -720,7 +720,7 @@ namespace Game {
                 texturedBatch2D2.QueueQuad(corner3, corner4, 0f, Vector2.Zero, Vector2.One, Color.White);
                 texturedBatch2D2.TransformTriangles(Widget.GlobalTransform, count2);
             }
-            if (VrCursorLocalPosition.HasValue) {
+            if (IsVrCursorVisible && VrCursorLocalPosition.HasValue) {
                 Vector2 screenPos = Vector2.Transform(VrCursorLocalPosition.Value, Widget.GlobalTransform);
                 dc.CursorPrimitivesRenderer2D.FlatBatch(0, null, null, null).QueueDisc(
                     screenPos, new Vector2(10f, 10f), 0f, Color.White);

@@ -8,7 +8,6 @@ namespace Game {
 
         public RenderTarget2D m_scalingRenderTarget;
         public PrimitivesRenderer3D m_vrGuiPr3 = new();
-        RenderTarget2D m_vrGuiRenderTarget;
         public Matrix? VrGuiQuadMatrix { get; private set; }
 
         public static RenderTarget2D ScreenTexture = new(Window.Size.X, Window.Size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
@@ -49,7 +48,6 @@ namespace Game {
         public override void Dispose() {
             base.Dispose();
             Utilities.Dispose(ref m_scalingRenderTarget);
-            Utilities.Dispose(ref m_vrGuiRenderTarget);
         }
 
         public virtual void DragOver(Widget dragWidget, object data) { }
@@ -124,7 +122,7 @@ namespace Game {
         }
 
         public virtual void DrawToScreen(DrawContext dc) {
-            if (VrManager.IsVrStarted && GameWidget.ActiveCamera is BasePerspectiveCamera camera) {
+            if (VrManager.IsVrStarted && VrManager.IsFrameActive && GameWidget.ActiveCamera is BasePerspectiveCamera camera) {
                 DrawToScreenVr(camera);
                 return;
             }
@@ -162,7 +160,7 @@ namespace Game {
                     camera.PrepareForDrawing();
                     m_subsystemDrawing.Draw(camera);
 
-                    if (m_vrGuiRenderTarget == null) return;
+                    if (GameWidget.m_vrGuiRenderTarget == null) return;
 
                     // Compute GUI quad from HMD (same technique as VR menu in ScreensManager)
                     Matrix hmd = VrManager.HmdMatrix;
@@ -171,7 +169,7 @@ namespace Game {
 
                     float dist = 6f;
                     Vector3 center = hmd.Translation + dist * (Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.1f, 0f));
-                    Vector2 size = new(m_vrGuiRenderTarget.Width / (float)m_vrGuiRenderTarget.Height, 1f);
+                    Vector2 size = new(GameWidget.m_vrGuiRenderTarget.Width / (float)GameWidget.m_vrGuiRenderTarget.Height, 1f);
                     size /= MathUtils.Max(size.X, size.Y);
                     size *= 7.5f;
                     Vector3 faceDir = Vector3.Normalize(hmd.Translation - center);
@@ -189,7 +187,7 @@ namespace Game {
 
                     // Draw GUI texture as 3D quad
                     TexturedBatch3D guiBatch = m_vrGuiPr3.TexturedBatch(
-                        m_vrGuiRenderTarget,
+                        GameWidget.m_vrGuiRenderTarget,
                         false, 0,
                         DepthStencilState.None,
                         RasterizerState.CullNoneScissor,
@@ -216,36 +214,6 @@ namespace Game {
                     return false;
                 }
             );
-        }
-
-        /// <summary>
-        ///     Render GuiWidget to VR texture. Caller must ensure GuiWidget.IsDrawEnabled is true.
-        /// </summary>
-        PrimitivesRenderer2D m_vrCursorRenderer = new();
-
-        public void RenderGuiToTexture() {
-            Point2 size = new(Display.Viewport.Width, Display.Viewport.Height);
-            if (m_vrGuiRenderTarget == null
-                || m_vrGuiRenderTarget.Width != size.X
-                || m_vrGuiRenderTarget.Height != size.Y) {
-                Utilities.Dispose(ref m_vrGuiRenderTarget);
-                m_vrGuiRenderTarget = new RenderTarget2D(size.X, size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
-            }
-            RenderTarget2D prevRT = Display.RenderTarget;
-            Display.RenderTarget = m_vrGuiRenderTarget;
-            Display.Clear(Color.Transparent, 1f, 0);
-            Widget.DrawWidgetsHierarchy(GameWidget.GuiWidget);
-
-            // Draw VR cursor disc on top of GUI texture
-            WidgetInput input = GameWidget.Input;
-            if (input.IsVrCursorVisible && input.VrCursorLocalPosition.HasValue) {
-                Vector2 screenPos = Vector2.Transform(input.VrCursorLocalPosition.Value, GameWidget.GuiWidget.GlobalTransform);
-                m_vrCursorRenderer.FlatBatch(0, null, null, null).QueueDisc(
-                    screenPos, new Vector2(10f, 10f), 0f, Color.White);
-                m_vrCursorRenderer.Flush();
-            }
-
-            Display.RenderTarget = prevRT;
         }
 
         static void BlitVrEyeToDesktop(int srcFbo, int dstFbo, int vrW, int vrH) {

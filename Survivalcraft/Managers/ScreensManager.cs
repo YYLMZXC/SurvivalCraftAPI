@@ -19,6 +19,7 @@ namespace Game {
         public static RenderTarget2D m_uiRenderTarget;
         public static Vector3 m_vrQuadPosition;
         public static Matrix m_vrQuadMatrix;
+        static bool m_vrQuadInitialized;
         public static float DebugUiScale = 1f;
 
         public static ContainerWidget RootWidget { get; set; }
@@ -147,6 +148,8 @@ namespace Game {
 
             AnimateVrQuad();
 
+            if (!m_vrQuadInitialized) return;
+
             VrManager.RenderToEyes((vrEye, eyeFrame) => {
                 DrawVrBackground();
                 DrawVrQuad();
@@ -237,10 +240,13 @@ namespace Game {
             if (Time.FrameIndex >= 5) {
                 float num = 6f;
                 Matrix hmdMatrix = VrManager.HmdMatrix;
+                Vector3 hmdForward = hmdMatrix.Forward * new Vector3(1f, 0f, 1f);
+                if (hmdForward.LengthSquared() < 0.001f) return;
                 Vector3 vector = hmdMatrix.Translation
-                    + num * (Vector3.Normalize(hmdMatrix.Forward * new Vector3(1f, 0f, 1f)) + new Vector3(0f, 0.1f, 0f));
-                if (m_vrQuadPosition == Vector3.Zero) {
+                    + num * (Vector3.Normalize(hmdForward) + new Vector3(0f, 0.1f, 0f));
+                if (!m_vrQuadInitialized) {
                     m_vrQuadPosition = vector;
+                    m_vrQuadInitialized = true;
                 }
                 if (Vector3.Distance(m_vrQuadPosition, vector) > 0f) {
                     Vector3 v = vector * new Vector3(1f, 0f, 1f) - m_vrQuadPosition * new Vector3(1f, 0f, 1f);

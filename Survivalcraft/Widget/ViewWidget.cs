@@ -9,6 +9,7 @@ namespace Game {
         public RenderTarget2D m_scalingRenderTarget;
         public PrimitivesRenderer3D m_vrGuiPr3 = new();
         RenderTarget2D m_vrGuiRenderTarget;
+        public Matrix? VrGuiQuadMatrix { get; private set; }
 
         public static RenderTarget2D ScreenTexture = new(Window.Size.X, Window.Size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
 
@@ -178,6 +179,14 @@ namespace Game {
                     Vector3 qUp = Vector3.Normalize(Vector3.Cross(faceDir, qRight)) * size.Y;
                     Vector3 corner = center - 0.5f * qRight - 0.5f * qUp;
 
+                    // Store quad matrix for VR cursor hit testing (used next frame)
+                    VrGuiQuadMatrix = new Matrix {
+                        Translation = corner,
+                        Right = qRight,
+                        Up = qUp,
+                        Forward = faceDir
+                    };
+
                     // Draw GUI texture as 3D quad
                     TexturedBatch3D guiBatch = m_vrGuiPr3.TexturedBatch(
                         m_vrGuiRenderTarget,
@@ -212,18 +221,30 @@ namespace Game {
         /// <summary>
         ///     Render GuiWidget to VR texture. Caller must ensure GuiWidget.IsDrawEnabled is true.
         /// </summary>
+        PrimitivesRenderer2D m_vrCursorRenderer = new();
+
         public void RenderGuiToTexture() {
             Point2 size = new(Display.Viewport.Width, Display.Viewport.Height);
             if (m_vrGuiRenderTarget == null
                 || m_vrGuiRenderTarget.Width != size.X
                 || m_vrGuiRenderTarget.Height != size.Y) {
                 Utilities.Dispose(ref m_vrGuiRenderTarget);
-                m_vrGuiRenderTarget = new RenderTarget2D(size.X, size.Y, 1, ColorFormat.Rgba8888, DepthFormat.None);
+                m_vrGuiRenderTarget = new RenderTarget2D(size.X, size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
             }
             RenderTarget2D prevRT = Display.RenderTarget;
             Display.RenderTarget = m_vrGuiRenderTarget;
             Display.Clear(Color.Transparent, 1f, 0);
             Widget.DrawWidgetsHierarchy(GameWidget.GuiWidget);
+
+            // Draw VR cursor disc on top of GUI texture
+            WidgetInput input = GameWidget.Input;
+            if (input.IsVrCursorVisible && input.VrCursorLocalPosition.HasValue) {
+                Vector2 screenPos = Vector2.Transform(input.VrCursorLocalPosition.Value, GameWidget.GuiWidget.GlobalTransform);
+                m_vrCursorRenderer.FlatBatch(0, null, null, null).QueueDisc(
+                    screenPos, new Vector2(10f, 10f), 0f, Color.White);
+                m_vrCursorRenderer.Flush();
+            }
+
             Display.RenderTarget = prevRT;
         }
 

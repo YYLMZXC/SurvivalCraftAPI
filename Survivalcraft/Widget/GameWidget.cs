@@ -143,6 +143,9 @@ public class GameWidget : CanvasWidget {
             || WidgetsHierarchyInput.Devices != widgetInputDevice) {
             WidgetsHierarchyInput = new WidgetInput(widgetInputDevice);
         }
+        if (VrManager.IsVrStarted && ViewWidget.VrGuiQuadMatrix.HasValue) {
+            WidgetsHierarchyInput.VrQuadMatrix = ViewWidget.VrGuiQuadMatrix;
+        }
         if ((widgetInputDevice & WidgetInputDevice.MultiMice) != 0
             && (widgetInputDevice & WidgetInputDevice.Mouse) == 0) {
             WidgetsHierarchyInput.UseSoftMouseCursor = true;

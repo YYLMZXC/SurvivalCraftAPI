@@ -294,6 +294,13 @@ namespace Game {
                 return;
             }
             IsControlledByTouch = false;
+            // HMD head tracking always runs regardless of modal/dialog state
+            Vector3 hmdMatrixYpr = VrManager.HmdMatrixYpr;
+            Vector3 hmdLastMatrixYpr = VrManager.HmdLastMatrixYpr;
+            Vector3 vector2 = hmdMatrixYpr - hmdLastMatrixYpr;
+            if (m_componentPlayer.GameWidget.ActiveCamera is FppCamera) {
+                m_playerInput.VrLook = new Vector2(vector2.X, hmdMatrixYpr.Y);
+            }
             if (m_componentGui.ModalPanelWidget != null
                 || DialogsManager.HasDialogs(m_componentPlayer.GuiWidget)) {
                 if (!input.IsVrCursorVisible) {
@@ -338,12 +345,6 @@ namespace Game {
                     }
                 }
                 m_playerInput.Look += 0.5f * vrStickPosition2 * MathF.Pow(vrStickPosition2.LengthSquared(), 0.25f);
-                Vector3 hmdMatrixYpr = VrManager.HmdMatrixYpr;
-                Vector3 hmdLastMatrixYpr = VrManager.HmdLastMatrixYpr;
-                Vector3 vector2 = hmdMatrixYpr - hmdLastMatrixYpr;
-                if (m_componentPlayer.GameWidget.ActiveCamera is FppCamera) {
-                    m_playerInput.VrLook = new Vector2(vector2.X, hmdMatrixYpr.Y);
-                }
                 TouchInput? touchInput2 = VrManager.GetTouchInput(VrController.Right);
                 Vector2 zero2 = Vector2.Zero;
                 if (touchInput2.HasValue) {

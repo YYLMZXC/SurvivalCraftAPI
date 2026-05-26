@@ -648,7 +648,8 @@
     "102": "地形  {0}, 季节 {1}, 最终 {2}",
     "103": "重生位置",
     "104": "切换全屏",
-    "105": "最高模组影响等级"
+    "105": "最高模组影响等级",
+    "106": "VR 控制"
   },
   "ModDetailsDialog": {
     "1": "禁用原因：",
@@ -1074,7 +1075,7 @@
     "Dig": "挖掘",
     "Hit": "攻击",
     "Aim": "瞄准",
-    "Interact": "交互，放置",
+    "Interact": "交互, 放置",
     "ToggleCrouch": "蹲下",
     "ToggleMount": "骑乘",
     "ToggleFly": "飞行",
@@ -1091,7 +1092,7 @@
     "EditItem": "编辑物品",
     "KeyboardHelp": "键盘设置",
     "GamepadHelp": "手柄设置",
-    "GameMenu": "退出游戏",
+    "GameMenu": "游戏菜单",
     "Back": "返回"
   },
   "KeyboardMappingScreenKeys": {
@@ -1116,6 +1117,36 @@
     "DPadRight": "→",
     "DPadUp": "↑",
     "DPadDown": "↓"
+  },
+  "VrControllerMappingScreenKeys": {
+    "LeftController": "左控制器",
+    "RightController": "右控制器",
+    "ThumbstickTrackpad": "摇杆 / 触摸板 (触摸)",
+    "ThumbstickTrackpadHorizontal": "摇杆 / 触摸板 (触摸) 水平",
+    "ThumbstickTrackpadVertical": "摇杆 / 触摸板 (触摸) 垂直",
+    "TriggerClick": "扳机 (点击)",
+    "TriggerHold": "扳机 (长按)",
+    "Grip": "握持键",
+    "Menu": "菜单键",
+    "YTrackpadUp": "Y / 触摸板上 (点击)",
+    "XTrackpadDown": "X / 触摸板下 (点击)",
+    "ThumbrestTrackpadLeft": "拇指托 / 触摸板左 (点击)",
+    "TrackpadRight": "触摸板右 (点击)",
+    "BTrackpadLeft": "B / 触摸板左 (点击)",
+    "ATrackpadRight": "A / 触摸板右 (点击)",
+    "ThumbrestTrackpadUp": "拇指托 / 触摸板上 (点击)",
+    "TrackpadDown": "触摸板下 (点击)"
+  },
+  "VrControllerMappingScreenActions": {
+    "SpecialClick": "界面特殊点击",
+    "HorizontalMove": "水平移动",
+    "Look": "视角",
+    "UIScroll": "界面滚动",
+    "UIClick": "界面点击",
+    "UIPress": "界面按下",
+    "UIBack": "界面返回",
+    "ScrollInventoryLeft": "物品栏左滚",
+    "ScrollInventoryRight": "物品栏右滚"
   },
   "ComponentSickness": {
     "1": "患病",

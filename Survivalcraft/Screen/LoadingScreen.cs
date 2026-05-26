@@ -578,6 +578,7 @@ namespace Game {
             AddLoadAction(delegate { AddScreen("Player", new PlayerScreen()); });
             AddLoadAction(delegate { AddScreen("KeyboardMapping", new KeyboardMappingScreen()); });
             AddLoadAction(delegate { AddScreen("GamepadMapping", new GamepadMappingScreen()); });
+            AddLoadAction(delegate { AddScreen("VrControllerMapping", new VrControllerMappingScreen()); });
             AddLoadAction(delegate { AddScreen("CameraManage", new CameraManageScreen()); });
             AddLoadAction(delegate { AddScreen("ManageClassSubstitutes", new ManageClassSubstitutesScreen()); });
         }

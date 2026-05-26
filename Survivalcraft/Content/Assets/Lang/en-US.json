@@ -648,7 +648,8 @@
     "102": "Terrain {0}, Season {1}, Final {2}",
     "103": "Spawn Location",
     "104": "Toggle Fullscreen",
-    "105": "Highest Mod Impact Level"
+    "105": "Highest Mod Impact Level",
+    "106": "VR Controls"
   },
   "ModDetailsDialog": {
     "1": "Disable Reason: ",
@@ -752,6 +753,8 @@
     "FurniturePack": "FurniturePack",
     "ByRank": "ByRank",
     "ByTime": "ByTime",
+    "ByBoutique": "Boutique",
+    "ByHide": "Hide",
     "Order Type": "Order Type",
     "Filter": "Filter"
   },
@@ -1114,6 +1117,36 @@
     "DPadRight": "→",
     "DPadUp": "↑",
     "DPadDown": "↓"
+  },
+  "VrControllerMappingScreenKeys": {
+    "LeftController": "Left Controller",
+    "RightController": "Right Controller",
+    "ThumbstickTrackpad": "Thumbstick / Trackpad (touch)",
+    "ThumbstickTrackpadHorizontal": "Thumbstick / Trackpad (touch) Horizontal",
+    "ThumbstickTrackpadVertical": "Thumbstick / Trackpad (touch) Vertical",
+    "TriggerClick": "Trigger (click)",
+    "TriggerHold": "Trigger (hold)",
+    "Grip": "Grip",
+    "Menu": "Menu",
+    "YTrackpadUp": "Y / Trackpad Up (click)",
+    "XTrackpadDown": "X / Trackpad Down (click)",
+    "ThumbrestTrackpadLeft": "Thumbrest / Trackpad Left (click)",
+    "TrackpadRight": "Trackpad Right (click)",
+    "BTrackpadLeft": "B / Trackpad Left (click)",
+    "ATrackpadRight": "A / Trackpad Right (click)",
+    "ThumbrestTrackpadUp": "Thumbrest / Trackpad Up (click)",
+    "TrackpadDown": "Trackpad Down (click)"
+  },
+  "VrControllerMappingScreenActions": {
+    "SpecialClick": "UI Special Click",
+    "HorizontalMove": "Horizontal Move",
+    "Look": "Look",
+    "UIScroll": "UI Scroll",
+    "UIClick": "UI Click",
+    "UIPress": "UI Press",
+    "UIBack": "UI Back",
+    "ScrollInventoryLeft": "Scroll Inventory Left",
+    "ScrollInventoryRight": "Scroll Inventory Right"
   },
   "ComponentSickness": {
     "1": "Sickness",

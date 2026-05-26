@@ -463,6 +463,9 @@ namespace Game {
                         )
                     );
                 }
+                if (VrManager.IsVrStarted) {
+                    list.Add(new Tuple<string, Action>(LanguageControl.Get(fName, "106"), delegate { ScreensManager.SwitchScreen("VrControllerMapping"); }));
+                }
 #if !BROWSER
                 list.Add(
                     new Tuple<string, Action>(

@@ -1028,11 +1028,13 @@ namespace Game {
                 Any = true;
             }
             if (IsVrCursorVisible && VrCursorPosition.HasValue) {
-                if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadUp)) {
-                    Scroll = new Vector3(VrCursorPosition.Value, 1f);
+                if (IsVrButtonDown(VrController.Right, VrControllerButton.TouchpadUp)
+                    || GetVrStickPosition(VrController.Right, 0f).Y > 0.5f) {
+                    Scroll = new Vector3(VrCursorPosition.Value, 0.5f);
                 }
-                if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadDown)) {
-                    Scroll = new Vector3(VrCursorPosition.Value, -1f);
+                if (IsVrButtonDown(VrController.Right, VrControllerButton.TouchpadDown)
+                    || GetVrStickPosition(VrController.Right, 0f).Y < -0.5f) {
+                    Scroll = new Vector3(VrCursorPosition.Value, -0.5f);
                 }
                 if (IsVrButtonDown(VrController.Right, VrControllerButton.Trigger)) {
                     Press = VrCursorPosition.Value;

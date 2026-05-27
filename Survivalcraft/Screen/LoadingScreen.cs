@@ -167,8 +167,12 @@ namespace Game {
                     if (VrManager.IsVrAvailable && SettingsManager.UseVr) {
                         try {
                             VrManager.StartVr();
+                            if (!VrManager.IsVrStarted) {
+                                SettingsManager.UseVr = false;
+                            }
                         }
                         catch (Exception ex) {
+                            SettingsManager.UseVr = false;
                             Log.Error($"VR start error: {ex}");
                         }
                     }

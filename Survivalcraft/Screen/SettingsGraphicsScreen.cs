@@ -38,10 +38,7 @@ namespace Game {
                     }
                 }
                 else {
-                    SettingsManager.UseVr = true;
-                    if (VrManager.IsVrAvailable) {
-                        VrManager.StartVr();
-                    }
+                    SettingsManager.UseVr = VrManager.IsVrAvailable && VrManager.StartVr();
                 }
             }
             m_virtualRealityButton.Text = SettingsManager.UseVr ? LanguageControl.Enable : LanguageControl.Disable;

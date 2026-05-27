@@ -31,6 +31,7 @@ namespace Engine {
         // Config
         uint m_swapchainWidth;
         uint m_swapchainHeight;
+        InternalFormat m_swapchainFormat;
 
         // Actions
         ActionSet m_actionSet;
@@ -61,8 +62,6 @@ namespace Engine {
         Vector3 m_hmdLastMatrixYpr;
         Vector2 m_headMove;
 
-        const uint GL_RGBA8 = 0x8058;
-
         // Platform abstract methods
         protected abstract StructureType GraphicsBindingType { get; }
         protected abstract int GetGraphicsBindingSize();
@@ -73,19 +72,12 @@ namespace Engine {
             public Vector2 Stick;
             public Vector2 Trackpad;
             public float Trigger;
-            public float LastTrigger;
             public bool Grip;
-            public bool LastGrip;
             public bool Menu;
-            public bool LastMenu;
             public bool StickClick;
-            public bool LastStickClick;
             public bool Primary;
-            public bool LastPrimary;
             public bool Secondary;
-            public bool LastSecondary;
             public bool Thumbrest;
-            public bool LastThumbrest;
             public Matrix Matrix;
         }
 
@@ -233,6 +225,9 @@ namespace Engine {
                 Log.Information("OpenXR VR started");
             }
             catch (Exception e) {
+                DestroyGraphicsResources();
+                DestroySessionResources();
+                IsStarted = false;
                 Log.Error($"OpenXR StartVr failed: {e.Message}");
             }
         }
@@ -259,12 +254,12 @@ namespace Engine {
                     spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Local;
                     result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
                     if (result != Result.Success) {
-                        Log.Error($"xrCreateReferenceSpace failed: {result}");
-                        return;
+                        throw new InvalidOperationException($"xrCreateReferenceSpace failed: {result}");
                     }
                 }
             }
 
+            SelectSwapchainFormat();
             // 3. Create swapchains
             for (int eye = 0; eye < 2; eye++) {
                 CreateSwapchain(eye);
@@ -299,8 +294,36 @@ namespace Engine {
 
             Result result = m_xr.CreateSession(m_instance, ref sessionCreateInfo, ref m_session);
             if (result != Result.Success) {
-                Log.Error($"xrCreateSession failed: {result}");
+                throw new InvalidOperationException($"xrCreateSession failed: {result}");
             }
+        }
+
+        void SelectSwapchainFormat() {
+            uint formatCount = 0;
+            Result result = m_xr.EnumerateSwapchainFormats(m_session, 0, ref formatCount, null);
+            if (result != Result.Success) {
+                throw new InvalidOperationException($"xrEnumerateSwapchainFormats failed: {result}");
+            }
+            if (formatCount == 0) {
+                throw new InvalidOperationException("OpenXR runtime did not report any swapchain formats.");
+            }
+            long[] formats = new long[formatCount];
+            fixed (long* pFormats = formats) {
+                result = m_xr.EnumerateSwapchainFormats(m_session, formatCount, ref formatCount, pFormats);
+                if (result != Result.Success) {
+                    throw new InvalidOperationException($"xrEnumerateSwapchainFormats failed: {result}");
+                }
+            }
+            InternalFormat[] preferredFormats = [
+                InternalFormat.Rgba8, InternalFormat.Srgb8Alpha8, InternalFormat.Srgb8, InternalFormat.Rgb10A2, InternalFormat.Rgba16, InternalFormat.Rgba16f, InternalFormat.Rgb16f, InternalFormat.Rgba32f
+            ];
+            foreach (long preferredFormat in preferredFormats) {
+                if (formats.Contains(preferredFormat)) {
+                    m_swapchainFormat = (InternalFormat)preferredFormat;
+                    return;
+                }
+            }
+            m_swapchainFormat = (InternalFormat)formats[0];
         }
 
         static void MemClear(void* ptr, int size) {
@@ -316,7 +339,7 @@ namespace Engine {
             SwapchainCreateInfo swapchainInfo = new() {
                 Type = StructureType.SwapchainCreateInfo,
                 UsageFlags = SwapchainUsageFlags.ColorAttachmentBit | SwapchainUsageFlags.SampledBit,
-                Format = GL_RGBA8,
+                Format = (long)m_swapchainFormat,
                 SampleCount = 1,
                 Width = m_swapchainWidth,
                 Height = m_swapchainHeight,
@@ -327,20 +350,28 @@ namespace Engine {
 
             Result result = m_xr.CreateSwapchain(m_session, ref swapchainInfo, ref m_swapchains[eye]);
             if (result != Result.Success) {
-                Log.Error($"xrCreateSwapchain failed for eye {eye}: {result}");
-                return;
+                throw new InvalidOperationException($"xrCreateSwapchain failed for eye {eye}: {result}");
             }
 
             // Enumerate swapchain images
             uint imageCount = 0;
-            m_xr.EnumerateSwapchainImages(m_swapchains[eye], 0, ref imageCount, ref *(SwapchainImageBaseHeader*)null);
+            result = m_xr.EnumerateSwapchainImages(m_swapchains[eye], 0, ref imageCount, ref *(SwapchainImageBaseHeader*)null);
+            if (result != Result.Success) {
+                throw new InvalidOperationException($"xrEnumerateSwapchainImages failed for eye {eye}: {result}");
+            }
+            if (imageCount == 0) {
+                throw new InvalidOperationException($"OpenXR swapchain for eye {eye} has no images.");
+            }
 
             SwapchainImageOpenGLKHR[] images = new SwapchainImageOpenGLKHR[imageCount];
             for (int i = 0; i < imageCount; i++) {
                 images[i] = new() { Type = StructureType.SwapchainImageOpenglKhr };
             }
             fixed (SwapchainImageOpenGLKHR* pImages = images) {
-                m_xr.EnumerateSwapchainImages(m_swapchains[eye], imageCount, ref imageCount, ref *(SwapchainImageBaseHeader*)pImages);
+                result = m_xr.EnumerateSwapchainImages(m_swapchains[eye], imageCount, ref imageCount, ref *(SwapchainImageBaseHeader*)pImages);
+                if (result != Result.Success) {
+                    throw new InvalidOperationException($"xrEnumerateSwapchainImages failed for eye {eye}: {result}");
+                }
             }
 
             m_swapchainImages[eye] = new uint[imageCount];
@@ -365,7 +396,11 @@ namespace Engine {
 
             gl.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, m_swapchainImages[eye][0], 0);
 
+            GLEnum status = gl.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
             gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            if (status != GLEnum.FramebufferComplete) {
+                throw new InvalidOperationException($"OpenXR framebuffer incomplete for eye {eye}: {status}");
+            }
 
             m_swapchainFbos[eye] = fbo;
             m_swapchainDepthRbs[eye] = depthRb;
@@ -699,7 +734,12 @@ namespace Engine {
                 suggestedBindings.SuggestedBindings = pBindings;
                 Result r = m_xr.SuggestInteractionProfileBinding(m_instance, in suggestedBindings);
                 if (r != Result.Success) {
-                    Log.Warning($"SuggestBindings failed for {profilePath}: {r}");
+                    if (r == Result.ErrorPathUnsupported) {
+                        Log.Information($"OpenXR interaction profile not supported by runtime: {profilePath}");
+                    }
+                    else {
+                        Log.Warning($"SuggestBindings failed for {profilePath}: {r}");
+                    }
                 }
             }
         }
@@ -1057,11 +1097,13 @@ namespace Engine {
             float midX = (leftPos.X + rightPos.X) * 0.5f;
             float midY = (leftPos.Y + rightPos.Y) * 0.5f;
             float midZ = (leftPos.Z + rightPos.Z) * 0.5f;
-            return Matrix.CreateTranslation(
+            Vector3 playSpaceOffset = new(
                 eyePose.Position.X - midX,
                 eyePose.Position.Y - midY,
                 eyePose.Position.Z - midZ
             );
+            Vector3 headLocalOffset = Vector3.TransformNormal(playSpaceOffset, m_hmdMatrixInverted.OrientationMatrix);
+            return Matrix.CreateTranslation(headLocalOffset);
         }
 
         public Matrix GetProjectionMatrix(VrEye eye, float near, float far) {
@@ -1170,22 +1212,7 @@ namespace Engine {
         public void StopVr() {
             if (!IsStarted) return;
 
-            GL gl = Graphics.GLWrapper.GL;
-
-            for (int i = 0; i < 2; i++) {
-                if (m_swapchains[i].Handle != 0) {
-                    m_xr.DestroySwapchain(m_swapchains[i]);
-                    m_swapchains[i] = default;
-                }
-                if (m_swapchainFbos[i] != 0) {
-                    gl.DeleteFramebuffer(m_swapchainFbos[i]);
-                    m_swapchainFbos[i] = 0;
-                }
-                if (m_swapchainDepthRbs[i] != 0) {
-                    gl.DeleteRenderbuffer(m_swapchainDepthRbs[i]);
-                    m_swapchainDepthRbs[i] = 0;
-                }
-            }
+            DestroyGraphicsResources();
 
             DestroySessionResources();
 
@@ -1198,6 +1225,24 @@ namespace Engine {
 
             IsStarted = false;
             // Keep IsAvailable true so StartVr can reinitialize
+        }
+
+        void DestroyGraphicsResources() {
+            GL gl = Graphics.GLWrapper.GL;
+            for (int i = 0; i < 2; i++) {
+                if (m_swapchains[i].Handle != 0) {
+                    m_xr?.DestroySwapchain(m_swapchains[i]);
+                    m_swapchains[i] = default;
+                }
+                if (m_swapchainFbos[i] != 0) {
+                    gl?.DeleteFramebuffer(m_swapchainFbos[i]);
+                    m_swapchainFbos[i] = 0;
+                }
+                if (m_swapchainDepthRbs[i] != 0) {
+                    gl?.DeleteRenderbuffer(m_swapchainDepthRbs[i]);
+                    m_swapchainDepthRbs[i] = 0;
+                }
+            }
         }
 
         public void Dispose() {
@@ -1215,18 +1260,18 @@ namespace Engine {
             }
 
             for (int hand = 0; hand < 2; hand++) {
-                if (m_triggerActions[hand].Handle != 0) m_xr.DestroyAction(m_triggerActions[hand]);
-                if (m_gripActions[hand].Handle != 0) m_xr.DestroyAction(m_gripActions[hand]);
-                if (m_menuActions[hand].Handle != 0) m_xr.DestroyAction(m_menuActions[hand]);
-                if (m_stickXActions[hand].Handle != 0) m_xr.DestroyAction(m_stickXActions[hand]);
-                if (m_stickYActions[hand].Handle != 0) m_xr.DestroyAction(m_stickYActions[hand]);
-                if (m_stickClickActions[hand].Handle != 0) m_xr.DestroyAction(m_stickClickActions[hand]);
-                if (m_poseActions[hand].Handle != 0) m_xr.DestroyAction(m_poseActions[hand]);
-                if (m_primaryActions[hand].Handle != 0) m_xr.DestroyAction(m_primaryActions[hand]);
-                if (m_secondaryActions[hand].Handle != 0) m_xr.DestroyAction(m_secondaryActions[hand]);
-                if (m_thumbrestActions[hand].Handle != 0) m_xr.DestroyAction(m_thumbrestActions[hand]);
-                if (m_trackpadXActions[hand].Handle != 0) m_xr.DestroyAction(m_trackpadXActions[hand]);
-                if (m_trackpadYActions[hand].Handle != 0) m_xr.DestroyAction(m_trackpadYActions[hand]);
+                DestroyAction(ref m_triggerActions[hand]);
+                DestroyAction(ref m_gripActions[hand]);
+                DestroyAction(ref m_menuActions[hand]);
+                DestroyAction(ref m_stickXActions[hand]);
+                DestroyAction(ref m_stickYActions[hand]);
+                DestroyAction(ref m_stickClickActions[hand]);
+                DestroyAction(ref m_poseActions[hand]);
+                DestroyAction(ref m_primaryActions[hand]);
+                DestroyAction(ref m_secondaryActions[hand]);
+                DestroyAction(ref m_thumbrestActions[hand]);
+                DestroyAction(ref m_trackpadXActions[hand]);
+                DestroyAction(ref m_trackpadYActions[hand]);
             }
 
             if (m_actionSet.Handle != 0) {
@@ -1241,6 +1286,12 @@ namespace Engine {
             if (m_session.Handle != 0) {
                 m_xr.DestroySession(m_session);
                 m_session = default;
+            }
+        }
+        void DestroyAction(ref XrAction action) {
+            if (action.Handle != 0) {
+                m_xr.DestroyAction(action);
+                action = default;
             }
         }
     }

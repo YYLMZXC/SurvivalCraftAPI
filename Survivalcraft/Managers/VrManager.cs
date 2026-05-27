@@ -29,6 +29,7 @@ namespace Game {
 
         public static bool IsFrameActive => m_frameActive;
 
+        [Obsolete]
         public static RenderTarget2D VrRenderTarget => _backend?.VrRenderTarget;
 
         public static Matrix HmdMatrix => _backend?.HmdMatrix ?? default;
@@ -52,15 +53,20 @@ namespace Game {
             _backend?.Initialize();
         }
 
-        public static void StartVr() => _backend?.StartVr();
+        public static bool StartVr() {
+            _backend?.StartVr();
+            return IsVrStarted;
+        }
 
         public static void StopVr() {
             _backend?.StopVr();
             m_frameActive = false;
         }
 
+        [Obsolete]
         public static void WaitGetPoses() { }
 
+        [Obsolete]
         public static void SubmitEyeTexture(VrEye eye, Texture2D texture) { }
 
         public static Matrix GetEyeToHeadTransform(VrEye eye) => _backend?.GetEyeToHeadTransform(eye) ?? default;
@@ -219,6 +225,7 @@ namespace Game {
                     Display.BackbufferSizeOverride = new Point2(vrW, vrH);
                     GLWrapper.m_mainFramebuffer = eyeFrame.Fbo;
                     GLWrapper.BindFramebuffer(eyeFrame.Fbo);
+                    GLWrapper.Disable(EnableCap.FramebufferSrgb);
                     Display.RenderTarget = null;
                     Viewport vp = new(0, 0, vrW, vrH);
                     Rectangle sc = new(0, 0, vrW, vrH);

@@ -36,7 +36,7 @@ namespace Game {
                 m_position += 1.5f * dt * (m_bestPosition.Value - m_position);
             }
 
-            if (!VrManager.IsVrStarted) {
+            if (!Eye.HasValue) {
                 SetupPerspectiveCamera(m_position, v - m_position, Vector3.UnitY);
                 return;
             }

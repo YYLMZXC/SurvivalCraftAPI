@@ -146,16 +146,14 @@ public class GameWidget : CanvasWidget {
             || WidgetsHierarchyInput.Devices != widgetInputDevice) {
             WidgetsHierarchyInput = new WidgetInput(widgetInputDevice);
         }
-        if (VrManager.IsVrStarted && ViewWidget.VrGuiQuadMatrix.HasValue) {
+        if ((widgetInputDevice & WidgetInputDevice.VrControllers) != WidgetInputDevice.None && VrManager.IsVrStarted && ViewWidget.VrGuiQuadMatrix.HasValue) {
             WidgetsHierarchyInput.VrQuadMatrix = ViewWidget.VrGuiQuadMatrix;
         }
-        if ((widgetInputDevice & WidgetInputDevice.MultiMice) != 0
-            && (widgetInputDevice & WidgetInputDevice.Mouse) == 0) {
-            WidgetsHierarchyInput.UseSoftMouseCursor = true;
-        }
         else {
-            WidgetsHierarchyInput.UseSoftMouseCursor = false;
+            WidgetsHierarchyInput.VrQuadMatrix = null;
         }
+        WidgetsHierarchyInput.UseSoftMouseCursor = (widgetInputDevice & WidgetInputDevice.MultiMice) != WidgetInputDevice.None
+            && (widgetInputDevice & WidgetInputDevice.Mouse) == WidgetInputDevice.None;
         if (GuiWidget.ParentWidget == null) {
             UpdateWidgetsHierarchy(GuiWidget);
         }
@@ -163,10 +161,14 @@ public class GameWidget : CanvasWidget {
 
     public override void ArrangeOverride() {
         base.ArrangeOverride();
-        if (VrManager.IsVrStarted) {
+        if (VrManager.IsVrStarted
+            && (WidgetsHierarchyInput.Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
             GuiWidget.IsDrawEnabled = true;
             RenderGuiToTexture();
             GuiWidget.IsDrawEnabled = false;
+        }
+        else {
+            GuiWidget.IsDrawEnabled = true;
         }
     }
 

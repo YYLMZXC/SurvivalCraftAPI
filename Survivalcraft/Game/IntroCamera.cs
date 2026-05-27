@@ -28,7 +28,7 @@ namespace Game {
             float x = Vector3.Distance(TargetCameraPosition, CameraPosition);
             CameraPosition += MathUtils.Min(dt * Speed, x) * Vector3.Normalize(TargetCameraPosition - CameraPosition);
 
-            if (!VrManager.IsVrStarted) {
+            if (!Eye.HasValue) {
                 SetupPerspectiveCamera(CameraPosition, TargetPosition - CameraPosition, Vector3.UnitY);
                 return;
             }

@@ -15,7 +15,7 @@ namespace Game {
         public override void Update(float dt) {
             if (GameWidget.Target == null) return;
 
-            if (!VrManager.IsVrStarted) {
+            if (!Eye.HasValue) {
                 Matrix matrix = Matrix.CreateFromQuaternion(GameWidget.Target.ComponentCreatureModel.EyeRotation);
                 matrix.Translation = GameWidget.Target.ComponentCreatureModel.EyePosition;
                 SetupPerspectiveCamera(matrix.Translation, matrix.Forward, matrix.Up);

@@ -50,7 +50,7 @@ namespace Game {
             ComponentPlayer componentPlayer = GameWidget.PlayerData.ComponentPlayer;
             if (componentPlayer == null || GameWidget.Target == null) return;
 
-            if (VrManager.IsVrStarted) {
+            if (Eye.HasValue) {
                 UpdateVr(dt);
             }
             else {

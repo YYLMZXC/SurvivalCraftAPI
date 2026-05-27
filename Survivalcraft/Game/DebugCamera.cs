@@ -33,7 +33,7 @@ namespace Game {
         }
 
         public override void Update(float dt) {
-            if (VrManager.IsVrStarted) {
+            if (Eye.HasValue) {
                 UpdateVr(dt);
             }
             else {

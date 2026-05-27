@@ -94,11 +94,11 @@ namespace Game {
                 if (m_isCleared) {
                     return null;
                 }
-                if ((Devices & WidgetInputDevice.Keyboard) != 0) {
+                if ((Devices & WidgetInputDevice.Keyboard) != WidgetInputDevice.None) {
                     return Keyboard.LastKey;
                 }
                 for (int i = 0; i < 4; i++) {
-                    if (((uint)Devices & (uint)(2 << i)) != 0) {
+                    if (((uint)Devices & (uint)(2 << i)) != 0u) {
                         return MultiKeyboard.LastKey(i);
                     }
                 }
@@ -111,11 +111,11 @@ namespace Game {
                 if (m_isCleared) {
                     return null;
                 }
-                if ((Devices & WidgetInputDevice.Keyboard) != 0) {
+                if ((Devices & WidgetInputDevice.Keyboard) != WidgetInputDevice.None) {
                     return Keyboard.LastChar;
                 }
                 for (int i = 0; i < 4; i++) {
-                    if (((uint)Devices & (uint)(2 << i)) != 0) {
+                    if (((uint)Devices & (uint)(2 << i)) != 0u) {
                         return MultiKeyboard.LastChar(i);
                     }
                 }
@@ -130,7 +130,7 @@ namespace Game {
 
         public bool IsMouseCursorVisible {
             get {
-                if ((Devices & (WidgetInputDevice.MultiMice | WidgetInputDevice.Mouse)) == 0) {
+                if ((Devices & (WidgetInputDevice.MultiMice | WidgetInputDevice.Mouse)) == WidgetInputDevice.None) {
                     return false;
                 }
                 return m_isMouseCursorVisible;
@@ -143,7 +143,7 @@ namespace Game {
                 if (m_isCleared) {
                     return null;
                 }
-                if ((Devices & WidgetInputDevice.Mouse) != 0) {
+                if ((Devices & WidgetInputDevice.Mouse) != WidgetInputDevice.None) {
                     if (m_useSoftMouseCursor) {
                         return m_softMouseCursorPosition;
                     }
@@ -153,7 +153,7 @@ namespace Game {
                     return new Vector2(Mouse.MousePosition.Value);
                 }
                 for (int i = 0; i < 4; i++) {
-                    if (((uint)Devices & (uint)(64 << i)) != 0) {
+                    if (((uint)Devices & (uint)(64 << i)) != 0u) {
                         if (m_useSoftMouseCursor) {
                             return m_softMouseCursorPosition;
                         }
@@ -187,7 +187,7 @@ namespace Game {
                     return;
                 }
                 for (int i = 0; i < 4; i++) {
-                    if (((uint)Devices & (uint)(64 << i)) != 0 && m_useSoftMouseCursor) {
+                    if (((uint)Devices & (uint)(64 << i)) != 0u && m_useSoftMouseCursor) {
                         m_softMouseCursorPosition = new Vector2(
                             Math.Clamp(value.Value.X, vector.X, vector2.X - 1f),
                             Math.Clamp(value.Value.Y, vector.Y, vector2.Y - 1f)
@@ -200,11 +200,11 @@ namespace Game {
         public Point2 MouseMovement {
             get {
                 if (!m_isCleared
-                    && (Devices & WidgetInputDevice.Mouse) != 0) {
+                    && (Devices & WidgetInputDevice.Mouse) != WidgetInputDevice.None) {
                     return Mouse.MouseMovement;
                 }
                 for (int i = 0; i < 4; i++) {
-                    if (((uint)Devices & (uint)(64 << i)) != 0) {
+                    if (((uint)Devices & (uint)(64 << i)) != 0u) {
                         return MultiMouse.MouseMovement(i);
                     }
                 }
@@ -215,11 +215,11 @@ namespace Game {
         public int MouseWheelMovement {
             get {
                 if (!m_isCleared
-                    && (Devices & WidgetInputDevice.Mouse) != 0) {
+                    && (Devices & WidgetInputDevice.Mouse) != WidgetInputDevice.None) {
                     return Mouse.MouseWheelMovement;
                 }
                 for (int i = 0; i < 4; i++) {
-                    if (((uint)Devices & (uint)(64 << i)) != 0) {
+                    if (((uint)Devices & (uint)(64 << i)) != 0u) {
                         return MultiMouse.MouseWheelMovement(i);
                     }
                 }
@@ -230,10 +230,10 @@ namespace Game {
         public bool IsPadCursorVisible {
             get {
                 if (m_isPadCursorVisible) {
-                    if (((Devices & WidgetInputDevice.GamePad1) == 0 || !GamePad.IsConnected(0))
-                        && ((Devices & WidgetInputDevice.GamePad2) == 0 || !GamePad.IsConnected(1))
-                        && ((Devices & WidgetInputDevice.GamePad3) == 0 || !GamePad.IsConnected(2))) {
-                        if ((Devices & WidgetInputDevice.GamePad4) != 0) {
+                    if (((Devices & WidgetInputDevice.GamePad1) == WidgetInputDevice.None || !GamePad.IsConnected(0))
+                        && ((Devices & WidgetInputDevice.GamePad2) == WidgetInputDevice.None || !GamePad.IsConnected(1))
+                        && ((Devices & WidgetInputDevice.GamePad3) == WidgetInputDevice.None || !GamePad.IsConnected(2))) {
+                        if ((Devices & WidgetInputDevice.GamePad4) != WidgetInputDevice.None) {
                             return GamePad.IsConnected(3);
                         }
                         return false;
@@ -267,7 +267,7 @@ namespace Game {
         public ReadOnlyList<TouchLocation> TouchLocations {
             get {
                 if (!m_isCleared
-                    && (Devices & WidgetInputDevice.Touch) != 0) {
+                    && (Devices & WidgetInputDevice.Touch) != WidgetInputDevice.None) {
                     return Touch.TouchLocations;
                 }
                 return ReadOnlyList<TouchLocation>.Empty;
@@ -281,7 +281,7 @@ namespace Game {
         public bool IsVrCursorVisible {
             get {
                 if (m_isVrCursorVisible) {
-                    if ((Devices & WidgetInputDevice.VrControllers) != 0) {
+                    if ((Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
                         return VrManager.IsVrStarted;
                     }
                 }
@@ -302,11 +302,11 @@ namespace Game {
             if (m_isCleared) {
                 return false;
             }
-            if ((Devices & WidgetInputDevice.Keyboard) != 0) {
+            if ((Devices & WidgetInputDevice.Keyboard) != WidgetInputDevice.None) {
                 return Keyboard.IsKeyDown(key);
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2 << i)) != 0) {
+                if (((uint)Devices & (uint)(2 << i)) != 0u) {
                     return MultiKeyboard.IsKeyDown(i, key);
                 }
             }
@@ -317,11 +317,11 @@ namespace Game {
             if (m_isCleared) {
                 return false;
             }
-            if ((Devices & WidgetInputDevice.Keyboard) != 0) {
+            if ((Devices & WidgetInputDevice.Keyboard) != WidgetInputDevice.None) {
                 return Keyboard.IsKeyDownOnce(key);
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2 << i)) != 0) {
+                if (((uint)Devices & (uint)(2 << i)) != 0u) {
                     return MultiKeyboard.IsKeyDownOnce(i, key);
                 }
             }
@@ -332,11 +332,11 @@ namespace Game {
             if (m_isCleared) {
                 return false;
             }
-            if ((Devices & WidgetInputDevice.Keyboard) != 0) {
+            if ((Devices & WidgetInputDevice.Keyboard) != WidgetInputDevice.None) {
                 return Keyboard.IsKeyDownRepeat(key);
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2 << i)) != 0) {
+                if (((uint)Devices & (uint)(2 << i)) != 0u) {
                     return MultiKeyboard.IsKeyDownRepeat(i, key);
                 }
             }
@@ -454,11 +454,11 @@ namespace Game {
 
         public bool IsMouseButtonDown(MouseButton button) {
             if (!m_isCleared
-                && (Devices & WidgetInputDevice.Mouse) != 0) {
+                && (Devices & WidgetInputDevice.Mouse) != WidgetInputDevice.None) {
                 return Mouse.IsMouseButtonDown(button);
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(64 << i)) != 0) {
+                if (((uint)Devices & (uint)(64 << i)) != 0u) {
                     return MultiMouse.IsMouseButtonDown(i, button);
                 }
             }
@@ -467,11 +467,11 @@ namespace Game {
 
         public bool IsMouseButtonDownOnce(MouseButton button) {
             if (!m_isCleared
-                && (Devices & WidgetInputDevice.Mouse) != 0) {
+                && (Devices & WidgetInputDevice.Mouse) != WidgetInputDevice.None) {
                 return Mouse.IsMouseButtonDownOnce(button);
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(64 << i)) != 0) {
+                if (((uint)Devices & (uint)(64 << i)) != 0u) {
                     return MultiMouse.IsMouseButtonDownOnce(i, button);
                 }
             }
@@ -484,7 +484,7 @@ namespace Game {
             }
             Vector2 zero = Vector2.Zero;
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0) {
+                if (((uint)Devices & (uint)(2048 << i)) != 0u) {
                     zero += GamePad.GetStickPosition(i, stick, deadZone);
                 }
             }
@@ -500,7 +500,7 @@ namespace Game {
             }
             float num = 0f;
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0) {
+                if (((uint)Devices & (uint)(2048 << i)) != 0u) {
                     num += GamePad.GetTriggerPosition(i, trigger, deadZone);
                 }
             }
@@ -512,7 +512,7 @@ namespace Game {
                 return false;
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0
+                if (((uint)Devices & (uint)(2048 << i)) != 0u
                     && GamePad.IsTriggerDown(i, trigger, deadZone, threshold)) {
                     return true;
                 }
@@ -525,7 +525,7 @@ namespace Game {
                 return false;
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0
+                if (((uint)Devices & (uint)(2048 << i)) != 0u
                     && GamePad.IsTriggerDownOnce(i, trigger, deadZone, threshold)) {
                     return true;
                 }
@@ -538,7 +538,7 @@ namespace Game {
                 return;
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0) {
+                if (((uint)Devices & (uint)(2048 << i)) != 0u) {
                     GamePad.SetModifierKeyOfCurrentCombo(i, modifierKey);
                 }
             }
@@ -549,7 +549,7 @@ namespace Game {
                 return false;
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0
+                if (((uint)Devices & (uint)(2048 << i)) != 0u
                     && GamePad.IsButtonDown(i, button)) {
                     return true;
                 }
@@ -562,7 +562,7 @@ namespace Game {
                 return false;
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0
+                if (((uint)Devices & (uint)(2048 << i)) != 0u
                     && GamePad.IsButtonDownOnce(i, button)) {
                     return true;
                 }
@@ -575,7 +575,7 @@ namespace Game {
                 return false;
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0
+                if (((uint)Devices & (uint)(2048 << i)) != 0u
                     && GamePad.IsButtonDownRepeat(i, button)) {
                     return true;
                 }
@@ -588,7 +588,7 @@ namespace Game {
                 return false;
             }
             for (int i = 0; i < 4; i++) {
-                if (((uint)Devices & (uint)(2048 << i)) != 0
+                if (((uint)Devices & (uint)(2048 << i)) != 0u
                     && GamePad.IsAnyModifierKeyHolding(i)) {
                     //此处若使用SettingsManager.GamepadTriggerThreshold，恐与GamePad类中使用到IsAnyModifierKeyHolding的地方不一致。因为GamePad无法访问SettingsManager
                     return true;
@@ -606,7 +606,7 @@ namespace Game {
         //{
         //	for(int i = 0; i < 4; i++)
         //	{
-        //		if(((uint)Devices & (uint)(2048 << i)) != 0)
+        //		if(((uint)Devices & (uint)(2048 << i)) != 0u)
         //		{
         //			GamePad.MakeVibration(i,vibration,durationMs);
         //			break;
@@ -616,7 +616,7 @@ namespace Game {
 
         public Vector2 GetVrStickPosition(VrController controller, float deadZone = 0f) {
             if (!m_isCleared
-                && (Devices & WidgetInputDevice.VrControllers) != 0) {
+                && (Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
                 return VrManager.GetStickPosition(controller, deadZone);
             }
             return Vector2.Zero;
@@ -624,7 +624,7 @@ namespace Game {
 
         public Vector2? GetVrTouchpadPosition(VrController controller, float deadZone = 0f) {
             if (!m_isCleared
-                && (Devices & WidgetInputDevice.VrControllers) != 0) {
+                && (Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
                 return VrManager.GetTouchpadPosition(controller, deadZone);
             }
             return null;
@@ -632,7 +632,7 @@ namespace Game {
 
         public float GetVrTriggerPosition(VrController controller, float deadZone = 0f) {
             if (!m_isCleared
-                && (Devices & WidgetInputDevice.VrControllers) != 0) {
+                && (Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
                 return VrManager.GetTriggerPosition(controller, deadZone);
             }
             return 0f;
@@ -640,7 +640,7 @@ namespace Game {
 
         public bool IsVrButtonDown(VrController controller, VrControllerButton button) {
             if (!m_isCleared
-                && (Devices & WidgetInputDevice.VrControllers) != 0) {
+                && (Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
                 return VrManager.IsButtonDown(controller, button);
             }
             return false;
@@ -648,7 +648,7 @@ namespace Game {
 
         public bool IsVrButtonDownOnce(VrController controller, VrControllerButton button) {
             if (!m_isCleared
-                && (Devices & WidgetInputDevice.VrControllers) != 0) {
+                && (Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
                 return VrManager.IsButtonDownOnce(controller, button);
             }
             return false;
@@ -672,19 +672,19 @@ namespace Game {
             m_isCleared = false;
             ClearInput();
             if (Window.IsActive) {
-                if ((Devices & (WidgetInputDevice.MultiKeyboards | WidgetInputDevice.Keyboard)) != 0) {
+                if ((Devices & (WidgetInputDevice.MultiKeyboards | WidgetInputDevice.Keyboard)) != WidgetInputDevice.None) {
                     UpdateInputFromKeyboard();
                 }
-                if ((Devices & (WidgetInputDevice.MultiMice | WidgetInputDevice.Mouse)) != 0) {
+                if ((Devices & (WidgetInputDevice.MultiMice | WidgetInputDevice.Mouse)) != WidgetInputDevice.None) {
                     UpdateInputFromMouse();
                 }
-                if ((Devices & WidgetInputDevice.Gamepads) != 0) {
+                if ((Devices & WidgetInputDevice.Gamepads) != WidgetInputDevice.None) {
                     UpdateInputFromGamepads();
                 }
-                if ((Devices & WidgetInputDevice.VrControllers) != 0 && VrManager.IsVrStarted) {
+                if ((Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None && VrManager.IsVrStarted) {
                     UpdateInputFromVrControllers();
                 }
-                if ((Devices & WidgetInputDevice.Touch) != 0) {
+                if ((Devices & WidgetInputDevice.Touch) != WidgetInputDevice.None) {
                     UpdateInputFromTouch();
                 }
             }

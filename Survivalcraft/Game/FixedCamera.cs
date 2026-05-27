@@ -18,7 +18,7 @@ namespace Game {
         }
 
         public override void Update(float dt) {
-            if (!VrManager.IsVrStarted) return;
+            if (!Eye.HasValue) return;
 
             if (!m_vrInitialized) {
                 m_vrBasePosition = ViewPosition;

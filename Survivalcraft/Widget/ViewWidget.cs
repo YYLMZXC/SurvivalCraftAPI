@@ -122,12 +122,15 @@ namespace Game {
         }
 
         public virtual void DrawToScreen(DrawContext dc) {
-            if (VrManager.IsVrStarted && VrManager.IsFrameActive && GameWidget.ActiveCamera is BasePerspectiveCamera camera) {
+            if (VrManager.IsVrStarted
+                && (Input.Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None
+                && VrManager.IsFrameActive
+                && GameWidget.ActiveCamera is BasePerspectiveCamera camera) {
                 DrawToScreenVr(camera);
                 return;
             }
             GameWidget.GuiWidget.IsDrawEnabled = true;
-            GameWidget.ActiveCamera.PrepareForDrawing();
+            GameWidget.ActiveCamera.PrepareForDrawing(null);
             RenderTarget2D renderTarget = Display.RenderTarget;
             SetupScalingRenderTarget();
             try {
@@ -154,13 +157,13 @@ namespace Game {
             // GUI texture pre-rendered in GameWidget.ArrangeOverride.
             // GuiWidget.IsDrawEnabled is false (skipped in CollateDrawItems).
 
-            try {
-                VrManager.RenderToEyes((vrEye, eyeFrame) => {
-                    camera.Eye = vrEye;
-                    camera.PrepareForDrawing();
+            VrManager.RenderToEyes((vrEye, eyeFrame) => {
+                    camera.PrepareForDrawing(vrEye);
                     m_subsystemDrawing.Draw(camera);
 
-                    if (GameWidget.m_vrGuiRenderTarget == null) return;
+                    if (GameWidget.m_vrGuiRenderTarget == null) {
+                        return;
+                    }
 
                     // Compute GUI quad from HMD (same technique as VR menu in ScreensManager)
                     Matrix hmd = VrManager.HmdMatrix;
@@ -178,17 +181,13 @@ namespace Game {
                     Vector3 corner = center - 0.5f * qRight - 0.5f * qUp;
 
                     // Store quad matrix for VR cursor hit testing (used next frame)
-                    VrGuiQuadMatrix = new Matrix {
-                        Translation = corner,
-                        Right = qRight,
-                        Up = qUp,
-                        Forward = faceDir
-                    };
+                    VrGuiQuadMatrix = new Matrix { Translation = corner, Right = qRight, Up = qUp, Forward = faceDir };
 
                     // Draw GUI texture as 3D quad
                     TexturedBatch3D guiBatch = m_vrGuiPr3.TexturedBatch(
                         GameWidget.m_vrGuiRenderTarget,
-                        false, 0,
+                        false,
+                        0,
                         DepthStencilState.None,
                         RasterizerState.CullNoneScissor,
                         BlendState.AlphaBlend,
@@ -201,11 +200,8 @@ namespace Game {
                     if (vrEye == VrEye.Left) {
                         BlitVrEyeToDesktop(eyeFrame.Fbo, desktopFbo, vrW, vrH);
                     }
-                });
-            }
-            finally {
-                camera.Eye = null;
-            }
+                }
+            );
 
             ModsManager.HookAction(
                 "DrawToScreen",

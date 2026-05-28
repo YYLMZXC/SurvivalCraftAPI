@@ -11,6 +11,12 @@ public class GameWidget : CanvasWidget {
     public Camera m_activeCamera;
     public RenderTarget2D m_vrGuiRenderTarget;
     public PrimitivesRenderer2D m_vrCursorRenderer;
+    public PrimitivesRenderer3D m_vrGuiPr3 = new();
+    public Matrix? VrGuiQuadMatrix { get; set; }
+
+    public CanvasWidget m_vrGuiRoot;
+    public bool m_vrGuiActive;
+    public WidgetInput m_vrWidgetInput;
 
     public ViewWidget ViewWidget { get; set; }
 
@@ -140,32 +146,80 @@ public class GameWidget : CanvasWidget {
         return false;
     }
 
+    public void AttachGuiToVrRoot() {
+        if (m_vrGuiActive) return;
+        m_vrGuiRoot ??= new CanvasWidget();
+        Children.Remove(GuiWidget);
+        m_vrGuiRoot.Children.Add(GuiWidget);
+        m_vrGuiActive = true;
+    }
+
+    public void DetachGuiFromVrRoot() {
+        if (!m_vrGuiActive) return;
+        m_vrGuiRoot.Children.Remove(GuiWidget);
+        Children.InsertAfter(ViewWidget, GuiWidget);
+        m_vrGuiActive = false;
+        m_vrWidgetInput = null;
+    }
+
     public override void Update() {
         WidgetInputDevice widgetInputDevice = DetermineInputDevices();
-        if (WidgetsHierarchyInput == null
-            || WidgetsHierarchyInput.Devices != widgetInputDevice) {
-            WidgetsHierarchyInput = new WidgetInput(widgetInputDevice);
+        bool isVrPlayer = VrManager.IsVrStarted
+            && (widgetInputDevice & WidgetInputDevice.VrControllers) != WidgetInputDevice.None;
+
+        if (isVrPlayer && !m_vrGuiActive) {
+            AttachGuiToVrRoot();
         }
-        if ((widgetInputDevice & WidgetInputDevice.VrControllers) != WidgetInputDevice.None && VrManager.IsVrStarted && ViewWidget.VrGuiQuadMatrix.HasValue) {
-            WidgetsHierarchyInput.VrQuadMatrix = ViewWidget.VrGuiQuadMatrix;
+        else if (!isVrPlayer && m_vrGuiActive) {
+            DetachGuiFromVrRoot();
+        }
+
+        if (m_vrGuiActive) {
+            WidgetInputDevice vrDevices = WidgetInputDevice.VrControllers | WidgetInputDevice.Touch;
+            if (m_vrWidgetInput == null || m_vrWidgetInput.Devices != vrDevices) {
+                m_vrWidgetInput = new WidgetInput(vrDevices);
+                GuiWidget.WidgetsHierarchyInput = m_vrWidgetInput;
+            }
+            if (VrGuiQuadMatrix.HasValue) {
+                m_vrWidgetInput.VrQuadMatrix = VrGuiQuadMatrix;
+            }
+            else {
+                m_vrWidgetInput.VrQuadMatrix = null;
+            }
+            UpdateWidgetsHierarchy(GuiWidget);
         }
         else {
-            WidgetsHierarchyInput.VrQuadMatrix = null;
-        }
-        WidgetsHierarchyInput.UseSoftMouseCursor = (widgetInputDevice & WidgetInputDevice.MultiMice) != WidgetInputDevice.None
-            && (widgetInputDevice & WidgetInputDevice.Mouse) == WidgetInputDevice.None;
-        if (GuiWidget.ParentWidget == null) {
-            UpdateWidgetsHierarchy(GuiWidget);
+            if (WidgetsHierarchyInput == null
+                || WidgetsHierarchyInput.Devices != widgetInputDevice) {
+                WidgetsHierarchyInput = new WidgetInput(widgetInputDevice);
+            }
+            if ((widgetInputDevice & WidgetInputDevice.VrControllers) != WidgetInputDevice.None
+                && VrManager.IsVrStarted && VrGuiQuadMatrix.HasValue) {
+                WidgetsHierarchyInput.VrQuadMatrix = VrGuiQuadMatrix;
+            }
+            else {
+                WidgetsHierarchyInput.VrQuadMatrix = null;
+            }
+            WidgetsHierarchyInput.UseSoftMouseCursor = (widgetInputDevice & WidgetInputDevice.MultiMice) != WidgetInputDevice.None
+                && (widgetInputDevice & WidgetInputDevice.Mouse) == WidgetInputDevice.None;
+            if (GuiWidget.ParentWidget == null) {
+                UpdateWidgetsHierarchy(GuiWidget);
+            }
         }
     }
 
     public override void ArrangeOverride() {
         base.ArrangeOverride();
-        if (VrManager.IsVrStarted
-            && (WidgetsHierarchyInput.Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
-            GuiWidget.IsDrawEnabled = true;
+        if (m_vrGuiActive) {
+            GuiWidget.MarginLeft = 0f;
+            GuiWidget.MarginTop = 0f;
+            GuiWidget.MarginRight = 0f;
+            GuiWidget.MarginBottom = 0f;
+            m_vrGuiRoot.LayoutTransform = ScreensManager.RootWidget.LayoutTransform;
+            Vector2 availableSize = ScreensManager.RootWidget.ActualSize;
+            m_vrGuiRoot.Measure(availableSize);
+            m_vrGuiRoot.Arrange(Vector2.Zero, availableSize);
             RenderGuiToTexture();
-            GuiWidget.IsDrawEnabled = false;
         }
         else {
             GuiWidget.IsDrawEnabled = true;
@@ -214,7 +268,12 @@ public class GameWidget : CanvasWidget {
     }
 
     public void RenderGuiToTexture() {
-        Point2 size = new(Display.Viewport.Width, Display.Viewport.Height);
+        Point2 size = new(
+            (int)GuiWidget.GlobalTransform.Right.Length(),
+            (int)GuiWidget.GlobalTransform.Up.Length()
+        );
+        if (size.X <= 0 || size.Y <= 0) return;
+
         if (m_vrGuiRenderTarget == null
             || m_vrGuiRenderTarget.Width != size.X
             || m_vrGuiRenderTarget.Height != size.Y) {
@@ -225,11 +284,15 @@ public class GameWidget : CanvasWidget {
         RenderTarget2D prevRT = Display.RenderTarget;
         Display.RenderTarget = m_vrGuiRenderTarget;
         Display.Clear(Color.Transparent, 1f, 0);
-        DrawWidgetsHierarchy(GuiWidget);
+        DrawWidgetsHierarchy(m_vrGuiRoot);
 
-        // Draw VR cursor disc on top of GUI texture
-        if (Input.IsVrCursorVisible && Input.VrCursorLocalPosition.HasValue) {
-            Vector2 screenPos = Vector2.Transform(Input.VrCursorLocalPosition.Value, GuiWidget.GlobalTransform);
+        if (m_vrWidgetInput != null
+            && m_vrWidgetInput.IsVrCursorVisible
+            && m_vrWidgetInput.VrCursorLocalPosition.HasValue) {
+            Vector2 screenPos = Vector2.Transform(
+                m_vrWidgetInput.VrCursorLocalPosition.Value,
+                GuiWidget.GlobalTransform
+            );
             m_vrCursorRenderer.FlatBatch(0, null, null, null).QueueDisc(
                 screenPos, new Vector2(10f, 10f), 0f, Color.White);
             m_vrCursorRenderer.Flush();
@@ -238,8 +301,44 @@ public class GameWidget : CanvasWidget {
         Display.RenderTarget = prevRT;
     }
 
+    public void DrawVrGui(VrEye vrEye, EyeFrame eyeFrame) {
+        if (m_vrGuiRenderTarget == null) return;
+
+        Matrix hmd = VrManager.HmdMatrix;
+        Vector3 hmdFwd = hmd.Forward * new Vector3(1f, 0f, 1f);
+        if (hmdFwd.LengthSquared() < 0.001f) return;
+
+        float dist = 6f;
+        Vector3 center = hmd.Translation + dist * (Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.1f, 0f));
+        Vector2 size = new(m_vrGuiRenderTarget.Width / (float)m_vrGuiRenderTarget.Height, 1f);
+        size /= MathUtils.Max(size.X, size.Y);
+        size *= 7.5f;
+        Vector3 faceDir = Vector3.Normalize(hmd.Translation - center);
+        Vector3 qRight = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, faceDir)) * size.X;
+        Vector3 qUp = Vector3.Normalize(Vector3.Cross(faceDir, qRight)) * size.Y;
+        Vector3 corner = center - 0.5f * qRight - 0.5f * qUp;
+
+        VrGuiQuadMatrix = new Matrix { Translation = corner, Right = qRight, Up = qUp, Forward = faceDir };
+
+        TexturedBatch3D guiBatch = m_vrGuiPr3.TexturedBatch(
+            m_vrGuiRenderTarget,
+            false,
+            0,
+            DepthStencilState.None,
+            RasterizerState.CullNoneScissor,
+            BlendState.AlphaBlend,
+            SamplerState.LinearClamp
+        );
+        ScreensManager.QueueQuad(guiBatch, corner, qRight, qUp, Color.White);
+        m_vrGuiPr3.Flush(eyeFrame.ViewMatrix * eyeFrame.ProjectionMatrix);
+    }
+
     public override void Dispose() {
+        if (m_vrGuiActive) {
+            DetachGuiFromVrRoot();
+        }
         base.Dispose();
         Utilities.Dispose(ref m_vrGuiRenderTarget);
+        m_vrGuiRoot?.Dispose();
     }
 }

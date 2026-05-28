@@ -7,9 +7,6 @@ namespace Game {
         public SubsystemDrawing m_subsystemDrawing;
 
         public RenderTarget2D m_scalingRenderTarget;
-        public PrimitivesRenderer3D m_vrGuiPr3 = new();
-        public Matrix? VrGuiQuadMatrix { get; private set; }
-
         public static RenderTarget2D ScreenTexture = new(Window.Size.X, Window.Size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
 
         public GameWidget GameWidget { get; set; }
@@ -150,55 +147,18 @@ namespace Game {
         }
 
         void DrawToScreenVr(BasePerspectiveCamera camera) {
-            int vrW = VrManager.SwapchainWidth;
-            int vrH = VrManager.SwapchainHeight;
             int desktopFbo = GLWrapper.m_mainFramebuffer;
-
-            // GUI texture pre-rendered in GameWidget.ArrangeOverride.
-            // GuiWidget.IsDrawEnabled is false (skipped in CollateDrawItems).
 
             VrManager.RenderToEyes((vrEye, eyeFrame) => {
                     camera.PrepareForDrawing(vrEye);
                     m_subsystemDrawing.Draw(camera);
 
-                    if (GameWidget.m_vrGuiRenderTarget == null) {
-                        return;
-                    }
+                    GameWidget.DrawVrGui(vrEye, eyeFrame);
 
-                    // Compute GUI quad from HMD (same technique as VR menu in ScreensManager)
-                    Matrix hmd = VrManager.HmdMatrix;
-                    Vector3 hmdFwd = hmd.Forward * new Vector3(1f, 0f, 1f);
-                    if (hmdFwd.LengthSquared() < 0.001f) return;
-
-                    float dist = 6f;
-                    Vector3 center = hmd.Translation + dist * (Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.1f, 0f));
-                    Vector2 size = new(GameWidget.m_vrGuiRenderTarget.Width / (float)GameWidget.m_vrGuiRenderTarget.Height, 1f);
-                    size /= MathUtils.Max(size.X, size.Y);
-                    size *= 7.5f;
-                    Vector3 faceDir = Vector3.Normalize(hmd.Translation - center);
-                    Vector3 qRight = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, faceDir)) * size.X;
-                    Vector3 qUp = Vector3.Normalize(Vector3.Cross(faceDir, qRight)) * size.Y;
-                    Vector3 corner = center - 0.5f * qRight - 0.5f * qUp;
-
-                    // Store quad matrix for VR cursor hit testing (used next frame)
-                    VrGuiQuadMatrix = new Matrix { Translation = corner, Right = qRight, Up = qUp, Forward = faceDir };
-
-                    // Draw GUI texture as 3D quad
-                    TexturedBatch3D guiBatch = m_vrGuiPr3.TexturedBatch(
-                        GameWidget.m_vrGuiRenderTarget,
-                        false,
-                        0,
-                        DepthStencilState.None,
-                        RasterizerState.CullNoneScissor,
-                        BlendState.AlphaBlend,
-                        SamplerState.LinearClamp
-                    );
-                    ScreensManager.QueueQuad(guiBatch, corner, qRight, qUp, Color.White);
-                    m_vrGuiPr3.Flush(eyeFrame.ViewMatrix * eyeFrame.ProjectionMatrix);
-
-                    // Blit to desktop before swapchain is released
                     if (vrEye == VrEye.Left) {
-                        BlitVrEyeToDesktop(eyeFrame.Fbo, desktopFbo, vrW, vrH);
+                        BlitVrEyeToDesktop(eyeFrame.Fbo, desktopFbo,
+                            VrManager.SwapchainWidth, VrManager.SwapchainHeight,
+                            GameWidget);
                     }
                 }
             );
@@ -212,31 +172,45 @@ namespace Game {
             );
         }
 
-        static void BlitVrEyeToDesktop(int srcFbo, int dstFbo, int vrW, int vrH) {
+        static void BlitVrEyeToDesktop(int srcFbo, int dstFbo, int vrW, int vrH, GameWidget gameWidget) {
             if (srcFbo == 0) return;
-            Point2 winSize = Display.BackbufferSize;
-            float vrAspect = (float)vrW / vrH;
-            float winAspect = (float)winSize.X / winSize.Y;
-            int drawW, drawH, offsetX, offsetY;
-            if (winAspect > vrAspect) {
-                drawH = winSize.Y;
-                drawW = (int)(winSize.Y * vrAspect);
-                offsetX = (winSize.X - drawW) / 2;
-                offsetY = 0;
-            }
-            else {
-                drawW = winSize.X;
-                drawH = (int)(winSize.X / vrAspect);
-                offsetX = 0;
-                offsetY = (winSize.Y - drawH) / 2;
-            }
+
+            Vector2 origin = Vector2.Transform(Vector2.Zero, gameWidget.GlobalTransform);
+            Vector2 end = Vector2.Transform(gameWidget.ActualSize, gameWidget.GlobalTransform);
+            int x1 = Math.Max(0, (int)MathF.Min(origin.X, end.X));
+            int y1 = Math.Max(0, (int)MathF.Min(origin.Y, end.Y));
+            int x2 = Math.Min(Display.BackbufferSize.X, (int)MathF.Max(origin.X, end.X));
+            int y2 = Math.Min(Display.BackbufferSize.Y, (int)MathF.Max(origin.Y, end.Y));
+            if (x2 <= x1 || y2 <= y1) return;
+
             GLWrapper.GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, (uint)dstFbo);
-            GLWrapper.ClearColor(Vector4.Zero);
             GLWrapper.ApplyViewportScissor(
-                new Viewport(0, 0, winSize.X, winSize.Y),
-                new Rectangle(0, 0, winSize.X, winSize.Y), true);
+                new Viewport(0, 0, Display.BackbufferSize.X, Display.BackbufferSize.Y),
+                new Rectangle(x1, y1, x2 - x1, y2 - y1), true);
+            GLWrapper.Enable(EnableCap.ScissorTest);
+            GLWrapper.ClearColor(Vector4.Zero);
             GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit);
             GLWrapper.GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)srcFbo);
+
+            float vrAspect = (float)vrW / vrH;
+            float regionW = x2 - x1;
+            float regionH = y2 - y1;
+            float regionAspect = regionW / regionH;
+
+            int drawW, drawH, offsetX, offsetY;
+            if (regionAspect > vrAspect) {
+                drawH = (int)regionH;
+                drawW = (int)(regionH * vrAspect);
+                offsetX = x1 + ((int)regionW - drawW) / 2;
+                offsetY = y1;
+            }
+            else {
+                drawW = (int)regionW;
+                drawH = (int)(regionW / vrAspect);
+                offsetX = x1;
+                offsetY = y1 + ((int)regionH - drawH) / 2;
+            }
+
             GLWrapper.GL.BlitFramebuffer(
                 0, 0, vrW, vrH,
                 offsetX, offsetY, offsetX + drawW, offsetY + drawH,

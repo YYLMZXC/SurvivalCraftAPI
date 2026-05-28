@@ -175,7 +175,7 @@ public class GameWidget : CanvasWidget {
         }
 
         if (m_vrGuiActive) {
-            WidgetInputDevice vrDevices = WidgetInputDevice.VrControllers | WidgetInputDevice.Touch;
+            WidgetInputDevice vrDevices = widgetInputDevice & ~(WidgetInputDevice.Mouse | WidgetInputDevice.MultiMice | WidgetInputDevice.Touch);
             if (m_vrWidgetInput == null || m_vrWidgetInput.Devices != vrDevices) {
                 m_vrWidgetInput = new WidgetInput(vrDevices);
                 GuiWidget.WidgetsHierarchyInput = m_vrWidgetInput;
@@ -187,6 +187,13 @@ public class GameWidget : CanvasWidget {
                 m_vrWidgetInput.VrQuadMatrix = null;
             }
             UpdateWidgetsHierarchy(GuiWidget);
+            // Sync Back to GameWidget's input — dialog clears m_vrWidgetInput on hide,
+            // ComponentGui reads GameWidget.WidgetsHierarchyInput
+            if (WidgetsHierarchyInput == null
+                || WidgetsHierarchyInput.Devices != vrDevices) {
+                WidgetsHierarchyInput = new WidgetInput(vrDevices);
+            }
+            WidgetsHierarchyInput.Back = m_vrWidgetInput.Back;
         }
         else {
             if (WidgetsHierarchyInput == null
@@ -268,9 +275,14 @@ public class GameWidget : CanvasWidget {
     }
 
     public void RenderGuiToTexture() {
+        if (m_vrWidgetInput != null && WidgetsHierarchyInput != null) {
+            m_vrWidgetInput.IsVrCursorVisible = WidgetsHierarchyInput.IsVrCursorVisible;
+        }
+        Vector2 guiOrigin = Vector2.Transform(Vector2.Zero, GuiWidget.GlobalTransform);
+        Vector2 guiEnd = Vector2.Transform(GuiWidget.ActualSize, GuiWidget.GlobalTransform);
         Point2 size = new(
-            (int)GuiWidget.GlobalTransform.Right.Length(),
-            (int)GuiWidget.GlobalTransform.Up.Length()
+            (int)MathF.Ceiling(MathF.Abs(guiEnd.X - guiOrigin.X)),
+            (int)MathF.Ceiling(MathF.Abs(guiEnd.Y - guiOrigin.Y))
         );
         if (size.X <= 0 || size.Y <= 0) return;
 

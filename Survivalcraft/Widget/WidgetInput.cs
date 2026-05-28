@@ -282,7 +282,7 @@ namespace Game {
             get {
                 if (m_isVrCursorVisible) {
                     if ((Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None) {
-                        return VrManager.IsVrStarted;
+                        return VrManager.IsFrameActive;
                     }
                 }
                 return false;
@@ -681,7 +681,7 @@ namespace Game {
                 if ((Devices & WidgetInputDevice.Gamepads) != WidgetInputDevice.None) {
                     UpdateInputFromGamepads();
                 }
-                if ((Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None && VrManager.IsVrStarted) {
+                if ((Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None && VrManager.IsFrameActive) {
                     UpdateInputFromVrControllers();
                 }
                 if ((Devices & WidgetInputDevice.Touch) != WidgetInputDevice.None) {

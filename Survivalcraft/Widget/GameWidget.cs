@@ -158,13 +158,14 @@ public class GameWidget : CanvasWidget {
         if (!m_vrGuiActive) return;
         m_vrGuiRoot.Children.Remove(GuiWidget);
         Children.InsertAfter(ViewWidget, GuiWidget);
+        GuiWidget.WidgetsHierarchyInput = null;
         m_vrGuiActive = false;
         m_vrWidgetInput = null;
     }
 
     public override void Update() {
         WidgetInputDevice widgetInputDevice = DetermineInputDevices();
-        bool isVrPlayer = VrManager.IsVrStarted
+        bool isVrPlayer = VrManager.IsFrameActive
             && (widgetInputDevice & WidgetInputDevice.VrControllers) != WidgetInputDevice.None;
 
         if (isVrPlayer && !m_vrGuiActive) {
@@ -201,7 +202,7 @@ public class GameWidget : CanvasWidget {
                 WidgetsHierarchyInput = new WidgetInput(widgetInputDevice);
             }
             if ((widgetInputDevice & WidgetInputDevice.VrControllers) != WidgetInputDevice.None
-                && VrManager.IsVrStarted && VrGuiQuadMatrix.HasValue) {
+                && VrManager.IsFrameActive && VrGuiQuadMatrix.HasValue) {
                 WidgetsHierarchyInput.VrQuadMatrix = VrGuiQuadMatrix;
             }
             else {

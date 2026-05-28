@@ -119,9 +119,8 @@ namespace Game {
         }
 
         public virtual void DrawToScreen(DrawContext dc) {
-            if (VrManager.IsVrStarted
+            if (VrManager.IsFrameActive
                 && (Input.Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None
-                && VrManager.IsFrameActive
                 && GameWidget.ActiveCamera is BasePerspectiveCamera camera) {
                 DrawToScreenVr(camera);
                 return;

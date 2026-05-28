@@ -24,7 +24,7 @@ namespace Game {
 
         public bool IsControlledByTouch { get; set; } = Touch.IsTouched;
 
-        public bool IsControlledByVr => VrManager.IsVrStarted
+        public bool IsControlledByVr => VrManager.IsFrameActive
             && (m_componentPlayer.GameWidget.Input.Devices & WidgetInputDevice.VrControllers) != WidgetInputDevice.None;
 
         public bool AllowHandleInput { get; set; } = true;

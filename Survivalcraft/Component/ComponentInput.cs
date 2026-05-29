@@ -387,7 +387,7 @@ namespace Game {
                 // Vive touchpad: right pad down
                 m_playerInput.SwitchCameraMode |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadDown);
             }
-            if (!DialogsManager.HasDialogs(m_componentPlayer.GuiWidget)) {
+            if (!DialogsManager.HasDialogsOrAnimations(m_componentPlayer.GuiWidget)) {
                 if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Menu)
                     || input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Menu)) {
                     input.Back = true;

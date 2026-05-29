@@ -112,7 +112,7 @@ namespace Game {
         public static void Draw() {
             Utilities.Dispose(ref m_uiRenderTarget);
 
-            if (VrManager.IsVrStarted && VrManager.IsFrameActive && CurrentScreen is not GameScreen) {
+            if (VrManager.IsFrameActive && CurrentScreen is not GameScreen) {
                 RenderVrMenu();
             }
             LayoutAndDrawWidgets();

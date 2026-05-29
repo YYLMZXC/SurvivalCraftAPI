@@ -32,6 +32,17 @@ namespace Game {
             return false;
         }
 
+        public static bool HasDialogsOrAnimations(Widget parentWidget) {
+            if (parentWidget == null) {
+                parentWidget = ScreensManager.CurrentScreen ?? ScreensManager.RootWidget;
+            }
+            if (HasDialogs(parentWidget)) return true;
+            foreach (var kvp in m_animationData) {
+                if (kvp.Key.ParentWidget == parentWidget) return true;
+            }
+            return false;
+        }
+
         public static void ShowDialog(ContainerWidget parentWidget, Dialog dialog) {
             ModsManager.HookAction(
                 "OnShowDialog",

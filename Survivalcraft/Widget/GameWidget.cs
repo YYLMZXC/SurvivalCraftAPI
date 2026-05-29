@@ -188,7 +188,9 @@ public class GameWidget : CanvasWidget {
                 m_vrWidgetInput.VrQuadMatrix = null;
             }
             UpdateWidgetsHierarchy(GuiWidget);
-            // Sync Back to GameWidget's input — dialog clears m_vrWidgetInput on hide,
+            // Dialog hide may trigger DetachGuiFromVrRoot which clears m_vrWidgetInput
+            if (m_vrWidgetInput == null) return;
+            // Sync Back to GameWidget's input
             // ComponentGui reads GameWidget.WidgetsHierarchyInput
             if (WidgetsHierarchyInput == null
                 || WidgetsHierarchyInput.Devices != vrDevices) {
@@ -223,8 +225,10 @@ public class GameWidget : CanvasWidget {
             GuiWidget.MarginTop = 0f;
             GuiWidget.MarginRight = 0f;
             GuiWidget.MarginBottom = 0f;
-            m_vrGuiRoot.LayoutTransform = ScreensManager.RootWidget.LayoutTransform;
-            Vector2 availableSize = ScreensManager.RootWidget.ActualSize;
+            float num = 850f / Math.Clamp(SettingsManager.UIScale, 0.5f, 1.2f) * ScreensManager.DebugUiScale;
+            Vector2 availableSize = new(num, num * 9f / 16f);
+            float vrScale = 1280f / num;
+            m_vrGuiRoot.LayoutTransform = Matrix.CreateScale(vrScale, vrScale, 1);
             m_vrGuiRoot.Measure(availableSize);
             m_vrGuiRoot.Arrange(Vector2.Zero, availableSize);
             RenderGuiToTexture();
@@ -279,19 +283,8 @@ public class GameWidget : CanvasWidget {
         if (m_vrWidgetInput != null && WidgetsHierarchyInput != null) {
             m_vrWidgetInput.IsVrCursorVisible = WidgetsHierarchyInput.IsVrCursorVisible;
         }
-        Vector2 guiOrigin = Vector2.Transform(Vector2.Zero, GuiWidget.GlobalTransform);
-        Vector2 guiEnd = Vector2.Transform(GuiWidget.ActualSize, GuiWidget.GlobalTransform);
-        Point2 size = new(
-            (int)MathF.Ceiling(MathF.Abs(guiEnd.X - guiOrigin.X)),
-            (int)MathF.Ceiling(MathF.Abs(guiEnd.Y - guiOrigin.Y))
-        );
-        if (size.X <= 0 || size.Y <= 0) return;
-
-        if (m_vrGuiRenderTarget == null
-            || m_vrGuiRenderTarget.Width != size.X
-            || m_vrGuiRenderTarget.Height != size.Y) {
-            Utilities.Dispose(ref m_vrGuiRenderTarget);
-            m_vrGuiRenderTarget = new RenderTarget2D(size.X, size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
+        if (m_vrGuiRenderTarget == null) {
+            m_vrGuiRenderTarget = new RenderTarget2D(1280, 720, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
         }
         m_vrCursorRenderer ??= new PrimitivesRenderer2D();
         RenderTarget2D prevRT = Display.RenderTarget;
@@ -321,11 +314,11 @@ public class GameWidget : CanvasWidget {
         Vector3 hmdFwd = hmd.Forward * new Vector3(1f, 0f, 1f);
         if (hmdFwd.LengthSquared() < 0.001f) return;
 
-        float dist = 6f;
-        Vector3 center = hmd.Translation + dist * (Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.1f, 0f));
-        Vector2 size = new(m_vrGuiRenderTarget.Width / (float)m_vrGuiRenderTarget.Height, 1f);
-        size /= MathUtils.Max(size.X, size.Y);
-        size *= 7.5f;
+        float dist = 1.5f;
+        Vector3 center = hmd.Translation + dist * Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.025f, 0f);
+        float width = 1.24f;
+        float aspect = m_vrGuiRenderTarget.Width / (float)m_vrGuiRenderTarget.Height;
+        Vector2 size = new(width, width / aspect);
         Vector3 faceDir = Vector3.Normalize(hmd.Translation - center);
         Vector3 qRight = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, faceDir)) * size.X;
         Vector3 qUp = Vector3.Normalize(Vector3.Cross(faceDir, qRight)) * size.Y;

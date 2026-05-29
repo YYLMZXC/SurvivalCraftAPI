@@ -4,6 +4,16 @@ using Engine.Graphics;
 using Game;
 using GameEntitySystem;
 
+/// <summary>
+/// VR GUI root widget that holds a reference back to the owning GameWidget.
+/// In VR mode, GuiWidget is reparented under this root (detached from GameWidget.Children),
+/// so widgets inside cannot find GameWidget by walking ParentWidget. This class provides
+/// the bridge so GameWidget property lookups still succeed.
+/// </summary>
+public class VrGuiRootWidget : CanvasWidget {
+    public GameWidget OwnerGameWidget { get; set; }
+}
+
 public class GameWidget : CanvasWidget {
     public List<Camera> m_cameras = new();
     public Dictionary<Camera, Func<GameWidget, bool>> m_isCameraEnable = new();
@@ -93,6 +103,14 @@ public class GameWidget : CanvasWidget {
         throw new InvalidOperationException($"Camera with type \"{typeof(T).Name}\" not found.");
     }
 
+    /// <summary>
+    /// 在 GUI 层级中查找指定类型的 Widget。VR 模式下从虚拟根节点查找，否则从 GameWidget.Children 查找。
+    /// </summary>
+    public T FindChild<T>(bool throwIfNotFound = true) where T : Widget {
+        ContainerWidget root = m_vrGuiActive ? m_vrGuiRoot : this;
+        return root?.Children.Find<T>(throwIfNotFound);
+    }
+
     public Camera FindCamera(Type type, bool throwOnError = true) {
         Camera val = m_cameras.FirstOrDefault(c => c.GetType() == type);
         if (val != null
@@ -148,7 +166,7 @@ public class GameWidget : CanvasWidget {
 
     public void AttachGuiToVrRoot() {
         if (m_vrGuiActive) return;
-        m_vrGuiRoot ??= new CanvasWidget();
+        m_vrGuiRoot ??= new VrGuiRootWidget { OwnerGameWidget = this };
         Children.Remove(GuiWidget);
         m_vrGuiRoot.Children.Add(GuiWidget);
         m_vrGuiActive = true;

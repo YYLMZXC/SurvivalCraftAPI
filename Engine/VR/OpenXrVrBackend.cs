@@ -62,8 +62,9 @@ namespace Engine {
         Vector3 m_hmdLastMatrixYpr;
         Vector2 m_headMove;
 
-        // Recenter compensation: Stage space Y shifts on recenter.
-        // Track cumulative offset so HmdMatrix.Translation.Y stays accurate.
+        // Recenter compensation: some runtimes (Quest, SteamVR) shift the reference
+        // space origin on recenter, violating the OpenXR spec. Track cumulative Y
+        // offset so HmdMatrix.Translation.Y stays accurate regardless.
         float m_recenterYOffset;
         bool m_recenterPending;
         float m_hmdYBeforeRecenterRaw; // raw Y (without offset) at recenter time
@@ -135,14 +136,18 @@ namespace Engine {
         void DoInitialize() {
             m_xr = XR.GetApi();
 
-            // 1. Check extension
+            // 1. Check extensions
             if (!m_xr.IsInstanceExtensionPresent(null, "XR_KHR_opengl_enable")) {
                 Log.Error("XR_KHR_opengl_enable extension not available");
                 return;
             }
+            bool hasLocalFloor = m_xr.IsInstanceExtensionPresent(null, "XR_EXT_local_floor");
 
             // 2. Create Instance
             byte* extName = (byte*)Marshal.StringToHGlobalAnsi("XR_KHR_opengl_enable");
+            byte* localFloorName = hasLocalFloor
+                ? (byte*)Marshal.StringToHGlobalAnsi("XR_EXT_local_floor")
+                : null;
             try {
                 ApplicationInfo appInfo = new() {
                     ApplicationVersion = 1,
@@ -152,11 +157,16 @@ namespace Engine {
                 WriteFixedString(appInfo.ApplicationName, "Survivalcraft", 128);
                 WriteFixedString(appInfo.EngineName, "Survivalcraft", 128);
 
+                uint extCount = hasLocalFloor ? 2u : 1u;
+                byte** extNames = stackalloc byte*[2];
+                extNames[0] = extName;
+                extNames[1] = localFloorName;
+
                 InstanceCreateInfo createInfo = new() {
                     Type = StructureType.InstanceCreateInfo,
                     ApplicationInfo = appInfo,
-                    EnabledExtensionCount = 1,
-                    EnabledExtensionNames = &extName
+                    EnabledExtensionCount = extCount,
+                    EnabledExtensionNames = extNames
                 };
 
                 Result result = m_xr.CreateInstance(ref createInfo, ref m_instance);
@@ -167,6 +177,9 @@ namespace Engine {
             }
             finally {
                 Marshal.FreeHGlobal((nint)extName);
+                if (localFloorName != null) {
+                    Marshal.FreeHGlobal((nint)localFloorName);
+                }
             }
 
             // 3. Get System
@@ -244,7 +257,7 @@ namespace Engine {
             // 1. Create session with platform graphics binding
             CreateSessionWithGraphicsBinding();
 
-            // 2. Create reference space — Stage (floor-level) preferred, fallback to Local (eye-level)
+            // 2. Create reference space — LOCAL_FLOOR preferred, fallback to Stage then Local
             CreatePlaySpace();
 
             // Reset recenter state for fresh session
@@ -814,8 +827,9 @@ namespace Engine {
             Matrix projMatrix = CreateProjectionMatrix(m_views[eyeIndex].Fov, 0.1f, 2048f);
 
             // Apply recenter offset to keep eye views in the same compensated
-            // coordinate space as HmdMatrix. Post-multiply translates the world
-            // down, which is equivalent to raising the camera.
+            // coordinate space as HmdMatrix. Only needed for Stage/Local spaces.
+            // Apply recenter offset to keep eye views in the same compensated
+            // coordinate space as HmdMatrix.
             if (m_recenterYOffset != 0f) {
                 viewMatrix *= Matrix.CreateTranslation(0f, -m_recenterYOffset, 0f);
             }
@@ -933,8 +947,8 @@ namespace Engine {
                 m_hmdMatrix.M43 - m_hmdLastMatrix.M43
             );
 
-            // Compensate for recenter: Stage space origin shifts on recenter.
-            // Compute how much Y moved compared to before recenter and accumulate.
+            // Compensate for recenter: some runtimes shift the reference space origin
+            // on recenter. Track how much Y moved and accumulate the offset.
             if (m_recenterPending) {
                 float currentRawY = m_hmdMatrix.Translation.Y;
                 float delta = m_hmdYBeforeRecenterRaw - currentRawY;
@@ -1163,14 +1177,14 @@ namespace Engine {
                     HandleSessionStateChange();
                 }
                 else if (eventData.Type == StructureType.EventDataReferenceSpaceChangePending) {
-                    // Reference space changed (e.g. recenter). Recreate the play space
-                    // and track the Y shift so consumers get stable height values.
+                    // Reference space changed (e.g. recenter). Recreate the play space.
+                    CreatePlaySpace();
+                    // Track Y shift. Even LOCAL_FLOOR may shift on Quest/SteamVR
+                    // despite the OpenXR spec saying it shouldn't.
                     if (!m_recenterPending && m_views != null) {
-                        // Capture RAW Y before recenter (subtract existing offset)
                         m_hmdYBeforeRecenterRaw = m_hmdMatrix.Translation.Y - m_recenterYOffset;
                         m_recenterPending = true;
                     }
-                    CreatePlaySpace();
                 }
             }
         }
@@ -1220,16 +1234,30 @@ namespace Engine {
                     Position = new() { X = 0, Y = 0, Z = 0 }
                 }
             };
-            spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Stage;
+            // 1. LOCAL_FLOOR: floor-level Y (OpenXR 1.1 / XR_EXT_local_floor).
+            //    Spec says no Y shift on recenter, but Quest/SteamVR violate this.
+            spaceInfo.ReferenceSpaceType = ReferenceSpaceType.LocalFloor;
             Result result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
-            if (result != Result.Success) {
-                Log.Warning($"Stage reference space unavailable ({result}), falling back to Local");
-                spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Local;
-                result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
-                if (result != Result.Success) {
-                    throw new InvalidOperationException($"xrCreateReferenceSpace failed: {result}");
-                }
+            if (result == Result.Success) {
+                Log.Information("[VR] Play space: LOCAL_FLOOR");
+                return;
             }
+            Log.Information($"[VR] LOCAL_FLOOR unavailable ({result}), trying Stage");
+            // 2. Stage: floor-level Y but may shift on recenter (needs compensation)
+            spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Stage;
+            result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
+            if (result == Result.Success) {
+                Log.Information("[VR] Play space: STAGE");
+                return;
+            }
+            // 3. Local: eye-level, last resort
+            Log.Warning($"LOCAL_FLOOR and Stage unavailable, falling back to Local");
+            spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Local;
+            result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
+            if (result != Result.Success) {
+                throw new InvalidOperationException($"xrCreateReferenceSpace failed: {result}");
+            }
+            Log.Information("[VR] Play space: LOCAL");
         }
 
         // --- Matrix utilities ---

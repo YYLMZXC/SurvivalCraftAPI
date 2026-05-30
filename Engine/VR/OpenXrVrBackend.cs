@@ -62,6 +62,12 @@ namespace Engine {
         Vector3 m_hmdLastMatrixYpr;
         Vector2 m_headMove;
 
+        // Recenter compensation: Stage space Y shifts on recenter.
+        // Track cumulative offset so HmdMatrix.Translation.Y stays accurate.
+        float m_recenterYOffset;
+        bool m_recenterPending;
+        float m_hmdYBeforeRecenterRaw; // raw Y (without offset) at recenter time
+
         // Platform abstract methods
         protected abstract StructureType GraphicsBindingType { get; }
         protected abstract int GetGraphicsBindingSize();
@@ -239,25 +245,12 @@ namespace Engine {
             CreateSessionWithGraphicsBinding();
 
             // 2. Create reference space — Stage (floor-level) preferred, fallback to Local (eye-level)
-            ReferenceSpaceCreateInfo spaceInfo = new() {
-                Type = StructureType.ReferenceSpaceCreateInfo,
-                PoseInReferenceSpace = new() {
-                    Orientation = new() { X = 0, Y = 0, Z = 0, W = 1 },
-                    Position = new() { X = 0, Y = 0, Z = 0 }
-                }
-            };
-            {
-                spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Stage;
-                Result result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
-                if (result != Result.Success) {
-                    Log.Warning($"Stage reference space unavailable ({result}), falling back to Local");
-                    spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Local;
-                    result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
-                    if (result != Result.Success) {
-                        throw new InvalidOperationException($"xrCreateReferenceSpace failed: {result}");
-                    }
-                }
-            }
+            CreatePlaySpace();
+
+            // Reset recenter state for fresh session
+            m_recenterYOffset = 0f;
+            m_recenterPending = false;
+            m_hmdYBeforeRecenterRaw = 0f;
 
             SelectSwapchainFormat();
             // 3. Create swapchains
@@ -770,7 +763,9 @@ namespace Engine {
             FrameBeginInfo beginInfo = new() { Type = StructureType.FrameBeginInfo };
             m_xr.BeginFrame(m_session, ref beginInfo);
 
-            if (m_frameState.ShouldRender == 0) return true;
+            if (m_frameState.ShouldRender == 0) {
+                return true;
+            }
 
             // Locate views
             ViewLocateInfo viewLocateInfo = new() {
@@ -818,9 +813,16 @@ namespace Engine {
             Matrix viewMatrix = CreateViewMatrix(m_views[eyeIndex].Pose);
             Matrix projMatrix = CreateProjectionMatrix(m_views[eyeIndex].Fov, 0.1f, 2048f);
 
+            // Apply recenter offset to keep eye views in the same compensated
+            // coordinate space as HmdMatrix. Post-multiply translates the world
+            // down, which is equivalent to raising the camera.
+            if (m_recenterYOffset != 0f) {
+                viewMatrix *= Matrix.CreateTranslation(0f, -m_recenterYOffset, 0f);
+            }
+
             Vector3 camPos = new(
                 m_views[eyeIndex].Pose.Position.X,
-                m_views[eyeIndex].Pose.Position.Y,
+                m_views[eyeIndex].Pose.Position.Y + m_recenterYOffset,
                 m_views[eyeIndex].Pose.Position.Z
             );
 
@@ -842,7 +844,17 @@ namespace Engine {
 
             if (m_frameState.ShouldRender != 0) {
                 for (int i = 0; i < 2; i++) {
-                    m_layerViews[i].Pose = m_views[i].Pose;
+                    // Apply recenter offset to layer pose so compositor reprojection
+                    // stays consistent with the compensated view matrices.
+                    Posef pose = m_views[i].Pose;
+                    if (m_recenterYOffset != 0f) {
+                        pose.Position = new Vector3f {
+                            X = pose.Position.X,
+                            Y = pose.Position.Y + m_recenterYOffset,
+                            Z = pose.Position.Z
+                        };
+                    }
+                    m_layerViews[i].Pose = pose;
                     m_layerViews[i].Fov = m_views[i].Fov;
                     m_layerViews[i].SubImage = new() {
                         Swapchain = m_swapchains[i],
@@ -920,6 +932,24 @@ namespace Engine {
                 m_hmdMatrix.M41 - m_hmdLastMatrix.M41,
                 m_hmdMatrix.M43 - m_hmdLastMatrix.M43
             );
+
+            // Compensate for recenter: Stage space origin shifts on recenter.
+            // Compute how much Y moved compared to before recenter and accumulate.
+            if (m_recenterPending) {
+                float currentRawY = m_hmdMatrix.Translation.Y;
+                float delta = m_hmdYBeforeRecenterRaw - currentRawY;
+                if (Math.Abs(delta) > 0.01f) { // ignore sub-cm noise
+                    m_recenterYOffset += delta;
+                    Log.Information($"[VR] Recenter Y offset: +{delta:0.00} (total: {m_recenterYOffset:0.00})");
+                }
+                m_recenterPending = false;
+            }
+
+            // Apply accumulated recenter offset
+            if (m_recenterYOffset != 0f) {
+                m_hmdMatrix.Translation += new Vector3(0f, m_recenterYOffset, 0f);
+                m_hmdMatrixInverted = Matrix.Invert(m_hmdMatrix);
+            }
         }
 
         // --- Controller input ---
@@ -954,8 +984,12 @@ namespace Engine {
 
                 if (!isConnected) continue;
 
-                // Controller matrix from pose
-                m_controllers[hand].Matrix = PoseToMatrix(location.Pose);
+                // Controller matrix from pose (apply recenter offset to match HMD)
+                Matrix ctrlMatrix = PoseToMatrix(location.Pose);
+                if (m_recenterYOffset != 0f) {
+                    ctrlMatrix.Translation += new Vector3(0f, m_recenterYOffset, 0f);
+                }
+                m_controllers[hand].Matrix = ctrlMatrix;
 
                 // Trigger
                 ActionStateFloat triggerState = GetFloatState(m_triggerActions[hand]);
@@ -1128,6 +1162,16 @@ namespace Engine {
                     m_sessionState = sessionEvent->State;
                     HandleSessionStateChange();
                 }
+                else if (eventData.Type == StructureType.EventDataReferenceSpaceChangePending) {
+                    // Reference space changed (e.g. recenter). Recreate the play space
+                    // and track the Y shift so consumers get stable height values.
+                    if (!m_recenterPending && m_views != null) {
+                        // Capture RAW Y before recenter (subtract existing offset)
+                        m_hmdYBeforeRecenterRaw = m_hmdMatrix.Translation.Y - m_recenterYOffset;
+                        m_recenterPending = true;
+                    }
+                    CreatePlaySpace();
+                }
             }
         }
 
@@ -1162,6 +1206,30 @@ namespace Engine {
 
         void EndSession() {
             m_xr.EndSession(m_session);
+        }
+
+        void CreatePlaySpace() {
+            if (m_playSpace.Handle != 0) {
+                m_xr.DestroySpace(m_playSpace);
+                m_playSpace = default;
+            }
+            ReferenceSpaceCreateInfo spaceInfo = new() {
+                Type = StructureType.ReferenceSpaceCreateInfo,
+                PoseInReferenceSpace = new() {
+                    Orientation = new() { X = 0, Y = 0, Z = 0, W = 1 },
+                    Position = new() { X = 0, Y = 0, Z = 0 }
+                }
+            };
+            spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Stage;
+            Result result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
+            if (result != Result.Success) {
+                Log.Warning($"Stage reference space unavailable ({result}), falling back to Local");
+                spaceInfo.ReferenceSpaceType = ReferenceSpaceType.Local;
+                result = m_xr.CreateReferenceSpace(m_session, ref spaceInfo, ref m_playSpace);
+                if (result != Result.Success) {
+                    throw new InvalidOperationException($"xrCreateReferenceSpace failed: {result}");
+                }
+            }
         }
 
         // --- Matrix utilities ---

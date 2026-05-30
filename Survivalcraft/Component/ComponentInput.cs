@@ -320,9 +320,7 @@ namespace Game {
                 zero += new Vector3(2f * vrStickPosition.X, 2f * vrStickPosition2.Y, 2f * vrStickPosition.Y);
                 m_playerInput.Move += zero;
                 m_playerInput.CrouchMove += zero;
-                if (m_componentPlayer.GameWidget.ActiveCamera is FppCamera) {
-                    m_playerInput.VrMove = value;
-                }
+                m_playerInput.VrMove = value;
                 TouchInput? touchInput = VrManager.GetTouchInput(VrController.Left);
                 if (touchInput.HasValue
                     && num3 > 0f) {

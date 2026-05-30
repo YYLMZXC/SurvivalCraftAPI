@@ -531,10 +531,12 @@ namespace Game {
             StandingOnVelocity = Vector3.Zero;
             Vector3 velocity = m_velocity;
             float num6 = m_velocity.Length();
-            if (num6 > 0f
+            if ((num6 > 0f || m_directMove != Vector3.Zero)
                 && CrushedTime == 0f) {
                 Vector3 stanceBoxSize = StanceBoxSize;
-                float x = 0.45f * MathUtils.Min(stanceBoxSize.X, stanceBoxSize.Y, stanceBoxSize.Z) / num6;
+                float x = num6 > 0f
+                    ? 0.45f * MathUtils.Min(stanceBoxSize.X, stanceBoxSize.Y, stanceBoxSize.Z) / num6
+                    : dt;
                 float num7 = dt;
                 while (num7 > 0f) {
                     float num8 = MathUtils.Min(num7, x);

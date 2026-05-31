@@ -412,9 +412,10 @@ namespace Engine {
                     throw new InvalidOperationException($"xrEnumerateSwapchainFormats failed: {result}");
                 }
             }
-            InternalFormat[] preferredFormats = [
-                InternalFormat.Rgba8, InternalFormat.Srgb8Alpha8, InternalFormat.Srgb8, InternalFormat.Rgb10A2, InternalFormat.Rgba16, InternalFormat.Rgba16f, InternalFormat.Rgb16f, InternalFormat.Rgba32f
-            ];
+            // Prefer sRGB: game outputs sRGB-encoded values with FRAMEBUFFER_SRGB disabled.
+            // Declaring swapchain as sRGB tells the compositor data is already gamma-corrected.
+            // Linear (Rgba8) causes Meta runtimes to apply a second gamma curve → washed out.
+            InternalFormat[] preferredFormats = [InternalFormat.Srgb8Alpha8, InternalFormat.Rgba8];
             foreach (long preferredFormat in preferredFormats) {
                 if (formats.Contains(preferredFormat)) {
                     m_swapchainFormat = (InternalFormat)preferredFormat;

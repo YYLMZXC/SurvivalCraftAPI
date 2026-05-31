@@ -4,6 +4,9 @@ using Engine.Graphics;
 using Silk.NET.OpenGLES;
 using Silk.NET.OpenXR;
 using Silk.NET.OpenXR.Extensions.KHR;
+#if ANDROID
+using Java.Interop;
+#endif
 using XrAction = Silk.NET.OpenXR.Action;
 
 namespace Engine {
@@ -13,7 +16,11 @@ namespace Engine {
         ulong m_systemId;
         Session m_session;
         Space m_playSpace;
+#if WINDOWS
         KhrOpenglEnable m_glExt;
+#else
+        KhrOpenglEsEnable m_glExt;
+#endif
         SessionState m_sessionState;
 
         // Swapchains
@@ -128,7 +135,7 @@ namespace Engine {
                 DoInitialize();
             }
             catch (Exception e) {
-                Log.Error($"OpenXR initialization failed: {e.Message}");
+                Log.Error($"OpenXR initialization failed: {e}");
                 IsAvailable = false;
             }
         }
@@ -136,18 +143,50 @@ namespace Engine {
         void DoInitialize() {
             m_xr = XR.GetApi();
 
+#if ANDROID
+            // Android: MUST initialize OpenXR loader with JVM info BEFORE any other OpenXR calls.
+            // Without this, the loader cannot communicate with the runtime broker and no extensions are visible.
+            Silk.NET.Core.PfnVoidFunction initLoaderPtr = default;
+            Result r = m_xr.GetInstanceProcAddr(default, "xrInitializeLoaderKHR", ref initLoaderPtr);
+            if (r == Result.Success) {
+                LoaderInitInfoAndroidKHR loaderInfo = new() {
+                    Type = StructureType.LoaderInitInfoAndroidKhr,
+                    ApplicationVM = (void*)JniRuntime.CurrentRuntime.InvocationPointer,
+                    ApplicationContext = (void*)Window.Activity.Handle
+                };
+                var initLoader = (delegate* unmanaged[Cdecl]<LoaderInitInfoBaseHeaderKHR*, Result>)initLoaderPtr.Handle;
+                r = initLoader((LoaderInitInfoBaseHeaderKHR*)&loaderInfo);
+                if (r != Result.Success) {
+                    Log.Warning($"[VR] xrInitializeLoaderKHR failed: {r}");
+                } else {
+                    Log.Information("[VR] OpenXR loader initialized for Android");
+                }
+            } else {
+                Log.Warning($"[VR] xrInitializeLoaderKHR not found: {r}");
+            }
+#endif
+
             // 1. Check extensions
-            if (!m_xr.IsInstanceExtensionPresent(null, "XR_KHR_opengl_enable")) {
-                Log.Error("XR_KHR_opengl_enable extension not available");
+            string glExtName =
+#if WINDOWS
+                "XR_KHR_opengl_enable";
+#else
+                "XR_KHR_opengl_es_enable";
+#endif
+            if (!m_xr.IsInstanceExtensionPresent(null, glExtName)) {
+                Log.Error($"{glExtName} extension not available");
                 return;
             }
             bool hasLocalFloor = m_xr.IsInstanceExtensionPresent(null, "XR_EXT_local_floor");
 
             // 2. Create Instance
-            byte* extName = (byte*)Marshal.StringToHGlobalAnsi("XR_KHR_opengl_enable");
+            byte* extName = (byte*)Marshal.StringToHGlobalAnsi(glExtName);
             byte* localFloorName = hasLocalFloor
                 ? (byte*)Marshal.StringToHGlobalAnsi("XR_EXT_local_floor")
                 : null;
+#if ANDROID
+            byte* androidCreateInstanceName = (byte*)Marshal.StringToHGlobalAnsi("XR_KHR_android_create_instance");
+#endif
             try {
                 ApplicationInfo appInfo = new() {
                     ApplicationVersion = 1,
@@ -157,10 +196,18 @@ namespace Engine {
                 WriteFixedString(appInfo.ApplicationName, "Survivalcraft", 128);
                 WriteFixedString(appInfo.EngineName, "Survivalcraft", 128);
 
+#if ANDROID
+                uint extCount = hasLocalFloor ? 3u : 2u;
+                byte** extNames = stackalloc byte*[3];
+                extNames[0] = extName;
+                extNames[1] = localFloorName;
+                extNames[2] = androidCreateInstanceName;
+#else
                 uint extCount = hasLocalFloor ? 2u : 1u;
                 byte** extNames = stackalloc byte*[2];
                 extNames[0] = extName;
                 extNames[1] = localFloorName;
+#endif
 
                 InstanceCreateInfo createInfo = new() {
                     Type = StructureType.InstanceCreateInfo,
@@ -168,6 +215,16 @@ namespace Engine {
                     EnabledExtensionCount = extCount,
                     EnabledExtensionNames = extNames
                 };
+
+#if ANDROID
+                // Android: chain InstanceCreateInfoAndroidKHR with JavaVM and Activity
+                InstanceCreateInfoAndroidKHR androidInfo = new() {
+                    Type = StructureType.InstanceCreateInfoAndroidKhr,
+                    ApplicationVM = (void*)JniRuntime.CurrentRuntime.InvocationPointer,
+                    ApplicationActivity = (void*)Window.Activity.Handle
+                };
+                createInfo.Next = &androidInfo;
+#endif
 
                 Result result = m_xr.CreateInstance(ref createInfo, ref m_instance);
                 if (result != Result.Success) {
@@ -180,6 +237,9 @@ namespace Engine {
                 if (localFloorName != null) {
                     Marshal.FreeHGlobal((nint)localFloorName);
                 }
+#if ANDROID
+                Marshal.FreeHGlobal((nint)androidCreateInstanceName);
+#endif
             }
 
             // 3. Get System
@@ -196,6 +256,7 @@ namespace Engine {
             }
 
             // 4. Load OpenGL extension + check requirements
+#if WINDOWS
             if (!m_xr.TryGetInstanceExtension<KhrOpenglEnable>(null, m_instance, out m_glExt)) {
                 Log.Error("Failed to load XR_KHR_opengl_enable extension");
                 return;
@@ -211,6 +272,23 @@ namespace Engine {
                     return;
                 }
             }
+#else
+            if (!m_xr.TryGetInstanceExtension<KhrOpenglEsEnable>(null, m_instance, out m_glExt)) {
+                Log.Error("Failed to load XR_KHR_opengl_es_enable extension");
+                return;
+            }
+
+            GraphicsRequirementsOpenGLESKHR glReqs = new() {
+                Type = StructureType.GraphicsRequirementsOpenglESKhr
+            };
+            {
+                Result result = m_glExt.GetOpenGlesgraphicsRequirements(m_instance, m_systemId, ref glReqs);
+                if (result != Result.Success) {
+                    Log.Error($"GetOpenGLESgraphicsRequirements failed: {result}");
+                    return;
+                }
+            }
+#endif
 
             // 5. Enumerate view configurations
             ViewConfigurationView[] configViews = new ViewConfigurationView[2];
@@ -256,6 +334,18 @@ namespace Engine {
 
             // 1. Create session with platform graphics binding
             CreateSessionWithGraphicsBinding();
+
+#if ANDROID
+            // Android: mark this thread as the renderer main thread (non-critical)
+            try {
+                if (m_xr.TryGetInstanceExtension<KhrAndroidThreadSettings>(null, m_instance, out var threadExt)) {
+                    threadExt.SetAndroidApplicationThread(m_session, AndroidThreadTypeKHR.RendererMainKhr, (uint)Environment.CurrentManagedThreadId);
+                    threadExt.Dispose();
+                }
+            } catch (Exception ex) {
+                Log.Warning($"[VR] SetAndroidApplicationThread failed (non-critical): {ex.Message}");
+            }
+#endif
 
             // 2. Create reference space — LOCAL_FLOOR preferred, fallback to Stage then Local
             CreatePlaySpace();
@@ -306,7 +396,7 @@ namespace Engine {
 
         void SelectSwapchainFormat() {
             uint formatCount = 0;
-            Result result = m_xr.EnumerateSwapchainFormats(m_session, 0, ref formatCount, null);
+            Result result = m_xr.EnumerateSwapchainFormats(m_session, 0, ref formatCount, (long*)null);
             if (result != Result.Success) {
                 throw new InvalidOperationException($"xrEnumerateSwapchainFormats failed: {result}");
             }
@@ -361,7 +451,7 @@ namespace Engine {
 
             // Enumerate swapchain images
             uint imageCount = 0;
-            result = m_xr.EnumerateSwapchainImages(m_swapchains[eye], 0, ref imageCount, ref *(SwapchainImageBaseHeader*)null);
+            result = m_xr.EnumerateSwapchainImages(m_swapchains[eye], 0, ref imageCount, (SwapchainImageBaseHeader*)null);
             if (result != Result.Success) {
                 throw new InvalidOperationException($"xrEnumerateSwapchainImages failed for eye {eye}: {result}");
             }
@@ -369,6 +459,7 @@ namespace Engine {
                 throw new InvalidOperationException($"OpenXR swapchain for eye {eye} has no images.");
             }
 
+#if WINDOWS
             SwapchainImageOpenGLKHR[] images = new SwapchainImageOpenGLKHR[imageCount];
             for (int i = 0; i < imageCount; i++) {
                 images[i] = new() { Type = StructureType.SwapchainImageOpenglKhr };
@@ -379,6 +470,18 @@ namespace Engine {
                     throw new InvalidOperationException($"xrEnumerateSwapchainImages failed for eye {eye}: {result}");
                 }
             }
+#else
+            SwapchainImageOpenGLESKHR[] images = new SwapchainImageOpenGLESKHR[imageCount];
+            for (int i = 0; i < imageCount; i++) {
+                images[i] = new() { Type = StructureType.SwapchainImageOpenglESKhr };
+            }
+            fixed (SwapchainImageOpenGLESKHR* pImages = images) {
+                result = m_xr.EnumerateSwapchainImages(m_swapchains[eye], imageCount, ref imageCount, ref *(SwapchainImageBaseHeader*)pImages);
+                if (result != Result.Success) {
+                    throw new InvalidOperationException($"xrEnumerateSwapchainImages failed for eye {eye}: {result}");
+                }
+            }
+#endif
 
             m_swapchainImages[eye] = new uint[imageCount];
             for (int i = 0; i < imageCount; i++) {
@@ -741,7 +844,7 @@ namespace Engine {
                 Result r = m_xr.SuggestInteractionProfileBinding(m_instance, in suggestedBindings);
                 if (r != Result.Success) {
                     if (r == Result.ErrorPathUnsupported) {
-                        Log.Information($"OpenXR interaction profile not supported by runtime: {profilePath}");
+                        Log.Verbose($"OpenXR interaction profile not supported by runtime: {profilePath}");
                     }
                     else {
                         Log.Warning($"SuggestBindings failed for {profilePath}: {r}");
@@ -826,8 +929,6 @@ namespace Engine {
             Matrix viewMatrix = CreateViewMatrix(m_views[eyeIndex].Pose);
             Matrix projMatrix = CreateProjectionMatrix(m_views[eyeIndex].Fov, 0.1f, 2048f);
 
-            // Apply recenter offset to keep eye views in the same compensated
-            // coordinate space as HmdMatrix. Only needed for Stage/Local spaces.
             // Apply recenter offset to keep eye views in the same compensated
             // coordinate space as HmdMatrix.
             if (m_recenterYOffset != 0f) {

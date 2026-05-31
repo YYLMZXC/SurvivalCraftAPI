@@ -146,7 +146,9 @@ namespace Game {
         }
 
         void DrawToScreenVr(BasePerspectiveCamera camera) {
+#if WINDOWS
             int desktopFbo = GLWrapper.m_mainFramebuffer;
+#endif
 
             VrManager.RenderToEyes((vrEye, eyeFrame) => {
                     camera.PrepareForDrawing(vrEye);
@@ -154,11 +156,13 @@ namespace Game {
 
                     GameWidget.DrawVrGui(vrEye, eyeFrame);
 
+#if WINDOWS
                     if (vrEye == VrEye.Left) {
                         BlitVrEyeToDesktop(eyeFrame.Fbo, desktopFbo,
                             VrManager.SwapchainWidth, VrManager.SwapchainHeight,
                             GameWidget);
                     }
+#endif
                 }
             );
 
@@ -171,6 +175,7 @@ namespace Game {
             );
         }
 
+#if WINDOWS
         static void BlitVrEyeToDesktop(int srcFbo, int dstFbo, int vrW, int vrH, GameWidget gameWidget) {
             if (srcFbo == 0) return;
 
@@ -217,5 +222,6 @@ namespace Game {
                 BlitFramebufferFilter.Linear);
             GLWrapper.GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, (uint)dstFbo);
         }
+#endif
     }
 }

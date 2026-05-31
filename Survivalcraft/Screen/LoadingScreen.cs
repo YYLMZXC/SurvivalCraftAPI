@@ -164,6 +164,12 @@ namespace Game {
             AddLoadAction(
                 delegate {
                     VrManager.Initialize();
+#if ANDROID
+                    // On Android VR headsets, force enable VR when available
+                    if (VrManager.IsVrAvailable && !SettingsManager.UseVr) {
+                        SettingsManager.UseVr = true;
+                    }
+#endif
                     if (VrManager.IsVrAvailable && SettingsManager.UseVr) {
                         try {
                             VrManager.StartVr();

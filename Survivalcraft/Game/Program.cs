@@ -161,21 +161,6 @@ namespace Game {
             Window.Created += () => {
                 InputMethod.Initialize(Process.GetCurrentProcess().MainWindowHandle);
                 InputMethod.Enabled = false;
-                try {
-                    VrManager.SetBackend(new Engine.VR.WindowsOpenXrVrBackend());
-                }
-                catch (Exception ex) {
-                    Log.Error($"VR init error: {ex}");
-                }
-            };
-#elif ANDROID
-            Window.Created += () => {
-                try {
-                    VrManager.SetBackend(new Engine.VR.AndroidOpenXrVrBackend());
-                }
-                catch (Exception ex) {
-                    Log.Error($"VR init error: {ex}");
-                }
             };
 #endif
             EntryPoint();
@@ -277,6 +262,11 @@ namespace Game {
                 MusicManager.Initialize();
                 ScreensManager.Initialize();
                 APIUpdateManager.Initialize();
+#if WINDOWS
+                VrManager.SetBackend(new Engine.VR.WindowsOpenXrVrBackend());
+#elif ANDROID
+                VrManager.SetBackend(new Engine.VR.AndroidOpenXrVrBackend());
+#endif
                 Log.Information("Program Initialize Success");
             }
             catch (Exception e) {

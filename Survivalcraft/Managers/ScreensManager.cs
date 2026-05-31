@@ -114,6 +114,9 @@ namespace Game {
 
             if (VrManager.IsFrameActive && CurrentScreen is not GameScreen) {
                 RenderVrMenu();
+#if ANDROID
+                return;
+#endif
             }
             LayoutAndDrawWidgets();
         }
@@ -121,7 +124,12 @@ namespace Game {
         static void RenderVrMenu() {
             int vrW = VrManager.SwapchainWidth;
             int vrH = VrManager.SwapchainHeight;
+#if WINDOWS
             Point2 desktopSize = Display.BackbufferSize;
+#else
+            // Android VR: use fixed 1280x720 UI resolution
+            Point2 desktopSize = new(1280, 720);
+#endif
             float desktopAspect = (float)desktopSize.X / desktopSize.Y;
             float vrAspect = (float)vrW / vrH;
             int rtW, rtH;

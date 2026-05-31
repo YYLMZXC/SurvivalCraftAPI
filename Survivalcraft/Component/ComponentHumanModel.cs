@@ -597,7 +597,7 @@ namespace Game {
             float num2 = 0.875f * m_componentCreature.ComponentBody.BoxSize.Y;
             float num3 = MathUtils.Lerp(MathUtils.Lerp(num2, 0.45f * num2, num), 0.2f * num2, f);
             Matrix matrix = m_componentCreature.ComponentBody.Matrix;
-            Vector3 result = m_componentCreature.ComponentBody.Position + matrix.Up * (num3 + 2f * Bob) + matrix.Forward * -0.2f * num;
+            Vector3 result = m_componentCreature.ComponentBody.Position + matrix.Up * (num3 + 2f * Bob) + matrix.Forward * -0.09f * num;
             ModsManager.HookAction(
                 "RecalculateModelEyePosition",
                 loader => {

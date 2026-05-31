@@ -18,7 +18,7 @@ namespace Game {
             m_brightnessSlider = Children.Find<SliderWidget>("BrightnessSlider");
             m_viewAngleSlider = Children.Find<SliderWidget>("ViewAngleSlider");
             m_vrPanel = Children.Find<ContainerWidget>("VrPanel");
-#if !WINDOWS && !ANDROID
+#if !WINDOWS
             m_vrPanel.IsVisible = false;
 #endif
         }

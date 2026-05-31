@@ -75,6 +75,7 @@ namespace Engine {
         float m_recenterYOffset;
         bool m_recenterPending;
         float m_hmdYBeforeRecenterRaw; // raw Y (without offset) at recenter time
+        bool m_trackingEstablished;    // true after first valid HMD pose
 
         // Platform abstract methods
         protected abstract StructureType GraphicsBindingType { get; }
@@ -354,6 +355,7 @@ namespace Engine {
             m_recenterYOffset = 0f;
             m_recenterPending = false;
             m_hmdYBeforeRecenterRaw = 0f;
+            m_trackingEstablished = false;
 
             SelectSwapchainFormat();
             // 3. Create swapchains
@@ -1048,8 +1050,15 @@ namespace Engine {
                 m_hmdMatrix.M43 - m_hmdLastMatrix.M43
             );
 
+            // Mark tracking as established once we have a valid HMD pose
+            if (!m_trackingEstablished) {
+                m_trackingEstablished = true;
+            }
+
             // Compensate for recenter: some runtimes shift the reference space origin
             // on recenter. Track how much Y moved and accumulate the offset.
+            // Only apply after tracking is established to avoid false compensation
+            // from initial ReferenceSpaceChangePending events during startup.
             if (m_recenterPending) {
                 float currentRawY = m_hmdMatrix.Translation.Y;
                 float delta = m_hmdYBeforeRecenterRaw - currentRawY;
@@ -1280,9 +1289,9 @@ namespace Engine {
                 else if (eventData.Type == StructureType.EventDataReferenceSpaceChangePending) {
                     // Reference space changed (e.g. recenter). Recreate the play space.
                     CreatePlaySpace();
-                    // Track Y shift. Even LOCAL_FLOOR may shift on Quest/SteamVR
-                    // despite the OpenXR spec saying it shouldn't.
-                    if (!m_recenterPending && m_views != null) {
+                    // Track Y shift for recenter compensation, but only after
+                    // tracking is established to avoid false offsets from startup events.
+                    if (!m_recenterPending && m_trackingEstablished) {
                         m_hmdYBeforeRecenterRaw = m_hmdMatrix.Translation.Y - m_recenterYOffset;
                         m_recenterPending = true;
                     }

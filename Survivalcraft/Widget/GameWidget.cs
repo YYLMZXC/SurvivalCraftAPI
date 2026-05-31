@@ -199,6 +199,9 @@ public class GameWidget : CanvasWidget {
                 m_vrWidgetInput = new WidgetInput(vrDevices);
                 GuiWidget.WidgetsHierarchyInput = m_vrWidgetInput;
             }
+            // Compute quad matrix here (before cursor calculation) so the cursor
+            // uses the current frame's quad position instead of the previous frame's.
+            UpdateVrGuiQuadMatrix();
             if (VrGuiQuadMatrix.HasValue) {
                 m_vrWidgetInput.VrQuadMatrix = VrGuiQuadMatrix;
             }
@@ -325,12 +328,18 @@ public class GameWidget : CanvasWidget {
         Display.RenderTarget = prevRT;
     }
 
-    public void DrawVrGui(VrEye vrEye, EyeFrame eyeFrame) {
-        if (m_vrGuiRenderTarget == null) return;
+    void UpdateVrGuiQuadMatrix() {
+        if (m_vrGuiRenderTarget == null) {
+            VrGuiQuadMatrix = null;
+            return;
+        }
 
         Matrix hmd = VrManager.HmdMatrix;
         Vector3 hmdFwd = hmd.Forward * new Vector3(1f, 0f, 1f);
-        if (hmdFwd.LengthSquared() < 0.001f) return;
+        if (hmdFwd.LengthSquared() < 0.001f) {
+            VrGuiQuadMatrix = null;
+            return;
+        }
 
         float dist = 1.5f;
         Vector3 center = hmd.Translation + dist * Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.025f, 0f);
@@ -343,7 +352,12 @@ public class GameWidget : CanvasWidget {
         Vector3 corner = center - 0.5f * qRight - 0.5f * qUp;
 
         VrGuiQuadMatrix = new Matrix { Translation = corner, Right = qRight, Up = qUp, Forward = faceDir };
+    }
 
+    public void DrawVrGui(VrEye vrEye, EyeFrame eyeFrame) {
+        if (m_vrGuiRenderTarget == null || !VrGuiQuadMatrix.HasValue) return;
+
+        Matrix quad = VrGuiQuadMatrix.Value;
         TexturedBatch3D guiBatch = m_vrGuiPr3.TexturedBatch(
             m_vrGuiRenderTarget,
             false,
@@ -353,7 +367,7 @@ public class GameWidget : CanvasWidget {
             BlendState.AlphaBlend,
             SamplerState.LinearClamp
         );
-        ScreensManager.QueueQuad(guiBatch, corner, qRight, qUp, Color.White);
+        ScreensManager.QueueQuad(guiBatch, quad.Translation, quad.Right, quad.Up, Color.White);
         m_vrGuiPr3.Flush(eyeFrame.ViewMatrix * eyeFrame.ProjectionMatrix);
     }
 

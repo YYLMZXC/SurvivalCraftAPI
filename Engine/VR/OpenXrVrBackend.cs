@@ -44,6 +44,7 @@ namespace Engine {
         ActionSet m_actionSet;
         readonly XrAction[] m_triggerActions = new XrAction[2];
         readonly XrAction[] m_gripActions = new XrAction[2];
+        readonly XrAction[] m_gripClickActions = new XrAction[2];
         readonly XrAction[] m_menuActions = new XrAction[2];
         readonly XrAction[] m_stickXActions = new XrAction[2];
         readonly XrAction[] m_stickYActions = new XrAction[2];
@@ -153,7 +154,9 @@ namespace Engine {
                 LoaderInitInfoAndroidKHR loaderInfo = new() {
                     Type = StructureType.LoaderInitInfoAndroidKhr,
                     ApplicationVM = (void*)JniRuntime.CurrentRuntime.InvocationPointer,
+#pragma warning disable CA1416
                     ApplicationContext = (void*)Window.Activity.Handle
+#pragma warning restore CA1416
                 };
                 var initLoader = (delegate* unmanaged[Cdecl]<LoaderInitInfoBaseHeaderKHR*, Result>)initLoaderPtr.Handle;
                 r = initLoader((LoaderInitInfoBaseHeaderKHR*)&loaderInfo);
@@ -178,16 +181,18 @@ namespace Engine {
                 Log.Error($"{glExtName} extension not available");
                 return;
             }
-            bool hasLocalFloor = m_xr.IsInstanceExtensionPresent(null, "XR_EXT_local_floor");
-
-            // 2. Create Instance
-            byte* extName = (byte*)Marshal.StringToHGlobalAnsi(glExtName);
-            byte* localFloorName = hasLocalFloor
-                ? (byte*)Marshal.StringToHGlobalAnsi("XR_EXT_local_floor")
-                : null;
+            // 2. Collect extensions to enable
+            List<string> extensions = [glExtName];
+            if (TryAddExtension(extensions, "XR_EXT_local_floor"))
+                Log.Information("[VR] Optional extension enabled: XR_EXT_local_floor");
 #if ANDROID
-            byte* androidCreateInstanceName = (byte*)Marshal.StringToHGlobalAnsi("XR_KHR_android_create_instance");
+            TryAddExtension(extensions, "XR_KHR_android_create_instance");
+            if (TryAddExtension(extensions, "XR_BD_controller_interaction"))
+                Log.Information("[VR] Optional extension enabled: XR_BD_controller_interaction (PICO controllers)");
 #endif
+
+            // 3. Create Instance
+            List<nint> extHandles = [];
             try {
                 ApplicationInfo appInfo = new() {
                     ApplicationVersion = 1,
@@ -197,23 +202,18 @@ namespace Engine {
                 WriteFixedString(appInfo.ApplicationName, "Survivalcraft", 128);
                 WriteFixedString(appInfo.EngineName, "Survivalcraft", 128);
 
-#if ANDROID
-                uint extCount = hasLocalFloor ? 3u : 2u;
-                byte** extNames = stackalloc byte*[3];
-                extNames[0] = extName;
-                extNames[1] = localFloorName;
-                extNames[2] = androidCreateInstanceName;
-#else
-                uint extCount = hasLocalFloor ? 2u : 1u;
-                byte** extNames = stackalloc byte*[2];
-                extNames[0] = extName;
-                extNames[1] = localFloorName;
-#endif
+                foreach (string ext in extensions) {
+                    extHandles.Add(Marshal.StringToHGlobalAnsi(ext));
+                }
+                byte** extNames = stackalloc byte*[extHandles.Count];
+                for (int i = 0; i < extHandles.Count; i++) {
+                    extNames[i] = (byte*)extHandles[i];
+                }
 
                 InstanceCreateInfo createInfo = new() {
                     Type = StructureType.InstanceCreateInfo,
                     ApplicationInfo = appInfo,
-                    EnabledExtensionCount = extCount,
+                    EnabledExtensionCount = (uint)extHandles.Count,
                     EnabledExtensionNames = extNames
                 };
 
@@ -222,7 +222,9 @@ namespace Engine {
                 InstanceCreateInfoAndroidKHR androidInfo = new() {
                     Type = StructureType.InstanceCreateInfoAndroidKhr,
                     ApplicationVM = (void*)JniRuntime.CurrentRuntime.InvocationPointer,
+#pragma warning disable CA1416
                     ApplicationActivity = (void*)Window.Activity.Handle
+#pragma warning restore CA1416
                 };
                 createInfo.Next = &androidInfo;
 #endif
@@ -234,13 +236,9 @@ namespace Engine {
                 }
             }
             finally {
-                Marshal.FreeHGlobal((nint)extName);
-                if (localFloorName != null) {
-                    Marshal.FreeHGlobal((nint)localFloorName);
+                foreach (nint handle in extHandles) {
+                    Marshal.FreeHGlobal(handle);
                 }
-#if ANDROID
-                Marshal.FreeHGlobal((nint)androidCreateInstanceName);
-#endif
             }
 
             // 3. Get System
@@ -425,6 +423,14 @@ namespace Engine {
             m_swapchainFormat = (InternalFormat)formats[0];
         }
 
+        bool TryAddExtension(List<string> extensions, string name) {
+            if (m_xr.IsInstanceExtensionPresent(null, name)) {
+                extensions.Add(name);
+                return true;
+            }
+            return false;
+        }
+
         static void MemClear(void* ptr, int size) {
             byte* p = (byte*)ptr;
             for (int i = 0; i < size; i++) {
@@ -540,6 +546,7 @@ namespace Engine {
                 CreateActionFloat($"trigger_{handPaths[hand]}", $"Trigger {handPaths[hand]}", out m_triggerActions[hand]);
                 // Grip (Float -> bool)
                 CreateActionFloat($"grip_{handPaths[hand]}", $"Grip {handPaths[hand]}", out m_gripActions[hand]);
+                CreateActionBool($"grip_click_{handPaths[hand]}", $"Grip Click {handPaths[hand]}", out m_gripClickActions[hand]);
                 // Menu (Boolean)
                 CreateActionBool($"menu_{handPaths[hand]}", $"Menu {handPaths[hand]}", out m_menuActions[hand]);
                 // Stick (two separate float actions since GetActionStateVector2f doesn't exist)
@@ -631,7 +638,6 @@ namespace Engine {
                 m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
                 m_primaryActions[1], m_secondaryActions[1], m_thumbrestActions[1]
             ];
-
             // Meta Quest Touch
             SuggestProfileBindings("/interaction_profiles/oculus/touch_controller", allActions, [
                 "/user/hand/left/input/trigger/value",
@@ -656,11 +662,43 @@ namespace Engine {
                 "/user/hand/right/input/thumbrest/touch"
             ]);
 
+            // Windows Mixed Reality / Microsoft Motion Controller.
+            // These controllers report squeeze as a click and expose both
+            // thumbstick and trackpad paths.
+            XrAction[] microsoftActions = [
+                m_triggerActions[0], m_gripClickActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
+                m_trackpadXActions[0], m_trackpadYActions[0],
+                m_triggerActions[1], m_gripClickActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
+                m_trackpadXActions[1], m_trackpadYActions[1]
+            ];
+            SuggestProfileBindings("/interaction_profiles/microsoft/motion_controller", microsoftActions, [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/click",
+                "/user/hand/left/input/menu/click",
+                "/user/hand/left/input/thumbstick/x",
+                "/user/hand/left/input/thumbstick/y",
+                "/user/hand/left/input/aim/pose",
+                "/user/hand/left/input/trackpad/click",
+                "/user/hand/left/input/trackpad/touch",
+                "/user/hand/left/input/trackpad/x",
+                "/user/hand/left/input/trackpad/y",
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/click",
+                "/user/hand/right/input/menu/click",
+                "/user/hand/right/input/thumbstick/x",
+                "/user/hand/right/input/thumbstick/y",
+                "/user/hand/right/input/aim/pose",
+                "/user/hand/right/input/trackpad/click",
+                "/user/hand/right/input/trackpad/touch",
+                "/user/hand/right/input/trackpad/x",
+                "/user/hand/right/input/trackpad/y"
+            ]);
+
             // HTC Vive (trackpad is both Stick and Trackpad)
             XrAction[] viveActions = [
-                m_triggerActions[0], m_gripActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
+                m_triggerActions[0], m_gripClickActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
                 m_trackpadXActions[0], m_trackpadYActions[0],
-                m_triggerActions[1], m_gripActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
+                m_triggerActions[1], m_gripClickActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
                 m_trackpadXActions[1], m_trackpadYActions[1]
             ];
             SuggestProfileBindings("/interaction_profiles/htc/vive_controller", viveActions, [
@@ -766,10 +804,18 @@ namespace Engine {
                 "/user/hand/right/input/thumbrest/touch"
             ]);
 
-            // Pico 4
-            SuggestProfileBindings("/interaction_profiles/bytedance/pico4_controller", allActions, [
+            // PICO Neo3. Do not use thumbrest paths here; PICO exposes
+            // thumbstick touch/click but no thumbrest input.
+            XrAction[] picoNeo3Actions = [
+                m_triggerActions[0], m_gripActions[0], m_gripClickActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
+                m_primaryActions[0], m_secondaryActions[0],
+                m_triggerActions[1], m_gripActions[1], m_gripClickActions[1], m_menuActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
+                m_primaryActions[1], m_secondaryActions[1]
+            ];
+            SuggestProfileBindings("/interaction_profiles/bytedance/pico_neo3_controller", picoNeo3Actions, [
                 "/user/hand/left/input/trigger/value",
                 "/user/hand/left/input/squeeze/value",
+                "/user/hand/left/input/squeeze/click",
                 "/user/hand/left/input/menu/click",
                 "/user/hand/left/input/thumbstick/x",
                 "/user/hand/left/input/thumbstick/y",
@@ -777,17 +823,46 @@ namespace Engine {
                 "/user/hand/left/input/thumbstick/click",
                 "/user/hand/left/input/x/click",
                 "/user/hand/left/input/y/click",
-                "/user/hand/left/input/thumbrest/touch",
                 "/user/hand/right/input/trigger/value",
                 "/user/hand/right/input/squeeze/value",
-                "/user/hand/right/input/system/click",
+                "/user/hand/right/input/squeeze/click",
+                "/user/hand/right/input/menu/click",
                 "/user/hand/right/input/thumbstick/x",
                 "/user/hand/right/input/thumbstick/y",
                 "/user/hand/right/input/aim/pose",
                 "/user/hand/right/input/thumbstick/click",
                 "/user/hand/right/input/a/click",
-                "/user/hand/right/input/b/click",
-                "/user/hand/right/input/thumbrest/touch"
+                "/user/hand/right/input/b/click"
+            ]);
+
+            // PICO 4. Menu is only exposed on the left hand in this profile;
+            // right-hand system/click is not reliable for application input.
+            XrAction[] pico4Actions = [
+                m_triggerActions[0], m_gripActions[0], m_gripClickActions[0], m_menuActions[0], m_stickXActions[0], m_stickYActions[0], m_poseActions[0], m_stickClickActions[0],
+                m_primaryActions[0], m_secondaryActions[0],
+                m_triggerActions[1], m_gripActions[1], m_gripClickActions[1], m_stickXActions[1], m_stickYActions[1], m_poseActions[1], m_stickClickActions[1],
+                m_primaryActions[1], m_secondaryActions[1]
+            ];
+            SuggestProfileBindings("/interaction_profiles/bytedance/pico4_controller", pico4Actions, [
+                "/user/hand/left/input/trigger/value",
+                "/user/hand/left/input/squeeze/value",
+                "/user/hand/left/input/squeeze/click",
+                "/user/hand/left/input/menu/click",
+                "/user/hand/left/input/thumbstick/x",
+                "/user/hand/left/input/thumbstick/y",
+                "/user/hand/left/input/aim/pose",
+                "/user/hand/left/input/thumbstick/click",
+                "/user/hand/left/input/x/click",
+                "/user/hand/left/input/y/click",
+                "/user/hand/right/input/trigger/value",
+                "/user/hand/right/input/squeeze/value",
+                "/user/hand/right/input/squeeze/click",
+                "/user/hand/right/input/thumbstick/x",
+                "/user/hand/right/input/thumbstick/y",
+                "/user/hand/right/input/aim/pose",
+                "/user/hand/right/input/thumbstick/click",
+                "/user/hand/right/input/a/click",
+                "/user/hand/right/input/b/click"
             ]);
 
             // HTC Vive Focus 3
@@ -845,13 +920,10 @@ namespace Engine {
             fixed (ActionSuggestedBinding* pBindings = bindings) {
                 suggestedBindings.SuggestedBindings = pBindings;
                 Result r = m_xr.SuggestInteractionProfileBinding(m_instance, in suggestedBindings);
-                if (r != Result.Success) {
-                    if (r == Result.ErrorPathUnsupported) {
-                        Log.Verbose($"OpenXR interaction profile not supported by runtime: {profilePath}");
-                    }
-                    else {
-                        Log.Warning($"SuggestBindings failed for {profilePath}: {r}");
-                    }
+                switch (r) {
+                    case Result.Success: Log.Information($"SuggestedBindings succeeded for {profilePath}"); break;
+                    case Result.ErrorPathUnsupported: Log.Verbose($"OpenXR interaction profile not supported by runtime: {profilePath}"); break;
+                    default: Log.Warning($"SuggestBindings failed for {profilePath}: {r}"); break;
                 }
             }
         }
@@ -1122,7 +1194,8 @@ namespace Engine {
 
                 // Grip (float -> bool >= 0.5)
                 ActionStateFloat gripState = GetFloatState(m_gripActions[hand]);
-                m_controllers[hand].Grip = gripState.CurrentState >= 0.5f;
+                ActionStateBoolean gripClickState = GetBoolState(m_gripClickActions[hand]);
+                m_controllers[hand].Grip = gripState.CurrentState >= 0.5f || gripClickState.CurrentState != 0;
 
                 // Menu
                 ActionStateBoolean menuState = GetBoolState(m_menuActions[hand]);

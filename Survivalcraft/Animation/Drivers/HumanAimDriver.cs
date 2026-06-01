@@ -45,13 +45,13 @@ namespace Game.Animation.Drivers {
             // 原始代码：
             // Hand1 (左手)：X = 1.5, Y = -0.7（需要平滑过渡）
             // Hand2 (右手)：X = AimHandAngle * 1, Y = 0
-            ModelBone hand1Bone = model.FindBone("Hand1");
+            ModelBone hand1Bone = model.FindBone("Hand1", false);
             if (hand1Bone != null) {
                 // Hand1 角度也需要平滑过渡
                 boneTransforms[hand1Bone.Index] = Matrix.CreateRotationX(AimAngleMultiplier * _currentAimActive)
                     * Matrix.CreateRotationY(AimAngleY * _currentAimActive);
             }
-            ModelBone hand2Bone = model.FindBone("Hand2");
+            ModelBone hand2Bone = model.FindBone("Hand2", false);
             if (hand2Bone != null) {
                 boneTransforms[hand2Bone.Index] = Matrix.CreateRotationX(_aimHandAngle * _currentAimActive);
             }

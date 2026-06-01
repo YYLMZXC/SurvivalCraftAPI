@@ -48,7 +48,7 @@ namespace Game.Animation.Drivers {
             _currentMineAngle += smoothFactor * (mineAngle - _currentMineAngle);
 
             // 设置 Hand2 骨骼（右手挖掘）
-            ModelBone hand2Bone = model.FindBone("Hand2");
+            ModelBone hand2Bone = model.FindBone("Hand2", false);
             if (hand2Bone != null) {
                 boneTransforms[hand2Bone.Index] = Matrix.CreateRotationX(_currentMineAngle);
             }

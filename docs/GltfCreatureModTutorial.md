@@ -75,7 +75,7 @@ YourMod/
 {
   "Name": "YourCreatureMod",
   "Version": "1.0.0",
-  "ApiVersion": "1.9.0.0",
+  "ApiVersion": "1.9.1.3",
   "Description": "Adds a creature using glTF model",
   "ScVersion": "1.90.3.0",
   "GameplayImpactLevel": "Cosmetic",
@@ -138,7 +138,7 @@ YourMod/
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.0.2" />
+    <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.1.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -364,7 +364,7 @@ YourMod/
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.0.2" />
+    <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.1.3" />
   </ItemGroup>
 
   <ItemGroup>

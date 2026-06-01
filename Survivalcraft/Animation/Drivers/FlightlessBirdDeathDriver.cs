@@ -71,7 +71,7 @@ namespace Game.Animation.Drivers {
             float bodyHeight = _bodyHeight > 0 ? _bodyHeight : 1f;
 
             // Body 骨骼 - 侧翻倒下
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 // 原始逻辑:
                 // Matrix.CreateTranslation(-0.5 * height * phase * UnitY)
@@ -85,7 +85,7 @@ namespace Game.Animation.Drivers {
             }
 
             // Head 和 Neck 骨骼重置
-            ModelBone headBone = model.FindBone("Head");
+            ModelBone headBone = model.FindBone("Head", false);
             if (headBone != null) {
                 boneTransforms[headBone.Index] = Matrix.Identity;
             }
@@ -97,12 +97,12 @@ namespace Game.Animation.Drivers {
             // 腿部逐渐放松（保持最后的角度但逐渐减弱）
             // 原始代码: SetBoneTransform(m_leg1Bone.Index, Matrix.CreateRotationX(m_legAngle1 * num8));
             // num8 = 1f - DeathPhase
-            ModelBone leg1Bone = model.FindBone("Leg1");
+            ModelBone leg1Bone = model.FindBone("Leg1", false);
             if (leg1Bone != null) {
                 // 死亡时腿部保持最后的角度但逐渐放松
                 boneTransforms[leg1Bone.Index] = Matrix.CreateRotationX(_lastLegAngle1 * deathInverse);
             }
-            ModelBone leg2Bone = model.FindBone("Leg2");
+            ModelBone leg2Bone = model.FindBone("Leg2", false);
             if (leg2Bone != null) {
                 boneTransforms[leg2Bone.Index] = Matrix.CreateRotationX(_lastLegAngle2 * deathInverse);
             }

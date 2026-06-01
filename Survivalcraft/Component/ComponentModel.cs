@@ -95,9 +95,7 @@ namespace Game {
         public virtual Matrix? GetBoneTransform(int boneIndex) => m_boneTransforms[boneIndex];
 
         public virtual void SetBoneTransform(int boneIndex, Matrix? transformation) {
-            bool canScale = boneIndex == Model.RootBone.Index;
-            Matrix? tf = canScale ? Matrix.CreateScale(ModelScale) * transformation : transformation;
-            m_boneTransforms[boneIndex] = tf * Matrix.CreateTranslation(ModelOffset);
+            m_boneTransforms[boneIndex] = transformation * Matrix.CreateTranslation(ModelOffset);
         }
 
         public virtual void CalculateAbsoluteBonesTransforms(Camera camera) {
@@ -266,7 +264,7 @@ namespace Game {
 
                     // 应用动画配置中的模型缩放（覆盖 ValuesDictionary 中的值）
                     if (AnimationController.ModelScale != 1f) {
-                        ModelScale = AnimationController.ModelScale;
+                        ModelScale *= AnimationController.ModelScale;
                     }
                 }
                 else if (!string.IsNullOrEmpty(AnimationTemplateName)) {
@@ -304,6 +302,10 @@ namespace Game {
                     m *= m_boneTransforms[modelBone.Index].Value;
                     m.Translation += translation;
                 }
+            }
+            // 根骨骼统一应用 ModelScale
+            if (modelBone == Model.RootBone && ModelScale != 1f) {
+                m = Matrix.CreateScale(ModelScale) * m;
             }
 
             // 骨骼世界变换 = 骨骼局部变换 * 父骨骼世界变换

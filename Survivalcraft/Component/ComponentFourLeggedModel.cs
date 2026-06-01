@@ -74,21 +74,29 @@ namespace Game {
                 attackPhaseSpeed = AnimationController.Parameters.GetFloat("AttackPhaseSpeed");
             }
 
-            // 脚步声相位计算
-            // 使用统一的 1.25 系数，不区分步态
-            // 步态判断由配置文件的条件规则处理
+            // 步态判断 - 根据速度确定步态类型（与旧版一致）
+            float walkSpeed = m_componentCreature.ComponentLocomotion.WalkSpeed;
+            if (m_canCanter && speed > 0.7f * walkSpeed) {
+                m_gait = Gait.Canter;
+            }
+            else if (m_canTrot && speed > 0.5f * walkSpeed) {
+                m_gait = Gait.Trot;
+            }
+            else {
+                m_gait = Gait.Walk;
+            }
+
+            // 脚步声相位计算 - 按步态使用不同系数
             if (MathF.Abs(speed) > 0.2f) {
-                m_footstepsPhase += 1.25f * m_walkAnimationSpeed * MathF.Abs(speed) * dt;
+                float footstepsFactor = m_gait switch {
+                    Gait.Canter => 0.7f,
+                    _ => 1.25f
+                };
+                m_footstepsPhase += footstepsFactor * m_walkAnimationSpeed * MathF.Abs(speed) * dt;
             }
             else {
                 m_footstepsPhase = 0f;
             }
-
-            // 从 Parameters 读取当前步态（由配置文件的 driverArgs 设置）
-            // 注意：这是上一帧的值，因为 AnimationController 还没评估当前帧的规则
-            // 但对于脚步声来说，这个延迟是可接受的
-            int gait = (int)(AnimationController?.Parameters.GetFloat("Gait") ?? 0);
-            m_gait = (Gait)gait;
 
             // 脚步声 - Canter 有特殊音效
             if (m_gait == Gait.Canter && m_useCanterSound) {
@@ -203,13 +211,13 @@ namespace Game {
                 return;
             }
             if (Model != null) {
-                m_bodyBone = Model.FindBone("Body");
+                m_bodyBone = Model.FindBone("Body", false);
                 m_neckBone = Model.FindBone("Neck", false);
-                m_headBone = Model.FindBone("Head");
-                m_leg1Bone = Model.FindBone("Leg1");
-                m_leg2Bone = Model.FindBone("Leg2");
-                m_leg3Bone = Model.FindBone("Leg3");
-                m_leg4Bone = Model.FindBone("Leg4");
+                m_headBone = Model.FindBone("Head", false);
+                m_leg1Bone = Model.FindBone("Leg1", false);
+                m_leg2Bone = Model.FindBone("Leg2", false);
+                m_leg3Bone = Model.FindBone("Leg3", false);
+                m_leg4Bone = Model.FindBone("Leg4", false);
             }
             // 配置驱动器参数
             if (AnimationController != null) {

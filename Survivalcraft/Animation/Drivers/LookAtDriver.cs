@@ -58,7 +58,7 @@ namespace Game.Animation.Drivers {
         }
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
-            ModelBone targetBone = model.FindBone(TargetBoneName);
+            ModelBone targetBone = model.FindBone(TargetBoneName, false);
             if (targetBone == null) {
                 return;
             }

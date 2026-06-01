@@ -544,12 +544,12 @@ namespace Game {
                 return;
             }
             if (Model != null) {
-                m_bodyBone = Model.FindBone("Body");
-                m_headBone = Model.FindBone("Head");
-                m_leg1Bone = Model.FindBone("Leg1");
-                m_leg2Bone = Model.FindBone("Leg2");
-                m_hand1Bone = Model.FindBone("Hand1");
-                m_hand2Bone = Model.FindBone("Hand2");
+                m_bodyBone = Model.FindBone("Body", false);
+                m_headBone = Model.FindBone("Head", false);
+                m_leg1Bone = Model.FindBone("Leg1", false);
+                m_leg2Bone = Model.FindBone("Leg2", false);
+                m_hand1Bone = Model.FindBone("Hand1", false);
+                m_hand2Bone = Model.FindBone("Hand2", false);
             }
             else {
                 m_bodyBone = null;
@@ -597,7 +597,7 @@ namespace Game {
             float num2 = 0.875f * m_componentCreature.ComponentBody.BoxSize.Y;
             float num3 = MathUtils.Lerp(MathUtils.Lerp(num2, 0.45f * num2, num), 0.2f * num2, f);
             Matrix matrix = m_componentCreature.ComponentBody.Matrix;
-            Vector3 result = m_componentCreature.ComponentBody.Position + matrix.Up * (num3 + 2f * Bob) + matrix.Forward * -0.2f * num;
+            Vector3 result = m_componentCreature.ComponentBody.Position + matrix.Up * (num3 + 2f * Bob) + matrix.Forward * -0.09f * num;
             ModsManager.HookAction(
                 "RecalculateModelEyePosition",
                 loader => {

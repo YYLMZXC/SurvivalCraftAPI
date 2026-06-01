@@ -47,7 +47,7 @@
 
     ```xml
     <ItemGroup>
-      <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.1.2"/>
+      <PackageReference Include="SurvivalcraftAPI.Survivalcraft" Version="1.9.1.3"/>
     </ItemGroup>
     ```
 

@@ -54,13 +54,13 @@ namespace Game.Animation.Drivers {
             _currentPunchAngle2 += smoothFactor * (targetAngle2 - _currentPunchAngle2);
 
             // 设置 Hand1 骨骼
-            ModelBone hand1Bone = model.FindBone("Hand1");
+            ModelBone hand1Bone = model.FindBone("Hand1", false);
             if (hand1Bone != null) {
                 boneTransforms[hand1Bone.Index] = Matrix.CreateRotationX(_currentPunchAngle1);
             }
 
             // 设置 Hand2 骨骼
-            ModelBone hand2Bone = model.FindBone("Hand2");
+            ModelBone hand2Bone = model.FindBone("Hand2", false);
             if (hand2Bone != null) {
                 boneTransforms[hand2Bone.Index] = Matrix.CreateRotationX(_currentPunchAngle2);
             }

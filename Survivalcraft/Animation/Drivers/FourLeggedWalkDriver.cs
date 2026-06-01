@@ -229,7 +229,7 @@ namespace Game.Animation.Drivers {
 
         public void SampleTransforms(Matrix?[] boneTransforms, Model model) {
             // Body 骨骼（包含位置和旋转）
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 boneTransforms[bodyBone.Index] = Matrix.CreateRotationY(_rotationY)
                     * Matrix.CreateTranslation(_position.X, _position.Y + _currentBob, _position.Z);
@@ -253,7 +253,7 @@ namespace Game.Animation.Drivers {
             // 头部和颈部 - 行走时的头部摆动 + 头部追踪
             ModelBone neckBone = model.FindBone("Neck", false);
             bool hasNeck = neckBone != null;
-            ModelBone headBone = model.FindBone("Head");
+            ModelBone headBone = model.FindBone("Head", false);
             if (headBone != null) {
                 float maxAngleX = MathUtils.DegToRad(HeadMaxAngleX);
                 float maxAngleY = MathUtils.DegToRad(HeadMaxAngleY);

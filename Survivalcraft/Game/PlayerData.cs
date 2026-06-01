@@ -123,6 +123,8 @@ namespace Game {
             }
         }
 
+        public PlayerData() { }
+
         public PlayerData(Project project) {
             m_project = project;
             SubsystemPlayers = project.FindSubsystem<SubsystemPlayers>(true);
@@ -341,11 +343,11 @@ namespace Game {
             m_stateMachine.TransitionTo("FirstUpdate");
         }
 
-        public void Dispose() {
+        public virtual void Dispose() {
             HideSpawnDialog();
         }
 
-        public void RandomizeCharacterSkin() {
+        public virtual void RandomizeCharacterSkin() {
             Random random = new();
             CharacterSkinsManager.UpdateCharacterSkinsList();
             string[] array = CharacterSkinsManager.CharacterSkinsNames
@@ -356,7 +358,7 @@ namespace Game {
             CharacterSkinName = array2.Length != 0 ? array2[random.Int(0, array2.Length - 1)] : array[random.Int(0, array.Length - 1)];
         }
 
-        public void ResetName() {
+        public virtual void ResetName() {
             m_name = CharacterSkinsManager.GetDisplayName(CharacterSkinName);
             IsDefaultName = true;
         }
@@ -367,7 +369,7 @@ namespace Game {
             m_stateMachine.Update();
         }
 
-        public void Load(ValuesDictionary valuesDictionary) {
+        public virtual void Load(ValuesDictionary valuesDictionary) {
             SpawnPosition = valuesDictionary.GetValue("SpawnPosition", Vector3.Zero);
             FirstSpawnTime = valuesDictionary.GetValue("FirstSpawnTime", 0.0);
             LastSpawnTime = valuesDictionary.GetValue("LastSpawnTime", 0.0);
@@ -379,7 +381,7 @@ namespace Game {
             InputDevice = valuesDictionary.GetValue("InputDevice", InputDevice);
         }
 
-        public void Save(ValuesDictionary valuesDictionary) {
+        public virtual void Save(ValuesDictionary valuesDictionary) {
             valuesDictionary.SetValue("SpawnPosition", SpawnPosition);
             valuesDictionary.SetValue("FirstSpawnTime", FirstSpawnTime);
             valuesDictionary.SetValue("LastSpawnTime", LastSpawnTime);
@@ -391,7 +393,7 @@ namespace Game {
             valuesDictionary.SetValue("InputDevice", InputDevice);
         }
 
-        public void OnEntityAdded(Entity entity) {
+        public virtual void OnEntityAdded(Entity entity) {
             ComponentPlayer componentPlayer = entity.FindComponent<ComponentPlayer>();
             if (componentPlayer != null
                 && componentPlayer.PlayerData == this) {
@@ -409,9 +411,9 @@ namespace Game {
             }
         }
 
-        public void OnEntityRemoved(Entity entity) { }
+        public virtual void OnEntityRemoved(Entity entity) { }
 
-        public Vector3 FindIntroSpawnPosition(Vector2 desiredSpawnPosition) {
+        public virtual Vector3 FindIntroSpawnPosition(Vector2 desiredSpawnPosition) {
             Vector2 vector = Vector2.Zero;
             float num = float.MinValue;
             for (int i = -30; i <= 30; i += 2) {
@@ -429,7 +431,7 @@ namespace Game {
             return new Vector3(vector.X + 0.5f, num5 + 0.01f, vector.Y + 0.5f);
         }
 
-        public Vector3 FindNoIntroSpawnPosition(Vector3 desiredSpawnPosition, bool respawn) {
+        public virtual Vector3 FindNoIntroSpawnPosition(Vector3 desiredSpawnPosition, bool respawn) {
             Vector3 vector = Vector3.Zero;
             float num = float.MinValue;
             for (int i = -8; i <= 8; i++) {
@@ -449,7 +451,7 @@ namespace Game {
             return new Vector3(vector.X + 0.5f, vector.Y + 0.01f, vector.Z + 0.5f);
         }
 
-        public float ScoreIntroSpawnPosition(Vector2 desiredSpawnPosition, int x, int z) {
+        public virtual float ScoreIntroSpawnPosition(Vector2 desiredSpawnPosition, int x, int z) {
             float num = -0.01f * Vector2.Distance(new Vector2(x, z), desiredSpawnPosition);
             int num2 = m_subsystemTerrain.Terrain.CalculateTopmostCellHeight(x, z);
             if (num2 < 64
@@ -493,7 +495,7 @@ namespace Game {
             return num;
         }
 
-        public float ScoreNoIntroSpawnPosition(Vector3 desiredSpawnPosition, int x, int y, int z) {
+        public virtual float ScoreNoIntroSpawnPosition(Vector3 desiredSpawnPosition, int x, int y, int z) {
             float num = -0.01f * Vector3.Distance(new Vector3(x, y, z), desiredSpawnPosition);
             if (y < 1
                 || y >= 255) {
@@ -526,7 +528,7 @@ namespace Game {
             return num;
         }
 
-        public bool CheckIsPointInWater(Point3 p) {
+        public virtual bool CheckIsPointInWater(Point3 p) {
             for (int i = p.X - 1; i < p.X + 1; i++) {
                 for (int j = p.Z - 1; j < p.Z + 1; j++) {
                     for (int num = p.Y; num > 0; num--) {
@@ -544,7 +546,7 @@ namespace Game {
             return true;
         }
 
-        public void SpawnPlayer(Vector3 position, SpawnMode spawnMode) {
+        public virtual void SpawnPlayer(Vector3 position, SpawnMode spawnMode) {
             if (LastDeadPlayer != null) {
                 m_project.RemoveEntity(LastDeadPlayer, false);
             }
@@ -658,7 +660,7 @@ namespace Game {
             LastDeadPlayer = null;
         }
 
-        public string GetEntityTemplateName() {
+        public virtual string GetEntityTemplateName() {
             if (PlayerClass != 0) {
                 return "FemalePlayer";
             }
@@ -684,7 +686,7 @@ namespace Game {
             m_spawnDialog.Progress = m_progress;
         }
 
-        public void HideSpawnDialog() {
+        public virtual void HideSpawnDialog() {
             if (m_spawnDialog != null) {
                 DialogsManager.HideDialog(m_spawnDialog);
                 m_spawnDialog = null;

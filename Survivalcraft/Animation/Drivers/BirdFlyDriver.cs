@@ -98,7 +98,7 @@ namespace Game.Animation.Drivers {
             }
 
             // Body 骨骼
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 boneTransforms[bodyBone.Index] = Matrix.CreateFromYawPitchRoll(_rotation.X, 0f, 0f)
                     * Matrix.CreateTranslation(_position.X, _position.Y + _bob, _position.Z);
@@ -111,11 +111,11 @@ namespace Game.Animation.Drivers {
             }
 
             // 腿部骨骼
-            ModelBone leg1Bone = model.FindBone("Leg1");
+            ModelBone leg1Bone = model.FindBone("Leg1", false);
             if (leg1Bone != null) {
                 boneTransforms[leg1Bone.Index] = Matrix.CreateRotationX(legAngle1);
             }
-            ModelBone leg2Bone = model.FindBone("Leg2");
+            ModelBone leg2Bone = model.FindBone("Leg2", false);
             if (leg2Bone != null) {
                 boneTransforms[leg2Bone.Index] = Matrix.CreateRotationX(legAngle2);
             }
@@ -129,7 +129,7 @@ namespace Game.Animation.Drivers {
             // Neck: CreateFromYawPitchRoll(yaw2, num4 + LookAngleY, 0)
             ModelBone neckBone = model.FindBone("Neck", false);
             bool hasNeck = neckBone != null;
-            ModelBone headBone = model.FindBone("Head");
+            ModelBone headBone = model.FindBone("Head", false);
             if (headBone != null) {
                 float yaw = _lookAngleX / 2f;
                 float num4 = 0f;

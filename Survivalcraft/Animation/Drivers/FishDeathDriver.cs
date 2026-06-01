@@ -45,7 +45,7 @@ namespace Game.Animation.Drivers {
             float riseHeight = DeathRiseHeight * _bodyHeight * _deathPhase;
 
             // Body 骨骼
-            ModelBone bodyBone = model.FindBone("Body");
+            ModelBone bodyBone = model.FindBone("Body", false);
             if (bodyBone != null) {
                 Vector3 deathPosition = _position + riseHeight * Vector3.UnitY;
                 boneTransforms[bodyBone.Index] = Matrix.CreateFromYawPitchRoll(_rotationY, 0f, rollAngle) * Matrix.CreateTranslation(deathPosition);

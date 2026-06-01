@@ -1121,32 +1121,25 @@
   "VrControllerMappingScreenKeys": {
     "LeftController": "Left Controller",
     "RightController": "Right Controller",
-    "ThumbstickTrackpad": "Thumbstick / Trackpad (touch)",
-    "ThumbstickTrackpadHorizontal": "Thumbstick / Trackpad (touch) Horizontal",
-    "ThumbstickTrackpadVertical": "Thumbstick / Trackpad (touch) Vertical",
-    "TriggerClick": "Trigger (click)",
-    "TriggerHold": "Trigger (hold)",
+    "Trigger": "Trigger",
     "Grip": "Grip",
     "Menu": "Menu",
-    "YTrackpadUp": "Y / Trackpad Up (click)",
-    "XTrackpadDown": "X / Trackpad Down (click)",
-    "ThumbrestTrackpadLeft": "Thumbrest / Trackpad Left (click)",
-    "TrackpadRight": "Trackpad Right (click)",
-    "BTrackpadLeft": "B / Trackpad Left (click)",
-    "ATrackpadRight": "A / Trackpad Right (click)",
-    "ThumbrestTrackpadUp": "Thumbrest / Trackpad Up (click)",
-    "TrackpadDown": "Trackpad Down (click)"
+    "X": "X",
+    "Y": "Y",
+    "A": "A",
+    "B": "B",
+    "Thumbrest": "Thumbrest",
+    "Trackpad": "Trackpad/Thumbstick Press",
+    "TrackpadCenter": "Trackpad Center Press",
+    "TrackpadLeft": "Trackpad Left (Touch)",
+    "TrackpadRight": "Trackpad Right (Touch)",
+    "TrackpadUp": "Trackpad Up (Touch)",
+    "TrackpadDown": "Trackpad Down (Touch)",
+    "Null": ""
   },
   "VrControllerMappingScreenActions": {
-    "SpecialClick": "UI Special Click",
-    "HorizontalMove": "Horizontal Move",
-    "Look": "Look",
-    "UIScroll": "UI Scroll",
-    "UIClick": "UI Click",
-    "UIPress": "UI Press",
-    "UIBack": "UI Back",
-    "ScrollInventoryLeft": "Scroll Inventory Left",
-    "ScrollInventoryRight": "Scroll Inventory Right"
+    "VrScrollLeft": "Scroll Left",
+    "VrScrollRight": "Scroll Right"
   },
   "ComponentSickness": {
     "1": "Sickness",
@@ -3373,7 +3366,8 @@
       "Gamepad Trigger Threshold:",
       "Short Inventory Looping:",
       "Keyboard Mapping:",
-      "Gamepad Mapping:"
+      "Gamepad Mapping:",
+      "VR Controller Mapping:"
     ],
     "CameraManageScreen": {
       "Enable": "Enable",

@@ -1121,32 +1121,25 @@
   "VrControllerMappingScreenKeys": {
     "LeftController": "左控制器",
     "RightController": "右控制器",
-    "ThumbstickTrackpad": "摇杆 / 触摸板 (触摸)",
-    "ThumbstickTrackpadHorizontal": "摇杆 / 触摸板 (触摸) 水平",
-    "ThumbstickTrackpadVertical": "摇杆 / 触摸板 (触摸) 垂直",
-    "TriggerClick": "扳机 (点击)",
-    "TriggerHold": "扳机 (长按)",
+    "Trigger": "扳机",
     "Grip": "握持键",
     "Menu": "菜单键",
-    "YTrackpadUp": "Y / 触摸板上 (点击)",
-    "XTrackpadDown": "X / 触摸板下 (点击)",
-    "ThumbrestTrackpadLeft": "拇指托 / 触摸板左 (点击)",
-    "TrackpadRight": "触摸板右 (点击)",
-    "BTrackpadLeft": "B / 触摸板左 (点击)",
-    "ATrackpadRight": "A / 触摸板右 (点击)",
-    "ThumbrestTrackpadUp": "拇指托 / 触摸板上 (点击)",
-    "TrackpadDown": "触摸板下 (点击)"
+    "X": "X",
+    "Y": "Y",
+    "A": "A",
+    "B": "B",
+    "Thumbrest": "拇指托",
+    "Trackpad": "触摸板/摇杆 按下",
+    "TrackpadCenter": "触摸板中心 按下",
+    "TrackpadLeft": "触摸板 左（触摸）",
+    "TrackpadRight": "触摸板 右（触摸）",
+    "TrackpadUp": "触摸板 上（触摸）",
+    "TrackpadDown": "触摸板 下（触摸）",
+    "Null": ""
   },
   "VrControllerMappingScreenActions": {
-    "SpecialClick": "界面特殊点击",
-    "HorizontalMove": "水平移动",
-    "Look": "视角",
-    "UIScroll": "界面滚动",
-    "UIClick": "界面点击",
-    "UIPress": "界面按下",
-    "UIBack": "界面返回",
-    "ScrollInventoryLeft": "物品栏左滚",
-    "ScrollInventoryRight": "物品栏右滚"
+    "VrScrollLeft": "物品栏左滚",
+    "VrScrollRight": "物品栏右滚"
   },
   "ComponentSickness": {
     "1": "患病",
@@ -3383,7 +3376,8 @@
       "手柄扳机触发阈值：",
       "底部物品栏循环滚动：",
       "键鼠按键映射：",
-      "手柄按键映射："
+      "手柄按键映射：",
+      "VR 手柄按键映射："
     ],
     "CameraManageScreen": {
       "Enable": "启用",

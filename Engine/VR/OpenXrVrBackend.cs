@@ -100,6 +100,7 @@ namespace Engine {
         // IVrBackend properties
         public bool IsAvailable { get; private set; }
         public bool IsStarted { get; private set; }
+        public VrControllerType ControllerType { get; private set; } = VrControllerType.Unknown;
         public Matrix HmdMatrix => m_hmdMatrix;
         public Matrix HmdMatrixInverted => m_hmdMatrixInverted;
         public Vector3 HmdMatrixYpr => m_hmdMatrixYpr;
@@ -580,6 +581,9 @@ namespace Engine {
                 m_xr.AttachSessionActionSets(m_session, ref attachInfo);
             }
 
+            // Detect controller type via current interaction profile
+            DetectControllerType();
+
             // Create action spaces for controller poses
             for (int hand = 0; hand < 2; hand++) {
                 ActionSpaceCreateInfo actionSpaceInfo = new() {
@@ -925,6 +929,46 @@ namespace Engine {
                     case Result.ErrorPathUnsupported: Log.Verbose($"OpenXR interaction profile not supported by runtime: {profilePath}"); break;
                     default: Log.Warning($"SuggestBindings failed for {profilePath}: {r}"); break;
                 }
+            }
+        }
+
+        void DetectControllerType() {
+            try {
+                ulong leftHandPath = 0;
+                m_xr.StringToPath(m_instance, "/user/hand/left", ref leftHandPath);
+                InteractionProfileState profileState = new() {
+                    Type = StructureType.InteractionProfileState
+                };
+                m_xr.GetCurrentInteractionProfile(m_session, leftHandPath, ref profileState);
+                if (profileState.InteractionProfile == 0) {
+                    ControllerType = VrControllerType.Unknown;
+                    return;
+                }
+                // Read profile path string
+                uint bufLen = 256;
+                byte[] buf = new byte[bufLen];
+                m_xr.PathToString(m_instance, profileState.InteractionProfile, &bufLen, buf);
+                // Find null terminator
+                int len = 0;
+                while (len < buf.Length && buf[len] != 0) len++;
+                string path = System.Text.Encoding.ASCII.GetString(buf, 0, len);
+                ControllerType = path switch {
+                    "/interaction_profiles/oculus/touch_controller" => VrControllerType.MetaQuestTouch,
+                    "/interaction_profiles/meta/touch_controller_pro" => VrControllerType.MetaQuestTouch,
+                    "/interaction_profiles/meta/touch_controller_plus" => VrControllerType.MetaQuestTouch,
+                    "/interaction_profiles/htc/vive_controller" => VrControllerType.HtcVive,
+                    "/interaction_profiles/valve/index_controller" => VrControllerType.ValveIndex,
+                    "/interaction_profiles/microsoft/motion_controller" => VrControllerType.MicrosoftMRMotion,
+                    "/interaction_profiles/bytedance/pico_neo3_controller" => VrControllerType.PICO,
+                    "/interaction_profiles/bytedance/pico4_controller" => VrControllerType.PICO,
+                    "/interaction_profiles/htc/vive_focus3_controller" => VrControllerType.MetaQuestTouch,
+                    _ => VrControllerType.Unknown
+                };
+                Log.Information($"OpenXR controller type: {ControllerType} ({path})");
+            }
+            catch (Exception e) {
+                Log.Warning($"Failed to detect controller type: {e.Message}");
+                ControllerType = VrControllerType.Unknown;
             }
         }
 
@@ -1285,14 +1329,14 @@ namespace Engine {
                 VrControllerButton.Trigger => m_controllers[idx].Trigger >= 0.5f,
                 VrControllerButton.Grip => m_controllers[idx].Grip,
                 VrControllerButton.Menu => m_controllers[idx].Menu,
-                VrControllerButton.Touchpad => m_controllers[idx].StickClick,
-                VrControllerButton.TouchpadCenter => m_controllers[idx].StickClick
+                VrControllerButton.Trackpad => m_controllers[idx].StickClick,
+                VrControllerButton.TrackpadCenter => m_controllers[idx].StickClick
                     && MathF.Abs(m_controllers[idx].Stick.X) < 0.3f
                     && MathF.Abs(m_controllers[idx].Stick.Y) < 0.3f,
-                VrControllerButton.TouchpadLeft => m_controllers[idx].Trackpad.X < -0.5f,
-                VrControllerButton.TouchpadRight => m_controllers[idx].Trackpad.X > 0.5f,
-                VrControllerButton.TouchpadUp => m_controllers[idx].Trackpad.Y > 0.5f,
-                VrControllerButton.TouchpadDown => m_controllers[idx].Trackpad.Y < -0.5f,
+                VrControllerButton.TrackpadLeft => m_controllers[idx].Trackpad.X < -0.5f,
+                VrControllerButton.TrackpadRight => m_controllers[idx].Trackpad.X > 0.5f,
+                VrControllerButton.TrackpadUp => m_controllers[idx].Trackpad.Y > 0.5f,
+                VrControllerButton.TrackpadDown => m_controllers[idx].Trackpad.Y < -0.5f,
                 VrControllerButton.Primary => m_controllers[idx].Primary,
                 VrControllerButton.Secondary => m_controllers[idx].Secondary,
                 VrControllerButton.Thumbrest => m_controllers[idx].Thumbrest,
@@ -1306,14 +1350,14 @@ namespace Engine {
                 VrControllerButton.Trigger => m_controllers[idx].Trigger >= 0.5f && m_lastControllers[idx].Trigger < 0.5f,
                 VrControllerButton.Grip => m_controllers[idx].Grip && !m_lastControllers[idx].Grip,
                 VrControllerButton.Menu => m_controllers[idx].Menu && !m_lastControllers[idx].Menu,
-                VrControllerButton.Touchpad => m_controllers[idx].StickClick && !m_lastControllers[idx].StickClick,
-                VrControllerButton.TouchpadCenter => m_controllers[idx].StickClick && !m_lastControllers[idx].StickClick
+                VrControllerButton.Trackpad => m_controllers[idx].StickClick && !m_lastControllers[idx].StickClick,
+                VrControllerButton.TrackpadCenter => m_controllers[idx].StickClick && !m_lastControllers[idx].StickClick
                     && MathF.Abs(m_controllers[idx].Stick.X) < 0.3f
                     && MathF.Abs(m_controllers[idx].Stick.Y) < 0.3f,
-                VrControllerButton.TouchpadLeft => m_controllers[idx].Trackpad.X < -0.5f && m_lastControllers[idx].Trackpad.X >= -0.4f,
-                VrControllerButton.TouchpadRight => m_controllers[idx].Trackpad.X > 0.5f && m_lastControllers[idx].Trackpad.X <= 0.4f,
-                VrControllerButton.TouchpadUp => m_controllers[idx].Trackpad.Y > 0.5f && m_lastControllers[idx].Trackpad.Y <= 0.4f,
-                VrControllerButton.TouchpadDown => m_controllers[idx].Trackpad.Y < -0.5f && m_lastControllers[idx].Trackpad.Y >= -0.4f,
+                VrControllerButton.TrackpadLeft => m_controllers[idx].Trackpad.X < -0.5f && m_lastControllers[idx].Trackpad.X >= -0.4f,
+                VrControllerButton.TrackpadRight => m_controllers[idx].Trackpad.X > 0.5f && m_lastControllers[idx].Trackpad.X <= 0.4f,
+                VrControllerButton.TrackpadUp => m_controllers[idx].Trackpad.Y > 0.5f && m_lastControllers[idx].Trackpad.Y <= 0.4f,
+                VrControllerButton.TrackpadDown => m_controllers[idx].Trackpad.Y < -0.5f && m_lastControllers[idx].Trackpad.Y >= -0.4f,
                 VrControllerButton.Primary => m_controllers[idx].Primary && !m_lastControllers[idx].Primary,
                 VrControllerButton.Secondary => m_controllers[idx].Secondary && !m_lastControllers[idx].Secondary,
                 VrControllerButton.Thumbrest => m_controllers[idx].Thumbrest && !m_lastControllers[idx].Thumbrest,

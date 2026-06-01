@@ -322,6 +322,20 @@ namespace Game {
                 m_playerInput.CrouchMove += zero;
                 m_playerInput.VrMove = value;
                 TouchInput? touchInput = VrManager.GetTouchInput(VrController.Left);
+                // Jump: special handling for Trackpad (tap gesture) vs other buttons
+                var (jumpCtrl, jumpBtn) = SettingsManager.GetVrMapping("VrJump");
+                if (jumpBtn == VrControllerButton.Trackpad) {
+                    // Default: tap gesture on both controllers
+                    if (touchInput.HasValue && num3 > 0f && touchInput.Value.InputType == TouchInputType.Tap)
+                        m_playerInput.Jump = true;
+                    TouchInput? touchInputR = VrManager.GetTouchInput(VrController.Right);
+                    if (touchInputR.HasValue && touchInputR.Value.InputType == TouchInputType.Tap)
+                        m_playerInput.Jump = true;
+                }
+                else if (jumpBtn != VrControllerButton.Null) {
+                    m_playerInput.Jump |= VrManager.IsButtonDownOnce(jumpCtrl, jumpBtn);
+                }
+                // Touchpad move gestures remain for movement (analog, not remappable)
                 if (touchInput.HasValue
                     && num3 > 0f) {
                     if (touchInput.Value.InputType == TouchInputType.Move) {
@@ -332,9 +346,6 @@ namespace Game {
                         m_playerInput.Move.X += ProcessInputValue(touchInput.Value.TotalMoveLimited.X, 0.1f, 1f);
                         m_playerInput.Move.Z += ProcessInputValue(touchInput.Value.TotalMoveLimited.Y, 0.1f, 1f);
                     }
-                    else if (touchInput.Value.InputType == TouchInputType.Tap) {
-                        m_playerInput.Jump = true;
-                    }
                 }
                 m_playerInput.Look += 0.5f * vrStickPosition2 * MathF.Pow(vrStickPosition2.LengthSquared(), 0.25f);
                 TouchInput? touchInput2 = VrManager.GetTouchInput(VrController.Right);
@@ -344,57 +355,53 @@ namespace Game {
                         zero2.X = touchInput2.Value.Move.X;
                         m_playerInput.Move.Y += ProcessInputValue(touchInput2.Value.TotalMoveLimited.Y, 0.1f, 1f);
                     }
-                    else if (touchInput2.Value.InputType == TouchInputType.Tap) {
-                        m_playerInput.Jump = true;
-                    }
                 }
                 if (num3 > 0f) {
                     m_vrSmoothLook = Vector2.Lerp(m_vrSmoothLook, zero2, 14f * num3);
                     m_playerInput.Look += num2 / num3 * new Vector2(0.25f) * m_vrSmoothLook * MathF.Pow(m_vrSmoothLook.LengthSquared(), 0.3f);
                 }
                 if (VrManager.IsControllerPresent(VrController.Right)) {
-                    m_playerInput.Dig = VrManager.IsButtonDown(VrController.Right, VrControllerButton.Trigger)
-                        ? CalculateVrHandRay()
-                        : m_playerInput.Dig;
-                    m_playerInput.Hit = VrManager.IsButtonDownOnce(VrController.Right, VrControllerButton.Trigger)
-                        ? CalculateVrHandRay()
-                        : m_playerInput.Hit;
-                    m_playerInput.Aim = VrManager.IsButtonDown(VrController.Left, VrControllerButton.Trigger)
-                        ? CalculateVrHandRay()
-                        : m_playerInput.Aim;
-                    m_playerInput.Interact = VrManager.IsButtonDownOnce(VrController.Left, VrControllerButton.Trigger)
-                        ? CalculateVrHandRay()
-                        : m_playerInput.Interact;
+                    var (hitCtrl, hitBtn) = SettingsManager.GetVrMapping("VrHit");
+                    var (digCtrl, digBtn) = SettingsManager.GetVrMapping("VrDig");
+                    var (aimCtrl, aimBtn) = SettingsManager.GetVrMapping("VrAim");
+                    var (interactCtrl, interactBtn) = SettingsManager.GetVrMapping("VrInteract");
+                    if (digBtn != VrControllerButton.Null)
+                        m_playerInput.Dig = VrManager.IsButtonDown(digCtrl, digBtn)
+                            ? CalculateVrHandRay()
+                            : m_playerInput.Dig;
+                    if (hitBtn != VrControllerButton.Null)
+                        m_playerInput.Hit = VrManager.IsButtonDownOnce(hitCtrl, hitBtn)
+                            ? CalculateVrHandRay()
+                            : m_playerInput.Hit;
+                    if (aimBtn != VrControllerButton.Null)
+                        m_playerInput.Aim = VrManager.IsButtonDown(aimCtrl, aimBtn)
+                            ? CalculateVrHandRay()
+                            : m_playerInput.Aim;
+                    if (interactBtn != VrControllerButton.Null)
+                        m_playerInput.Interact = VrManager.IsButtonDownOnce(interactCtrl, interactBtn)
+                            ? CalculateVrHandRay()
+                            : m_playerInput.Interact;
                 }
-                m_playerInput.ToggleMount |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Secondary)
-                    | input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadUp);
-                m_playerInput.ToggleCrouch |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Primary)
-                    | input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadDown);
-                m_playerInput.EditItem |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Grip);
-                m_playerInput.ToggleCreativeFly |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Thumbrest)
-                    | input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadUp);
-                if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Secondary)
-                    || input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadLeft)) {
+                m_playerInput.ToggleMount |= IsVrActionDownOnce("VrToggleMount");
+                m_playerInput.ToggleCrouch |= IsVrActionDownOnce("VrToggleCrouch");
+                m_playerInput.EditItem |= IsVrActionDownOnce("VrEditItem");
+                m_playerInput.ToggleCreativeFly |= IsVrActionDownOnce("VrToggleFly");
+                if (IsVrActionDownOnce("VrScrollLeft")) {
                     m_playerInput.ScrollInventory--;
                 }
-                if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Primary)
-                    || input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadRight)) {
+                if (IsVrActionDownOnce("VrScrollRight")) {
                     m_playerInput.ScrollInventory++;
                 }
-                m_playerInput.Drop |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Grip);
-                // Vive touchpad: right pad down
-                m_playerInput.SwitchCameraMode |= input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadDown);
+                m_playerInput.Drop |= IsVrActionDownOnce("VrDrop");
+                m_playerInput.SwitchCameraMode |= IsVrActionDownOnce("VrSwitchCameraMode");
             }
             if (!DialogsManager.HasDialogsOrAnimations(m_componentPlayer.GuiWidget)) {
                 if (input.IsVrButtonDownOnce(VrController.Right, VrControllerButton.Menu)
                     || input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Menu)) {
                     input.Back = true;
                 }
-                // Vive left touchpad left / Quest left thumbrest
-                m_playerInput.ToggleInventory |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadLeft)
-                    | input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.Thumbrest);
-                // Vive left touchpad right
-                m_playerInput.ToggleClothing |= input.IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadRight);
+                m_playerInput.ToggleInventory |= IsVrActionDownOnce("VrToggleInventory");
+                m_playerInput.ToggleClothing |= IsVrActionDownOnce("VrToggleClothing");
             }
         }
 
@@ -512,5 +519,23 @@ namespace Game {
 
         public static float ProcessInputValue(float value, float deadZone, float saturationZone) =>
             MathF.Sign(value) * Math.Clamp((MathF.Abs(value) - deadZone) / (saturationZone - deadZone), 0f, 1f);
+
+        static bool IsVrActionDown(string action) {
+            var (ctrl, btn) = SettingsManager.GetVrMapping(action);
+            if (btn == VrControllerButton.Null) return false;
+            if (VrManager.IsButtonDown(ctrl, btn)) return true;
+            if (SettingsManager.GetVrActionAlternative(action) is VrControllerButton alt)
+                return VrManager.IsButtonDown(ctrl, alt);
+            return false;
+        }
+
+        static bool IsVrActionDownOnce(string action) {
+            var (ctrl, btn) = SettingsManager.GetVrMapping(action);
+            if (btn == VrControllerButton.Null) return false;
+            if (VrManager.IsButtonDownOnce(ctrl, btn)) return true;
+            if (SettingsManager.GetVrActionAlternative(action) is VrControllerButton alt)
+                return VrManager.IsButtonDownOnce(ctrl, alt);
+            return false;
+        }
     }
 }

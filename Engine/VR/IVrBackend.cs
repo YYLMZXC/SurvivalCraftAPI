@@ -10,6 +10,7 @@ namespace Engine {
 
         // HMD
         bool IsStarted { get; }
+        VrControllerType ControllerType { get; }
         Matrix HmdMatrix { get; }
         Matrix HmdMatrixInverted { get; }
         Vector3 HmdMatrixYpr { get; }

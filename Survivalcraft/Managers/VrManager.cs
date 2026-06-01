@@ -28,6 +28,8 @@ namespace Game {
 
         public static bool IsVrStarted => _backend?.IsStarted ?? false;
 
+        public static VrControllerType ControllerType => _backend?.ControllerType ?? VrControllerType.Unknown;
+
         public static bool IsFrameActive => m_frameActive;
 
         [Obsolete]
@@ -56,6 +58,9 @@ namespace Game {
 
         public static bool StartVr() {
             _backend?.StartVr();
+            if (IsVrStarted) {
+                SettingsManager.EnsureVrMappingDefaults(ControllerType);
+            }
             return IsVrStarted;
         }
 
@@ -94,7 +99,7 @@ namespace Game {
             ref VrTouchTracker tracker = ref m_touchTrackers[idx];
 
             Vector2 stick = GetStickPosition(controller, 0f);
-            bool clicked = IsButtonDown(controller, VrControllerButton.Touchpad);
+            bool clicked = IsButtonDown(controller, VrControllerButton.Trackpad);
             float now = (float)Time.FrameStartTime;
             int frame = Time.FrameIndex;
 

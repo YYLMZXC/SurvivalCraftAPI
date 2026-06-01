@@ -3,14 +3,15 @@ namespace Engine {
         Trigger = 0,
         Grip = 1,
         Menu = 2,
-        Touchpad = 3,
-        TouchpadCenter = 4,
-        TouchpadLeft = 5,
-        TouchpadRight = 6,
-        TouchpadUp = 7,
-        TouchpadDown = 8,
+        Trackpad = 3,
+        TrackpadCenter = 4,
+        TrackpadLeft = 5,
+        TrackpadRight = 6,
+        TrackpadUp = 7,
+        TrackpadDown = 8,
         Primary = 9,
         Secondary = 10,
-        Thumbrest = 11
+        Thumbrest = 11,
+        Null = -1
     }
 }

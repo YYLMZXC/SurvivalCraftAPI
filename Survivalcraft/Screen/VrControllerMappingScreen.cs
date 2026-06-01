@@ -1,5 +1,7 @@
 using System.Xml.Linq;
 using Engine;
+using Engine.Input;
+using TemplatesDatabase;
 
 namespace Game {
     public class VrControllerMappingScreen : Screen {
@@ -7,102 +9,254 @@ namespace Game {
         public const string keysSection = "VrControllerMappingScreenKeys";
         public const string actionsSection = "VrControllerMappingScreenActions";
 
-        public ListPanelWidget m_bindingsList;
+        public ListPanelWidget m_keysList;
+        public BevelledButtonWidget m_setKeyButton;
+        public BevelledButtonWidget m_disableKeyButton;
+        public BevelledButtonWidget m_resetButton;
         public BevelledButtonWidget m_gameHelpButton;
+        public bool IsWaitingForInput;
+        public Dictionary<string, bool> m_conflicts = [];
+
+        static readonly string[] VrActions = [
+            "VrJump", "VrInteract", "VrAim", "VrEditItem",
+            "VrToggleMount", "VrToggleCrouch", "VrToggleInventory",
+            "VrToggleClothing", "VrHit", "VrDig", "VrDrop",
+            "VrScrollLeft", "VrScrollRight", "VrToggleFly", "VrSwitchCameraMode"
+        ];
+
+        static readonly string[][] VrCompatibleGroups = [
+            ["VrInteract", "VrAim"],
+            ["VrHit", "VrDig"]
+        ];
 
         public VrControllerMappingScreen() {
             XElement node = ContentManager.Get<XElement>("Screens/KeyboardMappingScreen");
             LoadContents(this, node);
-            m_bindingsList = Children.Find<ListPanelWidget>("KeysList");
-            m_bindingsList.ItemWidgetFactory = (Func<object, Widget>)Delegate.Combine(m_bindingsList.ItemWidgetFactory, BindingInfoWidget);
-            m_bindingsList.ScrollPosition = 0f;
-            m_bindingsList.ScrollSpeed = 0f;
-            m_bindingsList.ItemClicked += item => { };
+            m_keysList = Children.Find<ListPanelWidget>("KeysList");
+            m_keysList.ItemWidgetFactory = (Func<object, Widget>)Delegate.Combine(m_keysList.ItemWidgetFactory, MappingInfoWidget);
+            m_keysList.ScrollPosition = 0f;
+            m_keysList.ScrollSpeed = 0f;
+            m_keysList.ItemClicked += item => {
+                if (item is VrMappingItem mi && !mi.IsHeader) {
+                    m_keysList.SelectedItem = m_keysList.SelectedItem == item ? null : item;
+                }
+            };
+            m_setKeyButton = Children.Find<BevelledButtonWidget>("SetKey");
+            m_disableKeyButton = Children.Find<BevelledButtonWidget>("DisableKey");
+            m_resetButton = Children.Find<BevelledButtonWidget>("Reset");
             m_gameHelpButton = Children.Find<BevelledButtonWidget>("GameHelp");
-            Children.Find<BevelledButtonWidget>("SetKey").IsVisible = false;
-            Children.Find<BevelledButtonWidget>("DisableKey").IsVisible = false;
-            Children.Find<BevelledButtonWidget>("Reset").IsVisible = false;
         }
 
-        public Widget BindingInfoWidget(object item) {
+        public Widget MappingInfoWidget(object item) {
             XElement node = ContentManager.Get<XElement>("Widgets/KeyboardMappingItem");
-            node.SetAttributeValue("Name", $"VrBinding_{item}");
+            node.SetAttributeValue("Name", $"VrMapping_{item}");
             ContainerWidget containerWidget = (ContainerWidget)LoadWidget(this, node, null);
             LabelWidget nameLabel = containerWidget.Children.Find<LabelWidget>("Name");
             LabelWidget actionLabel = containerWidget.Children.Find<LabelWidget>("BoundKey");
-            if (item is VrBindingEntry entry) {
-                nameLabel.Text = entry.Button;
-                actionLabel.Text = entry.Action;
+            if (item is VrMappingItem mi) {
+                if (mi.IsHeader) {
+                    nameLabel.Text = TranslateHeader(mi.ActionName);
+                    actionLabel.Text = "";
+                }
+                else {
+                    m_widgetsByAction[mi.ActionName] = containerWidget;
+                    nameLabel.Text = TranslateAction(mi.ActionName);
+                    var (ctrl, btn) = SettingsManager.GetVrMapping(mi.ActionName);
+                    if (btn == VrControllerButton.Null) {
+                        actionLabel.Text = "";
+                    }
+                    else {
+                        string ctrlName = ctrl == VrController.Left
+                            ? LanguageControl.Get(keysSection, "LeftController")
+                            : LanguageControl.Get(keysSection, "RightController");
+                        actionLabel.Text = $"{ctrlName} · {TranslateButton(btn, ctrl)}";
+                    }
+                    actionLabel.Color = m_conflicts.TryGetValue(mi.ActionName, out bool conflicted) && conflicted
+                        ? Color.Red
+                        : Color.White;
+                }
             }
             return containerWidget;
         }
 
         public override void Enter(object[] parameters) {
             m_gameHelpButton.IsVisible = ScreensManager.PreviousScreen is GameScreen;
-            m_bindingsList.ClearItems();
-            PopulateBindings();
+            m_keysList.ClearItems();
+            PopulateList();
+            RefreshConflicts();
         }
 
         public override void Update() {
+            string selectedAction = GetSelectedAction();
+            m_setKeyButton.IsEnabled = selectedAction != null;
+            m_disableKeyButton.IsEnabled = selectedAction != null;
+
+            if (Children.Find<ButtonWidget>("TopBar.Back").IsClicked) {
+                ScreensManager.SwitchScreen(ScreensManager.PreviousScreen);
+                return;
+            }
+            // Update conflict display for visible items
+            foreach (object item in m_keysList.Items) {
+                if (item is VrMappingItem mi && !mi.IsHeader) {
+                    if (m_widgetsByAction.TryGetValue(mi.ActionName, out ContainerWidget widget)) {
+                        LabelWidget actionLabel = widget.Children.Find<LabelWidget>("BoundKey");
+                        var (ctrl, btn) = SettingsManager.GetVrMapping(mi.ActionName);
+                        if (btn == VrControllerButton.Null) {
+                            actionLabel.Text = "";
+                        }
+                        else {
+                            string ctrlName = ctrl == VrController.Left
+                                ? LanguageControl.Get(keysSection, "LeftController")
+                                : LanguageControl.Get(keysSection, "RightController");
+                            actionLabel.Text = $"{ctrlName} · {TranslateButton(btn, ctrl)}";
+                        }
+                        actionLabel.Color = m_conflicts.TryGetValue(mi.ActionName, out bool conflicted) && conflicted
+                            ? Color.Red
+                            : Color.White;
+                    }
+                }
+            }
+            if (m_disableKeyButton.IsClicked) {
+                if (selectedAction != null) {
+                    SettingsManager.SetVrMapping(selectedAction, VrController.Left, VrControllerButton.Null);
+                    RefreshConflicts();
+                }
+                IsWaitingForInput = false;
+            }
+            if (m_resetButton.IsClicked) {
+                MessageDialog dialog = new(
+                    LanguageControl.Get("ContentWidgets", "KeyboardMappingScreen", "ResetTitle"),
+                    LanguageControl.Get("ContentWidgets", "KeyboardMappingScreen", "ResetText"),
+                    LanguageControl.Yes,
+                    LanguageControl.No,
+                    delegate(MessageDialogButton button) {
+                        if (button == MessageDialogButton.Button1) {
+                            ResetAll();
+                        }
+                    }
+                );
+                DialogsManager.ShowDialog(null, dialog);
+                IsWaitingForInput = false;
+            }
+            if (IsWaitingForInput) {
+                m_setKeyButton.IsChecked = true;
+                // Cancel on Menu button press
+                if (VrManager.IsButtonDownOnce(VrController.Left, VrControllerButton.Menu)
+                    || VrManager.IsButtonDownOnce(VrController.Right, VrControllerButton.Menu)) {
+                    IsWaitingForInput = false;
+                    return;
+                }
+                // Poll all buttons on both controllers
+                foreach (VrControllerButton button in System.Enum.GetValues<VrControllerButton>()) {
+                    if (button == VrControllerButton.Null || button == VrControllerButton.Menu) continue;
+                    // Check left controller
+                    if (VrManager.IsButtonDownOnce(VrController.Left, button)) {
+                        SettingsManager.SetVrMapping(selectedAction, VrController.Left, button);
+                        IsWaitingForInput = false;
+                        RefreshConflicts();
+                        return;
+                    }
+                    // Check right controller
+                    if (VrManager.IsButtonDownOnce(VrController.Right, button)) {
+                        SettingsManager.SetVrMapping(selectedAction, VrController.Right, button);
+                        IsWaitingForInput = false;
+                        RefreshConflicts();
+                        return;
+                    }
+                }
+            }
+            else {
+                m_setKeyButton.IsChecked = false;
+            }
+            if (m_setKeyButton.IsClicked && selectedAction != null) {
+                IsWaitingForInput = true;
+            }
             if (m_gameHelpButton.IsClicked) {
                 ScreensManager.SwitchScreen("Help");
             }
-            if (Children.Find<ButtonWidget>("TopBar.Back").IsClicked || Input.Back || Input.Cancel) {
+            if (!IsWaitingForInput && (Input.Back || Input.Cancel)) {
                 ScreensManager.GoBack();
             }
         }
 
-        static string Tk(string key) => LanguageControl.Get(keysSection, key);
-        static string Ta(string key) {
-            string s = LanguageControl.Get(out bool r, "KeyboardMappingScreen", key);
-            if (r) return s;
-            return LanguageControl.Get(actionsSection, key);
-        }
-        static string Compose(params string[] keys) => string.Join(" / ", keys.Select(Ta));
-
-        void PopulateBindings() {
-            AddHeader(Tk("LeftController"));
-            AddBinding(Tk("ThumbstickTrackpad"), Ta("HorizontalMove"));
-            AddBinding(Tk("TriggerClick"), Ta("Interact"));
-            AddBinding(Tk("TriggerHold"), Compose("Aim", "SpecialClick"));
-            AddBinding(Tk("Grip"), Ta("EditItem"));
-            AddBinding(Tk("YTrackpadUp"), Ta("ToggleMount"));
-            AddBinding(Tk("XTrackpadDown"), Ta("ToggleCrouch"));
-            AddBinding(Tk("ThumbrestTrackpadLeft"), Ta("ToggleInventory"));
-            AddBinding(Tk("TrackpadRight"), Ta("ToggleClothing"));
-            AddBinding(Tk("Menu"), Compose("GameMenu", "UIBack"));
-
-            AddHeader(Tk("RightController"));
-            AddBinding(Tk("ThumbstickTrackpadHorizontal"), Ta("Look"));
-            AddBinding(
-                Tk("ThumbstickTrackpadVertical"),
-                $"{LanguageControl.Get("KeyboardMappingScreen", "MoveUp")}, {LanguageControl.Get("KeyboardMappingScreen", "MoveDown")} / {LanguageControl.Get(actionsSection, "UIScroll")}"
-            );
-            AddBinding(Tk("TriggerClick"), Compose("Hit", "UIClick"));
-            AddBinding(Tk("TriggerHold"), Compose("Dig", "UIPress"));
-            AddBinding(Tk("Grip"), Compose("Drop", "UIBack"));
-            AddBinding(Tk("BTrackpadLeft"), Ta("ScrollInventoryLeft"));
-            AddBinding(Tk("ATrackpadRight"), Ta("ScrollInventoryRight"));
-            AddBinding(Tk("ThumbrestTrackpadUp"), Ta("ToggleFly"));
-            AddBinding(Tk("TrackpadDown"), Ta("SwitchCameraMode"));
-            AddBinding(Tk("Menu"), Compose("GameMenu", "UIBack"));
-        }
-
-        void AddHeader(string text) {
-            m_bindingsList.AddItem(new VrBindingEntry(text, ""));
-        }
-
-        void AddBinding(string button, string action) {
-            m_bindingsList.AddItem(new VrBindingEntry(button, action));
-        }
-
-        public class VrBindingEntry {
-            public string Button;
-            public string Action;
-            public VrBindingEntry(string button, string action) {
-                Button = button;
-                Action = action;
+        void PopulateList() {
+            m_widgetsByAction.Clear();
+            foreach (string action in VrActions) {
+                m_keysList.AddItem(new VrMappingItem(action, false));
             }
+        }
+
+        public void ResetAll() {
+            SettingsManager.ResetVrMappingDefaults();
+            RefreshConflicts();
+        }
+
+        void RefreshConflicts() {
+            m_conflicts.Clear();
+            var bindingToActions = new Dictionary<(VrController, VrControllerButton), List<string>>();
+            foreach (string action in VrActions) {
+                var (ctrl, btn) = SettingsManager.GetVrMapping(action);
+                if (btn == VrControllerButton.Null) continue;
+                var key = (ctrl, btn);
+                if (!bindingToActions.TryGetValue(key, out var list)) {
+                    list = [];
+                    bindingToActions[key] = list;
+                }
+                list.Add(action);
+            }
+            foreach (var kvp in bindingToActions) {
+                if (kvp.Value.Count > 1 && !IsVrCompatibleGroup(kvp.Value)) {
+                    foreach (string action in kvp.Value) {
+                        m_conflicts[action] = true;
+                    }
+                }
+            }
+        }
+
+        static bool IsVrCompatibleGroup(List<string> actions) {
+            foreach (string[] group in VrCompatibleGroups) {
+                if (actions.Count == group.Length) {
+                    bool match = true;
+                    foreach (string a in group) {
+                        if (!actions.Contains(a)) { match = false; break; }
+                    }
+                    if (match) return true;
+                }
+            }
+            return false;
+        }
+
+        string GetSelectedAction() {
+            if (m_keysList.SelectedItem is VrMappingItem mi && !mi.IsHeader) return mi.ActionName;
+            return null;
+        }
+
+        // Translation helpers
+        static string Tk(string key) => LanguageControl.Get(keysSection, key);
+        static string TranslateHeader(string key) => Tk(key);
+        static string TranslateAction(string name) {
+            string key = name.StartsWith("Vr") ? name[2..] : name;
+            string s = LanguageControl.Get(out bool found, "KeyboardMappingScreen", key);
+            return found ? s : LanguageControl.Get(actionsSection, name);
+        }
+        static string TranslateButton(VrControllerButton btn, VrController controller) {
+            if (btn == VrControllerButton.Primary)
+                return controller == VrController.Left ? Tk("X") : Tk("A");
+            if (btn == VrControllerButton.Secondary)
+                return controller == VrController.Left ? Tk("Y") : Tk("B");
+            return Tk(btn.ToString());
+        }
+
+        readonly Dictionary<string, ContainerWidget> m_widgetsByAction = [];
+
+        public class VrMappingItem {
+            public string ActionName;
+            public bool IsHeader;
+            public VrMappingItem(string actionName, bool isHeader) {
+                ActionName = actionName;
+                IsHeader = isHeader;
+            }
+            public override string ToString() => ActionName;
         }
     }
 }

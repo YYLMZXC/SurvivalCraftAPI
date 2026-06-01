@@ -29,6 +29,8 @@ namespace Game {
         public ButtonWidget m_keyboardMappingEntry;
         public ButtonWidget m_gamepadMappingEntry;
         public ButtonWidget m_CameraManageEntry;
+        public ButtonWidget m_vrControllerMappingEntry;
+        public ContainerWidget m_vrControllerMappingPanel;
 
         public const string fName = "SettingsControlsScreen";
 
@@ -61,6 +63,8 @@ namespace Game {
             m_keyboardMappingEntry = Children.Find<ButtonWidget>("KeyboardMappingEntry");
             m_gamepadMappingEntry = Children.Find<ButtonWidget>("GamepadMappingEntry");
             m_CameraManageEntry = Children.Find<ButtonWidget>("CameraManageEntry");
+            m_vrControllerMappingEntry = Children.Find<ButtonWidget>("VrControllerMappingEntry");
+            m_vrControllerMappingPanel = Children.Find<ContainerWidget>("VrControllerMappingPanel");
             m_horizontalCreativeFlightPanel.IsVisible = true;
         }
 
@@ -139,6 +143,9 @@ namespace Game {
             if (m_CameraManageEntry.IsClicked) {
                 ScreensManager.SwitchScreen("CameraManage");
             }
+            if (m_vrControllerMappingEntry.IsClicked) {
+                ScreensManager.SwitchScreen("VrControllerMapping");
+            }
             if (m_AllowInitialIntro.IsClicked) {
                 SettingsManager.AllowInitialIntro = !SettingsManager.AllowInitialIntro;
             }
@@ -177,6 +184,8 @@ namespace Game {
             m_moveWidgetMarginXSlider.Text = $"{SettingsManager.MoveWidgetMarginX * 100f:F0}%";
             m_moveWidgetMarginYSlider.Value = SettingsManager.MoveWidgetMarginY;
             m_moveWidgetMarginYSlider.Text = $"{SettingsManager.MoveWidgetMarginY * 100f:F0}%";
+            m_vrControllerMappingPanel.IsVisible = VrManager.IsVrStarted
+                && (VrManager.IsControllerPresent(VrController.Left) || VrManager.IsControllerPresent(VrController.Right));
             if (Input.Back
                 || Input.Cancel
                 || Children.Find<ButtonWidget>("TopBar.Back").IsClicked) {

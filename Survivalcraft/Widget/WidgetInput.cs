@@ -990,28 +990,28 @@ namespace Game {
                     VrCursorPosition = Vector2.Transform(new Vector2(x, y), Widget.GlobalTransform);
                 }
             }
-            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadLeft)) {
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TrackpadLeft)) {
                 Left = true;
             }
-            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadRight)) {
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TrackpadRight)) {
                 Right = true;
             }
-            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadUp)) {
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TrackpadUp)) {
                 Up = true;
             }
-            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TouchpadDown)) {
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.TrackpadDown)) {
                 Down = true;
             }
-            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadLeft)) {
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TrackpadLeft)) {
                 Left = true;
             }
-            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadRight)) {
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TrackpadRight)) {
                 Right = true;
             }
-            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadUp)) {
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TrackpadUp)) {
                 Up = true;
             }
-            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TouchpadDown)) {
+            if (IsVrButtonDownOnce(VrController.Right, VrControllerButton.TrackpadDown)) {
                 Down = true;
             }
             if (IsVrCursorVisible
@@ -1021,18 +1021,18 @@ namespace Game {
                 Back = true;
                 Cancel = true;
             }
-            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.Touchpad)
+            if (IsVrButtonDownOnce(VrController.Left, VrControllerButton.Trackpad)
                 || IsVrButtonDownOnce(VrController.Left, VrControllerButton.Trigger)
-                || IsVrButtonDownOnce(VrController.Right, VrControllerButton.Touchpad)
+                || IsVrButtonDownOnce(VrController.Right, VrControllerButton.Trackpad)
                 || IsVrButtonDownOnce(VrController.Right, VrControllerButton.Trigger)) {
                 Any = true;
             }
             if (IsVrCursorVisible && VrCursorPosition.HasValue) {
-                if (IsVrButtonDown(VrController.Right, VrControllerButton.TouchpadUp)
+                if (IsVrButtonDown(VrController.Right, VrControllerButton.TrackpadUp)
                     || GetVrStickPosition(VrController.Right, 0f).Y > 0.5f) {
                     Scroll = new Vector3(VrCursorPosition.Value, 0.5f);
                 }
-                if (IsVrButtonDown(VrController.Right, VrControllerButton.TouchpadDown)
+                if (IsVrButtonDown(VrController.Right, VrControllerButton.TrackpadDown)
                     || GetVrStickPosition(VrController.Right, 0f).Y < -0.5f) {
                     Scroll = new Vector3(VrCursorPosition.Value, -0.5f);
                 }

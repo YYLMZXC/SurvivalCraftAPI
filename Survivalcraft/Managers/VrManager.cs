@@ -6,6 +6,7 @@ namespace Game {
     public class VrManager {
         static IVrBackend _backend;
         static bool m_frameActive;
+        static bool m_eyesRendered;
 
         struct VrTouchTracker {
             public bool ClickActive;
@@ -176,6 +177,7 @@ namespace Game {
         }
 
         public static bool BeginFrame() {
+            m_eyesRendered = false;
             m_frameActive = _backend?.BeginFrame() ?? false;
             return m_frameActive;
         }
@@ -185,7 +187,15 @@ namespace Game {
         public static void ReleaseEye(VrEye eye) => _backend?.ReleaseEye(eye);
 
         public static void EndFrame() {
-            _backend?.EndFrame();
+            if (m_eyesRendered) {
+                _backend?.EndFrame();
+            }
+            else {
+                // RenderToEyes was not called this frame — submit 0 layers
+                // to prevent the compositor from showing stale swapchain images
+                // (e.g. VR background from a previous menu frame).
+                _backend?.EndFrameEmpty();
+            }
             m_frameActive = false;
         }
 
@@ -209,6 +219,7 @@ namespace Game {
 
         public static void RenderToEyes(Action<VrEye, EyeFrame> renderAction) {
             if (!m_frameActive) return;
+            m_eyesRendered = true;
             int vrW = SwapchainWidth;
             int vrH = SwapchainHeight;
             int origFbo = GLWrapper.m_mainFramebuffer;
@@ -232,8 +243,11 @@ namespace Game {
                     Display.Viewport = vp;
                     Display.ScissorRectangle = sc;
                     GLWrapper.ApplyViewportScissor(vp, sc, true);
-                    GLWrapper.ClearColor(new Vector4(0, 0, 0, 1));
-                    GLWrapper.GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                    // Use GLWrapper.Clear to reset ColorMask(0xF) and DepthMask(true)
+                    // before clearing. A manual GL.Clear would skip these resets,
+                    // leaving stale content if a previous render pass disabled depth
+                    // or color writes (e.g. transparent-object passes).
+                    GLWrapper.Clear(null, new Vector4(0, 0, 0, 1), 1f, null);
 
                     renderAction(vrEye, eyeFrame);
                 }

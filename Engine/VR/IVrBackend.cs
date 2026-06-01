@@ -24,6 +24,7 @@ namespace Engine {
         EyeFrame GetEyeFrame(VrEye eye);
         void ReleaseEye(VrEye eye);
         void EndFrame();
+        void EndFrameEmpty();
 
         // Eye rendering
         Matrix GetEyeToHeadTransform(VrEye eye);

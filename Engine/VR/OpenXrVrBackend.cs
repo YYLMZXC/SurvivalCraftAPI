@@ -1077,15 +1077,20 @@ namespace Engine {
                 }
             }
             else {
-                FrameEndInfo endInfo = new() {
-                    Type = StructureType.FrameEndInfo,
-                    DisplayTime = m_frameState.PredictedDisplayTime,
-                    EnvironmentBlendMode = EnvironmentBlendMode.Opaque,
-                    LayerCount = 0,
-                    Layers = null
-                };
-                m_xr.EndFrame(m_session, ref endInfo);
+                EndFrameEmpty();
             }
+        }
+
+        public void EndFrameEmpty() {
+            if (!IsStarted) return;
+            FrameEndInfo endInfo = new() {
+                Type = StructureType.FrameEndInfo,
+                DisplayTime = m_frameState.PredictedDisplayTime,
+                EnvironmentBlendMode = EnvironmentBlendMode.Opaque,
+                LayerCount = 0,
+                Layers = null
+            };
+            m_xr.EndFrame(m_session, ref endInfo);
         }
 
         // --- HMD state ---

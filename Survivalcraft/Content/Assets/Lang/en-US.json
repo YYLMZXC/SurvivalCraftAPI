@@ -840,6 +840,10 @@
     "EntireScreen": "EntireScreen",
     "SplitTouch": "SplitTouch"
   },
+  "VrLookControlMode": {
+    "Smooth": "Smooth",
+    "Snap": "Snap"
+  },
   "SettingsUiScreen": {
     "1": "Message",
     "2": "Do you want apply this setting?"
@@ -3367,7 +3371,8 @@
       "Short Inventory Looping:",
       "Keyboard Mapping:",
       "Gamepad Mapping:",
-      "VR Controller Mapping:"
+      "VR Controller Mapping:",
+      "VR Look Control:"
     ],
     "CameraManageScreen": {
       "Enable": "Enable",

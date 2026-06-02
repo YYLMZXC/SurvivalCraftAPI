@@ -56,6 +56,8 @@ namespace Game {
 
         public static float VrEyeHeightOffset { get; set; }
 
+        public static VrLookControlMode VrLookControlMode { get; set; }
+
         public static ResolutionMode ResolutionMode {
             get => m_resolutionMode;
             set {

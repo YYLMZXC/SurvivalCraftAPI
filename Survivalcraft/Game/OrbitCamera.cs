@@ -66,6 +66,11 @@ namespace Game {
             m_angles.X = MathUtils.NormalizeAngle(m_angles.X + 4f * cameraLook.X * dt + 0.5f * cameraSneakMove.X * dt);
             m_angles.Y = Math.Clamp(MathUtils.NormalizeAngle(m_angles.Y + 4f * cameraLook.Y * dt), MathUtils.DegToRad(-20f), MathUtils.DegToRad(70f));
             m_distance = Math.Clamp(m_distance - 10f * cameraSneakMove.Z * dt, 2f, 16f);
+            // Snap turn camera rotation (negated: OrbitCamera uses positive convention for stick-right)
+            if (ComponentInput.VrSnapCameraRotation != 0f) {
+                m_angles.X -= ComponentInput.VrSnapCameraRotation;
+                ComponentInput.VrSnapCameraRotation = 0f;
+            }
 
             if (!m_vrInitialized) {
                 ResetVrView();

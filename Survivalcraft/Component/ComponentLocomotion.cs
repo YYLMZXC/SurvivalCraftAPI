@@ -237,6 +237,11 @@ namespace Game {
                     if (VrLookOrder.HasValue && m_componentCreature.ComponentBody.ParentBody == null) {
                         num2 += VrLookOrder.Value.X;
                     }
+                    // Snap turn body rotation (TppCamera/FixedCamera)
+                    if (ComponentInput.VrSnapBodyRotation != 0f) {
+                        num2 += ComponentInput.VrSnapBodyRotation;
+                        ComponentInput.VrSnapBodyRotation = 0f;
+                    }
                     m_componentCreature.ComponentBody.Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, num2);
                     if (LadderSpeed > 0f
                         && !LadderValue.HasValue

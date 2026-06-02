@@ -8,6 +8,7 @@ namespace Game {
 
         public RenderTarget2D m_scalingRenderTarget;
         public static RenderTarget2D ScreenTexture = new(Window.Size.X, Window.Size.Y, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
+        public PrimitivesRenderer2D m_vrFadePr2 = new();
 
         public GameWidget GameWidget { get; set; }
 
@@ -155,6 +156,16 @@ namespace Game {
                     m_subsystemDrawing.Draw(camera);
 
                     GameWidget.DrawVrGui(vrEye, eyeFrame);
+
+                    // Snap turn fade overlay
+                    float fadeAlpha = ComponentInput.VrSnapFadeAlpha;
+                    if (fadeAlpha > 0.001f) {
+                        var flatBatch = m_vrFadePr2?.FlatBatch(0, null, null, null);
+                        flatBatch?.QueueQuad(
+                            Vector2.Zero, new Vector2(VrManager.SwapchainWidth, VrManager.SwapchainHeight),
+                            0f, new Color(0f, 0f, 0f, fadeAlpha));
+                        m_vrFadePr2?.Flush();
+                    }
 
 #if WINDOWS
                     if (vrEye == VrEye.Left) {

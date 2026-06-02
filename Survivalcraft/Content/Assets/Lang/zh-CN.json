@@ -840,6 +840,10 @@
     "EntireScreen": "全屏",
     "SplitTouch": "准星"
   },
+  "VrLookControlMode": {
+    "Smooth": "连续",
+    "Snap": "瞬转"
+  },
   "SettingsUiScreen": {
     "1": "消息",
     "2": "你想应用此设置吗？"
@@ -3377,7 +3381,8 @@
       "底部物品栏循环滚动：",
       "键鼠按键映射：",
       "手柄按键映射：",
-      "VR 手柄按键映射："
+      "VR 手柄按键映射：",
+      "VR 视角控制："
     ],
     "CameraManageScreen": {
       "Enable": "启用",

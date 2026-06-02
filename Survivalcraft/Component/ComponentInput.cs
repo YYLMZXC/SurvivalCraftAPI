@@ -5,6 +5,10 @@ using TemplatesDatabase;
 
 namespace Game {
     public class ComponentInput : Component, IUpdateable {
+        public static volatile float VrSnapFadeAlpha;
+        public static float VrSnapBodyRotation;
+        public static float VrSnapCameraRotation;
+
         public SubsystemTime m_subsystemTime;
 
         public ComponentGui m_componentGui;
@@ -18,6 +22,8 @@ namespace Game {
         public double m_lastJumpTime;
 
         public Vector2 m_vrSmoothLook;
+        public bool m_vrSnapTurning;
+        public float m_vrSnapFadeTimer;
 
         public bool ToggleFlyInDoubleJump { get; set; } = true;
         public PlayerInput PlayerInput => m_playerInput;
@@ -347,7 +353,9 @@ namespace Game {
                         m_playerInput.Move.Z += ProcessInputValue(touchInput.Value.TotalMoveLimited.Y, 0.1f, 1f);
                     }
                 }
-                m_playerInput.Look += 0.5f * vrStickPosition2 * MathF.Pow(vrStickPosition2.LengthSquared(), 0.25f);
+                if (SettingsManager.VrLookControlMode == VrLookControlMode.Smooth) {
+                    m_playerInput.Look += 0.5f * vrStickPosition2 * MathF.Pow(vrStickPosition2.LengthSquared(), 0.25f);
+                }
                 TouchInput? touchInput2 = VrManager.GetTouchInput(VrController.Right);
                 Vector2 zero2 = Vector2.Zero;
                 if (touchInput2.HasValue) {
@@ -356,9 +364,57 @@ namespace Game {
                         m_playerInput.Move.Y += ProcessInputValue(touchInput2.Value.TotalMoveLimited.Y, 0.1f, 1f);
                     }
                 }
-                if (num3 > 0f) {
-                    m_vrSmoothLook = Vector2.Lerp(m_vrSmoothLook, zero2, 14f * num3);
-                    m_playerInput.Look += num2 / num3 * new Vector2(0.25f) * m_vrSmoothLook * MathF.Pow(m_vrSmoothLook.LengthSquared(), 0.3f);
+                // Snap turn or smooth turn for VR look
+                if (SettingsManager.VrLookControlMode == VrLookControlMode.Snap) {
+                    // Combine right stick X and touchpad X for snap input
+                    float snapInput = vrStickPosition2.X;
+                    if (touchInput2.HasValue && touchInput2.Value.InputType == TouchInputType.Move)
+                        snapInput += zero2.X;
+                    if (!m_vrSnapTurning) {
+                        float snapAngle = 0f;
+                        if (snapInput > 0.5f) snapAngle = -MathF.PI / 2f;
+                        else if (snapInput < -0.5f) snapAngle = MathF.PI / 2f;
+                        if (snapAngle != 0f) {
+                            if (m_playerInput.VrLook.HasValue) {
+                                // FppCamera: use VrLook path (body + pitch)
+                                m_playerInput.VrLook = new Vector2(
+                                    m_playerInput.VrLook.Value.X + snapAngle,
+                                    m_playerInput.VrLook.Value.Y);
+                            }
+                            else if (m_componentPlayer.GameWidget.ActiveCamera.UsesMovementControls) {
+                                // OrbitCamera/DebugCamera: route to camera rotation
+                                VrSnapCameraRotation += snapAngle;
+                            }
+                            else {
+                                // TppCamera/FixedCamera: route to body rotation
+                                VrSnapBodyRotation += snapAngle;
+                            }
+                            m_vrSnapTurning = true;
+                            m_vrSnapFadeTimer = 0.2f;
+                        }
+                    }
+                    else if (MathF.Abs(snapInput) < 0.2f) {
+                        m_vrSnapTurning = false;
+                    }
+                }
+                else {
+                    if (num3 > 0f) {
+                        m_vrSmoothLook = Vector2.Lerp(m_vrSmoothLook, zero2, 14f * num3);
+                        m_playerInput.Look += num2 / num3 * new Vector2(0.25f) * m_vrSmoothLook * MathF.Pow(m_vrSmoothLook.LengthSquared(), 0.3f);
+                    }
+                }
+                // Update snap turn fade
+                if (m_vrSnapFadeTimer > 0f) {
+                    m_vrSnapFadeTimer = MathF.Max(0f, m_vrSnapFadeTimer - num3);
+                    // Fade in/out: first half black, second half fade out
+                    float halfFade = 0.1f;
+                    if (m_vrSnapFadeTimer > halfFade)
+                        VrSnapFadeAlpha = 1f;
+                    else
+                        VrSnapFadeAlpha = m_vrSnapFadeTimer / halfFade;
+                }
+                else {
+                    VrSnapFadeAlpha = 0f;
                 }
                 if (VrManager.IsControllerPresent(VrController.Right)) {
                     var (hitCtrl, hitBtn) = SettingsManager.GetVrMapping("VrHit");

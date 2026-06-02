@@ -68,6 +68,11 @@ namespace Game {
 
             // Comfort turn: right stick rotates accumulated yaw
             m_vrAccumulatedYaw += -4f * lookInput.X * dt;
+            // Snap turn camera rotation
+            if (ComponentInput.VrSnapCameraRotation != 0f) {
+                m_vrAccumulatedYaw += ComponentInput.VrSnapCameraRotation;
+                ComponentInput.VrSnapCameraRotation = 0f;
+            }
 
             // View direction from HMD + accumulated yaw
             Matrix hmdRot = VrManager.HmdMatrix * Matrix.CreateRotationY(m_vrAccumulatedYaw);

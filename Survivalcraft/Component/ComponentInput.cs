@@ -691,11 +691,12 @@ namespace Game {
             Vector3 origin = controllerMatrix.Translation;
             Vector3 direction = controllerMatrix.Forward;
 
-            const float initialSpeed = 8f;
+            bool isCreativeFlyEnabled = m_componentPlayer.ComponentLocomotion.IsCreativeFlyEnabled;
+            float initialSpeed = isCreativeFlyEnabled ? 16f : 8f;
+            int numPoints = isCreativeFlyEnabled ? 60 : 30;
+            float maxRange = isCreativeFlyEnabled ? float.PositiveInfinity : 20f;
             const float gravity = 10f;
-            const int numPoints = 24;
             const float timeStep = 0.05f;
-            const float maxRange = 20f;
 
             m_vrTeleportArcPoints.Clear();
             m_vrTeleportArcPoints.Add(origin);

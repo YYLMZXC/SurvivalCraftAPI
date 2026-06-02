@@ -5,7 +5,7 @@ using TemplatesDatabase;
 
 namespace Game {
     public class ComponentInput : Component, IUpdateable {
-        public static volatile float VrSnapFadeAlpha;
+        public static volatile float VrFadeAlpha;
         public static float VrSnapBodyRotation;
         public static float VrSnapCameraRotation;
 
@@ -24,6 +24,15 @@ namespace Game {
         public Vector2 m_vrSmoothLook;
         public bool m_vrSnapTurning;
         public float m_vrSnapFadeTimer;
+
+        public SubsystemTerrain m_subsystemTerrain;
+        public Vector3? m_vrTeleportTarget;
+        public List<Vector3> m_vrTeleportArcPoints = new();
+        public bool m_vrTeleportValid;
+        public bool m_vrTeleportForceCrouch;
+        public bool m_vrTeleportStickActive;
+        public bool m_vrTeleportSuppressAfterBackward;
+        public int m_vrTeleportHitFace;
 
         public bool ToggleFlyInDoubleJump { get; set; } = true;
         public PlayerInput PlayerInput => m_playerInput;
@@ -119,6 +128,7 @@ namespace Game {
             m_subsystemTime = Project.FindSubsystem<SubsystemTime>(true);
             m_componentGui = Entity.FindComponent<ComponentGui>(true);
             m_componentPlayer = Entity.FindComponent<ComponentPlayer>(true);
+            m_subsystemTerrain = Project.FindSubsystem<SubsystemTerrain>(true);
         }
 
         public virtual void UpdateInputFromMouseAndKeyboard(WidgetInput input) {
@@ -324,6 +334,15 @@ namespace Game {
                     zero += 0.5f * new Vector3(Vector2.Dot(xZ, v), 0f, Vector2.Dot(xZ, v2));
                 }
                 zero += new Vector3(2f * vrStickPosition.X, 2f * vrStickPosition2.Y, 2f * vrStickPosition.Y);
+                // Teleport mode: suppress left stick forward/strafe (but force Smooth when on ladder)
+                bool isTeleportMode = SettingsManager.VrMoveControlMode == VrMoveControlMode.Teleport
+                    && !m_componentPlayer.ComponentLocomotion.LadderValue.HasValue;
+                if (isTeleportMode) {
+                    zero.X -= 2f * vrStickPosition.X;
+                    // Only suppress forward, allow backward smooth movement
+                    if (vrStickPosition.Y > 0f)
+                        zero.Z -= 2f * vrStickPosition.Y;
+                }
                 m_playerInput.Move += zero;
                 m_playerInput.CrouchMove += zero;
                 m_playerInput.VrMove = value;
@@ -342,15 +361,30 @@ namespace Game {
                     m_playerInput.Jump |= VrManager.IsButtonDownOnce(jumpCtrl, jumpBtn);
                 }
                 // Touchpad move gestures remain for movement (analog, not remappable)
+                // Ignore touchpad when stick is active (dual-input controllers)
+                bool leftStickActive = vrStickPosition.LengthSquared() > 0.04f;
                 if (touchInput.HasValue
-                    && num3 > 0f) {
+                    && num3 > 0f
+                    && !leftStickActive) {
                     if (touchInput.Value.InputType == TouchInputType.Move) {
-                        Vector2 move = touchInput.Value.Move;
-                        Vector2 vector = 10f * num / num3 * new Vector2(0.5f) * move * MathF.Pow(move.LengthSquared(), 0.175f);
-                        m_playerInput.CrouchMove.X += vector.X;
-                        m_playerInput.CrouchMove.Z += vector.Y;
-                        m_playerInput.Move.X += ProcessInputValue(touchInput.Value.TotalMoveLimited.X, 0.1f, 1f);
-                        m_playerInput.Move.Z += ProcessInputValue(touchInput.Value.TotalMoveLimited.Y, 0.1f, 1f);
+                        if (isTeleportMode) {
+                            // Teleport mode: allow backward touchpad movement, suppress forward/sideways
+                            if (touchInput.Value.Move.Y < 0f) {
+                                Vector2 move = touchInput.Value.Move;
+                                Vector2 vector = 10f * num / num3 * new Vector2(0.5f) * move * MathF.Pow(move.LengthSquared(), 0.175f);
+                                m_playerInput.CrouchMove.X += vector.X;
+                                m_playerInput.CrouchMove.Z += vector.Y;
+                                m_playerInput.Move.Z += ProcessInputValue(touchInput.Value.TotalMoveLimited.Y, 0.1f, 1f);
+                            }
+                        }
+                        else {
+                            Vector2 move = touchInput.Value.Move;
+                            Vector2 vector = 10f * num / num3 * new Vector2(0.5f) * move * MathF.Pow(move.LengthSquared(), 0.175f);
+                            m_playerInput.CrouchMove.X += vector.X;
+                            m_playerInput.CrouchMove.Z += vector.Y;
+                            m_playerInput.Move.X += ProcessInputValue(touchInput.Value.TotalMoveLimited.X, 0.1f, 1f);
+                            m_playerInput.Move.Z += ProcessInputValue(touchInput.Value.TotalMoveLimited.Y, 0.1f, 1f);
+                        }
                     }
                 }
                 if (SettingsManager.VrLookControlMode == VrLookControlMode.Smooth) {
@@ -409,12 +443,61 @@ namespace Game {
                     // Fade in/out: first half black, second half fade out
                     float halfFade = 0.1f;
                     if (m_vrSnapFadeTimer > halfFade)
-                        VrSnapFadeAlpha = 1f;
+                        VrFadeAlpha = 1f;
                     else
-                        VrSnapFadeAlpha = m_vrSnapFadeTimer / halfFade;
+                        VrFadeAlpha = m_vrSnapFadeTimer / halfFade;
                 }
                 else {
-                    VrSnapFadeAlpha = 0f;
+                    VrFadeAlpha = 0f;
+                }
+                // Teleport mode: track left stick/touchpad, compute arc, execute on release
+                if (isTeleportMode) {
+                    bool touchpadMove = touchInput.HasValue && touchInput.Value.InputType == TouchInputType.Move
+                        && !leftStickActive; // Ignore touchpad when stick is active
+                    // Activation threshold (high) vs hold threshold (low) — hysteresis
+                    bool stickForward = vrStickPosition.Y >= 0f && vrStickPosition.LengthSquared() > 0.25f;
+                    bool touchpadForward = touchpadMove && touchInput.Value.Move.Y >= 0f;
+                    bool stickHeld = vrStickPosition.Y >= 0f && vrStickPosition.LengthSquared() > 0.04f;
+                    // Suppress activation after backward until fully centered (prevents touchpad dual-report from triggering)
+                    if (vrStickPosition.Y < 0f && vrStickPosition.LengthSquared() > 0.04f) {
+                        m_vrTeleportSuppressAfterBackward = true;
+                    }
+                    if (vrStickPosition.LengthSquared() < 0.01f) {
+                        m_vrTeleportSuppressAfterBackward = false;
+                    }
+
+                    if ((stickForward || touchpadForward) && !m_vrTeleportStickActive && !m_vrTeleportSuppressAfterBackward) {
+                        m_vrTeleportStickActive = true;
+                    }
+                    if (m_vrTeleportStickActive) {
+                        if (stickHeld || touchpadForward) {
+                            ComputeTeleportArc();
+                        }
+                        else if (vrStickPosition.LengthSquared() < 0.04f && !touchpadMove) {
+                            // Stick returned to center — execute teleport if valid
+                            m_vrTeleportStickActive = false;
+                            if (m_vrTeleportValid && m_vrTeleportTarget.HasValue) {
+                                ExecuteTeleport(m_vrTeleportTarget.Value, m_vrTeleportForceCrouch);
+                            }
+                            m_vrTeleportArcPoints.Clear();
+                            m_vrTeleportTarget = null;
+                            m_vrTeleportValid = false;
+                        }
+                        else {
+                            // Stick pulled backward — cancel teleport without executing
+                            m_vrTeleportStickActive = false;
+                            m_vrTeleportArcPoints.Clear();
+                            m_vrTeleportTarget = null;
+                            m_vrTeleportValid = false;
+                        }
+                    }
+                }
+                else {
+                    m_vrTeleportArcPoints.Clear();
+                    m_vrTeleportTarget = null;
+                    m_vrTeleportValid = false;
+                    m_vrTeleportStickActive = false;
+                    m_vrTeleportSuppressAfterBackward = false;
                 }
                 if (VrManager.IsControllerPresent(VrController.Right)) {
                     var (hitCtrl, hitBtn) = SettingsManager.GetVrMapping("VrHit");
@@ -592,6 +675,138 @@ namespace Game {
             if (SettingsManager.GetVrActionAlternative(action) is VrControllerButton alt)
                 return VrManager.IsButtonDownOnce(ctrl, alt);
             return false;
+        }
+
+        void ComputeTeleportArc() {
+            m_vrTeleportTarget = null;
+            m_vrTeleportValid = false;
+            m_vrTeleportForceCrouch = false;
+
+            // Get left controller world position and direction
+            Camera activeCamera = m_componentPlayer.GameWidget.ActiveCamera;
+            Matrix worldMatrix = VrManager.HmdMatrixInverted
+                * Matrix.CreateWorld(activeCamera.ViewPosition, activeCamera.ViewDirection, activeCamera.ViewUp);
+            Matrix controllerMatrix = VrManager.GetControllerMatrix(VrController.Left) * worldMatrix;
+
+            Vector3 origin = controllerMatrix.Translation;
+            Vector3 direction = controllerMatrix.Forward;
+
+            const float initialSpeed = 8f;
+            const float gravity = 10f;
+            const int numPoints = 24;
+            const float timeStep = 0.05f;
+            const float maxRange = 20f;
+
+            m_vrTeleportArcPoints.Clear();
+            m_vrTeleportArcPoints.Add(origin);
+            m_vrTeleportHitFace = 4;
+
+            Vector3 velocity = direction * initialSpeed;
+            Vector3 pos = origin;
+
+            for (int i = 1; i <= numPoints; i++) {
+                Vector3 newPos = pos + velocity * timeStep;
+                velocity.Y -= gravity * timeStep;
+
+                // Raycast between consecutive points — only accept collidable blocks
+                TerrainRaycastResult? hit = m_subsystemTerrain.Raycast(pos, newPos, false, true,
+                    (value, _) => BlocksManager.Blocks[Terrain.ExtractContents(value)].IsCollidable_(value));
+                if (hit.HasValue) {
+                    m_vrTeleportArcPoints.Add(hit.Value.HitPoint());
+                    ValidateTeleportLanding(hit.Value);
+                    return;
+                }
+
+                if (Vector3.Distance(origin, newPos) > maxRange) {
+                    m_vrTeleportArcPoints.Add(newPos);
+                    return;
+                }
+
+                m_vrTeleportArcPoints.Add(newPos);
+                pos = newPos;
+            }
+        }
+
+        int CountClearance(int cellX, int cellY, int cellZ) {
+            int clearance = 0;
+            for (int y = Math.Max(cellY, 0); y <= cellY + 1 && y < 255; y++) {
+                int value = m_subsystemTerrain.Terrain.GetCellValue(cellX, y, cellZ);
+                if (!BlocksManager.Blocks[Terrain.ExtractContents(value)].IsCollidable_(value))
+                    clearance++;
+                else break;
+            }
+            return clearance;
+        }
+
+        void ApplyTeleportResult(Vector3 target) {
+            int cellX = Terrain.ToCell(target.X);
+            int cellY = Terrain.ToCell(target.Y);
+            int cellZ = Terrain.ToCell(target.Z);
+            int clearance = CountClearance(cellX, cellY, cellZ);
+            if (clearance >= 2) {
+                m_vrTeleportTarget = target;
+                m_vrTeleportValid = true;
+            }
+            else if (clearance == 1) {
+                m_vrTeleportTarget = target;
+                m_vrTeleportValid = true;
+                m_vrTeleportForceCrouch = true;
+            }
+        }
+
+        void ValidateTeleportLanding(TerrainRaycastResult hit) {
+            int face = hit.CellFace.Face;
+            m_vrTeleportHitFace = face;
+            int blockId = Terrain.ExtractContents(hit.Value);
+            Block block = BlocksManager.Blocks[blockId];
+            bool isCreativeFly = m_componentPlayer.ComponentLocomotion.IsCreativeFlyEnabled;
+
+            // Wall hit (face 0-3): only allow if creative fly or LadderBlock
+            if (face >= 0 && face <= 3) {
+                if (isCreativeFly || block is LadderBlock) {
+                    Vector3 hitPoint = hit.HitPoint();
+                    Vector3 normal = CellFace.FaceToVector3(face);
+                    // Offset slightly into the space in front of the wall
+                    Vector3 playerPos = hitPoint + normal * 0.1f;
+                    ApplyTeleportResult(playerPos);
+                }
+                return;
+            }
+
+            // Floor hit (face 4 = top): land above the block
+            // Ceiling hit (face 5 = bottom): land below the block (fly mode)
+            Vector3 landingPoint = hit.HitPoint();
+            int standY = face == 5 ? hit.CellFace.Y - 1 : hit.CellFace.Y + 1;
+            Vector3 target = new Vector3(landingPoint.X, standY, landingPoint.Z);
+            ApplyTeleportResult(target);
+            // clearance == 0: invalid, stays null
+        }
+
+        void ExecuteTeleport(Vector3 target, bool forceCrouch) {
+            if (m_componentPlayer.ComponentRider.Mount != null) return;
+            if (m_componentPlayer.ComponentHealth.Health <= 0f) return;
+            if (m_componentGui.ModalPanelWidget != null
+                || DialogsManager.HasDialogs(m_componentPlayer.GuiWidget)) return;
+
+            // Re-validate clearance at target (terrain may have changed)
+            int cellX = Terrain.ToCell(target.X);
+            int cellY = Terrain.ToCell(target.Y);
+            int cellZ = Terrain.ToCell(target.Z);
+            if (CountClearance(cellX, cellY, cellZ) == 0) return;
+
+            ComponentBody body = m_componentPlayer.ComponentBody;
+            body.Position = target;
+            body.Velocity = Vector3.Zero;
+
+            if (forceCrouch) {
+                body.IsCrouching = true;
+                body.CrouchFactor = 1f;
+            }
+            else {
+                body.TargetCrouchFactor = 0f;
+            }
+
+            m_vrSnapFadeTimer = 0.2f;
         }
     }
 }

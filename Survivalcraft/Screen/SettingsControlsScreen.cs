@@ -33,6 +33,8 @@ namespace Game {
         public ContainerWidget m_vrControllerMappingPanel;
         public ButtonWidget m_vrLookControlModeButton;
         public ContainerWidget m_vrLookControlModePanel;
+        public ButtonWidget m_vrMoveControlModeButton;
+        public ContainerWidget m_vrMoveControlModePanel;
 
         public const string fName = "SettingsControlsScreen";
 
@@ -69,6 +71,8 @@ namespace Game {
             m_vrControllerMappingPanel = Children.Find<ContainerWidget>("VrControllerMappingPanel");
             m_vrLookControlModeButton = Children.Find<ButtonWidget>("VrLookControlMode");
             m_vrLookControlModePanel = Children.Find<ContainerWidget>("VrLookControlModePanel");
+            m_vrMoveControlModeButton = Children.Find<ButtonWidget>("VrMoveControlMode");
+            m_vrMoveControlModePanel = Children.Find<ContainerWidget>("VrMoveControlModePanel");
             m_horizontalCreativeFlightPanel.IsVisible = true;
         }
 
@@ -154,6 +158,10 @@ namespace Game {
                 SettingsManager.VrLookControlMode = (VrLookControlMode)((int)(SettingsManager.VrLookControlMode + 1)
                     % EnumUtils.GetEnumValues<VrLookControlMode>().Count);
             }
+            if (m_vrMoveControlModeButton.IsClicked) {
+                SettingsManager.VrMoveControlMode = (VrMoveControlMode)((int)(SettingsManager.VrMoveControlMode + 1)
+                    % EnumUtils.GetEnumValues<VrMoveControlMode>().Count);
+            }
             if (m_AllowInitialIntro.IsClicked) {
                 SettingsManager.AllowInitialIntro = !SettingsManager.AllowInitialIntro;
             }
@@ -161,6 +169,8 @@ namespace Game {
             m_lookControlModeButton.Text = LanguageControl.Get("LookControlMode", SettingsManager.LookControlMode.ToString());
             m_vrLookControlModeButton.Text = LanguageControl.Get("VrLookControlMode", SettingsManager.VrLookControlMode.ToString());
             m_vrLookControlModePanel.IsVisible = VrManager.IsVrAvailable;
+            m_vrMoveControlModeButton.Text = LanguageControl.Get("VrMoveControlMode", SettingsManager.VrMoveControlMode.ToString());
+            m_vrMoveControlModePanel.IsVisible = VrManager.IsVrAvailable;
             m_leftHandedLayoutButton.Text = SettingsManager.LeftHandedLayout ? LanguageControl.On : LanguageControl.Off;
             m_flipVerticalAxisButton.Text = SettingsManager.FlipVerticalAxis ? LanguageControl.On : LanguageControl.Off;
             m_MemoryBankStyle.Text = SettingsManager.UsePrimaryMemoryBank

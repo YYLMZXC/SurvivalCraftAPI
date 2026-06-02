@@ -844,6 +844,10 @@
     "Smooth": "Smooth",
     "Snap": "Snap"
   },
+  "VrMoveControlMode": {
+    "Smooth": "Smooth",
+    "Teleport": "Teleport"
+  },
   "SettingsUiScreen": {
     "1": "Message",
     "2": "Do you want apply this setting?"
@@ -3372,7 +3376,8 @@
       "Keyboard Mapping:",
       "Gamepad Mapping:",
       "VR Controller Mapping:",
-      "VR Look Control:"
+      "VR Look Control:",
+      "VR Move Control:"
     ],
     "CameraManageScreen": {
       "Enable": "Enable",

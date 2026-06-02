@@ -158,7 +158,7 @@ namespace Game {
                     GameWidget.DrawVrGui(vrEye, eyeFrame);
 
                     // Snap turn fade overlay
-                    float fadeAlpha = ComponentInput.VrSnapFadeAlpha;
+                    float fadeAlpha = ComponentInput.VrFadeAlpha;
                     if (fadeAlpha > 0.001f) {
                         var flatBatch = m_vrFadePr2?.FlatBatch(0, null, null, null);
                         flatBatch?.QueueQuad(

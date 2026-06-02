@@ -78,6 +78,7 @@ namespace Game {
                 }
                 else {
                     DrawRayHighlight(camera);
+                    DrawTeleportArc(camera);
                 }
             }
         }
@@ -381,6 +382,38 @@ namespace Game {
                     Subsets[i] = terrainGeometrySubset;
                 }
             }
+        }
+
+        public virtual void DrawTeleportArc(Camera camera) {
+            ComponentInput input = m_componentPlayer.ComponentInput;
+            if (!input.IsControlledByVr) return;
+            if (SettingsManager.VrMoveControlMode != VrMoveControlMode.Teleport) return;
+            if (input.m_vrTeleportArcPoints.Count < 2) return;
+
+            Color arcColor = input.m_vrTeleportValid
+                ? new Color(0, 255, 0, 200)
+                : new Color(255, 0, 0, 200);
+
+            FlatBatch3D flatBatch = m_primitivesRenderer3D.FlatBatch(0, DepthStencilState.Default);
+            flatBatch.QueueLineStrip(input.m_vrTeleportArcPoints, arcColor);
+
+            // Landing indicator at actual hit point (last arc point)
+            if (input.m_vrTeleportValid && input.m_vrTeleportArcPoints.Count >= 2) {
+                Vector3 hitPoint = input.m_vrTeleportArcPoints[^1]
+                    + CellFace.FaceToVector3(input.m_vrTeleportHitFace) * 0.01f;
+                float s = 0.2f;
+                Color indicatorColor = new Color(0, 255, 0, 255);
+                int face = input.m_vrTeleportHitFace;
+                // Wall (face 0-3): vertical cross; Floor/Ceiling (4-5): horizontal cross
+                Vector3 axis1 = face <= 3 ? Vector3.UnitY : Vector3.UnitX;
+                Vector3 axis2 = face is 0 or 2 ? Vector3.UnitX
+                    : face is 1 or 3 ? Vector3.UnitZ
+                    : Vector3.UnitZ;
+                flatBatch.QueueLine(hitPoint - axis1 * s, hitPoint + axis1 * s, indicatorColor);
+                flatBatch.QueueLine(hitPoint - axis2 * s, hitPoint + axis2 * s, indicatorColor);
+            }
+
+            m_primitivesRenderer3D.Flush(camera.ViewProjectionMatrix);
         }
     }
 }

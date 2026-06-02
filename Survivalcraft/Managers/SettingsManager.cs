@@ -58,6 +58,8 @@ namespace Game {
 
         public static VrLookControlMode VrLookControlMode { get; set; }
 
+        public static VrMoveControlMode VrMoveControlMode { get; set; }
+
         public static ResolutionMode ResolutionMode {
             get => m_resolutionMode;
             set {

@@ -844,6 +844,10 @@
     "Smooth": "连续",
     "Snap": "瞬转"
   },
+  "VrMoveControlMode": {
+    "Smooth": "连续",
+    "Teleport": "瞬移"
+  },
   "SettingsUiScreen": {
     "1": "消息",
     "2": "你想应用此设置吗？"
@@ -3382,7 +3386,8 @@
       "键鼠按键映射：",
       "手柄按键映射：",
       "VR 手柄按键映射：",
-      "VR 视角控制："
+      "VR 视角控制：",
+      "VR 移动控制："
     ],
     "CameraManageScreen": {
       "Enable": "启用",

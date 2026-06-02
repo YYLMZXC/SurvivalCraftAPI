@@ -18,6 +18,9 @@ namespace Game {
         public SliderWidget m_vrGuiSizeSlider;
         public ContainerWidget m_vrGuiSizePanel;
 
+        public ButtonWidget m_vrGuiDockLeftHandButton;
+        public ContainerWidget m_vrGuiDockLeftHandPanel;
+
         public ButtonWidget m_upsideDownButton;
 
         public UniformSpacingPanelWidget m_adaptEdgeToEdgeDisplayContainer;
@@ -55,6 +58,8 @@ namespace Game {
             m_uiScaleSlider = Children.Find<SliderWidget>("UIScaleSlider");
             m_vrGuiSizeSlider = Children.Find<SliderWidget>("VrGuiSizeSlider");
             m_vrGuiSizePanel = Children.Find<ContainerWidget>("VrGuiSizePanel");
+            m_vrGuiDockLeftHandButton = Children.Find<ButtonWidget>("VrGuiDockLeftHand");
+            m_vrGuiDockLeftHandPanel = Children.Find<ContainerWidget>("VrGuiDockLeftHandPanel");
             m_upsideDownButton = Children.Find<ButtonWidget>("UpsideDownButton");
             m_adaptEdgeToEdgeDisplayContainer = Children.Find<UniformSpacingPanelWidget>("AdaptEdgeToEdgeDisplayContainer");
             m_adaptEdgeToEdgeDisplay = Children.Find<ButtonWidget>("AdaptEdgeToEdgeDisplay");
@@ -115,6 +120,11 @@ namespace Game {
             }
             m_vrGuiSizeSlider.Text = $"{m_vrGuiSizeSlider.Value * 100f:0}%";
             m_vrGuiSizePanel.IsVisible = VrManager.IsVrAvailable;
+            if (m_vrGuiDockLeftHandButton.IsClicked) {
+                SettingsManager.VrGuiDockLeftHand = !SettingsManager.VrGuiDockLeftHand;
+            }
+            m_vrGuiDockLeftHandButton.Text = SettingsManager.VrGuiDockLeftHand ? LanguageControl.Yes : LanguageControl.No;
+            m_vrGuiDockLeftHandPanel.IsVisible = VrManager.IsVrAvailable;
             if (m_upsideDownButton.IsClicked) {
                 SettingsManager.UpsideDownLayout = !SettingsManager.UpsideDownLayout;
             }

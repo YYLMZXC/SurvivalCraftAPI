@@ -52,6 +52,8 @@ namespace Game {
 
         public static float VrGuiSize { get; set; }
 
+        public static bool VrGuiDockLeftHand { get; set; }
+
         public static ResolutionMode ResolutionMode {
             get => m_resolutionMode;
             set {

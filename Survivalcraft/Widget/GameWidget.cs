@@ -339,6 +339,33 @@ public class GameWidget : CanvasWidget {
             return;
         }
 
+        float aspect = m_vrGuiRenderTarget.Width / (float)m_vrGuiRenderTarget.Height;
+
+        if (SettingsManager.VrGuiDockLeftHand && VrManager.IsControllerPresent(VrController.Left)) {
+            Matrix leftHand = VrManager.GetControllerMatrix(VrController.Left);
+            Vector3 handUp = Vector3.Normalize(leftHand.Up);
+            Vector3 handRight = Vector3.Normalize(leftHand.Right);
+            Vector3 handFwd = leftHand.Forward;
+            if (handUp.LengthSquared() < 0.001f || handRight.LengthSquared() < 0.001f || handFwd.LengthSquared() < 0.001f) {
+                VrGuiQuadMatrix = null;
+                return;
+            }
+            handFwd = Vector3.Normalize(handFwd);
+            float guiSize = Math.Clamp(SettingsManager.VrGuiSize, 0.75f, 2f) * 0.25f;
+            float lhWidth = 1.24f * guiSize;
+            Vector2 lhSize = new(lhWidth, lhWidth / aspect);
+            Vector3 lhCenter = leftHand.Translation + handUp * 0.08f;
+            Vector3 lhRight = handRight * lhSize.X;
+            // Tilt forward 30° around hand's right axis
+            float tiltAngle = 30f * MathF.PI / 180f;
+            Vector3 tiltedUp = Vector3.Transform(handUp, Quaternion.CreateFromAxisAngle(handRight, -tiltAngle));
+            Vector3 lhFace = Vector3.Normalize(Vector3.Cross(tiltedUp, lhRight));
+            Vector3 lhUp = Vector3.Normalize(Vector3.Cross(lhRight, lhFace)) * lhSize.Y;
+            Vector3 lhCorner = lhCenter - 0.5f * lhRight - 0.5f * lhUp;
+            VrGuiQuadMatrix = new Matrix { Translation = lhCorner, Right = lhRight, Up = lhUp, Forward = lhFace };
+            return;
+        }
+
         Matrix hmd = VrManager.HmdMatrix;
         Vector3 hmdFwd = hmd.Forward * new Vector3(1f, 0f, 1f);
         if (hmdFwd.LengthSquared() < 0.001f) {
@@ -350,7 +377,6 @@ public class GameWidget : CanvasWidget {
         Vector3 center = hmd.Translation + dist * Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.025f, 0f);
         float scale = Math.Clamp(SettingsManager.VrGuiSize, 0.75f, 2f);
         float width = 1.24f * scale;
-        float aspect = m_vrGuiRenderTarget.Width / (float)m_vrGuiRenderTarget.Height;
         Vector2 size = new(width, width / aspect);
         Vector3 faceDir = Vector3.Normalize(hmd.Translation - center);
         Vector3 qRight = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, faceDir)) * size.X;

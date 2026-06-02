@@ -194,9 +194,8 @@ public class GameWidget : CanvasWidget {
         }
 
         if (m_vrGuiActive) {
-            WidgetInputDevice vrDevices = widgetInputDevice & ~(WidgetInputDevice.Mouse | WidgetInputDevice.MultiMice | WidgetInputDevice.Touch);
-            if (m_vrWidgetInput == null || m_vrWidgetInput.Devices != vrDevices) {
-                m_vrWidgetInput = new WidgetInput(vrDevices);
+            if (m_vrWidgetInput == null || m_vrWidgetInput.Devices != widgetInputDevice) {
+                m_vrWidgetInput = new WidgetInput(widgetInputDevice);
                 GuiWidget.WidgetsHierarchyInput = m_vrWidgetInput;
             }
             // Compute quad matrix here (before cursor calculation) so the cursor
@@ -214,8 +213,8 @@ public class GameWidget : CanvasWidget {
             // Sync Back to GameWidget's input
             // ComponentGui reads GameWidget.WidgetsHierarchyInput
             if (WidgetsHierarchyInput == null
-                || WidgetsHierarchyInput.Devices != vrDevices) {
-                WidgetsHierarchyInput = new WidgetInput(vrDevices);
+                || WidgetsHierarchyInput.Devices != widgetInputDevice) {
+                WidgetsHierarchyInput = new WidgetInput(widgetInputDevice);
             }
             WidgetsHierarchyInput.Back = m_vrWidgetInput.Back;
         }

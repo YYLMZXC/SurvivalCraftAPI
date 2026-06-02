@@ -1186,7 +1186,7 @@ namespace Engine {
                 float delta = m_hmdYBeforeRecenterRaw - currentRawY;
                 if (Math.Abs(delta) > 0.01f) { // ignore sub-cm noise
                     m_recenterYOffset += delta;
-                    Log.Information($"[VR] Recenter Y offset: +{delta:0.00} (total: {m_recenterYOffset:0.00})");
+                    Log.Information($"[VR] Recenter Y offset: {delta:+0.00;-0.00;0.00} (total: {m_recenterYOffset:+0.00;-0.00;0.00})");
                 }
                 m_recenterPending = false;
             }

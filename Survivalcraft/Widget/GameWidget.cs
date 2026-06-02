@@ -351,8 +351,8 @@ public class GameWidget : CanvasWidget {
                 return;
             }
             handFwd = Vector3.Normalize(handFwd);
-            float guiSize = Math.Clamp(SettingsManager.VrGuiSize, 0.75f, 2f) * 0.25f;
-            float lhWidth = 1.24f * guiSize;
+            float guiSize = Math.Clamp(SettingsManager.VrGuiSize, 0.75f, 2f) * 0.3f;
+            float lhWidth = 1.4f * guiSize;
             Vector2 lhSize = new(lhWidth, lhWidth / aspect);
             Vector3 lhCenter = leftHand.Translation + handUp * 0.08f;
             Vector3 lhRight = handRight * lhSize.X;
@@ -376,7 +376,7 @@ public class GameWidget : CanvasWidget {
         float dist = 1.5f;
         Vector3 center = hmd.Translation + dist * Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.025f, 0f);
         float scale = Math.Clamp(SettingsManager.VrGuiSize, 0.75f, 2f);
-        float width = 1.24f * scale;
+        float width = 1.4f * scale;
         Vector2 size = new(width, width / aspect);
         Vector3 faceDir = Vector3.Normalize(hmd.Translation - center);
         Vector3 qRight = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, faceDir)) * size.X;

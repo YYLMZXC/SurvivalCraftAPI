@@ -54,6 +54,8 @@ namespace Game {
 
         public static bool VrGuiDockLeftHand { get; set; }
 
+        public static float VrEyeHeightOffset { get; set; }
+
         public static ResolutionMode ResolutionMode {
             get => m_resolutionMode;
             set {
@@ -565,6 +567,7 @@ namespace Game {
                 AutoJump = false;
 #endif
                 VrGuiSize = 1f;
+                VrEyeHeightOffset = 0f;
                 MoveSensitivity = 0.5f;
                 LookSensitivity = 0.5f;
                 GamepadDeadZone = 0.16f;

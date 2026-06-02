@@ -3391,7 +3391,8 @@
       "1": "Adjust Graphics Settings",
       "2": "Virtual Reality:",
       "3": "Dark Areas Brightness:",
-      "4": "Camera View Angle:"
+      "4": "Camera View Angle:",
+      "5": "VR Eye Height Offset:"
     },
     "SettingsPerformanceScreen": {
       "1": "Adjust Performance Settings",

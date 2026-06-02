@@ -248,7 +248,8 @@ public class GameWidget : CanvasWidget {
             GuiWidget.MarginBottom = 0f;
             float num = 850f / Math.Clamp(SettingsManager.UIScale, 0.5f, 1.2f) * ScreensManager.DebugUiScale;
             Vector2 availableSize = new(num, num * 9f / 16f);
-            float vrScale = 1280f / num;
+            float rtWidth = m_vrGuiRenderTarget?.Width ?? 1280f;
+            float vrScale = rtWidth / num;
             m_vrGuiRoot.LayoutTransform = Matrix.CreateScale(vrScale, vrScale, 1);
             m_vrGuiRoot.Measure(availableSize);
             m_vrGuiRoot.Arrange(Vector2.Zero, availableSize);
@@ -304,8 +305,12 @@ public class GameWidget : CanvasWidget {
         if (m_vrWidgetInput != null && WidgetsHierarchyInput != null) {
             m_vrWidgetInput.IsVrCursorVisible = WidgetsHierarchyInput.IsVrCursorVisible;
         }
-        if (m_vrGuiRenderTarget == null) {
-            m_vrGuiRenderTarget = new RenderTarget2D(1280, 720, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
+        float scale = Math.Clamp(SettingsManager.VrGuiSize, 0.75f, 2f);
+        int rtWidth = Math.Max(1, (int)Math.Round(1280 * scale));
+        int rtHeight = Math.Max(1, (int)Math.Round(720 * scale));
+        if (m_vrGuiRenderTarget == null || m_vrGuiRenderTarget.Width != rtWidth || m_vrGuiRenderTarget.Height != rtHeight) {
+            Utilities.Dispose(ref m_vrGuiRenderTarget);
+            m_vrGuiRenderTarget = new RenderTarget2D(rtWidth, rtHeight, 1, ColorFormat.Rgba8888, DepthFormat.Depth24Stencil8);
         }
         m_vrCursorRenderer ??= new PrimitivesRenderer2D();
         RenderTarget2D prevRT = Display.RenderTarget;
@@ -343,7 +348,8 @@ public class GameWidget : CanvasWidget {
 
         float dist = 1.5f;
         Vector3 center = hmd.Translation + dist * Vector3.Normalize(hmdFwd) + new Vector3(0f, 0.025f, 0f);
-        float width = 1.24f;
+        float scale = Math.Clamp(SettingsManager.VrGuiSize, 0.75f, 2f);
+        float width = 1.24f * scale;
         float aspect = m_vrGuiRenderTarget.Width / (float)m_vrGuiRenderTarget.Height;
         Vector2 size = new(width, width / aspect);
         Vector3 faceDir = Vector3.Normalize(hmd.Translation - center);

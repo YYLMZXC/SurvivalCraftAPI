@@ -50,6 +50,8 @@ namespace Game {
 
         public static float UIScale { get; set; }
 
+        public static float VrGuiSize { get; set; }
+
         public static ResolutionMode ResolutionMode {
             get => m_resolutionMode;
             set {
@@ -560,6 +562,7 @@ namespace Game {
                 UIScale = 0.75f;
                 AutoJump = false;
 #endif
+                VrGuiSize = 1f;
                 MoveSensitivity = 0.5f;
                 LookSensitivity = 0.5f;
                 GamepadDeadZone = 0.16f;

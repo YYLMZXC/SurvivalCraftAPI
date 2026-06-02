@@ -1,6 +1,9 @@
 using Engine;
 using Engine.Graphics;
 using Silk.NET.OpenGLES;
+#if ANDROID
+using Engine.Input;
+#endif
 
 namespace Game {
     public class VrManager {
@@ -60,6 +63,9 @@ namespace Game {
             _backend?.StartVr();
             if (IsVrStarted) {
                 SettingsManager.EnsureVrMappingDefaults(ControllerType);
+#if ANDROID
+                Keyboard.IsAndroidDialogAvailable = false;
+#endif
             }
             return IsVrStarted;
         }
@@ -67,6 +73,9 @@ namespace Game {
         public static void StopVr() {
             _backend?.StopVr();
             m_frameActive = false;
+#if ANDROID
+            Keyboard.IsAndroidDialogAvailable = true;
+#endif
         }
 
         [Obsolete]

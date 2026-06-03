@@ -10,6 +10,8 @@ namespace Game {
         static IVrBackend _backend;
         static bool m_frameActive;
         static bool m_eyesRendered;
+        static int m_savedPresentationInterval;
+        static bool m_hasSavedPresentationInterval;
 
         struct VrTouchTracker {
             public bool ClickActive;
@@ -66,6 +68,19 @@ namespace Game {
 #if ANDROID
                 Keyboard.IsAndroidDialogAvailable = false;
 #endif
+                // Disable VSync so the frame loop isn't throttled by the
+                // desktop monitor's refresh rate. VR frame pacing is handled
+                // by xrWaitFrame instead.
+                // Only needed on Windows where the desktop monitor may be 60Hz.
+                // On Android VR headsets the display IS the VR display, so
+                // VSync at the panel refresh rate is already correct.
+#if WINDOWS
+                if (!m_hasSavedPresentationInterval) {
+                    m_savedPresentationInterval = Window.PresentationInterval;
+                    m_hasSavedPresentationInterval = true;
+                }
+                Window.PresentationInterval = 0;
+#endif
             }
             return IsVrStarted;
         }
@@ -75,6 +90,13 @@ namespace Game {
             m_frameActive = false;
 #if ANDROID
             Keyboard.IsAndroidDialogAvailable = true;
+#endif
+            // Restore the user's VSync preference.
+#if WINDOWS
+            if (m_hasSavedPresentationInterval) {
+                Window.PresentationInterval = m_savedPresentationInterval;
+                m_hasSavedPresentationInterval = false;
+            }
 #endif
         }
 

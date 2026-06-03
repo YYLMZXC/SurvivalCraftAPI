@@ -732,7 +732,8 @@ namespace Game {
             int clearance = 0;
             for (int y = Math.Max(cellY, 0); y <= cellY + 1 && y < 255; y++) {
                 int value = m_subsystemTerrain.Terrain.GetCellValue(cellX, y, cellZ);
-                if (!BlocksManager.Blocks[Terrain.ExtractContents(value)].IsCollidable_(value))
+                Block block = BlocksManager.Blocks[Terrain.ExtractContents(value)];
+                if (block is LadderBlock || !block.IsCollidable_(value))
                     clearance++;
                 else break;
             }
@@ -757,10 +758,13 @@ namespace Game {
 
         void ValidateTeleportLanding(TerrainRaycastResult hit) {
             int face = hit.CellFace.Face;
-            m_vrTeleportHitFace = face;
-            int blockId = Terrain.ExtractContents(hit.Value);
-            Block block = BlocksManager.Blocks[blockId];
             bool isCreativeFly = m_componentPlayer.ComponentLocomotion.IsCreativeFlyEnabled;
+            if (face == 5
+                && !isCreativeFly) {
+                return;
+            }
+            m_vrTeleportHitFace = face;
+            Block block = BlocksManager.Blocks[Terrain.ExtractContents(hit.Value)];
 
             // Wall hit (face 0-3): only allow if creative fly or LadderBlock
             if (face >= 0 && face <= 3) {
@@ -768,7 +772,7 @@ namespace Game {
                     Vector3 hitPoint = hit.HitPoint();
                     Vector3 normal = CellFace.FaceToVector3(face);
                     // Offset slightly into the space in front of the wall
-                    Vector3 playerPos = hitPoint + normal * 0.1f;
+                    Vector3 playerPos = hitPoint + normal * 0.5f;
                     ApplyTeleportResult(playerPos);
                 }
                 return;
@@ -780,7 +784,6 @@ namespace Game {
             int standY = face == 5 ? hit.CellFace.Y - 1 : hit.CellFace.Y + 1;
             Vector3 target = new Vector3(landingPoint.X, standY, landingPoint.Z);
             ApplyTeleportResult(target);
-            // clearance == 0: invalid, stays null
         }
 
         void ExecuteTeleport(Vector3 target, bool forceCrouch) {

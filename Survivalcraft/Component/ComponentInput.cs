@@ -334,9 +334,11 @@ namespace Game {
                     zero += 0.5f * new Vector3(Vector2.Dot(xZ, v), 0f, Vector2.Dot(xZ, v2));
                 }
                 zero += new Vector3(2f * vrStickPosition.X, 2f * vrStickPosition2.Y, 2f * vrStickPosition.Y);
-                // Teleport mode: suppress left stick forward/strafe (but force Smooth when on ladder)
+                // Teleport mode: suppress left stick forward/strafe
+                // (but force Smooth when on ladder or mounted — teleport makes no sense there)
                 bool isTeleportMode = SettingsManager.VrMoveControlMode == VrMoveControlMode.Teleport
-                    && !m_componentPlayer.ComponentLocomotion.LadderValue.HasValue;
+                    && !m_componentPlayer.ComponentLocomotion.LadderValue.HasValue
+                    && m_componentPlayer.ComponentRider.Mount == null;
                 if (isTeleportMode) {
                     zero.X -= 2f * vrStickPosition.X;
                     // Only suppress forward, allow backward smooth movement
@@ -350,11 +352,11 @@ namespace Game {
                 // Jump: special handling for Trackpad (tap gesture) vs other buttons
                 var (jumpCtrl, jumpBtn) = SettingsManager.GetVrMapping("VrJump");
                 if (jumpBtn == VrControllerButton.Trackpad) {
-                    // Default: tap gesture on both controllers
-                    if (touchInput.HasValue && num3 > 0f && touchInput.Value.InputType == TouchInputType.Tap)
-                        m_playerInput.Jump = true;
-                    TouchInput? touchInputR = VrManager.GetTouchInput(VrController.Right);
-                    if (touchInputR.HasValue && touchInputR.Value.InputType == TouchInputType.Tap)
+                    // Only check the controller specified by the user's mapping
+                    TouchInput? jumpTouch = jumpCtrl == VrController.Right
+                        ? VrManager.GetTouchInput(VrController.Right)
+                        : touchInput;
+                    if (jumpTouch.HasValue && num3 > 0f && jumpTouch.Value.InputType == TouchInputType.Tap)
                         m_playerInput.Jump = true;
                 }
                 else if (jumpBtn != VrControllerButton.Null) {

@@ -10,8 +10,10 @@ namespace Game {
         static IVrBackend _backend;
         static bool m_frameActive;
         static bool m_eyesRendered;
+#if WINDOWS
         static int m_savedPresentationInterval;
         static bool m_hasSavedPresentationInterval;
+#endif
 
         struct VrTouchTracker {
             public bool ClickActive;

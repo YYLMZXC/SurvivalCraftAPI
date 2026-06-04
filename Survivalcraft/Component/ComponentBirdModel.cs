@@ -39,10 +39,7 @@ namespace Game {
             set => m_kickPhase = value;
         }
 
-        public override float AttackFactor {
-            get => m_peckAnimationSpeed;
-            set => m_peckAnimationSpeed = value;
-        }
+        public override float AttackFactor { get; set; }
 
         public override void Update(float dt) {
             float num = Vector3.Dot(m_componentCreature.ComponentBody.Velocity, m_componentCreature.ComponentBody.Matrix.Forward);
@@ -85,7 +82,7 @@ namespace Game {
             FeedOrder = false;
             IsAttackHitMoment = false;
             if (AttackOrder) {
-                m_peckAnimationSpeed = MathUtils.Min(m_peckAnimationSpeed + 2f * dt, 1f);
+                AttackFactor = MathUtils.Min(AttackFactor + 2f * dt, 1f);
                 float kickPhase = m_kickPhase;
                 m_kickPhase = MathUtils.Remainder(m_kickPhase + dt * 2f, 1f);
                 if (kickPhase < 0.5f
@@ -94,7 +91,7 @@ namespace Game {
                 }
             }
             else {
-                m_peckAnimationSpeed = MathUtils.Max(m_peckAnimationSpeed - 2f * dt, 0f);
+                AttackFactor = MathUtils.Max(AttackFactor - 2f * dt, 0f);
                 if (m_kickPhase != 0f) {
                     if (m_kickPhase > 0.5f) {
                         m_kickPhase = MathUtils.Remainder(MathUtils.Min(m_kickPhase + dt * 2f, 1f), 1f);

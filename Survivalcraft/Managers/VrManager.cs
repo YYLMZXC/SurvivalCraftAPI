@@ -110,9 +110,9 @@ namespace Game {
         [Obsolete]
         public static void SubmitEyeTexture(VrEye eye, Texture2D texture) { }
 
-        public static Matrix GetEyeToHeadTransform(VrEye eye) => _backend?.GetEyeToHeadTransform(eye) ?? default;
+        public static Matrix GetEyeToHeadTransform(VrEye eye) => _backend?.GetEyeToHeadTransform((Engine.VrEye)eye) ?? default;
 
-        public static Matrix GetProjectionMatrix(VrEye eye, float near, float far) => _backend?.GetProjectionMatrix(eye, near, far) ?? default;
+        public static Matrix GetProjectionMatrix(VrEye eye, float near, float far) => _backend?.GetProjectionMatrix((Engine.VrEye)eye, near, far) ?? default;
 
         public static bool IsControllerPresent(VrController controller) => _backend?.IsControllerPresent(controller) ?? false;
 
@@ -226,9 +226,9 @@ namespace Game {
             return m_frameActive;
         }
 
-        public static EyeFrame GetEyeFrame(VrEye eye) => _backend?.GetEyeFrame(eye) ?? default;
+        public static EyeFrame GetEyeFrame(VrEye eye) => _backend?.GetEyeFrame((Engine.VrEye)eye) ?? default;
 
-        public static void ReleaseEye(VrEye eye) => _backend?.ReleaseEye(eye);
+        public static void ReleaseEye(VrEye eye) => _backend?.ReleaseEye((Engine.VrEye)eye);
 
         public static void EndFrame() {
             if (m_eyesRendered) {

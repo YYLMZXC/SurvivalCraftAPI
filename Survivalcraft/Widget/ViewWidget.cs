@@ -155,7 +155,7 @@ namespace Game {
                     camera.PrepareForDrawing(vrEye);
                     m_subsystemDrawing.Draw(camera);
 
-                    GameWidget.DrawVrGui(vrEye, eyeFrame);
+                    GameWidget.DrawVrGui(eyeFrame);
 
                     // Snap turn fade overlay
                     float fadeAlpha = ComponentInput.VrFadeAlpha;

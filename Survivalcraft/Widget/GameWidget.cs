@@ -385,7 +385,7 @@ public class GameWidget : CanvasWidget {
         VrGuiQuadMatrix = new Matrix { Translation = corner, Right = qRight, Up = qUp, Forward = faceDir };
     }
 
-    public void DrawVrGui(VrEye vrEye, EyeFrame eyeFrame) {
+    public void DrawVrGui(EyeFrame eyeFrame) {
         if (m_vrGuiRenderTarget == null || !VrGuiQuadMatrix.HasValue) return;
 
         Matrix quad = VrGuiQuadMatrix.Value;

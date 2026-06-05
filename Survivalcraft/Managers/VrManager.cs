@@ -14,6 +14,7 @@ namespace Game {
         static int m_savedPresentationInterval;
         static bool m_hasSavedPresentationInterval;
 #endif
+        static bool m_vrMappingDefaultsEnsured;
 
         struct VrTouchTracker {
             public bool ClickActive;
@@ -64,9 +65,9 @@ namespace Game {
         }
 
         public static bool StartVr() {
+            m_vrMappingDefaultsEnsured = false;
             _backend?.StartVr();
             if (IsVrStarted) {
-                SettingsManager.EnsureVrMappingDefaults(ControllerType);
 #if ANDROID
                 Keyboard.IsAndroidDialogAvailable = false;
 #endif
@@ -90,6 +91,7 @@ namespace Game {
         public static void StopVr() {
             _backend?.StopVr();
             m_frameActive = false;
+            m_vrMappingDefaultsEnsured = false;
 #if ANDROID
             Keyboard.IsAndroidDialogAvailable = true;
 #endif
@@ -217,6 +219,10 @@ namespace Game {
         public static bool BeginFrame() {
             m_eyesRendered = false;
             m_frameActive = _backend?.BeginFrame() ?? false;
+            if (m_frameActive && !m_vrMappingDefaultsEnsured && ControllerType != VrControllerType.Unknown) {
+                SettingsManager.EnsureVrMappingDefaults(ControllerType);
+                m_vrMappingDefaultsEnsured = true;
+            }
             return m_frameActive;
         }
 

@@ -101,6 +101,7 @@ namespace Engine {
         public bool IsAvailable { get; private set; }
         public bool IsStarted { get; private set; }
         public VrControllerType ControllerType { get; private set; } = VrControllerType.Unknown;
+        int m_controllerDetectAttempts;
         public Matrix HmdMatrix => m_hmdMatrix;
         public Matrix HmdMatrixInverted => m_hmdMatrixInverted;
         public Vector3 HmdMatrixYpr => m_hmdMatrixYpr;
@@ -318,6 +319,8 @@ namespace Engine {
                     DoInitialize();
                 }
                 DoStartVr();
+                ControllerType = VrControllerType.Unknown;
+                m_controllerDetectAttempts = 0;
                 IsStarted = true;
                 Log.Information("OpenXR VR started");
             }
@@ -581,8 +584,9 @@ namespace Engine {
                 m_xr.AttachSessionActionSets(m_session, ref attachInfo);
             }
 
-            // Detect controller type via current interaction profile
-            DetectControllerType();
+            // Controller type detection is deferred to BeginFrame (after SyncActions),
+            // because xrGetCurrentInteractionProfile returns XR_NULL_PATH if called
+            // before the first xrSyncActions.
 
             // Create action spaces for controller poses
             for (int hand = 0; hand < 2; hand++) {
@@ -1019,6 +1023,15 @@ namespace Engine {
 
             // Sync actions
             SyncActions();
+
+            // Detect controller type after first SyncActions (profile may not be available earlier)
+            if (ControllerType == VrControllerType.Unknown && m_controllerDetectAttempts < 30) {
+                m_controllerDetectAttempts++;
+                DetectControllerType();
+                if (ControllerType == VrControllerType.Unknown && m_controllerDetectAttempts == 30) {
+                    Log.Warning("Could not detect VR controller type after 10 frames, giving up");
+                }
+            }
 
             // Update controller states
             UpdateControllers();

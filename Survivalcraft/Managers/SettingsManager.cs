@@ -737,6 +737,9 @@ namespace Game {
         }
 
         public static void EnsureVrMappingDefaults(VrControllerType type) {
+            if (type == VrControllerType.Unknown) {
+                type = VrControllerType.MetaQuestTouch;
+            }
             VrActiveControllerType = type;
             string typeName = type.ToString();
             if (VrMappingSettings.TryGetValue(typeName, out object val) && val is ValuesDictionary vd && vd.Count > 0) {

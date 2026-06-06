@@ -219,7 +219,12 @@ namespace Game {
             int arrowType = (int)GetArrowType(Terrain.ExtractData(value));
             if (arrowType >= 0
                 && arrowType < m_standaloneBlockMeshes.Count) {
-                BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshes[arrowType], color, 2f * size, ref matrix, environmentData);
+                Texture2D texture = GetDefaultTexture(value);
+                if (texture == null) {
+                    BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshes[arrowType], color, 2f * size, ref matrix, environmentData);
+                } else {
+                    BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshes[arrowType], texture, color, 2f * size, ref matrix, environmentData);
+                }
             }
         }
 

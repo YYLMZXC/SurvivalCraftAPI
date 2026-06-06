@@ -66,6 +66,7 @@ namespace Game {
             int num = Terrain.ExtractData(value);
             if (num < m_blockMeshesByData.Length
                 && m_blockMeshesByData[num] != null) {
+                Texture2D texture = GetDefaultTexture(value);
                 generator.GenerateShadedMeshVertices(
                     this,
                     x,
@@ -75,7 +76,7 @@ namespace Game {
                     Color.White,
                     null,
                     null,
-                    geometry.SubsetOpaque
+                    texture == null ? geometry.SubsetOpaque : geometry.GetGeometry(texture).SubsetOpaque
                 );
             }
         }

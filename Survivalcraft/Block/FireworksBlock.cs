@@ -112,16 +112,37 @@ namespace Game {
             Shape shape = GetShape(data);
             int altitude = GetAltitude(data);
             bool flickering = GetFlickering(data);
-            BlocksManager.DrawMeshBlock(
-                primitivesRenderer,
-                m_headBlockMeshes[(int)shape * 8 + color2],
-                color,
-                2f * size,
-                ref matrix,
-                environmentData
-            );
-            BlocksManager.DrawMeshBlock(primitivesRenderer, m_bodyBlockMeshes[altitude], color, 2f * size, ref matrix, environmentData);
-            BlocksManager.DrawMeshBlock(primitivesRenderer, m_finsBlockMeshes[flickering ? 1 : 0], color, 2f * size, ref matrix, environmentData);
+            Texture2D texture = GetDefaultTexture(value);
+            if (texture == null) {
+                BlocksManager.DrawMeshBlock(
+                    primitivesRenderer,
+                    m_headBlockMeshes[(int)shape * 8 + color2],
+                    color,
+                    2f * size,
+                    ref matrix,
+                    environmentData
+                );
+            } else {
+                BlocksManager.DrawMeshBlock(
+                    primitivesRenderer,
+                    m_headBlockMeshes[(int)shape * 8 + color2],
+                    texture,
+                    color,
+                    2f * size,
+                    ref matrix,
+                    environmentData
+                );
+            }
+            if (texture == null) {
+                BlocksManager.DrawMeshBlock(primitivesRenderer, m_bodyBlockMeshes[altitude], color, 2f * size, ref matrix, environmentData);
+            } else {
+                BlocksManager.DrawMeshBlock(primitivesRenderer, m_bodyBlockMeshes[altitude], texture, color, 2f * size, ref matrix, environmentData);
+            }
+            if (texture == null) {
+                BlocksManager.DrawMeshBlock(primitivesRenderer, m_finsBlockMeshes[flickering ? 1 : 0], color, 2f * size, ref matrix, environmentData);
+            } else {
+                BlocksManager.DrawMeshBlock(primitivesRenderer, m_finsBlockMeshes[flickering ? 1 : 0], texture, color, 2f * size, ref matrix, environmentData);
+            }
         }
 
         public override string GetDisplayName(SubsystemTerrain subsystemTerrain, int value) {

@@ -195,7 +195,12 @@ namespace Game {
             DrawBlockEnvironmentData environmentData) {
             int data = Terrain.ExtractData(value);
             EggType eggType = GetEggType(data);
-            BlocksManager.DrawMeshBlock(primitivesRenderer, eggType.BlockMesh, color, eggType.Scale * size, ref matrix, environmentData);
+            Texture2D texture = GetDefaultTexture(value);
+            if (texture == null) {
+                BlocksManager.DrawMeshBlock(primitivesRenderer, eggType.BlockMesh, color, eggType.Scale * size, ref matrix, environmentData);
+            } else {
+                BlocksManager.DrawMeshBlock(primitivesRenderer, eggType.BlockMesh, texture, color, eggType.Scale * size, ref matrix, environmentData);
+            }
         }
 
         public EggType GetEggType(int data) {

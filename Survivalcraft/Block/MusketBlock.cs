@@ -69,11 +69,20 @@ namespace Game {
             float size,
             ref Matrix matrix,
             DrawBlockEnvironmentData environmentData) {
+            Texture2D texture = GetDefaultTexture(value);
             if (GetHammerState(Terrain.ExtractData(value))) {
-                BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshLoaded, color, 2f * size, ref matrix, environmentData);
+                if (texture == null) {
+                    BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshLoaded, color, 2f * size, ref matrix, environmentData);
+                } else {
+                    BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshLoaded, texture, color, 2f * size, ref matrix, environmentData);
+                }
             }
             else {
-                BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshUnloaded, color, 2f * size, ref matrix, environmentData);
+                if (texture == null) {
+                    BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshUnloaded, color, 2f * size, ref matrix, environmentData);
+                } else {
+                    BlocksManager.DrawMeshBlock(primitivesRenderer, m_standaloneBlockMeshUnloaded, texture, color, 2f * size, ref matrix, environmentData);
+                }
             }
         }
 

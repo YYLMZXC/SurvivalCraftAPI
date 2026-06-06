@@ -153,6 +153,26 @@ namespace Game {
                     );
                 }
             }
+            // 渲染使用自定义纹理的家具几何体
+            if (geometry.Draws != null) {
+                foreach (var kv in geometry.Draws) {
+                    FurnitureGeometry subGeo = kv.Value;
+                    Texture2D tex = kv.Key;
+                    for (int k = 0; k < 6; k++) {
+                        Color globalColorTransform = GlobalColorTransform;
+                        if (Mode == ViewMode.Perspective) {
+                            float num4 = LightingManager.LightIntensityByLightValueAndFace[15 + 16 * CellFace.OppositeFace(k)];
+                            globalColorTransform *= new Color(num4, num4, num4);
+                        }
+                        if (subGeo.SubsetOpaqueByFace[k] != null) {
+                            BlocksManager.DrawMeshBlock(m_primitivesRenderer3d, subGeo.SubsetOpaqueByFace[k], tex, globalColorTransform, 1f, ref matrix2, null);
+                        }
+                        if (subGeo.SubsetAlphaTestByFace[k] != null) {
+                            BlocksManager.DrawMeshBlock(m_primitivesRenderer3d, subGeo.SubsetAlphaTestByFace[k], tex, globalColorTransform, 1f, ref matrix2, null);
+                        }
+                    }
+                }
+            }
             m_primitivesRenderer3d.Flush(matrix);
             m_primitivesRenderer2d.Flush();
         }

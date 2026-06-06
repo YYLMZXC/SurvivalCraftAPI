@@ -34,7 +34,7 @@ namespace Game {
                 value,
                 size2,
                 ref matrix,
-                null,
+                GetDefaultTexture(value),
                 color,
                 false,
                 environmentData

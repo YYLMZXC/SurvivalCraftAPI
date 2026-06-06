@@ -592,5 +592,13 @@ namespace Game {
         public virtual RecipaediaDescriptionScreen GetBlockDescriptionScreen(int value) => RecipaediaDescriptionScreen.Default;
 
         public virtual RecipaediaRecipesScreen GetBlockRecipeScreen(int value) => RecipaediaRecipesScreen.Default;
+
+        /// <summary>
+        /// 获取默认纹理<br />
+        /// 如果返回 null，将使用 SubsystemAnimatedTextures.AnimatedBlocksTexture
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public virtual Texture2D GetDefaultTexture(int value) => null;
     }
 }

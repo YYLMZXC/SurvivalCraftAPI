@@ -600,5 +600,17 @@ namespace Game {
         /// <param name="value"></param>
         /// <returns></returns>
         public virtual Texture2D GetDefaultTexture(int value) => null;
+
+        /// <summary>
+        /// 家具中此方块的体素是否使用 alpha-test 渲染（透明镂空）。<br />
+        /// 返回 true 时写入 SubsetAlphaTestByFace，否则写入 SubsetOpaqueByFace。
+        /// </summary>
+        public virtual bool IsFurnitureAlphaTest(int value) => false;
+
+        /// <summary>
+        /// 家具中此方块是否为发光体素（如火把、灯）。<br />
+        /// 返回 true 时强制使用发光纹理槽 31。
+        /// </summary>
+        public virtual bool IsFurnitureEmissive(int value) => false;
     }
 }

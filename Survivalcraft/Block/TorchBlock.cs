@@ -5,6 +5,8 @@ namespace Game {
     public class TorchBlock : Block {
         public static int Index = 31;
 
+        public override bool IsFurnitureEmissive(int value) => true;
+
         public BlockMesh m_standaloneBlockMesh = new();
 
         public BlockMesh[] m_blockMeshesByVariant = new BlockMesh[5];

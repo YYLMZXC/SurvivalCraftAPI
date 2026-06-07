@@ -722,9 +722,12 @@ namespace Game {
                                 int num13 = Terrain.ExtractContents(value2);
                                 Block block = BlocksManager.Blocks[num13];
                                 int num14 = block.GetFaceTextureSlot(num, value2);
-                                bool isEmissive = false;
+                                bool isEmissive = block.IsFurnitureEmissive(value2);
+                                if (isEmissive) {
+                                    num14 = 31;
+                                }
                                 Color color = Color.White;
-                                bool isGlass = false;
+                                bool isAlphaTest = block.IsFurnitureAlphaTest(value2);
                                 if (block is IPaintableBlock paintableBlock) {
                                     int? paintColor = paintableBlock.GetPaintColor(value2);
                                     color = SubsystemPalette.GetColor(m_subsystemTerrain, paintColor);
@@ -736,14 +739,6 @@ namespace Game {
                                 else if (block is CarpetBlock) {
                                     int color2 = CarpetBlock.GetColor(Terrain.ExtractData(value2));
                                     color = SubsystemPalette.GetFabricColor(m_subsystemTerrain, color2);
-                                }
-                                else if (block is TorchBlock
-                                    || block is WickerLampBlock) {
-                                    isEmissive = true;
-                                    num14 = 31;
-                                }
-                                else if (block is GlassBlock) {
-                                    isGlass = true;
                                 }
                                 ModsManager.HookAction(
                                     "SetFurnitureDesignColor",
@@ -762,7 +757,7 @@ namespace Game {
                                         subGeo = new FurnitureGeometry();
                                         m_geometry.Draws.Add(texture, subGeo);
                                     }
-                                    if (isGlass) {
+                                    if (isAlphaTest) {
                                         subGeo.SubsetAlphaTestByFace[i] ??= new BlockMesh();
                                         blockMesh3 = subGeo.SubsetAlphaTestByFace[i];
                                     }
@@ -771,7 +766,7 @@ namespace Game {
                                         blockMesh3 = subGeo.SubsetOpaqueByFace[i];
                                     }
                                 }
-                                else if (isGlass) {
+                                else if (isAlphaTest) {
                                     blockMesh3 = blockMesh2;
                                 }
                                 int num15 = num14 % slotCount;

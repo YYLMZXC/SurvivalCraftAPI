@@ -180,7 +180,7 @@ namespace Engine {
                 "XR_KHR_opengl_es_enable";
 #endif
             if (!m_xr.IsInstanceExtensionPresent(null, glExtName)) {
-                Log.Error($"{glExtName} extension not available");
+                Log.Information($"[VR] {glExtName} extension not available, OpenXR will not work");
                 return;
             }
             // 2. Collect extensions to enable

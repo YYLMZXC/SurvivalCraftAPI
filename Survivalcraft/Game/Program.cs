@@ -366,7 +366,9 @@ namespace Game {
 #if ANDROID
 #pragma warning disable CA1416
             Intent intent = new Intent(Window.Activity, Window.Activity.Class);
-            Window.Activity.StartActivity(intent);
+            intent.AddFlags(ActivityFlags.NewTask | ActivityFlags.ClearTask);
+            Window.Activity.ApplicationContext.StartActivity(intent);
+            Java.Lang.JavaSystem.Exit(0);
 #elif !BROWSER
             Process current = Process.GetCurrentProcess();
             Process.Start(new ProcessStartInfo {

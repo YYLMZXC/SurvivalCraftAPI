@@ -100,12 +100,12 @@ namespace Game {
             bool isCooked = GetIsCooked(data);
             bool isLaid = GetIsLaid(data);
             if (isCooked) {
-                return LanguageControl.Get(fName, 1) + eggType.DisplayName;
+                return string.Format(LanguageControl.Get(fName, 5), eggType.DisplayName);
             }
             if (!isLaid) {
                 return eggType.DisplayName;
             }
-            return LanguageControl.Get(fName, 2) + eggType.DisplayName;
+            return LanguageControl.Get(fName, 6) + eggType.DisplayName;
         }
 
         public override string GetCategory(int value) => "Spawner Eggs";

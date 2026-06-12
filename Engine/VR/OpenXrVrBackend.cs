@@ -251,7 +251,7 @@ namespace Engine {
             {
                 Result result = m_xr.GetSystem(m_instance, ref systemInfo, ref m_systemId);
                 if (result != Result.Success) {
-                    Log.Error($"xrGetSystem failed: {result}");
+                    Log.Information($"[VR] xrGetSystem failed: {result}, OpenXR will not work");
                     return;
                 }
             }

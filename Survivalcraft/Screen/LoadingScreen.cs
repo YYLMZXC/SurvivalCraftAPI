@@ -530,7 +530,7 @@ namespace Game {
             AddLoadAction(
                 delegate {
                     ModsManager.ModListAllDo(modEntity => {
-                        if (modEntity.Loader != null) {//modEntity.Loader不为空表示至少设置过一次，即Loaders长度不为0
+                        if (modEntity.Loaders.Count > 0) {//modEntity.Loader不为空表示至少设置过一次，即Loaders长度不为0
                             Info($"[{modEntity.modInfo?.Name}] {LanguageControl.Get(fName, "6")}");
                             modEntity.Loaders.ForEach(item => item.OnLoadingFinished(ModLoadingActoins));
                         }

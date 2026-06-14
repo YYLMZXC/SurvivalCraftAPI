@@ -271,12 +271,12 @@ namespace Game {
                     // 使用模板名称创建控制器
                     AnimationController = new AnimationController(m_model, AnimationTemplateName);
                 }
-                // 不要提交这部分临时测试代码
-                else if (m_model.HasAnimations) {
+                // 直接测试动画用
+                /*else if (m_model.HasAnimations) {
                     m_animationPlayer = new AnimationPlayer();
                     m_animationPlayer.SetAnimation(m_model, m_model.Animations[0]);
                     m_animationPlayer.Play(loop: true);
-                }
+                }*/
             }
             else {
                 m_boneTransforms = null;

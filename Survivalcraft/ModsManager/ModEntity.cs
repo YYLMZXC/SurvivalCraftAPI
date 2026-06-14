@@ -20,15 +20,12 @@ namespace Game {
         public static HashSet<string> InvalidDllNames = ["Survivalcraft.dll", "Engine.dll", "EntitySystem.dll"];
         public const string fName = "ModEntity";
 
+        /// <summary>
+        /// 获取和设置模组的主要 ModLoader
+        /// </summary>
         public ModLoader Loader {
             get => ModLoader_;
-            set{
-                ModLoader_ = value;
-                if(!Loaders.Contains(value)){
-                    //Log.Warning(modInfo.Name + ",  " + value.GetType().Name ?? "null");
-                    Loaders.Add(value);
-                }
-            }
+            set => ModLoader_ = value;
         }
         public List<ModLoader> Loaders {
             get; set;
@@ -340,21 +337,20 @@ namespace Game {
         }
 
         public virtual void HandleAssembly(Assembly assembly) {
-            List<Type> blockTypes = new();
+            List<Type> blockTypes = [];
 #pragma warning disable IL2026
             Type[] types = assembly.GetTypes();
 #pragma warning restore IL2026
-            for (int i = 0; i < types.Length; i++) {
-                Type type = types[i];
+            foreach (Type type in types) {
                 if (type.IsSubclassOf(typeof(ModLoader))
                     && !type.IsAbstract) {
 #pragma warning disable IL2062
-                    if (Activator.CreateInstance(types[i]) is ModLoader modLoader) {
+                    if (Activator.CreateInstance(type) is ModLoader modLoader) {
 #pragma warning disable IL2062
                         modLoader.Entity = this;
-                        Loader = modLoader;
                         modLoader.__ModInitialize();
                         ModsManager.ModLoaders.Add(modLoader);
+                        Loaders.Add(modLoader);
                     }
                 }
                 else if (type.IsSubclassOf(typeof(IContentReader.IContentReader))
@@ -374,6 +370,8 @@ namespace Game {
                 }
             }
             BlockTypes.AddRange(blockTypes);
+            Loaders.Sort((x, y) => x.Priority.CompareTo(y.Priority));
+            Loader = Loaders.FirstOrDefault();
         }
 
         public virtual void LoadJs() {

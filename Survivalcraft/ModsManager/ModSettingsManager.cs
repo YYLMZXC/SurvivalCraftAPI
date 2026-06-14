@@ -102,9 +102,9 @@ namespace Game {
                     ValuesDictionary modKeyboardSettings = [];
                     ValuesDictionary modGamepadSettings = [];
                     ValuesDictionary modCameraSettings = [];
-                    IEnumerable<KeyValuePair<string, object>> keysToAdd = modEntity.Loader?.GetKeyboardMappings() ?? []; //初始化模组默认键位设置
-                    IEnumerable<KeyValuePair<string, object>> gamepadKeysToAdd = modEntity.Loader?.GetGamepadMappings() ?? []; //初始化模组默认键位设置
-                    IEnumerable<KeyValuePair<string, int>> camerasToAdd = modEntity.Loader?.GetCameraList() ?? []; //初始化模组默认相机设置
+                    IEnumerable<KeyValuePair<string, object>> keysToAdd = modEntity.Loaders.SelectMany(item => item.GetKeyboardMappings()); //初始化模组默认键位设置
+                    IEnumerable<KeyValuePair<string, object>> gamepadKeysToAdd = modEntity.Loaders.SelectMany(item => item.GetGamepadMappings()); //初始化模组默认键位设置
+                    IEnumerable<KeyValuePair<string, int>> camerasToAdd = modEntity.Loaders.SelectMany(item => item.GetCameraList()); //初始化模组默认相机设置
                     foreach (KeyValuePair<string, object> item1 in keysToAdd) {
                         modKeyboardSettings.Add(item1.Key, item1.Value);
                     }
@@ -215,7 +215,7 @@ namespace Game {
                 string packageName = modEntity.modInfo.PackageName;
                 if (ModKeyboardMapSettings.TryGetValue(packageName, out ValuesDictionary keyboardSettings)) {
                     keyboardSettings.Clear();
-                    IEnumerable<KeyValuePair<string, object>> keysToAdd = modEntity.Loader?.GetKeyboardMappings() ?? [];
+                    IEnumerable<KeyValuePair<string, object>> keysToAdd = modEntity.Loaders.SelectMany(item => item.GetKeyboardMappings());
                     foreach (KeyValuePair<string, object> item1 in keysToAdd) {
                         keyboardSettings.Add(item1.Key, item1.Value);
                     }
@@ -229,8 +229,8 @@ namespace Game {
                 string packageName = modEntity.modInfo.PackageName;
                 if (ModGamepadMapSettings.TryGetValue(packageName, out ValuesDictionary gamepadSettings)) {
                     gamepadSettings.Clear();
-                    IEnumerable<KeyValuePair<string, object>> keysToAdd = modEntity.Loader?.GetGamepadMappings() ?? [];
-                    foreach (KeyValuePair<string, object> item1 in keysToAdd) {
+                    IEnumerable<KeyValuePair<string, object>> gamepadKeysToAdd = modEntity.Loaders.SelectMany(item => item.GetGamepadMappings());
+                    foreach (KeyValuePair<string, object> item1 in gamepadKeysToAdd) {
                         gamepadSettings.Add(item1.Key, item1.Value);
                     }
                 }
@@ -243,7 +243,7 @@ namespace Game {
                 string packageName = modEntity.modInfo.PackageName;
                 if (ModCameraManageSettings.TryGetValue(packageName, out ValuesDictionary cameraSettings)) {
                     cameraSettings.Clear();
-                    IEnumerable<KeyValuePair<string, int>> camerasToAdd = modEntity.Loader?.GetCameraList() ?? [];
+                    IEnumerable<KeyValuePair<string, int>> camerasToAdd = modEntity.Loaders.SelectMany(item => item.GetCameraList());
                     foreach (KeyValuePair<string, int> item1 in camerasToAdd) {
                         cameraSettings.Add(item1.Key, item1.Value);
                     }

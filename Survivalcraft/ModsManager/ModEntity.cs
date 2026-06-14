@@ -22,8 +22,17 @@ namespace Game {
 
         public ModLoader Loader {
             get => ModLoader_;
-            set => ModLoader_ = value;
+            set{
+                ModLoader_ = value;
+                if(!Loaders.Contains(value)){
+                    //Log.Warning(modInfo.Name + ",  " + value.GetType().Name ?? "null");
+                    Loaders.Add(value);
+                }
+            }
         }
+        public List<ModLoader> Loaders {
+            get; set;
+        } = [];
 
         ModLoader ModLoader_;
 
@@ -258,7 +267,8 @@ namespace Game {
                     ModsManager.CombineDataBase(element, stream, modInfo.PackageName);
                 }
             );
-            Loader?.OnXdbLoad(xElement);
+            foreach(ModLoader item in Loaders)
+                item.OnXdbLoad(xElement);
         }
 
         /// <summary>
@@ -434,7 +444,7 @@ namespace Game {
         /// </summary>
         /// <param name="xElement"></param>
         public virtual void SaveSettings(XElement xElement) {
-            Loader?.SaveSettings(xElement);
+            Loaders.ForEach(item => item.SaveSettings(xElement));
         }
 
         /// <summary>
@@ -442,7 +452,7 @@ namespace Game {
         /// </summary>
         /// <param name="xElement"></param>
         public virtual void LoadSettings(XElement xElement) {
-            Loader?.LoadSettings(xElement);
+            Loaders.ForEach(item => item.LoadSettings(xElement));
         }
 
         /// <summary>
@@ -450,13 +460,13 @@ namespace Game {
         /// </summary>
         // <param name="categories"></param>
         public virtual void OnBlocksInitalized() {
-            Loader?.BlocksInitalized();
+            Loaders.ForEach(item => item.BlocksInitalized());
         }
 
         //释放资源
         public virtual void Dispose() {
             try {
-                Loader?.ModDispose();
+                Loaders.ForEach(item => item.ModDispose());
             }
             catch {
                 // ignored

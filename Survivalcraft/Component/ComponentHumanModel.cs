@@ -308,7 +308,7 @@ namespace Game {
         /// 硬编码动画后备方案（当没有 AnimationController 时使用）
         /// 保持原有实现，确保向后兼容
         /// </summary>
-        private void AnimateCreatureFallback() {
+        public void AnimateCreatureFallback() {
             Vector3 position = m_componentCreature.ComponentBody.Position;
             Vector3 vector = m_componentCreature.ComponentBody.Rotation.ToYawPitchRoll();
 
@@ -429,7 +429,8 @@ namespace Game {
                 }
                 float f = MathUtils.Sigmoid(m_componentCreature.ComponentBody.CrouchFactor, 4f);
                 Vector3 position3 = new(position.X, position.Y - MathUtils.Lerp(0f, 0.7f, f), position.Z);
-                Vector3 position4 = new(0f, MathUtils.Lerp(0f, 7f, f), MathUtils.Lerp(0f, 28f, f));
+                Vector3 bodyBoneScale = m_bodyBone.Transform.Scale;
+                Vector3 position4 = new(0f, MathUtils.Lerp(0f, 0.16891f / bodyBoneScale.Y, f), MathUtils.Lerp(0f, 0.67564f / bodyBoneScale.Z, f));
                 Vector3 scale = new(1f, 1f, MathUtils.Lerp(1f, 0.5f, f));
                 SetBoneTransform(m_bodyBone.Index, Matrix.CreateRotationY(vector.X) * Matrix.CreateTranslation(position3));
                 SetBoneTransform(m_headBone.Index, Matrix.CreateRotationX(m_headAngles.Y) * Matrix.CreateRotationZ(0f - m_headAngles.X));

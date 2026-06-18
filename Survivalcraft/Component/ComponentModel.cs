@@ -151,7 +151,6 @@ namespace Game {
 
         public virtual void Animate() {
             Animated = false;
-
             ModsManager.HookAction(
                 "OnAnimateModel",
                 loader => {
@@ -160,6 +159,9 @@ namespace Game {
                     return false;
                 }
             );
+            if (Animated) {
+                return;
+            }
 
             // 优先使用动画控制器
             if (AnimationController != null) {

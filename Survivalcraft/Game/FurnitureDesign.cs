@@ -668,6 +668,7 @@ namespace Game {
                 }
                 BlockMesh blockMesh = new();
                 BlockMesh blockMesh2 = new();
+                BlockMesh blockMeshTransparent = new();
                 for (int j = 0; j < m_resolution; j++) {
                     Cell[] array = new Cell[m_resolution * m_resolution];
                     for (int k = 0; k < m_resolution; k++) {
@@ -728,6 +729,7 @@ namespace Game {
                                 }
                                 Color color = Color.White;
                                 bool isAlphaTest = block.IsFurnitureAlphaTest(value2);
+                                bool isTransparent = block.IsFurnitureTransparent(value2);
                                 if (block is IPaintableBlock paintableBlock) {
                                     int? paintColor = paintableBlock.GetPaintColor(value2);
                                     color = SubsystemPalette.GetColor(m_subsystemTerrain, paintColor);
@@ -739,6 +741,10 @@ namespace Game {
                                 else if (block is CarpetBlock) {
                                     int color2 = CarpetBlock.GetColor(Terrain.ExtractData(value2));
                                     color = SubsystemPalette.GetFabricColor(m_subsystemTerrain, color2);
+                                }
+                                if (isTransparent) {
+                                    // 半透明体素默认 alpha；模组可通过下方 SetFurnitureDesignColor 钩子覆盖 color.A
+                                    color.A = 200;
                                 }
                                 ModsManager.HookAction(
                                     "SetFurnitureDesignColor",
@@ -757,7 +763,11 @@ namespace Game {
                                         subGeo = new FurnitureGeometry();
                                         m_geometry.Draws.Add(texture, subGeo);
                                     }
-                                    if (isAlphaTest) {
+                                    if (isTransparent) {
+                                        subGeo.SubsetTransparentByFace[i] ??= new BlockMesh();
+                                        blockMesh3 = subGeo.SubsetTransparentByFace[i];
+                                    }
+                                    else if (isAlphaTest) {
                                         subGeo.SubsetAlphaTestByFace[i] ??= new BlockMesh();
                                         blockMesh3 = subGeo.SubsetAlphaTestByFace[i];
                                     }
@@ -765,6 +775,9 @@ namespace Game {
                                         subGeo.SubsetOpaqueByFace[i] ??= new BlockMesh();
                                         blockMesh3 = subGeo.SubsetOpaqueByFace[i];
                                     }
+                                }
+                                else if (isTransparent) {
+                                    blockMesh3 = blockMeshTransparent;
                                 }
                                 else if (isAlphaTest) {
                                     blockMesh3 = blockMesh2;
@@ -829,6 +842,11 @@ namespace Game {
                     blockMesh2.GenerateSidesData();
                     m_geometry.SubsetAlphaTestByFace[i] = blockMesh2;
                 }
+                if (blockMeshTransparent.Indices.Count > 0) {
+                    blockMeshTransparent.Trim();
+                    blockMeshTransparent.GenerateSidesData();
+                    m_geometry.SubsetTransparentByFace[i] = blockMeshTransparent;
+                }
                 if (m_geometry.Draws != null) {
                     foreach (var kv in m_geometry.Draws) {
                         BlockMesh opaqueMesh = kv.Value.SubsetOpaqueByFace[i];
@@ -840,6 +858,11 @@ namespace Game {
                         if (alphaMesh != null && alphaMesh.Indices.Count > 0) {
                             alphaMesh.Trim();
                             alphaMesh.GenerateSidesData();
+                        }
+                        BlockMesh transparentMesh = kv.Value.SubsetTransparentByFace[i];
+                        if (transparentMesh != null && transparentMesh.Indices.Count > 0) {
+                            transparentMesh.Trim();
+                            transparentMesh.GenerateSidesData();
                         }
                     }
                 }

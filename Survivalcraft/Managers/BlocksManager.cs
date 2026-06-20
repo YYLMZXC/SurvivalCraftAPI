@@ -873,7 +873,7 @@ namespace Game {
             float size,
             ref Matrix matrix,
             DrawBlockEnvironmentData environmentData,
-            bool useAlphaTest) {
+            GeometrySubsetType subsetType) {
             environmentData = environmentData ?? m_defaultEnvironmentData;
             Texture2D texture = environmentData.SubsystemTerrain != null
                 ? environmentData.SubsystemTerrain.SubsystemAnimatedTextures.AnimatedBlocksTexture
@@ -886,7 +886,7 @@ namespace Game {
                 size,
                 ref matrix,
                 environmentData,
-                useAlphaTest
+                subsetType
             );
         }
 
@@ -905,7 +905,7 @@ namespace Game {
                 size,
                 ref matrix,
                 environmentData,
-                true
+                GeometrySubsetType.AlphaTest
             );
         }
 
@@ -916,16 +916,22 @@ namespace Game {
             float size,
             ref Matrix matrix,
             DrawBlockEnvironmentData environmentData,
-            bool useAlphaTest) {
+            GeometrySubsetType subsetType) {
             environmentData = environmentData ?? m_defaultEnvironmentData;
             float num = LightingManager.LightIntensityByLightValue[environmentData.Light];
             Vector4 vector = new(color);
             Vector4 vector2 = new(new Vector3(vector.X, vector.Y, vector.Z) * num, vector.W);
+            // AlphaTest：cutout 着色器，写深度（镂空边缘硬边）。Transparent：关闭 alpha-test 走 blend，
+            // 且不写深度（DepthRead），避免半透明体素互相 z-reject 导致后绘背面不混合。Opaque：普通不透明。
+            bool useAlphaTest = subsetType == GeometrySubsetType.AlphaTest;
+            DepthStencilState depthStencilState = subsetType == GeometrySubsetType.Transparent
+                ? DepthStencilState.DepthRead
+                : DepthStencilState.Default;
             TexturedBatch3D texturedBatch3D = primitivesRenderer.TexturedBatch(
                 texture,
                 useAlphaTest,
                 0,
-                null,
+                depthStencilState,
                 RasterizerState.CullCounterClockwiseScissor,
                 null,
                 SamplerState.PointClamp

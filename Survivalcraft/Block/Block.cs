@@ -602,17 +602,27 @@ namespace Game {
         public virtual Texture2D GetDefaultTexture(int value) => null;
 
         /// <summary>
-        /// 家具中此方块的体素是否使用 alpha-test 渲染（透明镂空）。<br />
-        /// 返回 true 时写入 SubsetAlphaTestByFace，否则写入 SubsetOpaqueByFace。
+        /// 获取此方块在家具中的渲染类型
         /// </summary>
-        public virtual bool IsFurnitureAlphaTest(int value) => false;
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public virtual GeometrySubsetType GetFurnitureSubsetType(int value) => GeometrySubsetType.Opaque;
 
         /// <summary>
-        /// 家具中此方块的体素是否使用 alpha-blend 渲染（半透明）。<br />
-        /// 返回 true 时写入 SubsetTransparentByFace，以真正的半透明混合方式渲染。<br />
-        /// 与 IsFurnitureAlphaTest 互斥（优先级：半透明 > 镂空 > 不透明）。
+        /// 获取此方块在家具中的颜色
         /// </summary>
-        public virtual bool IsFurnitureTransparent(int value) => false;
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public virtual Color GetFurnitureColor(int value, SubsystemPalette subsystemPalette) {
+            if (this is IPaintableBlock paintableBlock
+                && subsystemPalette != null) {
+                int? paintColor = paintableBlock.GetPaintColor(value);
+                if (paintColor.HasValue) {
+                    return subsystemPalette.GetColor(paintColor.Value);
+                }
+            }
+            return Color.White;
+        }
 
         /// <summary>
         /// 家具中此方块是否为发光体素（如火把、灯）。<br />

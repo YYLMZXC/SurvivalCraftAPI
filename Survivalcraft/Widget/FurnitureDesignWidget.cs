@@ -153,7 +153,7 @@ namespace Game {
                     );
                 }
                 if (geometry.SubsetTransparentByFace[k] != null) {
-                    BlocksManager.DrawMeshBlock(m_primitivesRenderer3d, geometry.SubsetTransparentByFace[k], globalColorTransform, 1f, ref matrix2, null, false);
+                    BlocksManager.DrawMeshBlock(m_primitivesRenderer3d, geometry.SubsetTransparentByFace[k], globalColorTransform, 1f, ref matrix2, null, GeometrySubsetType.Transparent);
                 }
             }
             // 渲染使用自定义纹理的家具几何体
@@ -174,7 +174,7 @@ namespace Game {
                             BlocksManager.DrawMeshBlock(m_primitivesRenderer3d, subGeo.SubsetAlphaTestByFace[k], tex, globalColorTransform, 1f, ref matrix2, null);
                         }
                         if (subGeo.SubsetTransparentByFace[k] != null) {
-                            BlocksManager.DrawMeshBlock(m_primitivesRenderer3d, subGeo.SubsetTransparentByFace[k], tex, globalColorTransform, 1f, ref matrix2, null, false);
+                            BlocksManager.DrawMeshBlock(m_primitivesRenderer3d, subGeo.SubsetTransparentByFace[k], tex, globalColorTransform, 1f, ref matrix2, null, GeometrySubsetType.Transparent);
                         }
                     }
                 }

@@ -170,7 +170,7 @@ namespace Game {
                     BlocksManager.DrawMeshBlock(primitivesRenderer, geometry.SubsetAlphaTestByFace[i], color2, size, ref matrix2, environmentData);
                 }
                 if (geometry.SubsetTransparentByFace[i] != null) {
-                    BlocksManager.DrawMeshBlock(primitivesRenderer, geometry.SubsetTransparentByFace[i], color2, size, ref matrix2, environmentData, false);
+                    BlocksManager.DrawMeshBlock(primitivesRenderer, geometry.SubsetTransparentByFace[i], color2, size, ref matrix2, environmentData, GeometrySubsetType.Transparent);
                 }
             }
             if (geometry.Draws != null) {
@@ -187,7 +187,7 @@ namespace Game {
                             BlocksManager.DrawMeshBlock(primitivesRenderer, subGeo.SubsetAlphaTestByFace[i], tex, color2, size, ref matrix2, environmentData);
                         }
                         if (subGeo.SubsetTransparentByFace[i] != null) {
-                            BlocksManager.DrawMeshBlock(primitivesRenderer, subGeo.SubsetTransparentByFace[i], tex, color2, size, ref matrix2, environmentData, false);
+                            BlocksManager.DrawMeshBlock(primitivesRenderer, subGeo.SubsetTransparentByFace[i], tex, color2, size, ref matrix2, environmentData, GeometrySubsetType.Transparent);
                         }
                     }
                 }

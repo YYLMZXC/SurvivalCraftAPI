@@ -608,6 +608,13 @@ namespace Game {
         public virtual bool IsFurnitureAlphaTest(int value) => false;
 
         /// <summary>
+        /// 家具中此方块的体素是否使用 alpha-blend 渲染（半透明）。<br />
+        /// 返回 true 时写入 SubsetTransparentByFace，以真正的半透明混合方式渲染。<br />
+        /// 与 IsFurnitureAlphaTest 互斥（优先级：半透明 > 镂空 > 不透明）。
+        /// </summary>
+        public virtual bool IsFurnitureTransparent(int value) => false;
+
+        /// <summary>
         /// 家具中此方块是否为发光体素（如火把、灯）。<br />
         /// 返回 true 时强制使用发光纹理槽 31。
         /// </summary>

@@ -869,18 +869,61 @@ namespace Game {
 
         public static void DrawMeshBlock(PrimitivesRenderer3D primitivesRenderer,
             BlockMesh blockMesh,
+            Color color,
+            float size,
+            ref Matrix matrix,
+            DrawBlockEnvironmentData environmentData,
+            bool useAlphaTest) {
+            environmentData = environmentData ?? m_defaultEnvironmentData;
+            Texture2D texture = environmentData.SubsystemTerrain != null
+                ? environmentData.SubsystemTerrain.SubsystemAnimatedTextures.AnimatedBlocksTexture
+                : BlocksTexturesManager.DefaultBlocksTexture;
+            DrawMeshBlock(
+                primitivesRenderer,
+                blockMesh,
+                texture,
+                color,
+                size,
+                ref matrix,
+                environmentData,
+                useAlphaTest
+            );
+        }
+
+        public static void DrawMeshBlock(PrimitivesRenderer3D primitivesRenderer,
+            BlockMesh blockMesh,
             Texture2D texture,
             Color color,
             float size,
             ref Matrix matrix,
             DrawBlockEnvironmentData environmentData) {
+            DrawMeshBlock(
+                primitivesRenderer,
+                blockMesh,
+                texture,
+                color,
+                size,
+                ref matrix,
+                environmentData,
+                true
+            );
+        }
+
+        public static void DrawMeshBlock(PrimitivesRenderer3D primitivesRenderer,
+            BlockMesh blockMesh,
+            Texture2D texture,
+            Color color,
+            float size,
+            ref Matrix matrix,
+            DrawBlockEnvironmentData environmentData,
+            bool useAlphaTest) {
             environmentData = environmentData ?? m_defaultEnvironmentData;
             float num = LightingManager.LightIntensityByLightValue[environmentData.Light];
             Vector4 vector = new(color);
             Vector4 vector2 = new(new Vector3(vector.X, vector.Y, vector.Z) * num, vector.W);
             TexturedBatch3D texturedBatch3D = primitivesRenderer.TexturedBatch(
                 texture,
-                true,
+                useAlphaTest,
                 0,
                 null,
                 RasterizerState.CullCounterClockwiseScissor,
@@ -1015,8 +1058,9 @@ namespace Game {
                             string refTypeName = data.Substring(1);
                             obj = !string.IsNullOrEmpty(refTypeName)
                                 ? (m_blocks.FirstOrDefault(v => v.GetType().Name == refTypeName)
-                                    ?? throw new InvalidOperationException(string.Format(LanguageControl.Get("BlocksManager", "9"), refTypeName, typeName, fieldName)))
-                                .BlockIndex
+                                    ?? throw new InvalidOperationException(
+                                        string.Format(LanguageControl.Get("BlocksManager", "9"), refTypeName, typeName, fieldName)
+                                    )).BlockIndex
                                 : (object)block.BlockIndex;
                         }
                         else {

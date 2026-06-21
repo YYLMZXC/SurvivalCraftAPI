@@ -78,6 +78,7 @@ namespace Game {
 
         public Texture2D TextureOverride { get; set; }
 
+        [Obsolete("Use ModLoader.OnAnimateModel() instead.")]
         public virtual Func<bool> OnAnimate { get; set; }
 
         public bool CastsShadow { get; set; }

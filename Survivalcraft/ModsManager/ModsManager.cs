@@ -423,16 +423,6 @@ public static class ModsManager {
         FastDebugModEntity = new FastDebugModEntity();
         ModListAll.Add(FastDebugModEntity);
         GetScmods(ModsPath);
-        HashSet<ModEntity> toRemove = [];
-        foreach (ModEntity modEntity in ModListAll) {
-            if (modEntity.IsDisabled
-                && modEntity.DisableReason == ModDisableReason.Duplicated) {
-                toRemove.Add(modEntity);
-            }
-        }
-        foreach (ModEntity modEntity in toRemove) {
-            ModListAll.Remove(modEntity);
-        }
         if (!string.IsNullOrEmpty(SettingsManager.ModLoadAfters)) {
             string[] array = SettingsManager.ModLoadAfters.Split(';');
             if (array.Length > 0
@@ -440,7 +430,7 @@ public static class ModsManager {
                 for (int i = 0; i < array.Length; i += 2) {
                     string packageName1 = array[i];
                     ModEntity modEntity1 = ModListAll.Find(x => {
-                            if (x.modInfo == null) {
+                            if (x.modInfo == null || x.IsDisabled) {
                                 return false;
                             }
                             return x.modInfo.PackageName == packageName1;
@@ -451,7 +441,7 @@ public static class ModsManager {
                     }
                     string packageName2 = array[i + 1];
                     ModEntity modEntity2 = ModListAll.Find(x => {
-                        if (x.modInfo == null) {
+                        if (x.modInfo == null || x.IsDisabled) {
                             return false;
                         }
                         return x.modInfo.PackageName == packageName2;
@@ -486,11 +476,13 @@ public static class ModsManager {
         // 1. 基础排序：先单纯按照 LoadOrder 从小到大排
         List<ModEntity> orderedMods = ModListAll.Where(m => m.modInfo != null).OrderBy(m => m.modInfo.LoadOrder).ToList();
         // 2. 准备图结构：入度表 (InDegree) 和 邻接表 (AdjList)
-        Dictionary<string, int> inDegree = new();
-        Dictionary<string, List<string>> adjList = new();
+        //    键必须用 ModEntity 引用而非 PackageName，否则包名重复的模组会共享同一个键，导致拓扑排序错乱。
+        //    ModEntity 重写了 Equals/GetHashCode（基于包名+版本），因此必须使用 ReferenceEqualityComparer 强制按引用比较。
+        Dictionary<ModEntity, int> inDegree = new(ReferenceEqualityComparer.Instance);
+        Dictionary<ModEntity, List<ModEntity>> adjList = new(ReferenceEqualityComparer.Instance);
         foreach (ModEntity mod in orderedMods) {
-            inDegree[mod.modInfo.PackageName] = 0;
-            adjList[mod.modInfo.PackageName] = [];
+            inDegree[mod] = 0;
+            adjList[mod] = [];
         }
         // 3. 构建依赖图
         foreach (ModEntity mod in orderedMods) {
@@ -507,9 +499,14 @@ public static class ModsManager {
             foreach (string pre in prerequisites) {
                 // 核心需求：无视未找到的依赖项
                 // 只有当这个前置模组确实存在于当前列表中时，才建立连接
-                if (adjList.ContainsKey(pre)) {
-                    adjList[pre].Add(mod.modInfo.PackageName); // pre 必须在 mod 之前加载
-                    inDegree[mod.modInfo.PackageName]++; // mod 的前置条件 +1
+                foreach (ModEntity preMod in orderedMods) {
+                    if (ReferenceEquals(preMod, mod)) {
+                        continue;
+                    }
+                    if (preMod.modInfo.PackageName == pre) {
+                        adjList[preMod].Add(mod); // preMod 必须在 mod 之前加载
+                        inDegree[mod]++;          // mod 的前置条件 +1
+                    }
                 }
             }
         }
@@ -519,13 +516,13 @@ public static class ModsManager {
         while (remainingMods.Count > 0) {
             // 寻找第一个入度为 0（即所有前置模组都已加载）的模组
             // 使用 FindIndex 保证了当多个模组入度为 0 时，优先保持最初的 LoadOrder 顺序
-            int index = remainingMods.FindIndex(m => inDegree[m.modInfo.PackageName] == 0);
+            int index = remainingMods.FindIndex(m => inDegree[m] == 0);
             if (index != -1) {
                 ModEntity currentMod = remainingMods[index];
                 remainingMods.RemoveAt(index);
                 sortedResult.Add(currentMod);
                 // currentMod 已经“加载”，解除它对后续模组的阻塞
-                foreach (string dependent in adjList[currentMod.modInfo.PackageName]) {
+                foreach (ModEntity dependent in adjList[currentMod]) {
                     inDegree[dependent]--;
                 }
             }
@@ -585,8 +582,8 @@ public static class ModsManager {
                             continue;
                         }
                         if (modEntity.DisableReason == ModDisableReason.Duplicated) {
+                            // 包名重复通常由用户误操作导致，需要强引导；但仍加入 ModListAll 以便在管理界面查看/删除
                             AddException(new Exception($"Multiple mods with PackageName [{modEntity.modInfo.PackageName}], please keep only one."));
-                            continue;
                         }
                     }
                     ModListAll.Add(modEntity);

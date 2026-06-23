@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Engine;
 using Engine.Media;
 using Engine.Graphics;
@@ -71,10 +72,13 @@ namespace Game {
                 if (blockAllocate != 0) {
                     return blockAllocate;
                 }
-                //然后比对mod信息
-                int modEntitySub = u1.ModEntity.GetHashCode() - u2.ModEntity.GetHashCode();
-                if (modEntitySub != 0) {
-                    return modEntitySub;
+                //然后比对mod信息：同 mod 的方块聚到一起，保证连续分配 BlockIndex
+                //用引用哈希(RuntimeHelpers.GetHashCode)做稳定标识，与 ModEntity 重写的值相等语义解耦；
+                //比较而非相减，避免 int 溢出破坏传递性导致排序异常
+                int modHash1 = RuntimeHelpers.GetHashCode(u1.ModEntity);
+                int modHash2 = RuntimeHelpers.GetHashCode(u2.ModEntity);
+                if (modHash1 != modHash2) {
+                    return modHash1 < modHash2 ? -1 : 1;
                 }
                 //mod相同，则比对BlockIndex
                 int blockIndexSub = u1.Block.BlockIndex - u2.Block.BlockIndex;
@@ -312,7 +316,7 @@ namespace Game {
                                 Index = 0,
                                 Allocated = false,
                                 StaticBlockIndex = !block.IsIndexDynamic
-                                    || Equals(entity, ModsManager.SurvivalCraftModEntity)
+                                    || ReferenceEquals(entity, ModsManager.SurvivalCraftModEntity)
                                     || staticBlockIndexBefore,
                                 ModEntity = entity
                             }

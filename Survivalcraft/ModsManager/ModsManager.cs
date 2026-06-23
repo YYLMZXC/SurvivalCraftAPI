@@ -540,9 +540,10 @@ public static class ModsManager {
     }
 
     public static void DisposeNotEnabledModsResources() {
-        HashSet<ModEntity> notEnabled = [];
+        // 用引用比较：判断“该实例是否启用”与去重都应按引用，而非 ModEntity 重写的值相等
+        HashSet<ModEntity> notEnabled = new(ReferenceEqualityComparer.Instance);
         foreach (ModEntity entity in ModListAll) {
-            if (entity.IsDisabled || !ModList.Contains(entity)) {
+            if (entity.IsDisabled || !ModList.Contains(entity, ReferenceEqualityComparer.Instance)) {
                 notEnabled.Add(entity);
             }
         }

@@ -44,6 +44,10 @@ namespace Game {
                     return false;
                 }
             );
+            // 引擎内置"模组设置"入口。无任何模组声明 Settings 时隐藏。
+            if (ModSettingsManager.GetRootEntries().Any()) {
+                AddSettingButton(LanguageControl.Get("ModSettings", "Entry"), () => ScreensManager.SwitchScreen("ModSettingPage"));
+            }
         }
 
         /*public override void Enter(object[] parameters) {

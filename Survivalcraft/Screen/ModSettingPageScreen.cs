@@ -46,6 +46,7 @@ namespace Game {
         }
 
         void BuildRoot() {
+            m_titleLabel.Text = LanguageControl.Get("ModSettings", "RootTitle");
             foreach (KeyValuePair<string, ModSettingPage> entry in ModSettingsManager.GetRootEntries()) {
                 ModSettingPage page = entry.Value;
                 string[] pageIds = { page.Id };

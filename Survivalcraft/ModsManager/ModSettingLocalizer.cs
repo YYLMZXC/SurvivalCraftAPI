@@ -1,6 +1,6 @@
 namespace Game {
     /// <summary>
-    /// 设置文案三档解析（spec §6.4）+ enum 成员名解析（spec §6.6）。
+    /// 设置文案三档解析 + enum 成员名解析。
     /// 复用 LanguageControl.Get 的命中标志 r，不靠返回值非空判定。
     /// </summary>
     public static class ModSettingLocalizer {
@@ -36,7 +36,7 @@ namespace Game {
         }
 
         /// <summary>
-        /// enum 成员本地化文本（spec §6.6）。未命中时 LanguageControl.Get 返回 keys.Last()=memberName，天然回退英文成员名。
+        /// enum 成员本地化文本。未命中时 LanguageControl.Get 返回 keys.Last()=memberName，天然回退英文成员名。
         /// </summary>
         public static string GetEnumMemberText(string packageName, Type enumType, object value) {
             string memberName = Enum.GetName(enumType, value) ?? value?.ToString() ?? string.Empty;

@@ -240,6 +240,13 @@ namespace Game {
             return t;
         }
 
+        /// <summary>UI 取当前值（raw object，无类型校验，含 null）。模组读取请用 Get&lt;T&gt;。</summary>
+        internal static object GetValue(string[] path) {
+            string key = string.Join("/", path);
+            m_dataDrivenValues.TryGetValue(key, out object v);
+            return v;
+        }
+
         /// <summary>热路径：按 packageName + subPath（不含 packageName）查描述符。</summary>
         public static ModSettingItem FindItem(string packageName, params string[] subPath) {
             string key = packageName + "/" + string.Join("/", subPath);

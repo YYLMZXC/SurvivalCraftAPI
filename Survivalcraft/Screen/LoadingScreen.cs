@@ -590,6 +590,7 @@ namespace Game {
             AddLoadAction(delegate { AddScreen("VrControllerMapping", new VrControllerMappingScreen()); });
             AddLoadAction(delegate { AddScreen("CameraManage", new CameraManageScreen()); });
             AddLoadAction(delegate { AddScreen("ManageClassSubstitutes", new ManageClassSubstitutesScreen()); });
+            AddLoadAction(delegate { AddScreen("ModSettingPage", new ModSettingPageScreen()); });
         }
 
         public void AddScreen(string name, Screen screen) {

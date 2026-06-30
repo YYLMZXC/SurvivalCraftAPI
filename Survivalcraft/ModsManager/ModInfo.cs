@@ -56,6 +56,11 @@ namespace Game {
         /// </summary>
         public GameplayImpactLevel GameplayImpactLevel = GameplayImpactLevel.Cosmetic;
 
+        /// <summary>
+        ///     数据驱动设置页面树，由 ModsManager.DeserializeJson 解析 modinfo.json 的 Settings 字段填充
+        /// </summary>
+        public List<ModSettingPage> Settings;
+
         public override int GetHashCode() =>
             // ReSharper disable NonReadonlyMemberInGetHashCode
             HashCode.Combine(Name, PackageName, Version);

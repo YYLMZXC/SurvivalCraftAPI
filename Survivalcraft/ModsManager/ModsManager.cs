@@ -314,6 +314,10 @@ public static class ModsManager {
             && Enum.TryParse(gameplayImpactLevel.GetString(), out GameplayImpactLevel impactLevel)) {
             modInfo.GameplayImpactLevel = impactLevel;
         }
+        if (jsonElement.TryGetProperty("Settings", out JsonElement settingsArray)
+            && settingsArray.ValueKind == JsonValueKind.Array) {
+            modInfo.Settings = ModSettingsParser.ParseSettings(settingsArray, modInfo.PackageName);
+        }
         return modInfo;
     }
 

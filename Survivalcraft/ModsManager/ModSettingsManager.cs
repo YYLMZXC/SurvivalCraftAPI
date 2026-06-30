@@ -3,6 +3,7 @@ using System.Xml.Linq;
 using Engine;
 using TemplatesDatabase;
 using XmlUtilities;
+using Engine.Serialization;
 
 namespace Game {
     public static class ModSettingsManager {
@@ -25,6 +26,11 @@ namespace Game {
         ///     储存每个模组的相机设置，键：模组包名，值：模组的相机设置
         /// </summary>
         public static Dictionary<string, ValuesDictionary> ModCameraManageSettings { get; private set; } = new();
+
+        // ===== 数据驱动设置层 =====
+        static Dictionary<string, List<ModSettingPage>> m_dataDrivenPages = new();
+        static Dictionary<string, ModSettingItem> m_dataDrivenItems = new();   // CachedPath -> item
+        static Dictionary<string, object> m_dataDrivenValues = new();           // CachedPath -> 强类型运行时值
 
         public const string fName = "ModSettingsManager";
 
@@ -74,6 +80,7 @@ namespace Game {
 
         public static void LoadModSettings() {
             if (!Storage.FileExists(ModsManager.ModsSettingsPath)) {
+                RegisterAllDataDriven(); // 文件不存在：仍注册描述符 + Default
                 return;
             }
 
@@ -146,6 +153,7 @@ namespace Game {
                 }
                 Log.Warning($"{str} {e}");
             }
+            RegisterAllDataDriven(); // 文件已读入 ModSettingsCache，按 ModList 注册（命中用持久化值，否则 Default）
         }
 
         public static void SaveModSettings() {
@@ -183,6 +191,7 @@ namespace Game {
                     modCameraSettings.Save(cameraList);
                     settingsElement.Add(cameraList);
                 }
+                SaveDataDriven(packageName, settingsElement);
                 //模组保存了设置
                 if (settingsElement.Elements().Any()
                     || settingsElement.Attributes().Count() > 1) {
@@ -208,6 +217,147 @@ namespace Game {
                 info = "Saved mod settings";
             }
             Log.Information(info);
+        }
+
+        // ===== 数据驱动设置：值存取 =====
+
+        /// <summary>模组读取设置值。path = packageName + 逐级页面 Id + itemId（完整 Id 链，不省略）。</summary>
+        public static T Get<T>(params string[] path) {
+            string key = string.Join("/", path);
+            if (!m_dataDrivenValues.TryGetValue(key, out object v))
+                throw new KeyNotFoundException($"ModSettingsManager.Get: 设置项不存在 path=[{key}]");
+            if (v is not T t)
+                throw new InvalidCastException($"ModSettingsManager.Get: 类型不匹配 path=[{key}] 值类型={v?.GetType()} 请求={typeof(T)}");
+            return t;
+        }
+
+        /// <summary>热路径：按描述符高速取值（零字符串拼接）。</summary>
+        public static T Get<T>(ModSettingItem item) {
+            if (!m_dataDrivenValues.TryGetValue(item.CachedPath, out object v))
+                throw new KeyNotFoundException($"ModSettingsManager.Get: 设置项不存在 path=[{item.CachedPath}]");
+            if (v is not T t)
+                throw new InvalidCastException($"ModSettingsManager.Get: 类型不匹配 path=[{item.CachedPath}] 值类型={v?.GetType()} 请求={typeof(T)}");
+            return t;
+        }
+
+        /// <summary>热路径：按 packageName + subPath（不含 packageName）查描述符。</summary>
+        public static ModSettingItem FindItem(string packageName, params string[] subPath) {
+            string key = packageName + "/" + string.Join("/", subPath);
+            m_dataDrivenItems.TryGetValue(key, out ModSettingItem item);
+            return item;
+        }
+
+        /// <summary>Widget 写回值。更新字典 + 精准分发 OnSettingChanged。</summary>
+        internal static void Set(string[] path, object value) {
+            if (path == null || path.Length == 0) return;
+            string key = string.Join("/", path);
+            m_dataDrivenValues[key] = value;
+            string packageName = path[0];
+            string[] subPath = path[1..];
+            // 精准分发到目标模组 loaders：复用 HookAction 会广播所有注册 loader 且 subPath 不含 packageName，
+            // loader 无法自判归属，不符"按 packageName 分发"，故改精准定位 PackageNameToModEntity + 手写 try/catch。
+            if (ModsManager.PackageNameToModEntity.TryGetValue(packageName, out ModEntity entity)) {
+                foreach (ModLoader loader in entity.Loaders) {
+                    try { loader.OnSettingChanged(subPath, value); }
+                    catch (Exception e) { Log.Error($"[ModSettings] OnSettingChanged 异常 loader={loader.GetType().Name}: {e.Message}"); }
+                }
+            }
+        }
+
+        // ===== 数据驱动设置：注册 / 持久化 / 生命周期 =====
+
+        public static List<ModSettingPage> GetPages(string packageName) =>
+            m_dataDrivenPages.TryGetValue(packageName, out List<ModSettingPage> pages) ? pages : null;
+
+        /// <summary>root 列表页聚合：所有模组的非空顶层 Page。</summary>
+        public static IEnumerable<KeyValuePair<string, ModSettingPage>> GetRootEntries() {
+            foreach (KeyValuePair<string, List<ModSettingPage>> kv in m_dataDrivenPages) {
+                foreach (ModSettingPage page in kv.Value) {
+                    if (page.Items.Count > 0)
+                        yield return new KeyValuePair<string, ModSettingPage>(kv.Key, page);
+                }
+            }
+        }
+
+        // LoadModSettings 调：清空 + 按 ModList 注册（cache 已填或空）
+        static void RegisterAllDataDriven() {
+            m_dataDrivenPages.Clear();
+            m_dataDrivenItems.Clear();
+            m_dataDrivenValues.Clear();
+            foreach (ModEntity modEntity in ModsManager.ModList) {
+                string packageName = modEntity.modInfo.PackageName;
+                ModSettingsCache.TryGetValue(packageName, out XElement cacheEl);
+                RegisterDataDriven(packageName, modEntity.modInfo.Settings, cacheEl);
+            }
+        }
+
+        // 仅 ModList 内模组注册：禁用模组不注册，XML 节点靠 ModSettingsCache 保留
+        internal static void RegisterDataDriven(string packageName, List<ModSettingPage> pages, XElement persistedMod) {
+            if (pages == null || pages.Count == 0) return;
+            m_dataDrivenPages[packageName] = pages;
+            Dictionary<string, string> persisted = ReadPersistedValues(persistedMod);
+            foreach (ModSettingPage page in pages)
+                RegisterElement(packageName, new List<string>(), page, persisted);
+        }
+
+        static void RegisterElement(string packageName, List<string> idChain, ModSettingElement el, Dictionary<string, string> persisted) {
+            if (el is ModSettingPage page) {
+                idChain.Add(page.Id);
+                foreach (ModSettingElement child in page.Items)
+                    RegisterElement(packageName, idChain, child, persisted);
+                idChain.RemoveAt(idChain.Count - 1);
+            }
+            else if (el is ModSettingItem item) {
+                idChain.Add(item.Id);
+                string cachedPath = packageName + "/" + string.Join("/", idChain);
+                item.CachedPath = cachedPath;
+                m_dataDrivenItems[cachedPath] = item;
+                m_dataDrivenValues[cachedPath] = LoadItemValue(item, persisted);
+                idChain.RemoveAt(idChain.Count - 1);
+            }
+            // separator/label 无值，跳过
+        }
+
+        static object LoadItemValue(ModSettingItem item, Dictionary<string, string> persisted) {
+            string subPath = item.CachedPath.Substring(item.CachedPath.IndexOf('/') + 1); // 去 packageName/
+            if (persisted != null && persisted.TryGetValue(subPath, out string valueStr)) {
+                try { return HumanReadableConverter.ConvertFromString(item.Type, valueStr); }
+                catch (Exception e) {
+                    Log.Error($"[ModSettings] 持久化值解析失败 path={item.CachedPath} 用 Default：{e.Message}");
+                }
+            }
+            return item.Default; // 缺失/失败 → Default
+        }
+
+        // SaveModSettings 调：写 <DataDrivenSettings>
+        internal static void SaveDataDriven(string packageName, XElement modElement) {
+            if (!m_dataDrivenPages.TryGetValue(packageName, out List<ModSettingPage> pages) || pages.Count == 0) return;
+            XElement dd = new("DataDrivenSettings");
+            string prefix = packageName + "/";
+            foreach (KeyValuePair<string, ModSettingItem> kv in m_dataDrivenItems) {
+                if (!kv.Key.StartsWith(prefix)) continue;
+                ModSettingItem item = kv.Value;
+                object val = m_dataDrivenValues.TryGetValue(kv.Key, out object v) ? v : item.Default;
+                XElement itemEl = new("Item");
+                XmlUtils.SetAttributeValue(itemEl, "Path", kv.Key.Substring(prefix.Length));
+                XmlUtils.SetAttributeValue(itemEl, "Type", item.Type.FullName);
+                XmlUtils.SetAttributeValue(itemEl, "Value", HumanReadableConverter.ConvertToString(val));
+                dd.Add(itemEl);
+            }
+            if (dd.HasElements) modElement.Add(dd);
+        }
+
+        static Dictionary<string, string> ReadPersistedValues(XElement modElement) {
+            Dictionary<string, string> result = new();
+            if (modElement == null) return result;
+            XElement dd = modElement.Element("DataDrivenSettings");
+            if (dd == null) return result;
+            foreach (XElement itemEl in dd.Elements("Item")) {
+                string path = XmlUtils.GetAttributeValue<string>(itemEl, "Path", null);
+                string value = XmlUtils.GetAttributeValue<string>(itemEl, "Value", null);
+                if (path != null) result[path] = value;
+            }
+            return result;
         }
 
         public static void ResetModsKeyboardMappingSettings() {

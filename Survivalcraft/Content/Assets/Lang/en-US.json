@@ -1,4 +1,9 @@
 {
+  "ModSettings": {
+    "Entry": "Mod Settings",
+    "RootTitle": "Mod Settings",
+    "RootDescription": "Adjust data-driven mod settings."
+  },
   "Language": {
     "Name": "English"
   },

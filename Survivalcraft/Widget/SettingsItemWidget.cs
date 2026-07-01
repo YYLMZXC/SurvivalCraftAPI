@@ -8,7 +8,9 @@ namespace Game {
     /// 一个设置项 = 一行 UI（标题 + 值控件）。描述走页面共享 label。
     /// 纯代码组装，轮询 Update 检测交互。子类负责 Value↔控件互转 + 检测交互 + 触发 ValueChanged。
     /// </summary>
-    public abstract class SettingsItemWidget : ContainerWidget {
+    // 继承 StackPanelWidget 而非 ContainerWidget：ContainerWidget.MeasureOverride 只 measure 子不汇总尺寸，
+    // 自身 DesiredSize 保持 (Inf,Inf)，父容器按零尺寸排列导致整行不可见。StackPanel 会汇总子尺寸设 DesiredSize。
+    public abstract class SettingsItemWidget : StackPanelWidget {
         public ModSettingItem Descriptor { get; }
         public object Value { get; protected set; }
         public string DescriptionText { get; set; }
@@ -20,6 +22,7 @@ namespace Game {
         protected SettingsItemWidget(ModSettingItem descriptor, object currentValue) {
             Descriptor = descriptor;
             Value = currentValue;
+            Direction = LayoutDirection.Horizontal;
         }
 
         /// <summary>Factory 实例化后设值，触发 nameLabel 更新。</summary>
@@ -37,19 +40,14 @@ namespace Game {
         /// <summary>页面轮询识别激活项（如滑块滑动中），用于更新共享 Description。默认 false。</summary>
         public virtual bool IsPressed => false;
 
-        /// <summary>子类构造时调用：建 nameLabel + 横向排布值控件，组装进垂直 StackPanel。</summary>
+        /// <summary>子类构造时调用：建 nameLabel + 值控件，水平排进自身（已是 Horizontal StackPanel）。</summary>
         protected void Assemble(Widget valueWidget) {
             m_nameLabel = new LabelWidget {
                 Text = m_nameText,
-                HorizontalAlignment = WidgetAlignment.Near,
                 VerticalAlignment = WidgetAlignment.Center
             };
-            UniformSpacingPanelWidget row = new UniformSpacingPanelWidget { Direction = LayoutDirection.Horizontal };
-            row.Children.Add(m_nameLabel);
-            if (valueWidget != null) row.Children.Add(valueWidget);
-            StackPanelWidget column = new StackPanelWidget { Direction = LayoutDirection.Vertical };
-            column.Children.Add(row);
-            Children.Add(column);
+            Children.Add(m_nameLabel);
+            if (valueWidget != null) Children.Add(valueWidget);
         }
 
         /// <summary>子类检测到值变化时调用：更新 Value 并触发 ValueChanged（→ Manager.Set）。</summary>

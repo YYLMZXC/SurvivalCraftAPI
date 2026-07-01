@@ -281,7 +281,17 @@
     "6": "模组设置已保存",
     "7": "模组键盘鼠标键位设置已重置",
     "8": "模组摄像机设置已重置",
-    "9": "模组手柄键位设置已重置"
+    "9": "模组手柄键位设置已重置",
+    "10": "OnSettingChanged 异常，loader={0}：{1}",
+    "11": "持久化值解析失败，path={0}，改用默认值：{1}"
+  },
+  "SettingsItemWidgetFactory": {
+    "WidgetFallback": "设置项「{0}」的控件不受支持，已回退到默认「{1}」。",
+    "WidgetNone": "设置项「{0}」无可用控件（类型 {1}），已跳过。",
+    "WidgetCreateFailed": "控件「{0}」实例化失败：{1}"
+  },
+  "ModSettingPageScreen": {
+    "WidgetNotWidget": "设置项「{0}」的控件「{1}」未继承 Widget，无法渲染，已跳过。"
   },
   "SettingsManager": {
     "1": "不存在名为 \"{0}\" 的按键映射设置！",

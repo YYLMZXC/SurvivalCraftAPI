@@ -289,7 +289,10 @@ namespace Game {
             if (ModsManager.PackageNameToModEntity.TryGetValue(packageName, out ModEntity entity)) {
                 foreach (ModLoader loader in entity.Loaders) {
                     try { loader.OnSettingChanged(subPath, value); }
-                    catch (Exception e) { Log.Error($"[ModSettings] OnSettingChanged 异常 loader={loader.GetType().Name}: {e.Message}"); }
+                    catch (Exception e) {
+                        if (!LanguageControl.TryGet(out string msg, fName, "10")) msg = "OnSettingChanged error, loader={0}: {1}";
+                        Log.Error("[ModSettings] " + string.Format(msg, loader.GetType().Name, e.Message));
+                    }
                 }
             }
         }
@@ -353,7 +356,8 @@ namespace Game {
             if (persisted != null && persisted.TryGetValue(subPath, out string valueStr)) {
                 try { return HumanReadableConverter.ConvertFromString(item.Type, valueStr); }
                 catch (Exception e) {
-                    Log.Error($"[ModSettings] 持久化值解析失败 path={item.CachedPath} 用 Default：{e.Message}");
+                    if (!LanguageControl.TryGet(out string msg, fName, "11")) msg = "Persisted value parse failed, path={0}, using default: {1}";
+                    Log.Error("[ModSettings] " + string.Format(msg, item.CachedPath, e.Message));
                 }
             }
             return item.Default; // 缺失/失败 → Default

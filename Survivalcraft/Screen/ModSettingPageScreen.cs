@@ -119,7 +119,8 @@ namespace Game {
                     IModSettingItemWidget w = SettingsItemWidgetFactory.Create(item, current, name, desc);
                     if (w == null) return null;
                     if (w is not Widget widget) {
-                        Log.Error($"[ModSettings] 设置项 {item.Id} 的 Widget {w.GetType().Name} 未继承 Widget，无法渲染，跳过");
+                        if (!LanguageControl.TryGet(out string msg, nameof(ModSettingPageScreen), "WidgetNotWidget")) msg = "Setting '{0}' widget '{1}' does not derive from Widget, cannot render, skipped.";
+                        Log.Error("[ModSettings] " + string.Format(msg, item.Id, w.GetType().Name));
                         return null;
                     }
                     string[] fullPath = BuildPath(m_packageName, itemChain);

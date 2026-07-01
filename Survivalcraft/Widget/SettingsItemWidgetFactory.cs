@@ -14,11 +14,11 @@ namespace Game {
             if (defaultType != null) {
                 IModSettingItemWidget fallback = TryCreate(defaultType, descriptor, currentValue, nameText, descriptionText);
                 if (fallback != null && fallback.Supports(descriptor.Type)) {
-                    Log.Error($"[ModSettings] 设置项 {descriptor.Id} 的 Widget 回退默认 {defaultType.Name}");
+                    Log.Error("[ModSettings] " + L("WidgetFallback", "Setting '{0}' widget unsupported, fell back to default '{1}'.", descriptor.Id, defaultType.Name));
                     return fallback;
                 }
             }
-            Log.Error($"[ModSettings] 设置项 {descriptor.Id} 无可用 Widget（类型 {descriptor.Type}），跳过");
+            Log.Error("[ModSettings] " + L("WidgetNone", "Setting '{0}' has no usable widget (type {1}), skipped.", descriptor.Id, descriptor.Type.Name));
             return null;
         }
 
@@ -29,7 +29,13 @@ namespace Game {
                 widget?.Initialize(descriptor, currentValue, nameText, descriptionText);
                 return widget;
             }
-            catch (Exception e) { Log.Error($"[ModSettings] Widget {type.Name} 实例化失败：{e.Message}"); return null; }
+            catch (Exception e) { Log.Error("[ModSettings] " + L("WidgetCreateFailed", "Widget '{0}' instantiation failed: {1}", type.Name, e.Message)); return null; }
+        }
+
+        /// <summary>取本类命名空间下本地化日志串，未命中回退 engDefault，string.Format 填参数。</summary>
+        static string L(string key, string engDefault, params object[] args) {
+            if (!LanguageControl.TryGet(out string s, nameof(SettingsItemWidgetFactory), key)) s = engDefault;
+            return string.Format(s, args);
         }
     }
 }

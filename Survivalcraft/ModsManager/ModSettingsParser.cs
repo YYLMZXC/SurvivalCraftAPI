@@ -44,7 +44,7 @@ namespace Game {
 
         static ModSettingPage ParsePage(JsonElement obj, JsonElement itemsEl, string packageName) {
             string id = GetString(obj, "Id");
-            if (!IsValidId(id)) { Log.Error($"[ModSettings] 模组 {packageName} 的 Page 缺少合法 Id 或含 '/'，跳过"); return null; }
+            if (!IsValidId(id)) { Log.Error($"[ModSettings] Mod '{packageName}' page missing valid Id or contains '/', skipped"); return null; }
             ModSettingPage page = new() {
                 Id = id,
                 Name = GetString(obj, "Name"),
@@ -60,10 +60,10 @@ namespace Game {
 
         static ModSettingItem ParseItem(JsonElement obj, JsonElement typeEl) {
             string id = GetString(obj, "Id");
-            if (!IsValidId(id)) { Log.Error($"[ModSettings] 设置项缺少合法 Id 或含 '/'，跳过"); return null; }
+            if (!IsValidId(id)) { Log.Error("[ModSettings] Setting item missing valid Id or contains '/', skipped"); return null; }
             string typeStr = typeEl.GetString();
             Type type = ResolveType(typeStr);
-            if (type == null) { Log.Error($"[ModSettings] 设置项 {id} 的 Type '{typeStr}' 无法解析，跳过"); return null; }
+            if (type == null) { Log.Error($"[ModSettings] Type '{typeStr}' of setting '{id}' could not be resolved, skipped"); return null; }
 
             ModSettingItem item = new() {
                 Id = id,
@@ -94,7 +94,7 @@ namespace Game {
         static object ResolveDefault(JsonElement obj, Type type) {
             if (!obj.TryGetProperty("Default", out JsonElement defEl)) return GetDefaultOf(type);
             try { return ConvertValue(type, defEl); }
-            catch (Exception e) { Log.Error($"[ModSettings] Default 解析失败，用 default({type.Name})：{e.Message}"); return GetDefaultOf(type); }
+            catch (Exception e) { Log.Error($"[ModSettings] Default parse failed, using default({type.Name}): {e.Message}"); return GetDefaultOf(type); }
         }
 
         static object GetDefaultOf(Type type) {
@@ -132,7 +132,7 @@ namespace Game {
                 // 模组自定义 Widget：按全限定名查
                 Type t = TypeCache.FindType(widgetStr, true, false);
                 if (t != null && typeof(IModSettingItemWidget).IsAssignableFrom(t)) return t;
-                Log.Error($"[ModSettings] Widget '{widgetStr}' 未找到或非 SettingsItemWidget 子类，回退默认");
+                Log.Error($"[ModSettings] Widget '{widgetStr}' not found or not an IModSettingItemWidget, falling back to default");
             }
             return GetDefaultWidgetType(valueType); // 缺省/不合法 → 类型默认
         }

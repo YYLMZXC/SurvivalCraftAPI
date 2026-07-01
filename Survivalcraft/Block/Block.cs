@@ -612,6 +612,7 @@ namespace Game {
         /// 获取此方块在家具中的颜色
         /// </summary>
         /// <param name="value"></param>
+        /// <param name="subsystemPalette"></param>
         /// <returns></returns>
         public virtual Color GetFurnitureColor(int value, SubsystemPalette subsystemPalette) {
             if (this is IPaintableBlock paintableBlock

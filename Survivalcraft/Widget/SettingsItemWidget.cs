@@ -8,9 +8,9 @@ namespace Game {
     /// 一个设置项 = 一行 UI（标题 + 值控件）。描述走页面共享 label。
     /// 纯代码组装，轮询 Update 检测交互。子类负责 Value↔控件互转 + 检测交互 + 触发 ValueChanged。
     /// </summary>
-    // 继承 StackPanelWidget 而非 ContainerWidget：ContainerWidget.MeasureOverride 只 measure 子不汇总尺寸，
-    // 自身 DesiredSize 保持 (Inf,Inf)，父容器按零尺寸排列导致整行不可见。StackPanel 会汇总子尺寸设 DesiredSize。
-    public abstract class SettingsItemWidget : StackPanelWidget {
+    // 继承 UniformSpacingPanelWidget（fill 容器）：主轴 DesiredSize=Infinity，由父 arrange 给固定 ActualSize 后按子数均分。
+    // 选 Horizontal 使主轴=X、Y 轴 desired finite，避免污染上层 ContentStack(StackPanel Vertical) 经 layoutTransform 算 NaN。
+    public abstract class SettingsItemWidget : UniformSpacingPanelWidget {
         public ModSettingItem Descriptor { get; }
         public object Value { get; protected set; }
         public string DescriptionText { get; set; }
@@ -23,6 +23,7 @@ namespace Game {
             Descriptor = descriptor;
             Value = currentValue;
             Direction = LayoutDirection.Horizontal;
+            Margin = new Vector2(0, 3);
         }
 
         /// <summary>Factory 实例化后设值，触发 nameLabel 更新。</summary>
@@ -44,7 +45,9 @@ namespace Game {
         protected void Assemble(Widget valueWidget) {
             m_nameLabel = new LabelWidget {
                 Text = m_nameText,
-                VerticalAlignment = WidgetAlignment.Center
+                HorizontalAlignment = WidgetAlignment.Far,
+                VerticalAlignment = WidgetAlignment.Center,
+                Margin = new Vector2(20, 0)
             };
             Children.Add(m_nameLabel);
             if (valueWidget != null) Children.Add(valueWidget);
@@ -78,8 +81,8 @@ namespace Game {
             m_button = new BevelledButtonWidget {
                 Style = ContentManager.Get<XElement>("Styles/ButtonStyle_310x60"),
                 Text = (bool)Value ? m_textTrue : m_textFalse,
-                HorizontalAlignment = WidgetAlignment.Far,
-                VerticalAlignment = WidgetAlignment.Center
+                VerticalAlignment = WidgetAlignment.Center,
+                Margin = new Vector2(20, 0)
             };
             Assemble(m_button);
         }
@@ -107,8 +110,8 @@ namespace Game {
             m_button = new BevelledButtonWidget {
                 Style = ContentManager.Get<XElement>("Styles/ButtonStyle_310x60"),
                 Text = MemberText(Value),
-                HorizontalAlignment = WidgetAlignment.Far,
-                VerticalAlignment = WidgetAlignment.Center
+                VerticalAlignment = WidgetAlignment.Center,
+                Margin = new Vector2(20, 0)
             };
             Assemble(m_button);
         }
@@ -136,11 +139,12 @@ namespace Game {
         readonly string m_packageName;
 
         public EnumSliderWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
-            Direction = LayoutDirection.Vertical;
             m_packageName = ExtractPackageName(descriptor);
             m_members = Enum.GetValues(descriptor.Type);
             m_slider = new SliderWidget {
-                Size = new Vector2(280, 60),
+                Size = new Vector2(float.PositiveInfinity, 60),
+                VerticalAlignment = WidgetAlignment.Center,
+                Margin = new Vector2(20, 0),
                 MinValue = 0,
                 MaxValue = Math.Max(1, m_members.Length - 1),
                 Granularity = 1,
@@ -174,11 +178,13 @@ namespace Game {
         SliderWidget m_slider;
 
         public NumberSliderWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
-            // Vertical：name 一行、slider 一行。SliderWidget 必须固定宽——Size=Infinity 在嵌套 StackPanel
-            // 里累积 Inf 致 arrange 算 NaN（CanvasWidget.Size 默认 -1 不 clamp，子汇总得 Inf）。
-            Direction = LayoutDirection.Vertical;
+            // Horizontal + slider Size=(Inf,60)：UniformSpacingPanel 主轴=X 时 desired=(Inf,60)，Y finite。
+            // Vertical 会让主轴=Y→desired.Y=Inf，污染 ContentStack(StackPanel Vertical) 的 desired.Y=Inf，
+            // arrange 链经 layoutTransform 算 NaN，整个页面 widget 崩。
             m_slider = new SliderWidget {
-                Size = new Vector2(280, 60),
+                Size = new Vector2(float.PositiveInfinity, 60),
+                VerticalAlignment = WidgetAlignment.Center,
+                Margin = new Vector2(20, 0),
                 MinValue = 0,
                 MaxValue = 1,
                 Granularity = 0.1f,
@@ -220,8 +226,14 @@ namespace Game {
         TextBoxWidget m_textBox;
 
         public TextItemWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
-            m_textBox = new TextBoxWidget { Text = Value as string ?? "" };
-            Assemble(m_textBox);
+            m_textBox = new TextBoxWidget { Text = Value as string ?? "", Size = new Vector2(float.PositiveInfinity, 50), VerticalAlignment = WidgetAlignment.Center, Margin = new Vector2(10, 0) };
+            CanvasWidget canvasWidget = new() {
+                VerticalAlignment = WidgetAlignment.Center,
+                Size = new Vector2(float.PositiveInfinity, 50),
+                Margin = new Vector2(10, 5),
+                Children = { new BevelledRectangleWidget { Style = ContentManager.Get<XElement>("Styles/TextBoxArea") }, m_textBox }
+            };
+            Assemble(canvasWidget);
         }
 
         public override bool Supports(Type type) => type == typeof(string);

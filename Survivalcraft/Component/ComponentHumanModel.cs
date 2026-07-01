@@ -291,7 +291,9 @@ namespace Game {
 
         public override void AnimateCreature() {
             // 检查模组 hook（保持原有实现）
+#pragma warning disable CS0618 // 类型或成员已过时
             if (OnAnimate != null && OnAnimate()) {
+#pragma warning restore CS0618 // 类型或成员已过时
                 return;
             }
 

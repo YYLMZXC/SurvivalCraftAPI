@@ -5,46 +5,73 @@ using Engine;
 
 namespace Game {
     /// <summary>
+    /// 设置项 Widget 契约。模组可自行实现（任意 Widget 基类 + 本接口）以自由组装 UI，
+    /// 也可继承内置 UniformSpacingPanelSettingWidget 复用 nameLabel/Assemble/CommitValue。
+    /// </summary>
+    /// <remarks>实现约束（接口无法表达，须遵守）：① 实现类型须为 Engine.Widget 子类（Screen 据此渲染）；
+    /// ② 须有无参构造（Factory 用 Activator.CreateInstance 反射实例化）；
+    /// ③ Initialize 由 Factory 实例化后调用一次，不应假设可重入——重复调用会重复建控件。</remarks>
+    public interface IModSettingItemWidget {
+        public ModSettingItem Descriptor { get; }
+        public object Value { get; }
+        public string DescriptionText { get; set; }
+        public Action<object> ValueChanged { get; set; }
+
+        /// <summary>Factory 反射实例化（无参构造）后调用：注入描述符、当前值、名称与描述，子类在此建控件 + Assemble。仅调用一次。</summary>
+        public void Initialize(ModSettingItem descriptor, object currentValue, string name, string description);
+
+        /// <summary>子类判定是否支持某值类型（enum Widget 用 typeof(Enum).IsAssignableFrom）。</summary>
+        public bool Supports(Type type);
+
+        /// <summary>页面轮询识别激活项（如滑块滑动中），用于更新共享 Description。默认 false。</summary>
+        public bool IsOperating { get; set; }
+    }
+
+    /// <summary>
     /// 一个设置项 = 一行 UI（标题 + 值控件）。描述走页面共享 label。
     /// 纯代码组装，轮询 Update 检测交互。子类负责 Value↔控件互转 + 检测交互 + 触发 ValueChanged。
     /// </summary>
     // 继承 UniformSpacingPanelWidget（fill 容器）：主轴 DesiredSize=Infinity，由父 arrange 给固定 ActualSize 后按子数均分。
     // 选 Horizontal 使主轴=X、Y 轴 desired finite，避免污染上层 ContentStack(StackPanel Vertical) 经 layoutTransform 算 NaN。
-    public abstract class SettingsItemWidget : UniformSpacingPanelWidget {
-        public ModSettingItem Descriptor { get; }
+    public abstract class UniformSpacingPanelSettingWidget : UniformSpacingPanelWidget, IModSettingItemWidget {
+        public ModSettingItem Descriptor { get; private set; }
         public object Value { get; protected set; }
         public string DescriptionText { get; set; }
-        public Action<object> ValueChanged;
+        public Action<object> ValueChanged { get; set; }
 
         protected LabelWidget m_nameLabel;
-        string m_nameText;
+        string m_nameLabelText;
 
-        protected SettingsItemWidget(ModSettingItem descriptor, object currentValue) {
-            Descriptor = descriptor;
-            Value = currentValue;
+        protected UniformSpacingPanelSettingWidget() {
             Direction = LayoutDirection.Horizontal;
             Margin = new Vector2(0, 3);
         }
 
+        /// <summary>设描述符、当前值、名称与描述。子类 override 时先 base.Initialize（name 已存 m_nameLabelText 供 Assemble 取），再建控件 + Assemble。Value 类型已由 Factory 经 Supports 校验，子类可按 descriptor.Type 安全解引用。</summary>
+        public virtual void Initialize(ModSettingItem descriptor, object currentValue, string name, string description) {
+            Descriptor = descriptor;
+            Value = currentValue;
+            NameLabelText = name;
+            DescriptionText = description;
+        }
+
         /// <summary>Factory 实例化后设值，触发 nameLabel 更新。</summary>
-        public string NameText {
-            get => m_nameText;
+        public string NameLabelText {
+            get => m_nameLabelText;
             set {
-                m_nameText = value;
+                m_nameLabelText = value;
                 if (m_nameLabel != null) m_nameLabel.Text = value;
             }
         }
 
-        /// <summary>子类判定是否支持某值类型（enum Widget 用 typeof(Enum).IsAssignableFrom）。</summary>
         public abstract bool Supports(Type type);
 
-        /// <summary>页面轮询识别激活项（如滑块滑动中），用于更新共享 Description。默认 false。</summary>
-        public virtual bool IsPressed => false;
+        public bool IsOperating { get; set; }
 
         /// <summary>子类构造时调用：建 nameLabel + 值控件，水平排进自身（已是 Horizontal StackPanel）。</summary>
         protected void Assemble(Widget valueWidget) {
             m_nameLabel = new LabelWidget {
-                Text = m_nameText,
+                Text = m_nameLabelText,
                 HorizontalAlignment = WidgetAlignment.Far,
                 VerticalAlignment = WidgetAlignment.Center,
                 Margin = new Vector2(20, 0)
@@ -54,24 +81,21 @@ namespace Game {
         }
 
         /// <summary>子类检测到值变化时调用：更新 Value 并触发 ValueChanged（→ Manager.Set）。</summary>
-        protected void CommitValue(object newValue) {
+        protected virtual void CommitValue(object newValue) {
             Value = newValue;
             ValueChanged?.Invoke(newValue);
         }
-
-        /// <summary>从描述符 CachedPath 取 packageName（path 首段），用于 enum 成员本地化。</summary>
-        protected static string ExtractPackageName(ModSettingItem d) =>
-            d.CachedPath != null && d.CachedPath.Contains('/') ? d.CachedPath.Substring(0, d.CachedPath.IndexOf('/')) : null;
     }
 
     // ===== 内置子类 =====
 
     /// <summary>bool 开关按钮。Text = Value ? TextTrue : TextFalse（默认 Yes/No，可配 Enable/Disable）。</summary>
-    public class BoolButtonWidget : SettingsItemWidget {
+    public class BoolButtonSettingWidget : UniformSpacingPanelSettingWidget {
         BevelledButtonWidget m_button;
         string m_textTrue, m_textFalse;
 
-        public BoolButtonWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
+        public override void Initialize(ModSettingItem descriptor, object currentValue, string name, string description) {
+            base.Initialize(descriptor, currentValue, name, description);
             m_textTrue = LanguageControl.Yes;
             m_textFalse = LanguageControl.No;
             if (descriptor.WidgetProperties is JsonElement props) {
@@ -99,13 +123,14 @@ namespace Game {
     }
 
     /// <summary>enum 多项选择对话框（项数多时默认）。点按钮弹 ListSelectionDialog。</summary>
-    public class EnumSelectionDialogWidget : SettingsItemWidget {
+    public class EnumSelectionDialogSettingWidget : UniformSpacingPanelSettingWidget {
         BevelledButtonWidget m_button;
-        readonly Array m_members;
-        readonly string m_packageName;
+        Array m_members;
+        string m_packageName;
 
-        public EnumSelectionDialogWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
-            m_packageName = ExtractPackageName(descriptor);
+        public override void Initialize(ModSettingItem descriptor, object currentValue, string name, string description) {
+            base.Initialize(descriptor, currentValue, name, description);
+            m_packageName = ModSettingLocalizer.ExtractPackageName(descriptor);
             m_members = Enum.GetValues(descriptor.Type);
             m_button = new BevelledButtonWidget {
                 Style = ContentManager.Get<XElement>("Styles/ButtonStyle_310x60"),
@@ -124,7 +149,7 @@ namespace Game {
             base.Update();
             if (m_button.IsClicked) {
                 DialogsManager.ShowDialog(null, new ListSelectionDialog(
-                    NameText, m_members, 60f,
+                    NameLabelText, m_members, 60f,
                     item => new LabelWidget { Text = MemberText(item), HorizontalAlignment = WidgetAlignment.Center },
                     item => { CommitValue(item); m_button.Text = MemberText(item); }
                 ));
@@ -133,24 +158,30 @@ namespace Game {
     }
 
     /// <summary>enum 少项滑块（SliderWidget + 整数下标）。</summary>
-    public class EnumSliderWidget : SettingsItemWidget {
+    public class EnumSliderSettingWidget : UniformSpacingPanelSettingWidget {
         SliderWidget m_slider;
-        readonly Array m_members;
-        readonly string m_packageName;
+        Array m_members;
+        string m_packageName;
 
-        public EnumSliderWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
-            m_packageName = ExtractPackageName(descriptor);
+        public override void Initialize(ModSettingItem descriptor, object currentValue, string name, string description) {
+            base.Initialize(descriptor, currentValue, name, description);
+            m_packageName = ModSettingLocalizer.ExtractPackageName(descriptor);
             m_members = Enum.GetValues(descriptor.Type);
+            int lo = 0;
+            int hi = Math.Max(1, m_members.Length - 1);
             m_slider = new SliderWidget {
                 Size = new Vector2(float.PositiveInfinity, 60),
                 VerticalAlignment = WidgetAlignment.Center,
                 Margin = new Vector2(20, 0),
-                MinValue = 0,
-                MaxValue = Math.Max(1, m_members.Length - 1),
+                MinValue = lo,
+                MaxValue = hi,
                 Granularity = 1,
-                Value = Array.IndexOf(m_members, Value)
+                Value = Math.Clamp(Array.IndexOf(m_members, Value), lo, hi)
             };
             if (descriptor.WidgetProperties is JsonElement props) {
+                // 用户配的 Min/Max 钳到下标域 [lo, hi]，防止滑块越界选不中末项
+                if (props.TryGetProperty("MinValue", out JsonElement min) && min.ValueKind == JsonValueKind.Number) m_slider.MinValue = Math.Clamp(min.GetSingle(), lo, hi);
+                if (props.TryGetProperty("MaxValue", out JsonElement max) && max.ValueKind == JsonValueKind.Number) m_slider.MaxValue = Math.Clamp(max.GetSingle(), lo, hi);
                 if (props.TryGetProperty("Granularity", out JsonElement g) && g.ValueKind == JsonValueKind.Number) m_slider.Granularity = g.GetSingle();
             }
             m_slider.Text = MemberText(Value);
@@ -158,12 +189,12 @@ namespace Game {
         }
 
         public override bool Supports(Type type) => typeof(Enum).IsAssignableFrom(type);
-        public override bool IsPressed => m_slider.IsSliding;
 
         string MemberText(object value) => ModSettingLocalizer.GetEnumMemberText(m_packageName, Descriptor.Type, value);
 
         public override void Update() {
             base.Update();
+            IsOperating = m_slider.IsSliding;
             if (m_slider.IsSliding || m_slider.SlidingCompleted) {
                 int idx = Math.Clamp((int)Math.Round(m_slider.Value), 0, m_members.Length - 1);
                 object current = m_members.GetValue(idx);
@@ -174,10 +205,11 @@ namespace Game {
     }
 
     /// <summary>数值滑块（int/float 等）。需 WidgetProperties.MinValue/MaxValue，缺则降级 0~1。</summary>
-    public class NumberSliderWidget : SettingsItemWidget {
+    public class NumberSliderSettingWidget : UniformSpacingPanelSettingWidget {
         SliderWidget m_slider;
 
-        public NumberSliderWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
+        public override void Initialize(ModSettingItem descriptor, object currentValue, string name, string description) {
+            base.Initialize(descriptor, currentValue, name, description);
             // Horizontal + slider Size=(Inf,60)：UniformSpacingPanel 主轴=X 时 desired=(Inf,60)，Y finite。
             // Vertical 会让主轴=Y→desired.Y=Inf，污染 ContentStack(StackPanel Vertical) 的 desired.Y=Inf，
             // arrange 链经 layoutTransform 算 NaN，整个页面 widget 崩。
@@ -200,7 +232,6 @@ namespace Game {
         }
 
         public override bool Supports(Type type) => IsNumeric(type);
-        public override bool IsPressed => m_slider.IsSliding;
 
         static bool IsNumeric(Type t) =>
             t == typeof(int) || t == typeof(long) || t == typeof(short) || t == typeof(byte)
@@ -212,6 +243,7 @@ namespace Game {
 
         public override void Update() {
             base.Update();
+            IsOperating = m_slider.IsSliding;
             if (m_slider.IsSliding) m_slider.Text = m_slider.Value.ToString("0.###", CultureInfo.InvariantCulture);
             if (m_slider.SlidingCompleted) {
                 object newVal = Convert.ChangeType(m_slider.Value, Descriptor.Type, CultureInfo.InvariantCulture);
@@ -222,15 +254,16 @@ namespace Game {
     }
 
     /// <summary>文本输入（TextBoxWidget）。</summary>
-    public class TextItemWidget : SettingsItemWidget {
+    public class TextBoxSettingWidget : UniformSpacingPanelSettingWidget {
         TextBoxWidget m_textBox;
 
-        public TextItemWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
+        public override void Initialize(ModSettingItem descriptor, object currentValue, string name, string description) {
+            base.Initialize(descriptor, currentValue, name, description);
             m_textBox = new TextBoxWidget { Text = Value as string ?? "", Size = new Vector2(float.PositiveInfinity, 50), VerticalAlignment = WidgetAlignment.Center, Margin = new Vector2(10, 0) };
             CanvasWidget canvasWidget = new() {
                 VerticalAlignment = WidgetAlignment.Center,
                 Size = new Vector2(float.PositiveInfinity, 50),
-                Margin = new Vector2(10, 5),
+                Margin = new Vector2(20, 5),
                 Children = { new BevelledRectangleWidget { Style = ContentManager.Get<XElement>("Styles/TextBoxArea") }, m_textBox }
             };
             Assemble(canvasWidget);

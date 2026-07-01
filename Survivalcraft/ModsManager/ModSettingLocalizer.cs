@@ -42,5 +42,10 @@ namespace Game {
             string memberName = Enum.GetName(enumType, value) ?? value?.ToString() ?? string.Empty;
             return LanguageControl.Get("ModSettings", packageName, enumType.Name, memberName);
         }
+
+        /// <summary>从描述符 CachedPath 取 packageName（path 首段），用于 enum 成员本地化。</summary>
+        public static string ExtractPackageName(ModSettingItem d) => d.CachedPath != null && d.CachedPath.Contains('/')
+            ? d.CachedPath.Substring(0, d.CachedPath.IndexOf('/'))
+            : null;
     }
 }

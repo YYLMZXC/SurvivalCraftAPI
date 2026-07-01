@@ -21,10 +21,10 @@ namespace Game {
 
         /// <summary>按值类型选默认 Widget。返回 null 表示无默认（需模组自定义）。</summary>
         public static Type GetDefaultWidgetType(Type valueType) {
-            if (valueType == typeof(bool)) return typeof(BoolButtonWidget);
-            if (typeof(Enum).IsAssignableFrom(valueType)) return typeof(EnumSelectionDialogWidget);
-            if (IsNumeric(valueType)) return typeof(NumberSliderWidget);
-            if (valueType == typeof(string)) return typeof(TextItemWidget);
+            if (valueType == typeof(bool)) return typeof(BoolButtonSettingWidget);
+            if (typeof(Enum).IsAssignableFrom(valueType)) return typeof(EnumSelectionDialogSettingWidget);
+            if (IsNumeric(valueType)) return typeof(NumberSliderSettingWidget);
+            if (valueType == typeof(string)) return typeof(TextBoxSettingWidget);
             return null;
         }
 
@@ -82,7 +82,13 @@ namespace Game {
 
         static Type ResolveType(string typeStr) {
             if (string.IsNullOrEmpty(typeStr)) return null;
-            return typeStr == "bool" ? typeof(bool) : TypeCache.FindType(typeStr, true, false);
+            // FindType 依赖全限定名或已注册短名表；简单名未注册时 GetType 查不到（只查全局命名空间）。
+            // 内置类型多在 Game 命名空间，简单名补该前缀；模组自定义类型应以全限定名声明。
+            Type t = TypeCache.FindType(typeStr, true, false);
+            if (t == null && !typeStr.Contains('.')) {
+                t = TypeCache.FindType("Game." + typeStr, true, false);
+            }
+            return t;
         }
 
         static object ResolveDefault(JsonElement obj, Type type) {
@@ -117,20 +123,15 @@ namespace Game {
         static Type ResolveWidget(string widgetStr, Type valueType) {
             if (!string.IsNullOrEmpty(widgetStr)) {
                 switch (widgetStr) {
-                    case "bool":
-                    case "BoolButtonWidget": return typeof(BoolButtonWidget);
-                    case "enum-dialog":
-                    case "EnumSelectionDialogWidget": return typeof(EnumSelectionDialogWidget);
-                    case "enum-slider":
-                    case "EnumSliderWidget": return typeof(EnumSliderWidget);
-                    case "number-slider":
-                    case "NumberSliderWidget": return typeof(NumberSliderWidget);
-                    case "text":
-                    case "TextItemWidget": return typeof(TextItemWidget);
+                    case "BoolButtonSettingWidget": return typeof(BoolButtonSettingWidget);
+                    case "EnumSelectionDialogSettingWidget": return typeof(EnumSelectionDialogSettingWidget);
+                    case "EnumSliderSettingWidget": return typeof(EnumSliderSettingWidget);
+                    case "NumberSliderSettingWidget": return typeof(NumberSliderSettingWidget);
+                    case "TextBoxSettingWidget": return typeof(TextBoxSettingWidget);
                 }
                 // 模组自定义 Widget：按全限定名查
                 Type t = TypeCache.FindType(widgetStr, true, false);
-                if (t != null && t.IsSubclassOf(typeof(SettingsItemWidget))) return t;
+                if (t != null && typeof(IModSettingItemWidget).IsAssignableFrom(t)) return t;
                 Log.Error($"[ModSettings] Widget '{widgetStr}' 未找到或非 SettingsItemWidget 子类，回退默认");
             }
             return GetDefaultWidgetType(valueType); // 缺省/不合法 → 类型默认

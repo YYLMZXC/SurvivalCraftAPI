@@ -2,22 +2,19 @@ using Engine;
 
 namespace Game {
     /// <summary>
-    /// 按 descriptor.WidgetType 实例化 SettingsItemWidget。
+    /// 按 descriptor.WidgetType 实例化 IModSettingItemWidget。
     /// 实例化后查 Supports(Type)，不满足回退默认 Widget；默认也不满足返回 null（Screen 跳过该项 + Log）。
+    /// 回退时被丢弃的首选 Widget 已在 Initialize 建好控件树，但未挂入 Screen，由 GC 回收，不持有需显式释放的资源。
     /// </summary>
     public static class SettingsItemWidgetFactory {
-        public static SettingsItemWidget Create(ModSettingItem descriptor, object currentValue, string nameText, string descriptionText) {
-            SettingsItemWidget widget = TryCreate(descriptor.WidgetType, descriptor, currentValue);
-            if (widget != null && widget.Supports(descriptor.Type)) {
-                ApplyText(widget, nameText, descriptionText);
-                return widget;
-            }
+        public static IModSettingItemWidget Create(ModSettingItem descriptor, object currentValue, string nameText, string descriptionText) {
+            IModSettingItemWidget widget = TryCreate(descriptor.WidgetType, descriptor, currentValue, nameText, descriptionText);
+            if (widget != null && widget.Supports(descriptor.Type)) return widget;
             Type defaultType = ModSettingsParser.GetDefaultWidgetType(descriptor.Type);
             if (defaultType != null) {
-                SettingsItemWidget fallback = TryCreate(defaultType, descriptor, currentValue);
+                IModSettingItemWidget fallback = TryCreate(defaultType, descriptor, currentValue, nameText, descriptionText);
                 if (fallback != null && fallback.Supports(descriptor.Type)) {
                     Log.Error($"[ModSettings] 设置项 {descriptor.Id} 的 Widget 回退默认 {defaultType.Name}");
-                    ApplyText(fallback, nameText, descriptionText);
                     return fallback;
                 }
             }
@@ -25,15 +22,14 @@ namespace Game {
             return null;
         }
 
-        static SettingsItemWidget TryCreate(Type type, ModSettingItem descriptor, object currentValue) {
+        static IModSettingItemWidget TryCreate(Type type, ModSettingItem descriptor, object currentValue, string nameText, string descriptionText) {
             if (type == null) return null;
-            try { return Activator.CreateInstance(type, descriptor, currentValue) as SettingsItemWidget; }
+            try {
+                IModSettingItemWidget widget = Activator.CreateInstance(type) as IModSettingItemWidget;
+                widget?.Initialize(descriptor, currentValue, nameText, descriptionText);
+                return widget;
+            }
             catch (Exception e) { Log.Error($"[ModSettings] Widget {type.Name} 实例化失败：{e.Message}"); return null; }
-        }
-
-        static void ApplyText(SettingsItemWidget widget, string name, string desc) {
-            widget.NameText = name;
-            widget.DescriptionText = desc;
         }
     }
 }

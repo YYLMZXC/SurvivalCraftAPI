@@ -18,7 +18,7 @@ namespace Game {
         // 栈空 = root；非空 peek 为当前页
         readonly Stack<(string PackageName, string[] PageIds, string Title)> m_pageStack = new();
         readonly Dictionary<BevelledButtonWidget, (string PackageName, string[] PageIds, string Title)> m_navButtons = new();
-        readonly List<SettingsItemWidget> m_itemWidgets = new();
+        readonly List<IModSettingItemWidget> m_itemWidgets = new();
 
         public override void Enter(object[] parameters) {
             XElement node = ContentManager.Get<XElement>("Screens/ModSettingPageScreen");
@@ -116,12 +116,16 @@ namespace Game {
                     string name = ModSettingLocalizer.ResolveText(m_packageName, itemChain, "Name", item.Name, true);
                     string desc = ModSettingLocalizer.ResolveText(m_packageName, itemChain, "Description", item.Description, false);
                     object current = ModSettingsManager.GetValue(BuildPath(m_packageName, itemChain));
-                    SettingsItemWidget w = SettingsItemWidgetFactory.Create(item, current, name, desc);
+                    IModSettingItemWidget w = SettingsItemWidgetFactory.Create(item, current, name, desc);
                     if (w == null) return null;
+                    if (w is not Widget widget) {
+                        Log.Error($"[ModSettings] 设置项 {item.Id} 的 Widget {w.GetType().Name} 未继承 Widget，无法渲染，跳过");
+                        return null;
+                    }
                     string[] fullPath = BuildPath(m_packageName, itemChain);
                     w.ValueChanged = v => ModSettingsManager.Set(fullPath, v);
                     m_itemWidgets.Add(w);
-                    return w;
+                    return widget;
                 }
             }
             return null;
@@ -165,8 +169,8 @@ namespace Game {
             }
             // 共享 Description：激活项（如滑块滑动）显示其说明，否则页面默认
             bool anyPressed = false;
-            foreach (SettingsItemWidget w in m_itemWidgets) {
-                if (w.IsPressed) {
+            foreach (IModSettingItemWidget w in m_itemWidgets) {
+                if (w.IsOperating) {
                     m_descriptionLabel.Text = w.DescriptionText;
                     anyPressed = true;
                 }

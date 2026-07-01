@@ -7,16 +7,12 @@ namespace Game {
         public Screen m_previousScreen;
 
         public ButtonWidget m_performanceButton;
-
         public ButtonWidget m_graphicsButton;
-
         public ButtonWidget m_uiButton;
-
         public ButtonWidget m_compatibilityButton;
-
         public ButtonWidget m_audioButton;
-
         public ButtonWidget m_controlsButton;
+        public ButtonWidget m_modSettingsButton;
 
         public StackPanelWidget m_leftStack, m_rightPanel;
         readonly Dictionary<ButtonWidget, Action> m_buttonActions = new();
@@ -30,6 +26,7 @@ namespace Game {
             m_compatibilityButton = Children.Find<ButtonWidget>("Compatibility");
             m_audioButton = Children.Find<ButtonWidget>("Audio");
             m_controlsButton = Children.Find<ButtonWidget>("Controls");
+            m_modSettingsButton = Children.Find<ButtonWidget>("ModSettings");
             m_leftStack = Children.Find<StackPanelWidget>("LeftStack");
             m_rightPanel = Children.Find<StackPanelWidget>("RightStack");
             ModsManager.HookAction(
@@ -44,10 +41,6 @@ namespace Game {
                     return false;
                 }
             );
-            // 引擎内置"模组设置"入口。无任何模组声明 Settings 时隐藏。
-            if (ModSettingsManager.GetRootEntries().Any()) {
-                AddSettingButton(LanguageControl.Get("ModSettings", "Entry"), () => ScreensManager.SwitchScreen("ModSettingPage"));
-            }
         }
 
         /*public override void Enter(object[] parameters) {
@@ -74,6 +67,9 @@ namespace Game {
             }
             if (m_controlsButton.IsClicked) {
                 ScreensManager.SwitchScreen("SettingsControls");
+            }
+            if (m_modSettingsButton.IsClicked) {
+                ScreensManager.SwitchScreen("ModSettings");
             }
             foreach (KeyValuePair<ButtonWidget, Action> buttonAction in m_buttonActions) {
                 if (buttonAction.Key.IsClicked) {
@@ -102,10 +98,10 @@ namespace Game {
             }
             int index = m_buttonActions.Count - 1;
             if (index % 2 == 0) {
-                m_leftStack.Children.Add(button);
+                m_rightPanel.Children.Add(button);
             }
             else {
-                m_rightPanel.Children.Add(button);
+                m_leftStack.Children.Add(button);
             }
         }
 

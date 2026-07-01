@@ -40,7 +40,10 @@ namespace Game {
         /// </summary>
         public static string GetEnumMemberText(string packageName, Type enumType, object value) {
             string memberName = Enum.GetName(enumType, value) ?? value?.ToString() ?? string.Empty;
-            return LanguageControl.Get("ModSettings", packageName, enumType.Name, memberName);
+            if (LanguageControl.TryGet(out string result, "ModSettings", packageName, enumType.Name, memberName)) {
+                return result;
+            }
+            return memberName;
         }
 
         /// <summary>从描述符 CachedPath 取 packageName（path 首段），用于 enum 成员本地化。</summary>

@@ -150,7 +150,7 @@ namespace Game {
             if (m_button.IsClicked) {
                 DialogsManager.ShowDialog(null, new ListSelectionDialog(
                     NameLabelText, m_members, 60f,
-                    item => new LabelWidget { Text = MemberText(item), HorizontalAlignment = WidgetAlignment.Center },
+                    MemberText,
                     item => { CommitValue(item); m_button.Text = MemberText(item); }
                 ));
             }

@@ -423,6 +423,7 @@ namespace Game {
 #endif
                 }
             );
+            AddLoadAction(ModsManager.ParseAllModSettings); //语言已加载（日志可国际化）+ 模组 dll 已加载（类型可解析）
 #if !IOS && !BROWSER
             AddLoadAction(
                 delegate { //读取所有的ModEntity的JavaScript
@@ -590,7 +591,7 @@ namespace Game {
             AddLoadAction(delegate { AddScreen("VrControllerMapping", new VrControllerMappingScreen()); });
             AddLoadAction(delegate { AddScreen("CameraManage", new CameraManageScreen()); });
             AddLoadAction(delegate { AddScreen("ManageClassSubstitutes", new ManageClassSubstitutesScreen()); });
-            AddLoadAction(delegate { AddScreen("ModSettingPage", new ModSettingPageScreen()); });
+            AddLoadAction(delegate { AddScreen("ModSettings", new ModSettingsScreen()); });
         }
 
         public void AddScreen(string name, Screen screen) {

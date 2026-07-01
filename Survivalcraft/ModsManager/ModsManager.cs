@@ -316,9 +316,29 @@ public static class ModsManager {
         }
         if (jsonElement.TryGetProperty("Settings", out JsonElement settingsArray)
             && settingsArray.ValueKind == JsonValueKind.Array) {
-            modInfo.Settings = ModSettingsParser.ParseSettings(settingsArray, modInfo.PackageName);
+            // 延后解析：ParseSettings 的 ResolveType/ResolveWidget 依赖模组类型，模组 dll 此时尚未加载，
+            // 由 ParseAllModSettings 在 dll 加载完成后统一解析填充 Settings。
+            modInfo.RawSettings = settingsArray.Clone();
         }
         return modInfo;
+    }
+
+    /// <summary>
+    /// dll 加载完成后解析所有启用模组的 Settings（DeserializeJson 阶段仅 Clone 原始 JSON，因类型解析依赖模组 dll）。
+    /// </summary>
+    public static void ParseAllModSettings() {
+        foreach (ModEntity modEntity in ModList) {
+            ModInfo info = modEntity.modInfo;
+            if (info.RawSettings.ValueKind != JsonValueKind.Array) continue;
+            try {
+                info.Settings = ModSettingsParser.ParseSettings(info.RawSettings, info.PackageName);
+            }
+            catch (Exception e) {
+                // 单模组解析失败不影响其他模组：info.Settings 保持 null，RegisterDataDriven 跳过
+                if (!LanguageControl.TryGet(out string msg, ModSettingsManager.fName, "12")) msg = "Settings parse failed for mod '{0}', using empty settings: {1}";
+                Log.Error("[ModSettings] " + string.Format(msg, info.PackageName, e.Message));
+            }
+        }
     }
 
     public static void SaveModSettings(XElement xElement) {

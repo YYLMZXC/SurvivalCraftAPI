@@ -6,7 +6,7 @@ namespace Game {
     /// 实例化后查 Supports(Type)，不满足回退默认 Widget；默认也不满足返回 null（Screen 跳过该项 + Log）。
     /// 回退时被丢弃的首选 Widget 已在 Initialize 建好控件树，但未挂入 Screen，由 GC 回收，不持有需显式释放的资源。
     /// </summary>
-    public static class SettingsItemWidgetFactory {
+    public static class ModSettingItemWidgetFactory {
         public static IModSettingItemWidget Create(ModSettingItem descriptor, object currentValue, string nameText, string descriptionText) {
             IModSettingItemWidget widget = TryCreate(descriptor.WidgetType, descriptor, currentValue, nameText, descriptionText);
             if (widget != null && widget.Supports(descriptor.Type)) return widget;
@@ -34,7 +34,7 @@ namespace Game {
 
         /// <summary>取本类命名空间下本地化日志串，未命中回退 engDefault，string.Format 填参数。</summary>
         static string L(string key, string engDefault, params object[] args) {
-            if (!LanguageControl.TryGet(out string s, nameof(SettingsItemWidgetFactory), key)) s = engDefault;
+            if (!LanguageControl.TryGet(out string s, nameof(ModSettingItemWidgetFactory), key)) s = engDefault;
             return string.Format(s, args);
         }
     }

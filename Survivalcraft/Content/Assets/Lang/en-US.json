@@ -1,9 +1,4 @@
 {
-  "ModSettings": {
-    "Entry": "Mod Settings",
-    "RootTitle": "Mod Settings",
-    "RootDescription": "Adjust data-driven mod settings."
-  },
   "Language": {
     "Name": "English"
   },
@@ -288,15 +283,26 @@
     "8": "Reset mod camera manage settings",
     "9": "Reset mod gamepad mapping settings",
     "10": "OnSettingChanged error, loader={0}: {1}",
-    "11": "Persisted value parse failed, path={0}, using default: {1}"
+    "11": "Persisted value parse failed, path={0}, using default: {1}",
+    "12": "Settings parse failed for mod '{0}', using empty settings: {1}"
+  },
+  "ModSettingsParser": {
+    "PageInvalidId": "Mod '{0}' page missing valid Id or contains '/', skipped",
+    "ItemInvalidId": "Setting item missing valid Id or contains '/', skipped",
+    "TypeResolveFailed": "Type '{0}' of setting '{1}' could not be resolved, skipped",
+    "DefaultParseFailed": "Default parse failed, using default({0}): {1}",
+    "WidgetResolveFailed": "Widget '{0}' not found or not an IModSettingItemWidget, falling back to default"
   },
   "SettingsItemWidgetFactory": {
     "WidgetFallback": "Setting '{0}' widget unsupported, fell back to default '{1}'.",
     "WidgetNone": "Setting '{0}' has no usable widget (type {1}), skipped.",
     "WidgetCreateFailed": "Widget '{0}' instantiation failed: {1}"
   },
-  "ModSettingPageScreen": {
-    "WidgetNotWidget": "Setting '{0}' widget '{1}' does not derive from Widget, cannot render, skipped."
+  "ModSettingsScreen": {
+    "1": "Adjust Mod Settings",
+    "2": "You can adjust mod settings here.",
+    "3": "There is no setting from mods.",
+    "4": "Setting '{0}' widget '{1}' does not derive from Widget, cannot render, skipped."
   },
   "SettingsManager": {
     "1": "There's no keyboard mapping setting named \"{0}\"!",
@@ -3443,7 +3449,8 @@
       "4": "User Interface",
       "5": "Audio",
       "6": "Controls",
-      "7": "Compatibility"
+      "7": "Compatibility",
+      "8": "Mod Settings"
     },
     "SettingsUiScreen": [
       "Adjust User Interface Settings",

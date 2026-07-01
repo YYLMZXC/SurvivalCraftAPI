@@ -6,7 +6,7 @@ namespace Game {
     /// 通用递归设置页面。root 聚合所有模组顶层 Page；非 root 渲染指定页面 Items。
     /// 单实例复用：每次 Enter(params) 重建内容；内部页面栈导航规避单实例 SwitchScreen 同实例重入限制。
     /// </summary>
-    public class ModSettingPageScreen : Screen {
+    public class ModSettingsScreen : Screen {
         LabelWidget m_titleLabel;
         StackPanelWidget m_contentStack;
         LabelWidget m_descriptionLabel;
@@ -20,8 +20,10 @@ namespace Game {
         readonly Dictionary<BevelledButtonWidget, (string PackageName, string[] PageIds, string Title)> m_navButtons = new();
         readonly List<IModSettingItemWidget> m_itemWidgets = new();
 
+        public const string fName = "ModSettingsScreen";
+
         public override void Enter(object[] parameters) {
-            XElement node = ContentManager.Get<XElement>("Screens/ModSettingPageScreen");
+            XElement node = ContentManager.Get<XElement>("Screens/ModSettingsScreen");
             LoadContents(this, node);
             m_titleLabel = Children.Find<LabelWidget>("TopBar.Label");
             m_contentStack = Children.Find<StackPanelWidget>("ContentStack");
@@ -46,7 +48,7 @@ namespace Game {
         }
 
         void BuildRoot() {
-            m_titleLabel.Text = LanguageControl.Get("ModSettings", "RootTitle");
+            m_titleLabel.Text = LanguageControl.Get(fName, "1");
             foreach (KeyValuePair<string, ModSettingPage> entry in ModSettingsManager.GetRootEntries()) {
                 ModSettingPage page = entry.Value;
                 string[] pageIds = { page.Id };
@@ -54,7 +56,7 @@ namespace Game {
                 string title = ModSettingLocalizer.ResolveText(entry.Key, pageIds, "Title", page.Title, true);
                 AddNavButton(name, entry.Key, pageIds, title);
             }
-            m_descriptionLabel.Text = LanguageControl.Get("ModSettings", "RootDescription");
+            m_descriptionLabel.Text = m_contentStack.Children.Count > 0 ? LanguageControl.Get(fName, "2") : LanguageControl.Get(fName, "3");
             m_currentPage = null;
         }
 
@@ -116,10 +118,10 @@ namespace Game {
                     string name = ModSettingLocalizer.ResolveText(m_packageName, itemChain, "Name", item.Name, true);
                     string desc = ModSettingLocalizer.ResolveText(m_packageName, itemChain, "Description", item.Description, false);
                     object current = ModSettingsManager.GetValue(BuildPath(m_packageName, itemChain));
-                    IModSettingItemWidget w = SettingsItemWidgetFactory.Create(item, current, name, desc);
+                    IModSettingItemWidget w = ModSettingItemWidgetFactory.Create(item, current, name, desc);
                     if (w == null) return null;
                     if (w is not Widget widget) {
-                        if (!LanguageControl.TryGet(out string msg, nameof(ModSettingPageScreen), "WidgetNotWidget")) msg = "Setting '{0}' widget '{1}' does not derive from Widget, cannot render, skipped.";
+                        if (!LanguageControl.TryGet(out string msg, fName, "4")) msg = "Setting '{0}' widget '{1}' does not derive from Widget, cannot render, skipped.";
                         Log.Error("[ModSettings] " + string.Format(msg, item.Id, w.GetType().Name));
                         return null;
                     }

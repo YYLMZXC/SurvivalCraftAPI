@@ -44,7 +44,7 @@ namespace Game {
 
         static ModSettingPage ParsePage(JsonElement obj, JsonElement itemsEl, string packageName) {
             string id = GetString(obj, "Id");
-            if (!IsValidId(id)) { Log.Error($"[ModSettings] Mod '{packageName}' page missing valid Id or contains '/', skipped"); return null; }
+            if (!IsValidId(id)) { Log.Error("[ModSettings] " + L("PageInvalidId", "Mod '{0}' page missing valid Id or contains '/', skipped", packageName)); return null; }
             ModSettingPage page = new() {
                 Id = id,
                 Name = GetString(obj, "Name"),
@@ -60,10 +60,10 @@ namespace Game {
 
         static ModSettingItem ParseItem(JsonElement obj, JsonElement typeEl) {
             string id = GetString(obj, "Id");
-            if (!IsValidId(id)) { Log.Error("[ModSettings] Setting item missing valid Id or contains '/', skipped"); return null; }
+            if (!IsValidId(id)) { Log.Error("[ModSettings] " + L("ItemInvalidId", "Setting item missing valid Id or contains '/', skipped")); return null; }
             string typeStr = typeEl.GetString();
             Type type = ResolveType(typeStr);
-            if (type == null) { Log.Error($"[ModSettings] Type '{typeStr}' of setting '{id}' could not be resolved, skipped"); return null; }
+            if (type == null) { Log.Error("[ModSettings] " + L("TypeResolveFailed", "Type '{0}' of setting '{1}' could not be resolved, skipped", typeStr, id)); return null; }
 
             ModSettingItem item = new() {
                 Id = id,
@@ -94,7 +94,7 @@ namespace Game {
         static object ResolveDefault(JsonElement obj, Type type) {
             if (!obj.TryGetProperty("Default", out JsonElement defEl)) return GetDefaultOf(type);
             try { return ConvertValue(type, defEl); }
-            catch (Exception e) { Log.Error($"[ModSettings] Default parse failed, using default({type.Name}): {e.Message}"); return GetDefaultOf(type); }
+            catch (Exception e) { Log.Error("[ModSettings] " + L("DefaultParseFailed", "Default parse failed, using default({0}): {1}", type.Name, e.Message)); return GetDefaultOf(type); }
         }
 
         static object GetDefaultOf(Type type) {
@@ -132,7 +132,7 @@ namespace Game {
                 // 模组自定义 Widget：按全限定名查
                 Type t = TypeCache.FindType(widgetStr, true, false);
                 if (t != null && typeof(IModSettingItemWidget).IsAssignableFrom(t)) return t;
-                Log.Error($"[ModSettings] Widget '{widgetStr}' not found or not an IModSettingItemWidget, falling back to default");
+                Log.Error("[ModSettings] " + L("WidgetResolveFailed", "Widget '{0}' not found or not an IModSettingItemWidget, falling back to default", widgetStr));
             }
             return GetDefaultWidgetType(valueType); // 缺省/不合法 → 类型默认
         }
@@ -145,5 +145,11 @@ namespace Game {
 
         static string GetString(JsonElement obj, string name) =>
             obj.TryGetProperty(name, out JsonElement el) && el.ValueKind == JsonValueKind.String ? el.GetString() : null;
+
+        /// <summary>取本类命名空间下本地化日志串，未命中回退 engDefault，string.Format 填参数。</summary>
+        static string L(string key, string engDefault, params object[] args) {
+            if (!LanguageControl.TryGet(out string s, nameof(ModSettingsParser), key)) s = engDefault;
+            return string.Format(s, args);
+        }
     }
 }

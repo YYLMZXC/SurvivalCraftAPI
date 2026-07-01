@@ -1880,10 +1880,10 @@ namespace Game {
         }
 
         /// <summary>
-        /// 数据驱动设置项值变更通知。subPath = 完整 path 去掉第一段 packageName。
-        /// 模组用于"值变了要立即处理"（如改 PBR 着色器质量要重建）。常规读取用 ModSettingsManager.Get&lt;T&gt;。
+        /// 数据驱动设置项值变更通知。idPath = 完整 path 去掉第一段 packageName。
+        /// 模组用于"值变了要立即处理"（如改 PBR 着色器质量要重建）。常规读取用 ModSettingsManager.Get&lt;T&gt;、TryGet&lt;T&gt;。
         /// </summary>
-        public virtual void OnSettingChanged(string[] subPath, object value) { }
+        public virtual void OnModSettingChanged(string[] idPath, object value) { }
 
         /// <summary>
         ///     对单条日志消息进行判定以修改其显示颜色

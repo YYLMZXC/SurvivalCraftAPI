@@ -288,7 +288,7 @@ namespace Game {
             // loader 无法自判归属，不符"按 packageName 分发"，故改精准定位 PackageNameToModEntity + 手写 try/catch。
             if (ModsManager.PackageNameToModEntity.TryGetValue(packageName, out ModEntity entity)) {
                 foreach (ModLoader loader in entity.Loaders) {
-                    try { loader.OnSettingChanged(subPath, value); }
+                    try { loader.OnModSettingChanged(subPath, value); }
                     catch (Exception e) {
                         if (!LanguageControl.TryGet(out string msg, fName, "10")) msg = "OnSettingChanged error, loader={0}: {1}";
                         Log.Error("[ModSettings] " + string.Format(msg, loader.GetType().Name, e.Message));

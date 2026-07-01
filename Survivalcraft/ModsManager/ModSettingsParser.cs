@@ -8,20 +8,6 @@ namespace Game {
     /// 类型/值转换薄封装，复用 HumanReadableConverter，不重写转换逻辑。
     /// </summary>
     public static class ModSettingsParser {
-        // 内置 Widget 别名 → 类名。别名与类名解耦，引擎内置改名不破坏 JSON。
-        static readonly Dictionary<string, string> WidgetAliases = new() {
-            { "bool", "BoolButtonWidget" },
-            { "enum-dialog", "EnumSelectionDialogWidget" },
-            { "enum-slider", "EnumSliderWidget" },
-            { "number-slider", "NumberSliderWidget" },
-            { "text", "TextItemWidget" },
-            { "BoolButtonWidget", "BoolButtonWidget" },
-            { "EnumSelectionDialogWidget", "EnumSelectionDialogWidget" },
-            { "EnumSliderWidget", "EnumSliderWidget" },
-            { "NumberSliderWidget", "NumberSliderWidget" },
-            { "TextItemWidget", "TextItemWidget" },
-        };
-
         /// <summary>解析顶层 Settings 数组 → ModSettingPage 列表。失败返回空列表。</summary>
         public static List<ModSettingPage> ParseSettings(JsonElement settingsArray, string packageName) {
             List<ModSettingPage> result = new();
@@ -35,12 +21,11 @@ namespace Game {
 
         /// <summary>按值类型选默认 Widget。返回 null 表示无默认（需模组自定义）。</summary>
         public static Type GetDefaultWidgetType(Type valueType) {
-            string name = null;
-            if (valueType == typeof(bool)) name = "BoolButtonWidget";
-            else if (typeof(Enum).IsAssignableFrom(valueType)) name = "EnumSelectionDialogWidget";
-            else if (IsNumeric(valueType)) name = "NumberSliderWidget";
-            else if (valueType == typeof(string)) name = "TextItemWidget";
-            return name != null ? TypeCache.FindType(name, true, false) : null;
+            if (valueType == typeof(bool)) return typeof(BoolButtonWidget);
+            if (typeof(Enum).IsAssignableFrom(valueType)) return typeof(EnumSelectionDialogWidget);
+            if (IsNumeric(valueType)) return typeof(NumberSliderWidget);
+            if (valueType == typeof(string)) return typeof(TextItemWidget);
+            return null;
         }
 
         static ModSettingElement ParseElement(JsonElement obj, List<string> idChain, string packageName) {
@@ -128,12 +113,23 @@ namespace Game {
             };
         }
 
+        /// <summary>内置别名/类名直接映射 typeof；模组自定义全限定名走 FindType。</summary>
         static Type ResolveWidget(string widgetStr, Type valueType) {
-            string typeName = null;
-            if (!string.IsNullOrEmpty(widgetStr))
-                typeName = WidgetAliases.GetValueOrDefault(widgetStr) ?? widgetStr; // 别名→类名，否则当全限定名
-            if (typeName != null) {
-                Type t = TypeCache.FindType(typeName, true, false);
+            if (!string.IsNullOrEmpty(widgetStr)) {
+                switch (widgetStr) {
+                    case "bool":
+                    case "BoolButtonWidget": return typeof(BoolButtonWidget);
+                    case "enum-dialog":
+                    case "EnumSelectionDialogWidget": return typeof(EnumSelectionDialogWidget);
+                    case "enum-slider":
+                    case "EnumSliderWidget": return typeof(EnumSliderWidget);
+                    case "number-slider":
+                    case "NumberSliderWidget": return typeof(NumberSliderWidget);
+                    case "text":
+                    case "TextItemWidget": return typeof(TextItemWidget);
+                }
+                // 模组自定义 Widget：按全限定名查
+                Type t = TypeCache.FindType(widgetStr, true, false);
                 if (t != null && t.IsSubclassOf(typeof(SettingsItemWidget))) return t;
                 Log.Error($"[ModSettings] Widget '{widgetStr}' 未找到或非 SettingsItemWidget 子类，回退默认");
             }

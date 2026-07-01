@@ -22,12 +22,15 @@ namespace Game {
 
         public const string fName = "ModSettingsScreen";
 
-        public override void Enter(object[] parameters) {
+        public ModSettingsScreen() {
             XElement node = ContentManager.Get<XElement>("Screens/ModSettingsScreen");
             LoadContents(this, node);
             m_titleLabel = Children.Find<LabelWidget>("TopBar.Label");
             m_contentStack = Children.Find<StackPanelWidget>("ContentStack");
             m_descriptionLabel = Children.Find<LabelWidget>("Description");
+        }
+
+        public override void Enter(object[] parameters) {
             m_pageStack.Clear();
             NavigateCurrent();
         }
@@ -49,12 +52,52 @@ namespace Game {
 
         void BuildRoot() {
             m_titleLabel.Text = LanguageControl.Get(fName, "1");
-            foreach (KeyValuePair<string, ModSettingPage> entry in ModSettingsManager.GetRootEntries()) {
-                ModSettingPage page = entry.Value;
-                string[] pageIds = { page.Id };
-                string name = ModSettingLocalizer.ResolveText(entry.Key, pageIds, "Name", page.Name, true);
-                string title = ModSettingLocalizer.ResolveText(entry.Key, pageIds, "Title", page.Title, true);
-                AddNavButton(name, entry.Key, pageIds, title);
+            // 每个模组一组：左图标+名称，右该模组各顶层 Page 的入口按钮
+            foreach ((string packageName, List<ModSettingPage> pages) in ModSettingsManager.ModSettingPages) {
+                if (pages == null || pages.Count == 0 || !ModsManager.PackageNameToModEntity.TryGetValue(packageName, out ModEntity modEntity)) continue;
+
+                UniformSpacingPanelWidget group = new() {
+                    Direction = LayoutDirection.Horizontal,
+                    Margin = new Vector2(20f, 8f)
+                };
+                StackPanelWidget right = new() {
+                    Direction = LayoutDirection.Vertical,
+                    VerticalAlignment = WidgetAlignment.Center
+                };
+                foreach (ModSettingPage page in pages) {
+                    if (page.Items.Count == 0) continue;
+                    string[] pageIds = { page.Id };
+                    string entryName = ModSettingLocalizer.ResolveText(packageName, pageIds, "Name", page.Name, true);
+                    string title = ModSettingLocalizer.ResolveText(packageName, pageIds, "Title", page.Title, true);
+                    AddNavButton(right, entryName, packageName, pageIds, title);
+                }
+                if (right.Children.Count == 0) continue;
+
+                StackPanelWidget left = new() {
+                    Direction = LayoutDirection.Horizontal
+                };
+                left.Children.Add(new RectangleWidget {
+                    Size = new Vector2(60f),
+                    FillColor = Color.White,
+                    OutlineColor = Color.Transparent,
+                    HorizontalAlignment = WidgetAlignment.Center,
+                    VerticalAlignment = WidgetAlignment.Center,
+                    Subtexture = modEntity.Icon != null
+                        ? new Subtexture(modEntity.Icon, Vector2.Zero, Vector2.One)
+                        : ContentManager.Get<Subtexture>("Textures/Gui/DefaultModIcon")
+                });
+                left.Children.Add(new LabelWidget {
+                    Text = modEntity.modInfo.Name,
+                    Color = Color.White,
+                    VerticalAlignment = WidgetAlignment.Center,
+                    Margin = new Vector2(10f, 0f),
+                    WordWrap = true
+                });
+
+                group.Children.Add(left);
+                group.Children.Add(right);
+                m_contentStack.Children.Add(group);
+                m_contentStack.Children.Add(CreateElementWidget(new ModSettingSeparator()));
             }
             m_descriptionLabel.Text = m_contentStack.Children.Count > 0 ? LanguageControl.Get(fName, "2") : LanguageControl.Get(fName, "3");
             m_currentPage = null;
@@ -70,16 +113,16 @@ namespace Game {
             }
         }
 
-        void AddNavButton(string text, string packageName, string[] pageIds, string title) {
+        void AddNavButton(ContainerWidget parent, string text, string packageName, string[] pageIds, string title) {
             BevelledButtonWidget btn = new() {
                 Style = ContentManager.Get<XElement>("Styles/ButtonStyle_310x60"),
                 Text = text,
                 HorizontalAlignment = WidgetAlignment.Center,
                 VerticalAlignment = WidgetAlignment.Center,
-                Margin = new Vector2(0f, 5f)
+                Margin = new Vector2(0f, 6f)
             };
             m_navButtons[btn] = (packageName, pageIds, title);
-            m_contentStack.Children.Add(btn);
+            parent.Children.Add(btn);
         }
 
         Widget CreateElementWidget(ModSettingElement el) {
@@ -89,15 +132,15 @@ namespace Game {
                         Text = ModSettingLocalizer.ResolveText(m_packageName, m_pageIds, "Text", label.Text, true),
                         HorizontalAlignment = WidgetAlignment.Near,
                         Color = new Color(200, 200, 200),
-                        Margin = new Vector2(0f, 8f)
+                        Margin = new Vector2(0f, 6f)
                     };
                 case ModSettingSeparator:
                     return new RectangleWidget {
-                        Size = new Vector2(300f, 2f),
+                        Size = new Vector2(float.PositiveInfinity, 2f),
                         FillColor = new Color(80, 80, 80),
                         OutlineColor = Color.Transparent,
                         HorizontalAlignment = WidgetAlignment.Center,
-                        Margin = new Vector2(0f, 6f)
+                        Margin = new Vector2(80f, 6f)
                     };
                 case ModSettingPage subPage: {
                     string[] subIds = AppendId(m_pageIds, subPage.Id);
@@ -108,7 +151,7 @@ namespace Game {
                         Text = name,
                         HorizontalAlignment = WidgetAlignment.Center,
                         VerticalAlignment = WidgetAlignment.Center,
-                        Margin = new Vector2(0f, 5f)
+                        Margin = new Vector2(0f, 6f)
                     };
                     m_navButtons[btn] = (m_packageName, subIds, title);
                     return btn;
@@ -181,7 +224,7 @@ namespace Game {
             if (!anyPressed && m_currentPage != null)
                 m_descriptionLabel.Text = ModSettingLocalizer.ResolveText(m_packageName, m_pageIds, "Description", m_currentPage.Description, false);
 
-            if (Input.Back || Input.Cancel) {
+            if (Input.Back || Input.Cancel || Children.Find<ButtonWidget>("TopBar.Back").IsClicked) {
                 if (m_pageStack.Count > 0) {
                     m_pageStack.Pop();
                     NavigateCurrent();

@@ -27,6 +27,8 @@ namespace Game {
         /// </summary>
         public static Dictionary<string, ValuesDictionary> ModCameraManageSettings { get; private set; } = new();
 
+        public static Dictionary<string, List<ModSettingPage>> ModSettingPages => m_dataDrivenPages;
+
         // ===== 数据驱动设置层 =====
         static Dictionary<string, List<ModSettingPage>> m_dataDrivenPages = new();
         static Dictionary<string, ModSettingItem> m_dataDrivenItems = new();   // CachedPath -> item
@@ -301,16 +303,6 @@ namespace Game {
 
         public static List<ModSettingPage> GetPages(string packageName) =>
             m_dataDrivenPages.TryGetValue(packageName, out List<ModSettingPage> pages) ? pages : null;
-
-        /// <summary>root 列表页聚合：所有模组的非空顶层 Page。</summary>
-        public static IEnumerable<KeyValuePair<string, ModSettingPage>> GetRootEntries() {
-            foreach (KeyValuePair<string, List<ModSettingPage>> kv in m_dataDrivenPages) {
-                foreach (ModSettingPage page in kv.Value) {
-                    if (page.Items.Count > 0)
-                        yield return new KeyValuePair<string, ModSettingPage>(kv.Key, page);
-                }
-            }
-        }
 
         // LoadModSettings 调：清空 + 按 ModList 注册（cache 已填或空）
         static void RegisterAllDataDriven() {

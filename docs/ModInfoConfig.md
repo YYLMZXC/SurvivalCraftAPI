@@ -102,7 +102,7 @@
     "Settings": [
         {
             "Id": "TemplateModSettingsGroup1", // 用于获取设置值，必须有
-            "Name": "Template Mod Settings Group 1", // 入口按钮的显示名称（支持国际化）
+            "Name": "Settings Group 1", // 入口按钮的显示名称（支持国际化）
             "Title": "Adjust Template Mod Settings Group 1", // 点开按钮后，在左侧边栏显示的标题（支持国际化）
             "Items": [
                 {

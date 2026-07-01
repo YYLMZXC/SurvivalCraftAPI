@@ -136,9 +136,11 @@ namespace Game {
         readonly string m_packageName;
 
         public EnumSliderWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
+            Direction = LayoutDirection.Vertical;
             m_packageName = ExtractPackageName(descriptor);
             m_members = Enum.GetValues(descriptor.Type);
             m_slider = new SliderWidget {
+                Size = new Vector2(280, 60),
                 MinValue = 0,
                 MaxValue = Math.Max(1, m_members.Length - 1),
                 Granularity = 1,
@@ -172,7 +174,11 @@ namespace Game {
         SliderWidget m_slider;
 
         public NumberSliderWidget(ModSettingItem descriptor, object currentValue) : base(descriptor, currentValue) {
+            // Vertical：name 一行、slider 一行。SliderWidget 必须固定宽——Size=Infinity 在嵌套 StackPanel
+            // 里累积 Inf 致 arrange 算 NaN（CanvasWidget.Size 默认 -1 不 clamp，子汇总得 Inf）。
+            Direction = LayoutDirection.Vertical;
             m_slider = new SliderWidget {
+                Size = new Vector2(280, 60),
                 MinValue = 0,
                 MaxValue = 1,
                 Granularity = 0.1f,

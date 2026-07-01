@@ -231,6 +231,18 @@ namespace Game {
             return t;
         }
 
+        public static bool TryGet<T>(out T value, params string[] path) {
+            string key = string.Join("/", path);
+            if (m_dataDrivenValues.TryGetValue(key, out object v)) {
+                if (v is T t) {
+                    value = t;
+                    return true;
+                }
+            }
+            value = default;
+            return false;
+        }
+
         /// <summary>热路径：按描述符高速取值（零字符串拼接）。</summary>
         public static T Get<T>(ModSettingItem item) {
             if (!m_dataDrivenValues.TryGetValue(item.CachedPath, out object v))
@@ -238,6 +250,17 @@ namespace Game {
             if (v is not T t)
                 throw new InvalidCastException($"ModSettingsManager.Get: 类型不匹配 path=[{item.CachedPath}] 值类型={v?.GetType()} 请求={typeof(T)}");
             return t;
+        }
+
+        public static bool TryGet<T>(out T value, ModSettingItem item) {
+            if (m_dataDrivenValues.TryGetValue(item.CachedPath, out object v)) {
+                if (v is T t) {
+                    value = t;
+                    return true;
+                }
+            }
+            value = default;
+            return false;
         }
 
         /// <summary>UI 取当前值（raw object，无类型校验，含 null）。模组读取请用 Get&lt;T&gt;。</summary>

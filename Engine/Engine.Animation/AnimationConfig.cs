@@ -217,5 +217,11 @@ namespace Engine.Animation {
         /// 初始参数值
         /// </summary>
         public Dictionary<string, object> Parameters { get; set; } = new();
+
+        /// <summary>
+        /// 骨骼别名表（别名 -> 真实骨骼名），由 ComponentModel.SetModel 写入 Model.BoneAliases。
+        /// JSON 键名 "boneAliases"（大小写不敏感，自动反序列化）。
+        /// </summary>
+        public Dictionary<string, string> BoneAliases { get; set; }
     }
 }

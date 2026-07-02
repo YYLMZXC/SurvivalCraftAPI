@@ -269,6 +269,9 @@ namespace Game {
                     if (AnimationController.ModelScale != 1f) {
                         ModelScale *= AnimationController.ModelScale;
                     }
+
+                    // 应用骨骼别名表：使旧硬编码骨骼名（Hand1 等）能解析到 glb 真实骨骼名
+                    m_model.BoneAliases = config.BoneAliases;
                 }
                 else if (!string.IsNullOrEmpty(AnimationTemplateName)) {
                     // 使用模板名称创建控制器

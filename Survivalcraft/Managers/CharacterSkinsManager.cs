@@ -164,7 +164,19 @@ namespace Game {
                     case PlayerClass.Female: valuesDictionary = DatabaseManager.FindEntityValuesDictionary("FemalePlayer", true); break;
                     default: throw new InvalidOperationException("Unknown player class.");
                 }
-                value = ContentManager.Get<Model>(valuesDictionary.GetValue<ValuesDictionary>("HumanModel").GetValue<string>("ModelName"));
+                ValuesDictionary humanModel = valuesDictionary.GetValue<ValuesDictionary>("HumanModel");
+                value = ContentManager.Get<Model>(humanModel.GetValue<string>("ModelName"));
+                // 应用骨骼别名表：此路径在 ClothingBlock.Initialize / PlayerModelWidget 等“方块/UI 上下文”中加载玩家模型，
+                // 它们会用旧硬编码骨骼名（Hand1/Leg1/...）调用 throwing FindBone。glTF 玩家模型没有这些骨骼，
+                // 必须在这里（模型加载并缓存时）把 AnimationConfig.boneAliases 写入 Model.BoneAliases，
+                // 与 ComponentModel.SetModel 的运行时路径保持一致，否则这些 throwing 调用会崩溃。
+                string animationConfigPath = humanModel.GetValue("AnimationConfigPath", "");
+                if (!string.IsNullOrEmpty(animationConfigPath)) {
+                    string configJson = ContentManager.Get<string>(animationConfigPath, ".json");
+                    var loader = new Engine.Animation.AnimationConfigLoader();
+                    Engine.Animation.AnimationConfig config = loader.LoadFromJsonNode(System.Text.Json.Nodes.JsonNode.Parse(configJson));
+                    value.BoneAliases = config.BoneAliases;
+                }
                 m_playerModels.Add(playerClass, value);
             }
             return value;

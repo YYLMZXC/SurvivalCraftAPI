@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Engine;
 using Engine.Graphics;
 using Engine.Media;
@@ -173,9 +174,13 @@ namespace Game {
                 string animationConfigPath = humanModel.GetValue("AnimationConfigPath", "");
                 if (!string.IsNullOrEmpty(animationConfigPath)) {
                     string configJson = ContentManager.Get<string>(animationConfigPath, ".json");
-                    var loader = new Engine.Animation.AnimationConfigLoader();
-                    Engine.Animation.AnimationConfig config = loader.LoadFromJsonNode(System.Text.Json.Nodes.JsonNode.Parse(configJson));
-                    value.BoneAliases = config.BoneAliases;
+                    // 注意：这里只反序列化提取 boneAliases，不调用 LoadFromJsonNode/ValidateConfig。
+                    // 原因：ClothingBlock.Initialize 在方块加载阶段运行（LoadingScreen 第 489 行），早于
+                    // AnimationTemplateRegistration.Register（第 528 行），此时 Human 模板尚未注册，
+                    // ValidateConfig 会因 "Unknown template" 抛异常。这里不需要控制器/状态规则，只需别名。
+                    var config = System.Text.Json.Nodes.JsonNode.Parse(configJson)
+                        .Deserialize<Engine.Animation.AnimationConfig>(Engine.Animation.AnimationConfigLoader.s_jsonOptions);
+                    value.BoneAliases = config?.BoneAliases;
                 }
                 m_playerModels.Add(playerClass, value);
             }

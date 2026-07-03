@@ -4132,6 +4132,8 @@
             <Parameter Name="Torso" Description="[DescriptionAttribute:257]" Guid="d2e513e4-c3ab-419d-9168-ced1f8abc775" Value="" Type="string" />
             <Parameter Name="Head" Description="[DescriptionAttribute:258]" Guid="d2e8538f-51c0-42f9-8e34-8f31ffef9b0d" Value="" Type="string" />
           </ParameterSet>
+          <Parameter Name="ShowClothedTexture" Guid="fe23f225-45b9-40c3-8d15-ae6f30669c5c" Value="True" Type="bool" />
+          <Parameter Name="DrawClothedTexture" Guid="c713cfc8-9cd4-4900-8385-8b99541e284e" Value="True" Type="bool" />
           <Parameter Name="Class" Guid="1df4e627-c959-4e6a-bfa2-b7ee3ef08c99" Value="Game.ComponentClothing" Type="string" />
         </ComponentTemplate>
         <ComponentTemplate Name="Name" Description="[DescriptionAttribute:259]" Guid="be9d5f51-94da-4d6f-b14d-fb96061584da" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
@@ -4290,6 +4292,7 @@
           <Parameter Name="CastsShadow" Description="[DescriptionAttribute:351]" Guid="db4beb73-f071-49e3-9a46-8feb09c8f13d" Value="False" Type="bool" />
           <Parameter Name="TextureOverride" Description="[DescriptionAttribute:352]" Guid="e7a927a4-a52a-4cbf-8170-d5eed845cea8" Value="" Type="string" />
           <Parameter Name="AnimationConfigPath" Guid="5c28f597-d678-47bc-b0a8-9fecf4736177" Value="" Type="string" />
+          <Parameter Name="DisableAnimation" Guid="f8201a75-a1d4-46a0-857c-ad86dfb8bd98" Value="False" Type="bool" />
         </ComponentTemplate>
         <ComponentTemplate Name="DiggingCracks" Description="[DescriptionAttribute:353]" Guid="7ea6062c-28be-4e76-8765-39b7a1f5be9b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="239a3460-544e-49d1-832b-364f1fe2799c" Value="Game.ComponentDiggingCracks" Type="string" />

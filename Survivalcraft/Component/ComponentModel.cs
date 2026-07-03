@@ -91,6 +91,8 @@ namespace Game {
 
         public bool IsVisibleForCamera { get; set; }
 
+        public bool DisableAnimation { get; set; }
+
         public Matrix[] AbsoluteBoneTransformsForCamera { get; set; }
 
         public virtual Matrix? GetBoneTransform(int boneIndex) => m_boneTransforms[boneIndex];
@@ -179,12 +181,14 @@ namespace Game {
                     AnimationController.EntityRotation = body.Rotation;
                 }
 
-                AnimationController.Update(Time.FrameDuration);
-                AnimationController.ComputeBoneTransforms(m_boneTransforms);
+                if (!DisableAnimation) {
+                    AnimationController.Update(Time.FrameDuration);
+                    AnimationController.ComputeBoneTransforms(m_boneTransforms);
 
-                // RootMotion: 将冲量/速度写回物理体
-                if (body != null && AnimationController.Velocity.HasValue) {
-                    body.Velocity = AnimationController.Velocity.Value;
+                    // RootMotion: 将冲量/速度写回物理体
+                    if (body != null && AnimationController.Velocity.HasValue) {
+                        body.Velocity = AnimationController.Velocity.Value;
+                    }
                 }
 
                 Animated = true;
@@ -196,7 +200,9 @@ namespace Game {
                     m_boneTransforms[i] = null;
                 }
 
-                m_animationPlayer.Update(Time.FrameDuration);
+                if (!DisableAnimation) {
+                    m_animationPlayer.Update(Time.FrameDuration);
+                }
                 m_animationPlayer.SampleBoneTransforms(m_boneTransforms);
                 m_animationPlayer.SamplePointerTargets(Model);
                 m_animationPlayer.SampleMorphWeights(Model);
@@ -235,6 +241,7 @@ namespace Game {
             if (!string.IsNullOrEmpty(animationConfigPath)) {
                 AnimationConfigJson = ContentManager.Get<string>(animationConfigPath, ".json");
             }
+            DisableAnimation = valuesDictionary.GetValue<bool>("DisableAnimation", false);
             Type type = TypeCache.FindType(modeltype, true, true);
             Model = (Model)ContentManager.Get(type, ModelRoute);
         }

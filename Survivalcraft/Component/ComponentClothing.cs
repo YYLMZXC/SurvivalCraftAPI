@@ -67,8 +67,19 @@ namespace Game {
 
         public static List<ClothingSlot> m_outerSlotsOrderList = [];
 
-        public static bool ShowClothedTexture = false;
+        /// <summary>
+        /// 服装贴图合成总开关。为 false 时 <see cref="UpdateRenderTargets"/> 直接返回，
+        /// 不创建合成 RenderTarget、也不把 HumanModel/OuterClothingModel 的贴图覆盖为合成贴图。
+        /// 用于自定义贴图布局的模型（如 glTF 玩家模型，UV 与原版 dae 皮肤贴图不一致）。
+        /// 实例级，由 ValuesDictionary 的 "ShowClothedTexture" 参数初始化。
+        /// </summary>
+        public static bool ShowClothedTexture = true;
 
+        /// <summary>
+        /// 是否实际把皮肤+服装贴图画进合成 RenderTarget。为 false 时仍创建并覆盖 RenderTarget
+        /// （贴图为空），但不执行 2D 绘制。仅在 <see cref="ShowClothedTexture"/> 为 true 时才有意义。
+        /// 实例级，由 ValuesDictionary 的 "DrawClothedTexture" 参数初始化。
+        /// </summary>
         public static bool DrawClothedTexture = true;
 
         public Texture2D InnerClothedTexture => m_innerClothedTexture;
@@ -272,6 +283,8 @@ namespace Game {
             foreach (ClothingSlot clothingSlot in m_innerSlotsOrder) {
                 m_clothes[clothingSlot] = [];
             }
+            ShowClothedTexture = valuesDictionary.GetValue<bool>("ShowClothedTexture", true);
+            DrawClothedTexture = valuesDictionary.GetValue<bool>("DrawClothedTexture", true);
             ValuesDictionary value = valuesDictionary.GetValue<ValuesDictionary>("Clothes");
             foreach (string key in ClothingSlot.ClothingSlots.Keys) {
                 SetClothes(ClothingSlot.ClothingSlots[key], HumanReadableConverter.ValuesListFromString<int>(';', value.GetValue<string>(key)));
@@ -571,6 +584,9 @@ namespace Game {
         }
 
         public virtual void UpdateRenderTargets() {
+            if (!ShowClothedTexture) {
+                return;
+            }
             if (m_skinTexture == null
                 || m_componentPlayer.PlayerData.CharacterSkinName != m_skinTextureName) {
                 m_skinTexture = CharacterSkinsManager.LoadTexture(m_componentPlayer.PlayerData.CharacterSkinName);

@@ -10,6 +10,7 @@ namespace Game {
         public static Dictionary<PlayerClass, Model> m_playerModels = [];
         public static Dictionary<PlayerClass, Model> m_outerClothingModels = [];
         public static bool AddEmptySkin;
+        public static bool UseEmptySkinAsDefault;
         public const string fName = "CharacterSkinsManager";
 
         public static ReadOnlyList<string> CharacterSkinsNames => new(m_characterSkinNames);

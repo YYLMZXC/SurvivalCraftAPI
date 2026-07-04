@@ -246,9 +246,7 @@ namespace Engine.Animation {
             }
 
             // 查找对应动画
-            ModelAnimation animation = m_model.Animations.FirstOrDefault(a => a.Name.Equals(gait, StringComparison.OrdinalIgnoreCase)
-                || a.Name.Contains(gait, StringComparison.OrdinalIgnoreCase)
-            );
+            ModelAnimation animation = FindAnimation(gait);
             if (animation != null) {
                 baseLayer.PlayAnimation(m_model, animation);
             }
@@ -265,9 +263,7 @@ namespace Engine.Animation {
                 upperBodyLayer.StopAnimation();
                 return;
             }
-            ModelAnimation animation = m_model.Animations.FirstOrDefault(a => a.Name.Equals(activity, StringComparison.OrdinalIgnoreCase)
-                || a.Name.Contains(activity, StringComparison.OrdinalIgnoreCase)
-            );
+            ModelAnimation animation = FindAnimation(activity);
             if (animation != null) {
                 upperBodyLayer.PlayAnimation(m_model, animation);
             }
@@ -756,6 +752,22 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 按名称精确查找模型动画（大小写不敏感）。
+        /// 不做模糊包含——短名误命中太坑（如 "Idle_Loop" 命中 "Crouch_Idle_Loop"）。
+        /// </summary>
+        private ModelAnimation FindAnimation(string name) {
+            if (string.IsNullOrEmpty(name)) {
+                return null;
+            }
+            foreach (ModelAnimation a in m_model.Animations) {
+                if (a.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) {
+                    return a;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
         /// 应用动画配置到指定层
         /// </summary>
         /// <returns>是否成功应用动画</returns>
@@ -876,9 +888,7 @@ namespace Engine.Animation {
             }
             // 处理动画名（模型内置动画）
             else {
-                ModelAnimation animation = m_model.Animations.FirstOrDefault(a => a.Name.Equals(source, StringComparison.OrdinalIgnoreCase)
-                    || a.Name.Contains(source, StringComparison.OrdinalIgnoreCase)
-                );
+                ModelAnimation animation = FindAnimation(source);
                 if (animation == null) {
                     return false;
                 }

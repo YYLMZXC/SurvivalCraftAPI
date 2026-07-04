@@ -7,10 +7,10 @@ using TemplatesDatabase;
 namespace Game {
     public static class CharacterSkinsManager {
         public static List<string> m_characterSkinNames = [];
-
         public static Dictionary<PlayerClass, Model> m_playerModels = [];
-
         public static Dictionary<PlayerClass, Model> m_outerClothingModels = [];
+        public static bool AddEmptySkin;
+        public const string fName = "CharacterSkinsManager";
 
         public static ReadOnlyList<string> CharacterSkinsNames => new(m_characterSkinNames);
 
@@ -48,28 +48,15 @@ namespace Game {
 
         public static string GetDisplayName(string name) {
             if (IsBuiltIn(name)) {
-                if (name.Contains("Female")) {
-                    if (name.Contains("1")) {
-                        return "Doris";
-                    }
-                    if (name.Contains("2")) {
-                        return "Mabel";
-                    }
-                    if (name.Contains("3")) {
-                        return "Ada";
-                    }
-                    return "Shirley";
+                if (name == "$Empty") {
+                    return LanguageControl.Get(fName, "SkinName", "Empty");
                 }
-                if (name.Contains("1")) {
-                    return "Walter";
+                if (name.StartsWith("$Female")) {
+                    return LanguageControl.Get(fName, "SkinName", "Female", name.Substring(7));
                 }
-                if (name.Contains("2")) {
-                    return "Basil";
+                if (name.StartsWith("$Male")) {
+                    return LanguageControl.Get(fName, "SkinName", "Male", name.Substring(5));
                 }
-                if (name.Contains("3")) {
-                    return "Geoffrey";
-                }
-                return "Zachary";
             }
             return Storage.GetFileNameWithoutExtension(name);
         }
@@ -88,6 +75,9 @@ namespace Game {
         }
 
         public static Texture2D LoadTexture(string name) {
+            if (string.IsNullOrEmpty(name)) {
+                return null;
+            }
             Texture2D texture2D = null;
             try {
                 string fileName = GetFileName(name);
@@ -98,12 +88,15 @@ namespace Game {
                         texture2D = Texture2D.Load(stream);
                     }
                 }
+                else if (name == "$Empty") {
+                    return null;
+                }
                 else {
                     texture2D = ContentManager.Get<Texture2D>($"Textures/Creatures/Human{name.Substring(1).Replace(" ", "")}");
                 }
             }
             catch (Exception ex) {
-                Log.Warning($"Could not load character skin \"{name}\". Reason: {ex.Message}.");
+                Log.Warning(string.Format(LanguageControl.Get(fName, "1"), name, ex.Message));
             }
             if (texture2D == null) {
                 texture2D = ContentManager.Get<Texture2D>("Textures/Creatures/HumanMale1");
@@ -150,6 +143,9 @@ namespace Game {
             m_characterSkinNames.Add("$Female2");
             m_characterSkinNames.Add("$Female3");
             m_characterSkinNames.Add("$Female4");
+            if (AddEmptySkin) {
+                m_characterSkinNames.Add("$Empty");
+            }
             foreach (string item in Storage.ListFileNames(CharacterSkinsDirectoryName)) {
                 if (Storage.GetExtension(item).ToLower() == ".scskin") {
                     m_characterSkinNames.Add(item);

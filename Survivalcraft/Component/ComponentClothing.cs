@@ -584,7 +584,7 @@ namespace Game {
         }
 
         public virtual void UpdateRenderTargets() {
-            if (!ShowClothedTexture) {
+            if (!ShowClothedTexture || m_componentPlayer.PlayerData.CharacterSkinName == "$Empty") {
                 return;
             }
             if (m_skinTexture == null

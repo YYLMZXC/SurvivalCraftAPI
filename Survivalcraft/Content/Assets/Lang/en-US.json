@@ -332,6 +332,24 @@
       ".scmodList": "Survivalcraft API Mod List"
     }
   },
+  "CharacterSkinsManager": {
+    "1": "Could not load character skin \"{0}\". Reason: {1}.",
+    "SkinName": {
+      "Empty": "Empty",
+      "Female": {
+        "1": "Doris",
+        "2": "Mabel",
+        "3": "Ada",
+        "4": "Shirley"
+      },
+      "Male": {
+        "1": "Walter",
+        "2": "Basil",
+        "3": "Geoffrey",
+        "4": "Zachary"
+      }
+    }
+  },
   "SubsystemCrossbowBlockBehavior": {
     "0": "Draw the crossbow first",
     "1": "Load a bolt first"

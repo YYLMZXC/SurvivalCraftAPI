@@ -164,7 +164,7 @@ namespace Game {
                         Texture2D texture = m_characterSkinsCache.GetTexture((string)item);
                         containerWidget.Children.Find<LabelWidget>("CharacterSkinItem.Text").Text =
                             CharacterSkinsManager.GetDisplayName((string)item);
-                        containerWidget.Children.Find<LabelWidget>("CharacterSkinItem.Details").Text = $"{texture.Width}x{texture.Height}";
+                        containerWidget.Children.Find<LabelWidget>("CharacterSkinItem.Details").Text = $"{texture?.Width ?? 0}x{texture?.Height ?? 0}";
                         PlayerModelWidget playerModelWidget = containerWidget.Children.Find<PlayerModelWidget>("CharacterSkinItem.Model");
                         playerModelWidget.PlayerClass = m_playerData.PlayerClass;
                         playerModelWidget.CharacterSkinTexture = texture;

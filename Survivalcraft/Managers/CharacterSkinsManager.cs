@@ -8,6 +8,7 @@ namespace Game {
     public static class CharacterSkinsManager {
         public static List<string> m_characterSkinNames = [];
         public static Dictionary<PlayerClass, Model> m_playerModels = [];
+        public static Dictionary<PlayerClass, Model> m_playerModelsForClothing = [];
         public static Dictionary<PlayerClass, Model> m_outerClothingModels = [];
         public static bool AddEmptySkin;
         public static bool UseEmptySkinAsDefault;
@@ -154,21 +155,44 @@ namespace Game {
             }
         }
 
-        public static Model GetPlayerModel(PlayerClass playerClass) {
-            if (!m_playerModels.TryGetValue(playerClass, out Model value)) {
-                ValuesDictionary valuesDictionary;
+        public static Model GetPlayerModel(PlayerClass playerClass) => GetPlayerModel(playerClass, false);
+
+        public static Model GetPlayerModel(PlayerClass playerClass, bool forClothing) {
+            ValuesDictionary humanModelValueDictionary = null;
+            if (forClothing) {
+                if (m_playerModelsForClothing.TryGetValue(playerClass, out Model modelForClothing)) {
+                    return modelForClothing;
+                }
+                ValuesDictionary playerValuesDictionary;
                 switch (playerClass) {
-                    case PlayerClass.Male: valuesDictionary = DatabaseManager.FindEntityValuesDictionary("MalePlayer", true); break;
-                    case PlayerClass.Female: valuesDictionary = DatabaseManager.FindEntityValuesDictionary("FemalePlayer", true); break;
+                    case PlayerClass.Male: playerValuesDictionary = DatabaseManager.FindEntityValuesDictionary("MalePlayer", true); break;
+                    case PlayerClass.Female: playerValuesDictionary = DatabaseManager.FindEntityValuesDictionary("FemalePlayer", true); break;
                     default: throw new InvalidOperationException("Unknown player class.");
                 }
-                ValuesDictionary humanModel = valuesDictionary.GetValue<ValuesDictionary>("HumanModel");
-                value = ContentManager.Get<Model>(humanModel.GetValue<string>("ModelName"));
+                humanModelValueDictionary = playerValuesDictionary.GetValue<ValuesDictionary>("HumanModel");
+                string modelNameForClothing = humanModelValueDictionary.GetValue<string>("ModelNameForClothing");
+                if (!string.IsNullOrEmpty(modelNameForClothing)) {
+                    modelForClothing = ContentManager.Get<Model>(modelNameForClothing);
+                    m_playerModelsForClothing.Add(playerClass, modelForClothing);
+                    return modelForClothing;
+                }
+            }
+            if (!m_playerModels.TryGetValue(playerClass, out Model model)) {
+                if (humanModelValueDictionary == null) {
+                    ValuesDictionary playerValuesDictionary;
+                    switch (playerClass) {
+                        case PlayerClass.Male: playerValuesDictionary = DatabaseManager.FindEntityValuesDictionary("MalePlayer", true); break;
+                        case PlayerClass.Female: playerValuesDictionary = DatabaseManager.FindEntityValuesDictionary("FemalePlayer", true); break;
+                        default: throw new InvalidOperationException("Unknown player class.");
+                    }
+                    humanModelValueDictionary = playerValuesDictionary.GetValue<ValuesDictionary>("HumanModel");
+                }
+                model = ContentManager.Get<Model>(humanModelValueDictionary.GetValue<string>("ModelName"));
                 // 应用骨骼别名表：此路径在 ClothingBlock.Initialize / PlayerModelWidget 等“方块/UI 上下文”中加载玩家模型，
                 // 它们会用旧硬编码骨骼名（Hand1/Leg1/...）调用 throwing FindBone。glTF 玩家模型没有这些骨骼，
                 // 必须在这里（模型加载并缓存时）把 AnimationConfig.boneAliases 写入 Model.BoneAliases，
                 // 与 ComponentModel.SetModel 的运行时路径保持一致，否则这些 throwing 调用会崩溃。
-                string animationConfigPath = humanModel.GetValue("AnimationConfigPath", "");
+                string animationConfigPath = humanModelValueDictionary.GetValue("AnimationConfigPath", "");
                 if (!string.IsNullOrEmpty(animationConfigPath)) {
                     string configJson = ContentManager.Get<string>(animationConfigPath, ".json");
                     // 注意：这里只反序列化提取 boneAliases，不调用 LoadFromJsonNode/ValidateConfig。
@@ -177,11 +201,11 @@ namespace Game {
                     // ValidateConfig 会因 "Unknown template" 抛异常。这里不需要控制器/状态规则，只需别名。
                     var config = System.Text.Json.Nodes.JsonNode.Parse(configJson)
                         .Deserialize<Engine.Animation.AnimationConfig>(Engine.Animation.AnimationConfigLoader.s_jsonOptions);
-                    value.BoneAliases = config?.BoneAliases;
+                    model.BoneAliases = config?.BoneAliases;
                 }
-                m_playerModels.Add(playerClass, value);
+                m_playerModels.Add(playerClass, model);
             }
-            return value;
+            return model;
         }
 
         public static Model GetOuterClothingModel(PlayerClass playerClass) {

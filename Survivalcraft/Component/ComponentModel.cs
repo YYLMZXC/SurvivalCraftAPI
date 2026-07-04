@@ -93,6 +93,8 @@ namespace Game {
 
         public bool DisableAnimation { get; set; }
 
+        public bool DisableDrawing { get; set; }
+
         public Matrix[] AbsoluteBoneTransformsForCamera { get; set; }
 
         public virtual Matrix? GetBoneTransform(int boneIndex) => m_boneTransforms[boneIndex];
@@ -133,7 +135,7 @@ namespace Game {
                     return false;
                 }
             );
-            if (flag) {
+            if (flag || DisableDrawing) {
                 return;
             }
             if (camera.GameWidget.IsEntityFirstPersonTarget(Entity)) {
@@ -242,6 +244,7 @@ namespace Game {
                 AnimationConfigJson = ContentManager.Get<string>(animationConfigPath, ".json");
             }
             DisableAnimation = valuesDictionary.GetValue<bool>("DisableAnimation", false);
+            DisableDrawing = valuesDictionary.GetValue<bool>("DisableDrawing", false);
             Type type = TypeCache.FindType(modeltype, true, true);
             Model = (Model)ContentManager.Get(type, ModelRoute);
         }

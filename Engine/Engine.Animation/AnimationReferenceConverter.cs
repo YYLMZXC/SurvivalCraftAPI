@@ -24,12 +24,12 @@ namespace Engine.Animation {
                 reader.Read();
                 switch (propertyName.ToLowerInvariant()) {
                     case "source": reference.Source = reader.GetString(); break;
-                    case "speed": reference.SpeedValue = ReadDynamicValue(ref reader); break;
-                    case "loop": reference.LoopValue = ReadDynamicValue(ref reader); break;
-                    case "startphase": reference.StartPhaseValue = ReadDynamicValue(ref reader); break;
-                    case "endphase": reference.EndPhaseValue = ReadDynamicValue(ref reader); break;
-                    case "preservepose": reference.PreservePose = reader.GetBoolean(); break;
-                    case "blendduration": reference.BlendDurationValue = ReadDynamicValue(ref reader); break;
+                    case "speed": reference.SpeedValue = ReadDynamicValue(ref reader); reference.HasSpeed = true; break;
+                    case "loop": reference.LoopValue = ReadDynamicValue(ref reader); reference.HasLoop = true; break;
+                    case "startphase": reference.StartPhaseValue = ReadDynamicValue(ref reader); reference.HasStartPhase = true; break;
+                    case "endphase": reference.EndPhaseValue = ReadDynamicValue(ref reader); reference.HasEndPhase = true; break;
+                    case "preservepose": reference.PreservePose = reader.GetBoolean(); reference.HasPreservePose = true; break;
+                    case "blendduration": reference.BlendDurationValue = ReadDynamicValue(ref reader); reference.HasBlendDuration = true; break;
                     case "driverargs": reference.DriverArgs = ReadDriverArgs(ref reader, options); break;
                     case "events": reference.Events = JsonSerializer.Deserialize<List<AnimationEventConfig>>(ref reader, options); break;
                     case "oncomplete": reference.OnComplete = JsonSerializer.Deserialize<OnCompleteAction>(ref reader, options); break;

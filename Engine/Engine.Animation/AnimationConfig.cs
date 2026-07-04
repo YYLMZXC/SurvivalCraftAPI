@@ -72,6 +72,16 @@ namespace Engine.Animation {
         /// </summary>
         public object BlendDurationValue { get; set; } = 0.3f;
 
+        // 以下 HasXxx 标记对应字段是否在 JSON 中显式设置。
+        // 用于别名合并：caller（状态规则/手动 API）显式设置的字段覆盖 alias 默认，
+        // 未设置的字段回退到 alias。由 AnimationReferenceConverter.Read 置位。
+        public bool HasSpeed;
+        public bool HasLoop;
+        public bool HasStartPhase;
+        public bool HasEndPhase;
+        public bool HasBlendDuration;
+        public bool HasPreservePose;
+
         /// <summary>
         /// 驱动器参数（当 Source 为 driver: 时使用）
         /// </summary>

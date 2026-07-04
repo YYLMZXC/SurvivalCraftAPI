@@ -733,6 +733,29 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 将 caller（状态规则/手动 API）的动画引用与别名配置合并。
+        /// 语义：alias = 模板默认，caller = 覆盖层（只覆盖显式设置的字段）；
+        /// Source 永远取 alias（alias 才持有真实动画名）。
+        /// 动态字段（speed/loop/phase/blendDuration/preservePose）按 HasXxx 判断 caller 是否显式设置；
+        /// 引用类型字段（driverArgs/events/onComplete/rootMotion）按 null 判断。
+        /// </summary>
+        private static AnimationReference MergeWithAlias(AnimationReference caller, AnimationReference alias) {
+            return new AnimationReference {
+                Source = alias.Source,
+                SpeedValue = caller.HasSpeed ? caller.SpeedValue : alias.SpeedValue,
+                LoopValue = caller.HasLoop ? caller.LoopValue : alias.LoopValue,
+                StartPhaseValue = caller.HasStartPhase ? caller.StartPhaseValue : alias.StartPhaseValue,
+                EndPhaseValue = caller.HasEndPhase ? caller.EndPhaseValue : alias.EndPhaseValue,
+                BlendDurationValue = caller.HasBlendDuration ? caller.BlendDurationValue : alias.BlendDurationValue,
+                PreservePose = caller.HasPreservePose ? caller.PreservePose : alias.PreservePose,
+                DriverArgs = caller.DriverArgs ?? alias.DriverArgs,
+                Events = caller.Events ?? alias.Events,
+                OnComplete = caller.OnComplete ?? alias.OnComplete,
+                RootMotion = caller.RootMotion ?? alias.RootMotion
+            };
+        }
+
+        /// <summary>
         /// 应用动画配置到指定层
         /// </summary>
         /// <returns>是否成功应用动画</returns>
@@ -748,21 +771,9 @@ namespace Engine.Animation {
 
             // 检查 source 是否是动画别名（在 animations 部分定义）
             if (m_animationReferences.TryGetValue(source, out AnimationReference aliasRef)) {
-                // 使用别名解析后的配置（别名配置优先，因为状态规则通常只指定 source）
-                // 保留动态属性值
-                animRef = new AnimationReference {
-                    Source = aliasRef.Source,
-                    SpeedValue = aliasRef.SpeedValue,
-                    LoopValue = aliasRef.LoopValue,
-                    StartPhaseValue = aliasRef.StartPhaseValue,
-                    EndPhaseValue = aliasRef.EndPhaseValue,
-                    PreservePose = aliasRef.PreservePose,
-                    BlendDurationValue = aliasRef.BlendDurationValue,
-                    DriverArgs = aliasRef.DriverArgs,
-                    Events = aliasRef.Events,
-                    OnComplete = aliasRef.OnComplete,
-                    RootMotion = aliasRef.RootMotion
-                };
+                // alias 作为模板默认，caller（状态规则）显式设置的字段覆盖 alias。
+                // 修复：之前整体用 alias 替换 caller，导致 caller 的 speed 表达式等动态属性丢失。
+                animRef = MergeWithAlias(animRef, aliasRef);
                 source = animRef.Source;
             }
 
@@ -1148,22 +1159,19 @@ namespace Engine.Animation {
             }
 
             // 1. 检查是否是别名
-            AnimationReference animRef = null;
+            AnimationReference animRef;
             if (m_animationReferences.TryGetValue(animationNameOrAlias, out AnimationReference aliasRef)) {
-                // 使用别名配置，但覆盖循环和过渡时长（如果显式指定）
-                animRef = new AnimationReference {
-                    Source = aliasRef.Source,
-                    SpeedValue = aliasRef.SpeedValue,
-                    LoopValue = loop, // 使用参数值
-                    StartPhaseValue = aliasRef.StartPhaseValue,
-                    EndPhaseValue = aliasRef.EndPhaseValue,
-                    PreservePose = aliasRef.PreservePose,
-                    BlendDurationValue = blendDuration, // 使用参数值
-                    DriverArgs = aliasRef.DriverArgs,
-                    Events = aliasRef.Events,
-                    OnComplete = aliasRef.OnComplete,
-                    RootMotion = aliasRef.RootMotion
+                // caller 仅强制覆盖 loop/blendDuration（参数显式传入），其余字段继承 alias。
+                // 修复：之前整体用 alias 替换，导致 alias 的 rootMotion/events/onComplete 等虽能继承，
+                // 但语义不统一；现统一走 MergeWithAlias。
+                AnimationReference caller = new() {
+                    Source = animationNameOrAlias,
+                    LoopValue = loop,
+                    BlendDurationValue = blendDuration,
+                    HasLoop = true,
+                    HasBlendDuration = true
                 };
+                animRef = MergeWithAlias(caller, aliasRef);
             }
             else {
                 // 2. 创建临时引用（直接使用动画名）

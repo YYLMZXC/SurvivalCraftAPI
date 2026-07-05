@@ -223,16 +223,30 @@ namespace Engine.Animation {
                         errors.Add("State track name cannot be empty");
                     }
                     if (trackConfig?.Rules != null) {
-                        int ruleIndex = 0;
-                        foreach (StateRuleConfig rule in trackConfig.Rules) {
-                            if (string.IsNullOrEmpty(rule.Condition)) {
-                                errors.Add($"State '{trackName}' rule {ruleIndex}: Condition is required");
-                            }
-                            ruleIndex++;
-                        }
+                        ValidateRules(trackConfig.Rules, $"state '{trackName}'", errors);
                     }
                 }
             }
+            // 递归验证状态规则（支持嵌套 rules 决策树）
+            void ValidateRules(List<StateRuleConfig> rules, string path, List<string> errors) {
+                for (int i = 0; i < rules.Count; i++) {
+                    StateRuleConfig rule = rules[i];
+                    string rulePath = $"{path}.{i}";
+                    if (string.IsNullOrEmpty(rule.Condition)) {
+                        errors.Add($"State rule {rulePath}: Condition is required");
+                    }
+                    if (rule.Rules != null && rule.Rules.Count == 0) {
+                        errors.Add($"State rule {rulePath}: Rules cannot be empty (omit the field or add a child rule)");
+                    }
+                    if (rule.HasRules && rule.Animation != null) {
+                        errors.Add($"State rule {rulePath}: cannot have both Rules and Animation");
+                    }
+                    if (rule.HasRules) {
+                        ValidateRules(rule.Rules, rulePath, errors);
+                    }
+                }
+            }
+
             if (errors.Count > 0) {
                 throw new AnimationConfigValidationException($"Animation config validation failed:\n{string.Join("\n", errors)}", errors);
             }

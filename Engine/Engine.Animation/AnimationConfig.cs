@@ -158,6 +158,15 @@ namespace Engine.Animation {
         /// 目标动画配置
         /// </summary>
         public AnimationReference Animation { get; set; }
+
+        /// <summary>
+        /// 嵌套子规则（与 Animation 互斥）。非空时为分组节点：匹配 Condition 后递归评估子 rules，
+        /// 实现"外层失败短路整组"的决策树优化（如 [CrouchFactor]>0.0 失败时跳过所有 crouch 变体）。
+        /// </summary>
+        public List<StateRuleConfig> Rules { get; set; }
+
+        /// <summary>是否为分组节点（有非空子规则）。与 Animation 互斥。</summary>
+        public bool HasRules => Rules != null && Rules.Count > 0;
     }
 
     /// <summary>

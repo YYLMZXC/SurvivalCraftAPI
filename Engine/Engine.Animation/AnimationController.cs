@@ -44,7 +44,7 @@ namespace Engine.Animation {
         public Dictionary<string, StateTrackConfig> m_stateConfigs;
 
         // 记录每个状态轨道当前匹配的规则索引（用于避免重复切换）
-        public readonly Dictionary<string, int> m_lastMatchedRuleIndex = new();
+        public readonly Dictionary<string, int[]> m_lastMatchedRuleIndex = new();
 
         // 动画引用配置（用于获取 OnComplete 动作）
         public Dictionary<string, AnimationReference> m_animationReferences = new();
@@ -673,32 +673,20 @@ namespace Engine.Animation {
                     continue;
                 }
 
-                // 找到匹配的规则
-                int matchedIndex = -1;
-                StateRuleConfig matchedRule = null;
-                for (int i = 0; i < trackConfig.Rules.Count; i++) {
-                    StateRuleConfig rule = trackConfig.Rules[i];
-                    bool result = m_ruleEvaluator.EvaluateCondition(rule.Condition, m_parameters);
-                    if (result) {
-                        matchedIndex = i;
-                        matchedRule = rule;
-                        break;
-                    }
+                // 递归匹配规则（支持嵌套 rules 决策树），path 累积匹配索引路径
+                List<int> path = new();
+                if (!TryMatchRule(trackConfig.Rules, path, out StateRuleConfig matchedRule)) {
+                    continue; // 无匹配，保持当前状态
                 }
 
-                // 如果没有匹配任何规则，保持当前状态
-                if (matchedRule == null) {
+                // 路径未变则跳过（路径 = 外层 idx → 内层 idx → ...）
+                if (m_lastMatchedRuleIndex.TryGetValue(trackName, out int[] lastPath)
+                    && lastPath != null && lastPath.SequenceEqual(path)) {
                     continue;
                 }
 
-                // 检查是否与上次匹配相同
-                if (m_lastMatchedRuleIndex.TryGetValue(trackName, out int lastIndex)
-                    && lastIndex == matchedIndex) {
-                    continue; // 规则未变化，跳过
-                }
-
                 // 更新匹配记录
-                m_lastMatchedRuleIndex[trackName] = matchedIndex;
+                m_lastMatchedRuleIndex[trackName] = path.ToArray();
 
                 // 切换动画
                 if (matchedRule.Animation != null) {
@@ -726,6 +714,38 @@ namespace Engine.Animation {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 递归匹配状态规则（支持嵌套 rules 决策树）。
+        /// 分组节点（Rules 非空）匹配 Condition 后递归子 rules；叶子节点（Rules 空）直接返回。
+        /// 外层 Condition 失败时短路整组（不评估子 rules）。
+        /// path 累积匹配索引路径（外层→内层），用于变化检测触发 transition。
+        /// </summary>
+        bool TryMatchRule(List<StateRuleConfig> rules, List<int> path, out StateRuleConfig leaf) {
+            leaf = null;
+            for (int i = 0; i < rules.Count; i++) {
+                StateRuleConfig rule = rules[i];
+                bool result = !string.IsNullOrEmpty(rule.Condition)
+                    && (rule.Condition == "true"
+                        || m_ruleEvaluator.EvaluateCondition(rule.Condition, m_parameters));
+                if (!result) {
+                    continue;
+                }
+                path.Add(i);
+                if (rule.HasRules) {
+                    // 分组：递归子 rules。子全无匹配则回溯 path，继续同层下一 rule。
+                    if (!TryMatchRule(rule.Rules, path, out leaf)) {
+                        path.RemoveAt(path.Count - 1);
+                        continue;
+                    }
+                }
+                else {
+                    leaf = rule;
+                }
+                return true;
+            }
+            return false;
         }
 
         /// <summary>

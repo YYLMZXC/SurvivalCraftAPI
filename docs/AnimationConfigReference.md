@@ -399,7 +399,8 @@
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `condition` | string | NCalc 布尔表达式 |
-| `animation` | object 或 null | 匹配时的 AnimationReference。`null` 表示停用该层 |
+| `animation` | object 或 null | 匹配时的 AnimationReference。`null` 表示停用该层。与 `rules` 互斥 |
+| `rules` | array | 嵌套子规则（决策树）。非空时为分组节点：匹配 `condition` 后递归评估子规则。与 `animation` 互斥 |
 
 ### 条件表达式
 
@@ -456,6 +457,39 @@
   "animation": null
 }
 ```
+
+### 嵌套规则（决策树）
+
+规则可嵌套 `rules` 形成决策树。外层 `condition` 匹配后递归评估子规则，取子规则中首个匹配的叶子；外层不匹配则**短路整组**（跳过所有子规则评估）。
+
+适用场景：一组共享前缀条件的变体（如蹲下的 idle/walk/run）。外层条件失败时避免逐条评估组内规则。
+
+```json
+"rules": [
+  {
+    "condition": "[CrouchFactor] > 0.0",
+    "rules": [
+      { "condition": "[SpeedAbs] > 0.2", "animation": { "source": "crouch_walk", "speed": "[Speed] * 1.25" } },
+      { "condition": "true", "animation": { "source": "crouch_idle" } }
+    ]
+  },
+  { "condition": "[SpeedAbs] > 0.2", "animation": { "source": "walk", "speed": "[Speed]" } },
+  { "condition": "true", "animation": { "source": "idle" } }
+]
+```
+
+- 站立走：`[CrouchFactor] > 0.0` 失败 → 短路整组 → 匹配 `walk`（仅评估 2 条）
+- 蹲下走：外层匹配 → 子规则 `[SpeedAbs] > 0.2` → `crouch_walk`
+- 蹲下静止：外层匹配 → 子规则 `true` → `crouch_idle`
+
+#### 嵌套规则要点
+
+- `rules` 与 `animation` 互斥：分组节点（有 `rules`）不能同时设 `animation`，否则加载报错
+- `rules` 不可为空数组：`"rules": []` 会加载报错（应省略字段或添加子规则）
+- 子规则末尾建议放 `"condition": "true"` 兜底。组内全不匹配时会回溯：跳过整组，继续同层下一规则
+- 嵌套深度无限制（实际 2 层够用）
+- 子规则的 `animation` 属性覆盖与扁平规则一致（可覆盖 speed/loop 等）
+- 状态切换（组切换或组内切换）的过渡与扁平规则相同，走层过渡逻辑
 
 ### 多状态轨道示例
 

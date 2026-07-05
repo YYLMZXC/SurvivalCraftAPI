@@ -133,6 +133,7 @@ namespace Engine.Animation {
         /// <param name="duration">过渡时长</param>
         /// <param name="interruptMode">中断模式</param>
         /// <param name="priority">优先级</param>
+        /// <param name="sourceTransformsOverride">可选的源姿态快照；中断现有过渡时由调用方传入当前实际渲染姿态，避免源退化为主 player 首帧。为 null 时从 sourcePlayer 采样</param>
         /// <returns>是否成功开始过渡</returns>
         public bool StartTransition(AnimationPlayer sourcePlayer,
             Model targetModel,
@@ -140,7 +141,8 @@ namespace Engine.Animation {
             bool loop,
             float duration,
             TransitionInterruptMode interruptMode = TransitionInterruptMode.CanInterrupt,
-            int priority = 0) {
+            int priority = 0,
+            Matrix?[] sourceTransformsOverride = null) {
             // 检查是否可以被中断
             if (m_isActive) {
                 if (InterruptMode == TransitionInterruptMode.CannotInterrupt) {
@@ -154,14 +156,21 @@ namespace Engine.Animation {
 
             // 保存源状态
             m_sourcePlayer = sourcePlayer;
-            // 即使源动画已经停止播放，也要采样当前姿态用于过渡
-            // 这样非循环动画播放完成后，过渡到下一个动画时可以正确混合
-            if (m_sourcePlayer != null
-                && m_sourcePlayer.Animation != null) {
-                // 确保源变换缓冲区足够大
-                int boneCount = targetModel != null ? targetModel.Bones.Count : 0;
-                if (boneCount > 0) {
-                    EnsureSourceBufferSize(boneCount);
+            // 源姿态来源：
+            // - sourceTransformsOverride：中断现有过渡时，由调用方采样的当前实际渲染姿态
+            //   （旧过渡的混合输出），避免源退化为已被 SetAnimation 切换的主 player 首帧
+            // - 否则：从源 player 采样当前姿态（即使源动画已停止，也能正确混合）
+            int boneCount = targetModel != null ? targetModel.Bones.Count : 0;
+            if (boneCount > 0) {
+                EnsureSourceBufferSize(boneCount);
+                if (sourceTransformsOverride != null) {
+                    int copyLen = Math.Min(boneCount, sourceTransformsOverride.Length);
+                    for (int i = 0; i < copyLen; i++) {
+                        m_sourceTransforms[i] = sourceTransformsOverride[i];
+                    }
+                }
+                else if (m_sourcePlayer != null
+                    && m_sourcePlayer.Animation != null) {
                     m_sourcePlayer.SampleBoneTransforms(m_sourceTransforms);
                 }
             }
@@ -190,6 +199,7 @@ namespace Engine.Animation {
             m_isActive = true;
             m_priority = priority;
             InterruptMode = interruptMode;
+            m_isDeactivateTransition = false;
             return true;
         }
 

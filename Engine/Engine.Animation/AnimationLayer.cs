@@ -272,6 +272,15 @@ namespace Engine.Animation {
                 return false;
             }
 
+            // 中断现有过渡时，采样当前实际渲染姿态作新过渡源。
+            // 否则源会退化为 m_animationPlayer（已被上次 SetAnimation 切到旧 target，time≈0）的首帧，
+            // 导致新过渡 blend 起点突变（如 run→walk→idle 切换时"立即变 idle"）。
+            Matrix?[] sourceSnapshot = null;
+            if (m_transition.IsActive && model != null) {
+                sourceSnapshot = new Matrix?[model.Bones.Count];
+                SampleTransforms(sourceSnapshot, model);
+            }
+
             // 开始过渡
             bool started = m_transition.StartTransition(
                 m_animationPlayer,
@@ -280,7 +289,8 @@ namespace Engine.Animation {
                 loop,
                 transitionDuration,
                 interruptMode,
-                priority
+                priority,
+                sourceSnapshot
             );
             if (started) {
                 // 同时更新主播放器，这样外部查询和速度设置都能正常工作

@@ -4240,6 +4240,8 @@
           <Parameter Name="WalkBobHeight" Description="[DescriptionAttribute:324]" Guid="2929455d-85a4-445e-a101-e33b75eb8959" Value="0.05" Type="float" />
           <Parameter Name="Class" Guid="fde7895d-e080-4bb6-876a-36d582f5eda2" Value="Game.ComponentHumanModel" Type="string" />
           <Parameter Name="AnimationConfigPath" Guid="d4e5f6a7-b8c9-0123-def0-234567890123" Value="Animations/Human" Type="string" />
+          <Parameter Name="BaseInhandItemOffset" Guid="4db49451-6168-4558-b210-2ad8dadf8f18" Value="0.05, 0.05, -0.56" Type="Vector3" />
+          <Parameter Name="BaseInhandItemRotation" Guid="9ff645c2-5b41-4631-99c5-2fc94a644cd3" Value="0, 0, 0" Type="Vector3" />
         </ComponentTemplate>
         <ComponentTemplate Name="BirdModel" Description="[DescriptionAttribute:325]" Guid="0cf15b57-00ff-422e-bb97-9dab5354d83b" InheritanceParent="681a5886-5bff-418a-bf5f-ac84f290a311">
           <Parameter Name="BoundingSphereRadius" Guid="5f901b7b-9fab-475d-be36-6c66dc4b2b2f" Value="1" Type="float" />

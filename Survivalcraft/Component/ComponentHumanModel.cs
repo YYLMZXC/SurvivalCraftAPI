@@ -76,6 +76,10 @@ namespace Game {
 
         public Vector2 m_legAngles2;
 
+        public Vector3 m_baseInhandItemOffset;
+
+        public Vector3 m_baseInhandItemRotation;
+
         public override float AttackPhase {
             get => m_punchPhase;
             set => m_punchPhase = value;
@@ -496,11 +500,11 @@ namespace Game {
                 m.Up = Vector3.Normalize(m.Up);
                 m.Forward = Vector3.Normalize(m.Forward);
                 Vector3 InhandRotation = block.GetInHandRotation(m_componentMiner.ActiveBlockValue);
-                Matrix matrix = Matrix.CreateRotationY(MathUtils.DegToRad(InhandRotation.Y) + m_inHandItemRotation.Y)
-                    * Matrix.CreateRotationZ(MathUtils.DegToRad(InhandRotation.Z) + m_inHandItemRotation.Z)
-                    * Matrix.CreateRotationX(MathUtils.DegToRad(InhandRotation.X) + m_inHandItemRotation.X)
+                Matrix matrix = Matrix.CreateRotationY(MathUtils.DegToRad(InhandRotation.Y) + m_inHandItemRotation.Y + MathUtils.DegToRad(m_baseInhandItemRotation.Y))
+                    * Matrix.CreateRotationZ(MathUtils.DegToRad(InhandRotation.Z) + m_inHandItemRotation.Z + MathUtils.DegToRad(m_baseInhandItemRotation.Z))
+                    * Matrix.CreateRotationX(MathUtils.DegToRad(InhandRotation.X) + m_inHandItemRotation.X + MathUtils.DegToRad(m_baseInhandItemRotation.X))
                     * Matrix.CreateTranslation(block.GetInHandOffset(m_componentMiner.ActiveBlockValue) + m_inHandItemOffset)
-                    * Matrix.CreateTranslation(new Vector3(0.05f, 0.05f, -0.56f) * (m_componentCreature.ComponentBody.BoxSize.Y / 1.77f))
+                    * Matrix.CreateTranslation(m_baseInhandItemOffset * (m_componentCreature.ComponentBody.BoxSize.Y / 1.77f))
                     * m;
                 int x = Terrain.ToCell(matrix.Translation.X);
                 int y = Terrain.ToCell(matrix.Translation.Y);
@@ -539,6 +543,8 @@ namespace Game {
             m_walkAnimationSpeed = valuesDictionary.GetValue<float>("WalkAnimationSpeed");
             m_walkBobHeight = valuesDictionary.GetValue<float>("WalkBobHeight");
             m_walkLegsAngle = valuesDictionary.GetValue<float>("WalkLegsAngle");
+            m_baseInhandItemOffset = valuesDictionary.GetValue<Vector3>("BaseInhandItemOffset", new Vector3(0.05f, 0.05f, -0.56f));
+            m_baseInhandItemRotation = valuesDictionary.GetValue<Vector3>("BaseInhandItemRotation", Vector3.Zero);
         }
 
         public override void SetModel(Model model) {

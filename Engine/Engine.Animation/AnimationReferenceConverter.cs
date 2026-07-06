@@ -8,10 +8,22 @@ namespace Engine.Animation {
     /// 处理动态属性（speed、loop 等可以是静态值或表达式字符串）
     /// </summary>
     public class AnimationReferenceConverter : JsonConverter<AnimationReference> {
+        // 处理 null 字面量：使 Read 收到 Null token（默认 System.Text.Json 对 null 跳过 converter）
+        public override bool HandleNull => true;
+
         public override AnimationReference Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
             AnimationReference reference = new();
+            // 简写：animation 为字符串时等价于 { "source": <字符串> }
+            if (reader.TokenType == JsonTokenType.String) {
+                reference.Source = reader.GetString();
+                return reference;
+            }
+            // null 简写：animation:null 等价于 { "source": null }（reference.Source 默认 null）
+            if (reader.TokenType == JsonTokenType.Null) {
+                return reference;
+            }
             if (reader.TokenType != JsonTokenType.StartObject) {
-                throw new JsonException("Expected StartObject token");
+                throw new JsonException("Expected StartObject, String, or Null token");
             }
             while (reader.Read()) {
                 if (reader.TokenType == JsonTokenType.EndObject) {
@@ -58,6 +70,11 @@ namespace Engine.Animation {
         }
 
         public override void Write(Utf8JsonWriter writer, AnimationReference value, JsonSerializerOptions options) {
+            // HandleNull=true 时 Write 可能收到 null（序列化路径，配置通常不序列化，保险处理）
+            if (value == null) {
+                writer.WriteNullValue();
+                return;
+            }
             writer.WriteStartObject();
             if (!string.IsNullOrEmpty(value.Source)) {
                 writer.WriteString("source", value.Source);

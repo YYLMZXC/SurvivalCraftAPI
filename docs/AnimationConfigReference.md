@@ -456,7 +456,7 @@
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `condition` | string | NCalc 布尔表达式 |
-| `animation` | object 或 null | 匹配时的 AnimationReference。`null` 表示停用该层。与 `rules` 互斥 |
+| `animation` | object、string 或 null | 匹配时的 AnimationReference。`null` 表示停用该层；字符串简写等价于 `{ "source": <字符串> }`（见[动画简写](#动画简写)）。与 `rules` 互斥 |
 | `rules` | array | 嵌套子规则（决策树）。非空时为分组节点：匹配 `condition` 后递归评估子规则。与 `animation` 互斥 |
 
 ### 条件表达式
@@ -503,6 +503,24 @@
   }
 }
 ```
+
+#### 动画简写
+
+`animation` 为字符串时等价于 `{ "source": <字符串> }`，仅需指定来源时使用：
+
+```json
+{ "condition": "[IsDead] == true", "animation": "death" }
+```
+
+等价于：
+
+```json
+{ "condition": "[IsDead] == true", "animation": { "source": "death" } }
+```
+
+需覆盖其他属性（speed、loop 等）时仍用对象形式。简写对 `animations` 别名定义同样生效。
+
+`null` 同样适用：`"animation": null` 等价于 `{ "source": null }`，表示停用该层。
 
 ### 停用层级
 

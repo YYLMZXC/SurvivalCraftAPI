@@ -42,14 +42,14 @@
 | `modelScale` | float | `1` | 模型缩放。厘米单位模型用 `0.01`，米单位模型用 `1.0` |
 | `layers` | object | `{}` | 层级配置，覆盖或补充模板中的层级 |
 | `animations` | object | `{}` | 动画别名到 AnimationReference 的映射 |
-| `states` | object | `{}` | 状态轨道到状态规则的映射 |
+| `states` | object | `{}` | 状态名到状态层配置（layer + rules）的映射 |
 | `parameters` | object | `{}` | 参数初始值 |
 
 ---
 
 ## 2. 模板系统
 
-模板预定义了层级、状态轨道和驱动器配置。选择合适的模板可大幅简化配置。
+模板预定义了层级和驱动器配置。选择合适的模板可大幅简化配置。
 
 ### 内置模板
 
@@ -62,9 +62,6 @@
   "name": "Simple",
   "layers": {
     "Base": { "index": 0, "blendMode": "Override" }
-  },
-  "stateTracks": {
-    "Gait": { "type": "Enum", "defaultValue": "Idle", "enumValues": ["Idle"] }
   }
 }
 ```
@@ -80,11 +77,6 @@
     "Base": { "index": 0, "blendMode": "Override" },
     "Head": { "index": 1, "blendMode": "Override", "boneMask": ["Head", "Neck"] },
     "Death": { "index": 2, "blendMode": "Override" }
-  },
-  "stateTracks": {
-    "Gait": { "type": "Enum", "defaultValue": "Idle", "enumValues": ["Idle", "Walk", "Trot", "Canter"] },
-    "Activity": { "type": "Enum", "defaultValue": "None", "enumValues": ["None", "Feed", "Attack"] },
-    "Death": { "type": "Float", "defaultValue": 0, "minValue": 0, "maxValue": 1 }
   }
 }
 ```
@@ -101,12 +93,6 @@
     "Activity": { "index": 1, "blendMode": "Additive", "boneMask": ["Hand1", "Hand2"] },
     "Ride": { "index": 2, "blendMode": "Override" },
     "Death": { "index": 3, "blendMode": "Override" }
-  },
-  "stateTracks": {
-    "Locomotion": { "type": "Enum", "defaultValue": "Idle", "enumValues": ["Idle", "Walk", "Fly"] },
-    "Activity": { "type": "Enum", "defaultValue": "None", "enumValues": ["None", "Attack", "Aim"] },
-    "Ride": { "type": "Enum", "defaultValue": "None", "enumValues": ["None", "Riding"] },
-    "Death": { "type": "Float", "defaultValue": 0, "minValue": 0, "maxValue": 1 }
   }
 }
 ```
@@ -122,11 +108,6 @@
     "Base": { "index": 0, "blendMode": "Override" },
     "Head": { "index": 1, "blendMode": "Override", "boneMask": ["Head", "Neck"] },
     "Death": { "index": 2, "blendMode": "Override" }
-  },
-  "stateTracks": {
-    "Locomotion": { "type": "Enum", "defaultValue": "Idle", "enumValues": ["Idle", "Walk", "Fly"] },
-    "Activity": { "type": "Enum", "defaultValue": "None", "enumValues": ["None", "Peck", "Attack"] },
-    "Death": { "type": "Float", "defaultValue": 0, "minValue": 0, "maxValue": 1 }
   }
 }
 ```
@@ -142,11 +123,6 @@
     "Base": { "index": 0, "blendMode": "Override" },
     "Head": { "index": 1, "blendMode": "Override", "boneMask": ["Head", "Neck"] },
     "Death": { "index": 2, "blendMode": "Override" }
-  },
-  "stateTracks": {
-    "Locomotion": { "type": "Enum", "defaultValue": "Idle", "enumValues": ["Idle", "Walk"] },
-    "Activity": { "type": "Enum", "defaultValue": "None", "enumValues": ["None", "Feed", "Attack"] },
-    "Death": { "type": "Float", "defaultValue": 0, "minValue": 0, "maxValue": 1 }
   }
 }
 ```
@@ -162,11 +138,6 @@
     "Base": { "index": 0, "blendMode": "Override" },
     "Head": { "index": 1, "blendMode": "Override", "boneMask": ["Jaw"] },
     "Death": { "index": 2, "blendMode": "Override" }
-  },
-  "stateTracks": {
-    "Swim": { "type": "Float", "defaultValue": 0 },
-    "Activity": { "type": "Enum", "defaultValue": "None", "enumValues": ["None", "Bite"] },
-    "Death": { "type": "Float", "defaultValue": 0, "minValue": 0, "maxValue": 1 }
   }
 }
 ```
@@ -184,22 +155,6 @@
     "Base": { "index": 0, "blendMode": "Override" },
     "UpperBodyAction": { "index": 1, "blendMode": "Override" },
     "Death": { "index": 2, "blendMode": "Override" }
-  },
-  "stateTracks": {
-    "Gait": {
-      "type": "Enum",
-      "defaultValue": "Idle",
-      "enumValues": ["Idle", "Walk", "Run", "Jump", "Fall", "Sit"]
-    },
-    "Activity": {
-      "type": "Enum",
-      "defaultValue": "None",
-      "enumValues": ["None", "Feed", "Attack", "Bark", "Howl"]
-    },
-    "Death": {
-      "type": "Bool",
-      "defaultValue": false
-    }
   }
 }
 ```
@@ -222,14 +177,6 @@
 | `boneMask` | string[] | 骨骼过滤列表。列出的骨 + 其全部后代 |
 | `boneMaskExclude` | string[] | 排除骨骼（同子树语义，从结果集扣除） |
 | `weight` | float? | 层权重（0-1）。null/<=0 回退默认 1。Override 控制覆盖强度，Additive 控制叠加强度 |
-
-### 状态轨道类型
-
-| type | 字段 | 说明 |
-|------|------|------|
-| `"Enum"` | `enumValues` (string[]), `defaultValue` | 离散枚举值，如步态 |
-| `"Bool"` | `defaultValue` | 布尔开关，如死亡 |
-| `"Float"` | `minValue`, `maxValue`, `defaultValue` | 连续浮点值 |
 
 ---
 
@@ -440,11 +387,11 @@
 }
 ```
 
-每个状态轨道包含：
+每个状态层包含：
 - `layer`：控制哪个层级
 - `rules`：有序规则列表，从上到下评估，第一个匹配的规则生效
 
-### StateTrackConfig 字段
+### StateLayerConfig 字段
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -566,7 +513,7 @@
 - 子规则的 `animation` 属性覆盖与扁平规则一致（可覆盖 speed/loop 等）
 - 状态切换（组切换或组内切换）的过渡与扁平规则相同，走层过渡逻辑
 
-### 多状态轨道示例
+### 多状态层示例
 
 ```json
 "states": {
@@ -729,21 +676,7 @@
 
 ### OnComplete 动作
 
-非循环动画结束时可以自动触发状态变更或事件：
-
-```json
-{
-  "source": "Bark",
-  "loop": false,
-  "onComplete": {
-    "type": "setState",
-    "state": "Activity",
-    "value": "None"
-  }
-}
-```
-
-或触发事件：
+非循环动画结束时可以自动触发事件：
 
 ```json
 {
@@ -759,11 +692,9 @@
 
 | onComplete 字段 | 说明 |
 |-----------------|------|
-| `type` | `"setState"` — 设置状态轨道值；`"trigger"` — 触发事件 |
-| `state` | 目标状态轨道名（仅 setState） |
-| `value` | 设置的值（仅 setState） |
-| `name` | 事件名称（仅 trigger） |
-| `data` | 事件附加数据（仅 trigger） |
+| `type` | `"trigger"` — 触发事件 |
+| `name` | 事件名称 |
+| `data` | 事件附加数据 |
 
 ---
 
@@ -986,22 +917,6 @@ NCalc 引擎原生提供的数学函数也可直接使用：`abs`, `min`, `max`,
     "Base": { "index": 0, "blendMode": "Override" },
     "UpperBodyAction": { "index": 1, "blendMode": "Override" },
     "Death": { "index": 2, "blendMode": "Override" }
-  },
-  "stateTracks": {
-    "Gait": {
-      "type": "Enum",
-      "defaultValue": "Idle",
-      "enumValues": ["Idle", "Walk", "Run", "Jump", "Fall", "Sit"]
-    },
-    "Activity": {
-      "type": "Enum",
-      "defaultValue": "None",
-      "enumValues": ["None", "Feed", "Attack"]
-    },
-    "Death": {
-      "type": "Bool",
-      "defaultValue": false
-    }
   }
 }
 ```

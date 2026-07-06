@@ -10,7 +10,6 @@ namespace Engine.Animation {
         public readonly Model m_model;
         public readonly AnimationTemplate m_template;
         public readonly AnimationLayer[] m_layers;
-        public readonly Dictionary<string, StateTrack> m_stateTracks = new();
         public readonly AnimationParameters m_parameters = new();
         public readonly AnimationBlender m_blender = new();
         public readonly StateRuleEvaluator m_ruleEvaluator = new();
@@ -41,9 +40,9 @@ namespace Engine.Animation {
         public Quaternion m_parentChainRotation = Quaternion.Identity;
 
         // 状态规则配置（从动画配置文件加载）
-        public Dictionary<string, StateTrackConfig> m_stateConfigs;
+        public Dictionary<string, StateLayerConfig> m_stateConfigs;
 
-        // 记录每个状态轨道当前匹配的规则索引（用于避免重复切换）
+        // 记录每个状态层当前匹配的规则索引（用于避免重复切换）
         public readonly Dictionary<string, int[]> m_lastMatchedRuleIndex = new();
 
         // 动画引用配置（用于获取 OnComplete 动作）
@@ -185,11 +184,6 @@ namespace Engine.Animation {
                 m_layers[layerIndex].OnAnimationEvent += ForwardAnimationEvent;
                 layerIndex++;
             }
-
-            // 初始化状态轨道
-            foreach ((string name, StateTrackDefinition trackDef) in m_template.StateTracks) {
-                m_stateTracks[name] = new StateTrack(name, trackDef);
-            }
         }
 
         /// <summary>
@@ -232,67 +226,6 @@ namespace Engine.Animation {
             }
             // 全部没找到，回退到 RootBone 名称
             return root.Name;
-        }
-
-        /// <summary>
-        /// 设置状态值
-        /// </summary>
-        public void SetState(string trackName, object value) {
-            if (m_stateTracks.TryGetValue(trackName, out StateTrack track)) {
-                track.SetValue(value);
-                OnStateChanged(trackName, value);
-            }
-        }
-
-        /// <summary>
-        /// 获取状态值
-        /// </summary>
-        public object GetState(string trackName) {
-            if (m_stateTracks.TryGetValue(trackName, out StateTrack track)) {
-                return track.Value;
-            }
-            return null;
-        }
-
-        public void OnStateChanged(string trackName, object value) {
-            // 根据状态切换动画
-            switch (trackName) {
-                case "Gait": PlayGaitAnimation(value?.ToString()); break;
-                case "Activity": PlayActivityAnimation(value?.ToString()); break;
-            }
-        }
-
-        public void PlayGaitAnimation(string gait) {
-            if (string.IsNullOrEmpty(gait)) {
-                return;
-            }
-            AnimationLayer baseLayer = m_layers.FirstOrDefault(l => l.Name == "Base");
-            if (baseLayer == null) {
-                return;
-            }
-
-            // 查找对应动画
-            ModelAnimation animation = FindAnimation(gait);
-            if (animation != null) {
-                baseLayer.PlayAnimation(m_model, animation);
-            }
-        }
-
-        public void PlayActivityAnimation(string activity) {
-            AnimationLayer upperBodyLayer = m_layers.FirstOrDefault(l => l.Name == "UpperBody");
-            if (upperBodyLayer == null) {
-                return;
-            }
-            if (string.IsNullOrEmpty(activity)
-                || activity == "None") {
-                // 停止上半身动画
-                upperBodyLayer.StopAnimation();
-                return;
-            }
-            ModelAnimation animation = FindAnimation(activity);
-            if (animation != null) {
-                upperBodyLayer.PlayAnimation(m_model, animation);
-            }
         }
 
         /// <summary>
@@ -752,12 +685,6 @@ namespace Engine.Animation {
                 return;
             }
             switch (action.Type?.ToLowerInvariant()) {
-                case "setstate":
-                    // 设置状态轨道的值
-                    if (!string.IsNullOrEmpty(action.State)) {
-                        SetState(action.State, action.Value);
-                    }
-                    break;
                 case "trigger":
                     // 触发自定义事件
                     if (!string.IsNullOrEmpty(action.Name)) {
@@ -778,7 +705,7 @@ namespace Engine.Animation {
         /// <summary>
         /// 设置状态规则配置
         /// </summary>
-        public void SetStateConfigs(Dictionary<string, StateTrackConfig> configs) {
+        public void SetStateConfigs(Dictionary<string, StateLayerConfig> configs) {
             m_stateConfigs = configs;
         }
 
@@ -795,37 +722,37 @@ namespace Engine.Animation {
                 && m_manualOverrideLayers.Count >= m_layers.Length) {
                 return;
             }
-            foreach ((string trackName, StateTrackConfig trackConfig) in m_stateConfigs) {
-                if (string.IsNullOrEmpty(trackConfig.Layer)) {
+            foreach ((string stateName, StateLayerConfig layerConfig) in m_stateConfigs) {
+                if (string.IsNullOrEmpty(layerConfig.Layer)) {
                     continue;
                 }
-                if (!m_layers.Any(l => l.Name == trackConfig.Layer)) {
+                if (!m_layers.Any(l => l.Name == layerConfig.Layer)) {
                     continue;
                 }
 
                 // 跳过被手动控制的层
-                if (m_manualOverrideLayers.Contains(trackConfig.Layer)) {
+                if (m_manualOverrideLayers.Contains(layerConfig.Layer)) {
                     continue;
                 }
-                if (trackConfig.Rules == null
-                    || trackConfig.Rules.Count == 0) {
+                if (layerConfig.Rules == null
+                    || layerConfig.Rules.Count == 0) {
                     continue;
                 }
 
                 // 递归匹配规则（支持嵌套 rules 决策树），path 累积匹配索引路径
                 List<int> path = new();
-                if (!TryMatchRule(trackConfig.Rules, path, out StateRuleConfig matchedRule)) {
+                if (!TryMatchRule(layerConfig.Rules, path, out StateRuleConfig matchedRule)) {
                     continue; // 无匹配，保持当前状态
                 }
 
                 // 路径未变则跳过（路径 = 外层 idx → 内层 idx → ...）
-                if (m_lastMatchedRuleIndex.TryGetValue(trackName, out int[] lastPath)
+                if (m_lastMatchedRuleIndex.TryGetValue(stateName, out int[] lastPath)
                     && lastPath != null && lastPath.SequenceEqual(path)) {
                     continue;
                 }
 
                 // 更新匹配记录
-                m_lastMatchedRuleIndex[trackName] = path.ToArray();
+                m_lastMatchedRuleIndex[stateName] = path.ToArray();
 
                 // 切换动画。
                 // Source 为空（含 {"source":null} 与整个 animation:null）= 该层无内容 → 停用，让下层输出可见。
@@ -833,19 +760,19 @@ namespace Engine.Animation {
                 // 旧动画会滞留（条件不再满足时该层动画继续播放，无法停止）。
                 if (matchedRule.Animation != null
                     && !string.IsNullOrEmpty(matchedRule.Animation.Source)) {
-                    ApplyAnimationToLayer(trackConfig.Layer, matchedRule.Animation);
+                    ApplyAnimationToLayer(layerConfig.Layer, matchedRule.Animation);
                 }
                 else {
                     // animation:null 或 source:null → 停用层：渐降平滑淡出，完成时清空动画并保持 active。
                     // 渐降期间保留动画采样（层动画淡出可见）；完成清空 Animation=null → 下次播放走权重渐入
                     //（PlayAnimationWithTransition 的 Animation==null 分支）实现重启平滑。详见 DeactivateAndClear。
-                    AnimationLayer layer = m_layers.FirstOrDefault(l => l.Name == trackConfig.Layer);
+                    AnimationLayer layer = m_layers.FirstOrDefault(l => l.Name == layerConfig.Layer);
                     if (layer != null) {
                         layer.DeactivateAndClear(0.2f);
                     }
 
                     // Base 层停用时清除根运动配置，根骨骼变换回退顶层
-                    if (trackConfig.Layer == "Base") {
+                    if (layerConfig.Layer == "Base") {
                         SetRootMotionConfig(null);
                         SetRootTransformTarget(
                             m_configRootRotation ?? Quaternion.Identity,
@@ -1442,12 +1369,12 @@ namespace Engine.Animation {
                 layer?.SetHoldPose(false);
                 m_manualOverrideLayers.Remove(layerName);
 
-                // 清除该层相关状态轨道的规则匹配缓存
-                // 通过遍历状态配置找到该层对应的轨道
+                // 清除该层相关状态层的规则匹配缓存
+                // 通过遍历状态配置找到该层对应的状态层
                 if (m_stateConfigs != null) {
-                    foreach ((string trackName, StateTrackConfig trackConfig) in m_stateConfigs) {
-                        if (trackConfig.Layer == layerName) {
-                            m_lastMatchedRuleIndex.Remove(trackName);
+                    foreach ((string stateName, StateLayerConfig layerConfig) in m_stateConfigs) {
+                        if (layerConfig.Layer == layerName) {
+                            m_lastMatchedRuleIndex.Remove(stateName);
                         }
                     }
                 }

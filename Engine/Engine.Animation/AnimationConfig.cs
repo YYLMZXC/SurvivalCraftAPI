@@ -7,19 +7,9 @@ namespace Engine.Animation {
     /// </summary>
     public class OnCompleteAction {
         /// <summary>
-        /// 动作类型：setState 或 trigger
+        /// 动作类型：trigger
         /// </summary>
         public string Type { get; set; }
-
-        /// <summary>
-        /// 目标状态轨道名称（setState 使用）
-        /// </summary>
-        public string State { get; set; }
-
-        /// <summary>
-        /// 要设置的值（setState 使用）
-        /// </summary>
-        public object Value { get; set; }
 
         /// <summary>
         /// 事件名称（trigger 使用）
@@ -197,9 +187,9 @@ namespace Engine.Animation {
     }
 
     /// <summary>
-    /// 状态轨道配置（新格式）
+    /// 状态层配置
     /// </summary>
-    public class StateTrackConfig {
+    public class StateLayerConfig {
         /// <summary>
         /// 所属层名称
         /// </summary>
@@ -260,7 +250,7 @@ namespace Engine.Animation {
         /// <summary>
         /// 状态配置
         /// </summary>
-        public Dictionary<string, StateTrackConfig> States { get; set; } = new();
+        public Dictionary<string, StateLayerConfig> States { get; set; } = new();
 
         /// <summary>
         /// 动画引用映射（别名 -> 引用）

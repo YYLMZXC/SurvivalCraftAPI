@@ -134,27 +134,13 @@ namespace Engine.Animation {
                 }
             }
 
-            // 转换状态轨道定义
-            Dictionary<string, StateTrackDefinition> stateTracks = new();
-            if (config.StateTracks != null) {
-                foreach ((string name, TemplateStateTrackConfig trackConfig) in config.StateTracks) {
-                    if (trackConfig == null) {
-                        continue;
-                    }
-                    StateTrackDefinition track = CreateStateTrackFromConfig(trackConfig);
-                    if (track != null) {
-                        stateTracks[name] = track;
-                    }
-                }
-            }
-
             // 转换必需骨骼列表
             string[] requiredBones = null;
             if (config.RequiredBones != null
                 && config.RequiredBones.Count > 0) {
                 requiredBones = config.RequiredBones.ToArray();
             }
-            return new AnimationTemplate(config.Name, layers, stateTracks, requiredBones);
+            return new AnimationTemplate(config.Name, layers, requiredBones);
         }
 
         public static LayerDefinition CreateLayerFromConfig(TemplateLayerConfig config) {
@@ -179,27 +165,6 @@ namespace Engine.Animation {
             return new LayerDefinition(config.Index, blendMode, boneMask, boneMaskExclude, weight);
         }
 
-        public static StateTrackDefinition CreateStateTrackFromConfig(TemplateStateTrackConfig config) {
-            if (config == null) {
-                return null;
-            }
-            StateTrackType type = ParseStateTrackType(config.Type);
-            StateTrackDefinition definition = new(type, config.DefaultValue);
-
-            // 设置 Enum 类型特有属性
-            if (type == StateTrackType.Enum
-                && config.EnumValues != null) {
-                definition.EnumValues = config.EnumValues.ToArray();
-            }
-
-            // 设置 Float 类型特有属性
-            if (type == StateTrackType.Float) {
-                definition.MinValue = config.MinValue;
-                definition.MaxValue = config.MaxValue;
-            }
-            return definition;
-        }
-
         public static AnimationBlendMode ParseBlendMode(string value) {
             if (string.IsNullOrEmpty(value)) {
                 return AnimationBlendMode.Override;
@@ -208,18 +173,6 @@ namespace Engine.Animation {
                 "override" => AnimationBlendMode.Override,
                 "additive" => AnimationBlendMode.Additive,
                 _ => AnimationBlendMode.Override
-            };
-        }
-
-        public static StateTrackType ParseStateTrackType(string value) {
-            if (string.IsNullOrEmpty(value)) {
-                return StateTrackType.Float;
-            }
-            return value.ToLowerInvariant() switch {
-                "enum" => StateTrackType.Enum,
-                "bool" => StateTrackType.Bool,
-                "float" => StateTrackType.Float,
-                _ => StateTrackType.Float
             };
         }
 

@@ -252,9 +252,9 @@ namespace Engine.Animation {
 
             // 验证状态配置
             if (config.States != null) {
-                foreach (KeyValuePair<string, StateTrackConfig> kvp in config.States) {
+                foreach (KeyValuePair<string, StateLayerConfig> kvp in config.States) {
                     string trackName = kvp.Key;
-                    StateTrackConfig trackConfig = kvp.Value;
+                    StateLayerConfig trackConfig = kvp.Value;
                     if (string.IsNullOrEmpty(trackName)) {
                         errors.Add("State track name cannot be empty");
                     }

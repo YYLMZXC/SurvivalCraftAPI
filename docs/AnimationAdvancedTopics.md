@@ -39,8 +39,6 @@ if (controller != null)
 |-----|------|
 | `Update(float deltaTime)` | 每帧更新（由系统自动调用） |
 | `ComputeBoneTransforms(Matrix?[] boneTransforms)` | 计算骨骼变换（由系统自动调用） |
-| `SetState(string trackName, object value)` | 设置状态轨道值 |
-| `GetState(string trackName)` | 获取状态轨道值 |
 | `PlayAnimation(...)` | 手动播放动画 |
 | `ReleaseManualControl(...)` | 释放手动控制 |
 | `RegisterAndBuildIKChain(...)` | 注册 IK 链 |
@@ -271,16 +269,16 @@ private void OnAnimationEvent(AnimationEvent evt)
 
 ### OnComplete 自动动作
 
-非循环动画完成时可自动触发状态变更，无需 C# 代码：
+非循环动画完成时可自动触发事件，无需 C# 代码：
 
 ```json
 {
   "source": "Bark",
   "loop": false,
   "onComplete": {
-    "type": "setState",
-    "state": "Activity",
-    "value": "None"
+    "type": "trigger",
+    "name": "BarkComplete",
+    "data": null
   }
 }
 ```

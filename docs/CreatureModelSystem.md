@@ -561,7 +561,7 @@ flowchart TD
 ```
 
 **关键概念**：
-- **模板（Template）**：预定义层级和状态轨道（Simple/FourLegged/Human/Bird/Fish/FlightlessBird）
+- **模板（Template）**：预定义层级（Simple/FourLegged/Human/Bird/Fish/FlightlessBird）
 - **层级（Layer）**：独立的动画播放上下文，支持 Override/Additive 混合
 - **状态规则（State Rules）**：条件表达式 → 动画映射的有序规则列表
 - **参数（Parameters）**：类型化的运行时值，驱动表达式和状态规则

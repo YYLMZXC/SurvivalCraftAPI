@@ -318,14 +318,14 @@ YourMod/
 
 ### 选择模板
 
-| 模板 | 适用生物 | 预设层级 | 预设状态轨道 |
-|------|----------|----------|-------------|
-| `Simple` | 简单实体 | Base | Gait (Idle) |
-| `FourLegged` | 四足动物 | Base, Head, Death | Gait, Activity, Death |
-| `Human` | 人形 | Base, Activity, Ride, Death | Locomotion, Activity, Ride, Death |
-| `Bird` | 鸟类 | Base, Head, Death | Locomotion, Activity, Death |
-| `FlightlessBird` | 不会飞的鸟 | Base, Head, Death | Locomotion, Activity, Death |
-| `Fish` | 鱼类 | Base, Head, Death | Swim, Activity, Death |
+| 模板 | 适用生物 | 预设层级 |
+|------|----------|----------|
+| `Simple` | 简单实体 | Base |
+| `FourLegged` | 四足动物 | Base, Head, Death |
+| `Human` | 人形 | Base, Activity, Ride, Death |
+| `Bird` | 鸟类 | Base, Head, Death |
+| `FlightlessBird` | 不会飞的鸟 | Base, Head, Death |
+| `Fish` | 鱼类 | Base, Head, Death |
 
 详细的模板内容和 JSON 格式参见 [AnimationConfigReference.md](AnimationConfigReference.md)。
 
@@ -402,7 +402,7 @@ public class ComponentYourCreatureModel : ComponentCreatureModel
         if (controller == null) return;
 
         // 添加模组自定义参数（基类不提供的）
-        // 通过 Parameters.SetString 设置状态轨道值，触发状态规则评估
+        // 通过 Parameters.SetString 设置参数值，触发状态规则评估
         var locomotion = m_componentCreature.ComponentLocomotion;
         float speed = Vector3.Dot(
             m_componentCreature.ComponentBody.Velocity,
@@ -420,7 +420,7 @@ public class ComponentYourCreatureModel : ComponentCreatureModel
 
 > **重要**：必须调用 `base.SyncAnimationParameters()`。基类同步了大量内置参数（Speed, SpeedAbs, DeathPhase, IsDead, WalkSpeed, LookAngleX/Y, BodyHeight 等），不调用会导致基础功能异常。
 
-设置状态轨道值使用 `Parameters.SetString("Gait", "Run")` 或 `Parameters.SetBool("Death", true)`，而非 `SetState()`。参数变化通过状态规则的条件表达式间接驱动动画切换。
+设置参数值使用 `Parameters.SetString("Gait", "Run")` 或 `Parameters.SetBool("Death", true)`。参数变化通过状态规则的条件表达式间接驱动动画切换。
 
 ### 7.3 手动动画控制
 

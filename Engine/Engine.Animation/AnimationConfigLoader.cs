@@ -124,6 +124,20 @@ namespace Engine.Animation {
                 errors.Add($"Unknown template: {config.Template}");
             }
 
+            // 顶层 rootBoneRotation / rootBoneTranslation 有限性
+            if (config.RootBoneRotation.HasValue) {
+                Vector3 r = config.RootBoneRotation.Value;
+                if (!IsFinite(r.X) || !IsFinite(r.Y) || !IsFinite(r.Z)) {
+                    errors.Add("rootBoneRotation has non-finite component");
+                }
+            }
+            if (config.RootBoneTranslation.HasValue) {
+                Vector3 t = config.RootBoneTranslation.Value;
+                if (!IsFinite(t.X) || !IsFinite(t.Y) || !IsFinite(t.Z)) {
+                    errors.Add("rootBoneTranslation has non-finite component");
+                }
+            }
+
             // 验证动画引用
             if (config.Animations != null) {
                 int index = 0;
@@ -194,6 +208,28 @@ namespace Engine.Animation {
                                 errors.Add($"Animation '{alias}': BlendDuration cannot be negative (got {blendInt})");
                             }
                         }
+
+                        // Validate RootBoneRotationValue（静态值，不支持 NCalc）。
+                        // 字符串/NCalc 表达式在反序列化时已被 ReadRootBoneRotationValue 拒绝（抛 JsonException），此处不重复检查。
+                        // 不变量：HasRootBoneRotation == true 时 RootBoneRotationValue 必非 null。
+                        if (reference.HasRootBoneRotation) {
+                            if (reference.RootBoneRotationValue is Vector3 rv) {
+                                if (!IsFinite(rv.X) || !IsFinite(rv.Y) || !IsFinite(rv.Z)) {
+                                    errors.Add($"Animation '{alias}': rootBoneRotation has non-finite component");
+                                }
+                            }
+                            else if (reference.RootBoneRotationValue is float rf && !IsFinite(rf)) {
+                                errors.Add($"Animation '{alias}': rootBoneRotation must be finite (got {rf})");
+                            }
+                        }
+                        // Validate RootBoneTranslation
+                        if (reference.HasRootBoneTranslation
+                            && reference.RootBoneTranslation.HasValue) {
+                            Vector3 tv = reference.RootBoneTranslation.Value;
+                            if (!IsFinite(tv.X) || !IsFinite(tv.Y) || !IsFinite(tv.Z)) {
+                                errors.Add($"Animation '{alias}': rootBoneTranslation has non-finite component");
+                            }
+                        }
                     }
                     index++;
                 }
@@ -252,6 +288,8 @@ namespace Engine.Animation {
             }
         }
 
+        private static bool IsFinite(float f) => !float.IsNaN(f) && !float.IsInfinity(f);
+
         /// <summary>
         /// 在模型中查找指定名称的动画
         /// </summary>
@@ -297,8 +335,11 @@ namespace Engine.Animation {
             // 创建控制器
             AnimationController controller = new(model, templateName);
 
-            // 设置根骨骼旋转（用于修正模型朝向）
-            controller.RootBoneRotation = config.RootBoneRotation * MathF.PI / 180f; // 度转弧度
+            // 设置根骨骼变换配置（rotation 度→弧度由 controller 内部转；translation 直传）
+            controller.SetRootRotationConfig(config.RootBoneRotation);
+            controller.SetRootTranslationConfig(config.RootBoneTranslation);
+            // snap effective = 顶层配置目标，避免启动时无谓混合
+            controller.SnapRootTransformToConfig();
 
             // 设置模型缩放
             controller.ModelScale = config.ModelScale;

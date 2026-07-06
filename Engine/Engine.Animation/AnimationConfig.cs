@@ -1,4 +1,5 @@
 using Engine.Animation.RootMotion;
+using System.Text.Json.Serialization;
 
 namespace Engine.Animation {
     /// <summary>
@@ -102,6 +103,22 @@ namespace Engine.Animation {
         /// </summary>
         public RootMotionConfig RootMotion { get; set; }
 
+        /// <summary>
+        /// 根骨骼旋转覆盖（度）。未设置（HasRootBoneRotation=false）时回退顶层。
+        /// 可为 float（绕 Y）或 Vector3（绕 X/Y/Z）。静态值，不支持 NCalc。
+        /// 不变量：HasRootBoneRotation == true 时此值必非 null（ReadRootBoneRotationValue 从不返回 null，
+        /// MergeWithAlias 保持该不变量）。判过 HasRootBoneRotation 即可直接取值，无需重复判空。
+        /// </summary>
+        public object RootBoneRotationValue { get; set; }
+
+        /// <summary>
+        /// 根骨骼平移覆盖。null=回退顶层。
+        /// </summary>
+        public Vector3? RootBoneTranslation { get; set; }
+
+        public bool HasRootBoneRotation;
+        public bool HasRootBoneTranslation;
+
         // Cached dynamic properties (avoid repeated allocations)
         public DynamicProperty<float> m_cachedSpeedProperty;
         public DynamicProperty<bool> m_cachedLoopProperty;
@@ -202,11 +219,19 @@ namespace Engine.Animation {
         public string Template { get; set; } = "Simple";
 
         /// <summary>
-        /// 根骨骼旋转角度（度），用于修正模型朝向
-        /// 某些 glTF 模型的前方方向可能与游戏不一致，需要旋转修正
-        /// 例如：Fox 模型的前方是 +X，需要旋转 90 度使其面向 +Z
+        /// 根骨骼旋转（度），用于修正模型朝向。
+        /// 单数字 = 绕 Y 轴（向后兼容）；Vector3 = 绕 X/Y/Z（数组 [x,y,z] 或对象 {"X":..,"Y":..,"Z":..}）。
+        /// 例如：Fox 模型前方 +X，需绕 Y 旋转 90 度面向 +Z。
         /// </summary>
-        public float RootBoneRotation { get; set; } = 0f;
+        [JsonConverter(typeof(RootBoneEulerConverter))]
+        public Vector3? RootBoneRotation { get; set; }
+
+        /// <summary>
+        /// 根骨骼平移（米），用于修正模型原点偏移。
+        /// 沿实体本地坐标轴（Y 恒指上方；X/Z 随实体朝向旋转），不被 RootBoneRotation 旋转（R*T 顺序）。
+        /// 数组或对象两种写法。
+        /// </summary>
+        public Vector3? RootBoneTranslation { get; set; }
 
         /// <summary>
         /// 模型缩放比例

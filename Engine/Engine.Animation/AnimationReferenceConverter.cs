@@ -42,6 +42,14 @@ namespace Engine.Animation {
                             reader.Skip();
                         }
                         break;
+                    case "rootbonerotation":
+                        reference.RootBoneRotationValue = ReadRootBoneRotationValue(ref reader, options);
+                        reference.HasRootBoneRotation = true;
+                        break;
+                    case "rootbonetranslation":
+                        reference.RootBoneTranslation = ReadVector3Nullable(ref reader, options);
+                        reference.HasRootBoneTranslation = true;
+                        break;
                     default:
                         reader.Skip(); break;
                 }
@@ -81,6 +89,14 @@ namespace Engine.Animation {
                 writer.WritePropertyName("rootMotion");
                 JsonSerializer.Serialize(writer, value.RootMotion, options);
             }
+            if (value.HasRootBoneRotation) {
+                writer.WritePropertyName("rootBoneRotation");
+                WriteRootBoneRotationValue(writer, value.RootBoneRotationValue);
+            }
+            if (value.HasRootBoneTranslation && value.RootBoneTranslation.HasValue) {
+                writer.WritePropertyName("rootBoneTranslation");
+                JsonSerializer.Serialize(writer, value.RootBoneTranslation.Value, options);
+            }
             writer.WriteEndObject();
         }
 
@@ -107,6 +123,50 @@ namespace Engine.Animation {
                 case double d: writer.WriteNumberValue(d); break;
                 case bool b: writer.WriteBooleanValue(b); break;
                 default: writer.WriteStringValue(value.ToString()); break;
+            }
+        }
+
+        private object ReadRootBoneRotationValue(ref Utf8JsonReader reader, JsonSerializerOptions options) {
+            switch (reader.TokenType) {
+                case JsonTokenType.Number:
+                    return reader.TryGetInt32(out int intVal) ? intVal : (object)reader.GetSingle();
+                case JsonTokenType.StartArray:
+                case JsonTokenType.StartObject:
+                    return JsonSerializer.Deserialize<Vector3>(ref reader, options);
+                default:
+                    throw new JsonException($"Invalid rootBoneRotation token: {reader.TokenType} (expected number, array, or object)");
+            }
+        }
+
+        private Vector3? ReadVector3Nullable(ref Utf8JsonReader reader, JsonSerializerOptions options) {
+            if (reader.TokenType == JsonTokenType.Null) {
+                return null;
+            }
+            if (reader.TokenType == JsonTokenType.StartArray
+                || reader.TokenType == JsonTokenType.StartObject) {
+                return JsonSerializer.Deserialize<Vector3>(ref reader, options);
+            }
+            throw new JsonException($"Invalid rootBoneTranslation token: {reader.TokenType} (expected array or object)");
+        }
+
+        private void WriteRootBoneRotationValue(Utf8JsonWriter writer, object value) {
+            switch (value) {
+                case float f: writer.WriteNumberValue(f); break;
+                case int i: writer.WriteNumberValue(i); break;
+                case double d: writer.WriteNumberValue(d); break;
+                case Vector3 v:
+                    if (v.X == 0f && v.Z == 0f) {
+                        writer.WriteNumberValue(v.Y);
+                    }
+                    else {
+                        writer.WriteStartArray();
+                        writer.WriteNumberValue(v.X);
+                        writer.WriteNumberValue(v.Y);
+                        writer.WriteNumberValue(v.Z);
+                        writer.WriteEndArray();
+                    }
+                    break;
+                default: throw new InvalidOperationException($"Unexpected rootBoneRotation value type: {value?.GetType().Name ?? "null"}");
             }
         }
 

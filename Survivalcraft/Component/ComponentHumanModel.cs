@@ -181,8 +181,8 @@ namespace Game {
             if ((m_rowLeft || m_rowRight)
                 && componentMount != null
                 && componentMount.ComponentBody.ImmersionFactor > 0f
-                && Math.Floor(1.1000000238418579 * m_subsystemTime.GameTime)
-                != Math.Floor(1.1000000238418579 * (m_subsystemTime.GameTime - m_subsystemTime.GameTimeDelta))) {
+                && Math.Floor(1.1 * m_subsystemTime.GameTime)
+                != Math.Floor(1.1 * (m_subsystemTime.GameTime - m_subsystemTime.GameTimeDelta))) {
                 m_subsystemAudio.PlayRandomSound(
                     "Audio/Rowing",
                     m_random.Float(0.4f, 0.6f),
@@ -278,6 +278,10 @@ namespace Game {
             // 创造模式飞行
             ctrl.Parameters.SetBool("IsCreativeFly", m_componentCreature.ComponentLocomotion.IsCreativeFlyEnabled);
             ctrl.Parameters.SetFloat("VelocityXZ", m_componentCreature.ComponentBody.Velocity.XZ.Length());
+            ctrl.Parameters.SetFloat("VelocityY", m_componentCreature.ComponentBody.Velocity.Y);
+
+            // 在梯子上爬行
+            ctrl.Parameters.SetBool("IsOnLadder", m_componentCreature.ComponentLocomotion.LadderValue.HasValue);
 
             // 实体哈希（用于噪声种子）
             ctrl.Parameters.SetFloat("EntityHash", GetHashCode());

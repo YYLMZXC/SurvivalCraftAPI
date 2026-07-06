@@ -95,6 +95,30 @@ namespace Engine.Animation {
         /// </summary>
         public float RootBoneRotation { get; set; } = 0f;
 
+        // ===== 根骨骼变换（rotation Vector3 扩展 + translation + 每动画覆盖混合） =====
+        // 顶层配置目标
+        Quaternion? m_configRootRotation;
+        Vector3 m_configRootTranslation;
+        bool m_hasConfigTranslation;
+
+        // 当前有效值（ComponentModel / root motion 读取）
+        Quaternion m_effectiveRootRotation = Quaternion.Identity;
+        Vector3 m_effectiveRootTranslation = Vector3.Zero;
+
+        // 活动混合（from → to）
+        Quaternion m_rootRotFrom = Quaternion.Identity;
+        Quaternion m_rootRotTo = Quaternion.Identity;
+        Vector3 m_rootTransFrom = Vector3.Zero;
+        Vector3 m_rootTransTo = Vector3.Zero;
+        float m_rootBlendElapsed;
+        float m_rootBlendDuration;
+        bool m_rootBlending;
+
+        /// <summary>当前有效根骨骼旋转（已混合）。ComponentModel 与 root motion 读取。</summary>
+        public Quaternion EffectiveRootRotation => m_effectiveRootRotation;
+        /// <summary>当前有效根骨骼平移（已混合）。</summary>
+        public Vector3 EffectiveRootTranslation => m_effectiveRootTranslation;
+
         /// <summary>
         /// 模型缩放比例
         /// </summary>
@@ -290,10 +314,13 @@ namespace Engine.Animation {
                 layer.Update(deltaTime, m_parameters);
             }
 
-            // 5. 应用根运动（仅 Base 层）
+            // 5. 推进根骨骼变换混合（须在根运动前，根运动读 EffectiveRootRotation）
+            AdvanceRootBlend(deltaTime);
+
+            // 6. 应用根运动（仅 Base 层）
             ApplyRootMotion(deltaTime);
 
-            // 6. 检查动画完成事件
+            // 7. 检查动画完成事件
             CheckAnimationCompletion();
         }
 
@@ -446,10 +473,7 @@ namespace Engine.Animation {
                     // 动画局部空间 → 模型空间 → 实体空间
                     velocity = Vector3.Transform(velocity, m_parentChainRotation);
                     velocity *= ModelScale;
-                    if (RootBoneRotation != 0f) {
-                        Quaternion rootRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, RootBoneRotation);
-                        velocity = Vector3.Transform(velocity, rootRot);
-                    }
+                    velocity = Vector3.Transform(velocity, m_effectiveRootRotation);
                 }
             }
             Vector3? scale = null;
@@ -505,10 +529,7 @@ namespace Engine.Animation {
             // 动画局部空间 → 模型空间 → 实体空间
             localImpulse = Vector3.Transform(localImpulse, m_parentChainRotation);
             localImpulse *= ModelScale;
-            if (RootBoneRotation != 0f) {
-                Quaternion rootRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, RootBoneRotation);
-                localImpulse = Vector3.Transform(localImpulse, rootRot);
-            }
+            localImpulse = Vector3.Transform(localImpulse, m_effectiveRootRotation);
             return localImpulse;
         }
 
@@ -540,6 +561,122 @@ namespace Engine.Animation {
             m_currentAnimationName = null; // 重置动画名称，触发缓存更新
             m_parentChainRotation = Quaternion.Identity;
             m_translationApplier.Reset();
+        }
+
+        /// <summary>
+        /// 设置顶层根骨骼旋转配置（度）。同步更新 legacy float RootBoneRotation（Y 弧度，向后兼容）。
+        /// </summary>
+        public void SetRootRotationConfig(Vector3? eulerDegrees) {
+            m_configRootRotation = eulerDegrees.HasValue
+                ? EulerDegreesToQuaternion(eulerDegrees.Value)
+                : (Quaternion?)null;
+            RootBoneRotation = eulerDegrees.HasValue
+                ? eulerDegrees.Value.Y * MathF.PI / 180f
+                : 0f;
+        }
+
+        /// <summary>
+        /// 设置顶层根骨骼平移配置。
+        /// </summary>
+        public void SetRootTranslationConfig(Vector3? translation) {
+            m_hasConfigTranslation = translation.HasValue;
+            m_configRootTranslation = translation ?? Vector3.Zero;
+        }
+
+        /// <summary>
+        /// 将 effective snap 到顶层配置目标（CreateController 初始化用，避免启动混合）。
+        /// </summary>
+        public void SnapRootTransformToConfig() {
+            m_effectiveRootRotation = m_configRootRotation ?? Quaternion.Identity;
+            m_effectiveRootTranslation = m_hasConfigTranslation ? m_configRootTranslation : Vector3.Zero;
+            m_rootBlending = false;
+            m_rootBlendElapsed = 0f;
+        }
+
+        /// <summary>
+        /// 解析动画引用的根骨骼变换目标并启动混合。
+        /// 由 ApplyAnimationToLayer 在合并 caller+alias 后调用。
+        /// </summary>
+        public void SetRootTransformTargetFromAnimation(AnimationReference animRef, float blendDuration) {
+            Quaternion rotTarget = ResolveRotationTarget(animRef);
+            Vector3 transTarget = ResolveTranslationTarget(animRef);
+            SetRootTransformTarget(rotTarget, transTarget, blendDuration);
+        }
+
+        /// <summary>
+        /// 启动根骨骼变换混合（从当前有效值出发，中断安全）。duration≤0 立即 snap。
+        /// </summary>
+        public void SetRootTransformTarget(Quaternion rotation, Vector3 translation, float duration) {
+            m_rootRotFrom = m_effectiveRootRotation;
+            m_rootRotTo = rotation;
+            m_rootTransFrom = m_effectiveRootTranslation;
+            m_rootTransTo = translation;
+            if (duration <= 0f) {
+                m_effectiveRootRotation = rotation;
+                m_effectiveRootTranslation = translation;
+                m_rootBlending = false;
+                m_rootBlendElapsed = 0f;
+                m_rootBlendDuration = 0f;
+                return;
+            }
+            m_rootBlendDuration = duration;
+            m_rootBlendElapsed = 0f;
+            m_rootBlending = true;
+        }
+
+        /// <summary>
+        /// 推进根骨骼变换混合。Update 每帧调用。
+        /// </summary>
+        public void AdvanceRootBlend(float deltaTime) {
+            if (!m_rootBlending) {
+                return;
+            }
+            m_rootBlendElapsed += deltaTime;
+            float raw = m_rootBlendDuration > 0f
+                ? m_rootBlendElapsed / m_rootBlendDuration
+                : 1f;
+            float t = Math.Clamp(raw, 0f, 1f);
+            float s = t * t * (3f - 2f * t); // smoothstep
+            m_effectiveRootRotation = Quaternion.Slerp(m_rootRotFrom, m_rootRotTo, s);
+            m_effectiveRootTranslation = Vector3.Lerp(m_rootTransFrom, m_rootTransTo, s);
+            if (t >= 1f) {
+                m_effectiveRootRotation = m_rootRotTo;
+                m_effectiveRootTranslation = m_rootTransTo;
+                m_rootBlending = false;
+            }
+        }
+
+        Quaternion ResolveRotationTarget(AnimationReference animRef) {
+            if (animRef != null && animRef.HasRootBoneRotation) {
+                return RootRotationValueToQuaternion(animRef.RootBoneRotationValue);
+            }
+            return m_configRootRotation ?? Quaternion.Identity;
+        }
+
+        Vector3 ResolveTranslationTarget(AnimationReference animRef) {
+            if (animRef != null
+                && animRef.HasRootBoneTranslation
+                && animRef.RootBoneTranslation.HasValue) {
+                return animRef.RootBoneTranslation.Value;
+            }
+            return m_hasConfigTranslation ? m_configRootTranslation : Vector3.Zero;
+        }
+
+        static Quaternion EulerDegreesToQuaternion(Vector3 eulerDegrees) {
+            float yaw = eulerDegrees.Y * MathF.PI / 180f;
+            float pitch = eulerDegrees.X * MathF.PI / 180f;
+            float roll = eulerDegrees.Z * MathF.PI / 180f;
+            return Quaternion.CreateFromYawPitchRoll(yaw, pitch, roll);
+        }
+
+        static Quaternion RootRotationValueToQuaternion(object value) {
+            switch (value) {
+                case float f: return EulerDegreesToQuaternion(new Vector3(0f, f, 0f));
+                case int i: return EulerDegreesToQuaternion(new Vector3(0f, i, 0f));
+                case double d: return EulerDegreesToQuaternion(new Vector3(0f, (float)d, 0f));
+                case Vector3 v: return EulerDegreesToQuaternion(v);
+                default: return Quaternion.Identity;
+            }
         }
 
         /// <summary>
@@ -708,9 +845,13 @@ namespace Engine.Animation {
                         }
                     }
 
-                    // Base 层停用时清除根运动配置
+                    // Base 层停用时清除根运动配置，根骨骼变换回退顶层
                     if (trackConfig.Layer == "Base") {
                         SetRootMotionConfig(null);
+                        SetRootTransformTarget(
+                            m_configRootRotation ?? Quaternion.Identity,
+                            m_configRootTranslation,
+                            0.2f);
                     }
                 }
             }
@@ -767,6 +908,10 @@ namespace Engine.Animation {
                 DriverArgs = caller.DriverArgs ?? alias.DriverArgs,
                 Events = caller.Events ?? alias.Events,
                 OnComplete = caller.OnComplete ?? alias.OnComplete,
+                RootBoneRotationValue = caller.HasRootBoneRotation ? caller.RootBoneRotationValue : alias.RootBoneRotationValue,
+                RootBoneTranslation = caller.HasRootBoneTranslation ? caller.RootBoneTranslation : alias.RootBoneTranslation,
+                HasRootBoneRotation = caller.HasRootBoneRotation || alias.HasRootBoneRotation,
+                HasRootBoneTranslation = caller.HasRootBoneTranslation || alias.HasRootBoneTranslation,
                 RootMotion = caller.RootMotion ?? alias.RootMotion
             };
         }
@@ -813,6 +958,9 @@ namespace Engine.Animation {
             float speed = animRef.GetSpeedProperty().IsExpression ? 1.0f : animRef.GetSpeedProperty().StaticValue;
             bool loop = animRef.GetLoopProperty().IsExpression ? true : animRef.GetLoopProperty().StaticValue;
             float blendDuration = animRef.GetBlendDurationProperty().IsExpression ? 0.3f : animRef.GetBlendDurationProperty().StaticValue;
+
+            // 解析根骨骼变换目标（每动画覆盖 → 顶层回退），启动混合（时长=blendDuration，与姿态过渡同步）
+            SetRootTransformTargetFromAnimation(animRef, blendDuration);
 
             // 处理 driver: 语法
             if (source.StartsWith("driver:")) {

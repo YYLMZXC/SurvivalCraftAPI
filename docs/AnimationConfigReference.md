@@ -37,7 +37,8 @@
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `template` | string | `"Simple"` | 动画模板名称或自定义模板路径 |
-| `rootBoneRotation` | float | `0` | 根骨骼旋转修正（度数）。模型朝向不对时使用，常见值 `0` 或 `180` |
+| `rootBoneRotation` | float 或 Vector3 | `0` | 根骨骼旋转修正（度）。单数字=绕 Y；`[x,y,z]` 或 `{"X":..,"Y":..,"Z":..}`=绕 X/Y/Z。详见 [根骨骼变换覆盖与混合](#根骨骼变换覆盖与混合) |
+| `rootBoneTranslation` | Vector3 | `[0,0,0]` | 根骨骼平移修正（米）。`[x,y,z]` 或 `{"X":..,"Y":..,"Z":..}`。沿实体本地坐标轴（Y 恒上；X/Z 随实体朝向），不受 rootBoneRotation 旋转影响 |
 | `modelScale` | float | `1` | 模型缩放。厘米单位模型用 `0.01`，米单位模型用 `1.0` |
 | `layers` | object | `{}` | 层级配置，覆盖或补充模板中的层级 |
 | `animations` | object | `{}` | 动画别名到 AnimationReference 的映射 |
@@ -317,6 +318,8 @@
 | `events` | array | `[]` | 动画事件列表 |
 | `onComplete` | object | null | 动画完成时的动作 |
 | `rootMotion` | object | null | Root Motion 配置 |
+| `rootBoneRotation` | float 或 Vector3 | null | 根骨骼旋转覆盖（度）。覆盖顶层。静态值，不支持表达式 |
+| `rootBoneTranslation` | Vector3 | null | 根骨骼平移覆盖（米）。覆盖顶层 |
 
 ### source 格式
 
@@ -361,6 +364,34 @@
   "preservePose": true
 }
 ```
+
+### 根骨骼变换覆盖与混合
+
+`rootBoneRotation` 与 `rootBoneTranslation` 既可顶层配置（全局默认），也可在单个动画（AnimationReference）上覆盖。典型用途：复用动画（如把地面爬行旋转 90° 当作爬梯姿态）。
+
+```json
+"climb": {
+  "source": "Crawl",
+  "rootBoneRotation": [90, 0, 0],
+  "rootBoneTranslation": [0, 0.2, 0],
+  "blendDuration": 0.3
+}
+```
+
+**两种写法**（rotation 单数字 = 绕 Y，向后兼容；translation 仅 Vector3）：
+- 数组：`[x, y, z]`
+- 对象：`{ "X": x, "Y": y, "Z": z }`
+
+**覆盖与回退**：动画显式设置 → 用该值；未设置 → 回退顶层；顶层也未设 → 无变换（Identity）。
+
+**平滑混合**：切入带覆盖的动画时，根骨骼变换随该动画的 `blendDuration` 平滑过渡（smoothstep 曲线）。从当前有效姿态出发，到达目标正好与姿态过渡同步；切出（回到无覆盖动画）同样平滑回正。
+
+- **中断安全**：过渡未完成又切换动画，从当前姿态继续，不突跳。
+- **旋转序**：`Yaw(Y) · Pitch(X) · Roll(Z)`（单轴 Y=90 等价旧 `rootBoneRotation: 90`）。
+- **平移序**：`R*T`（先旋转后平移）——平移在旋转前的坐标架应用，故不被 `rootBoneRotation` 旋转。轴为实体本地坐标轴（Y 恒指上方；X/Z 随实体朝向），即 `[0, 0.5, 0]` 恒向实体上方抬升 0.5 米。
+- **静态值**：不支持表达式（NCalc）。旋转/平移必须是数字或 Vector3 字面量。
+- **根运动方向**：旋转同时变换 root motion 方向（绕 Y 旋转后前进方向跟随）；平移不参与根运动。
+- **层级停用**：状态规则把某层切到 `animation: null` 时，该层根骨骼变换以 0.2s 过渡回退顶层默认。
 
 ---
 

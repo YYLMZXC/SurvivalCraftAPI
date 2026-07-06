@@ -16,6 +16,7 @@ namespace Engine.Animation {
         public float m_deactivateElapsed;
         public float m_deactivateDuration;
         public float m_originalWeight;
+        public bool m_clearOnDeactivate; // 渐降完成时清空动画（状态规则停用），区别于普通停用（恢复 Weight + m_active=false）
 
         // 激活渐变过渡状态（Override 层的权重渐入）
         public bool m_activating;
@@ -240,6 +241,7 @@ namespace Engine.Animation {
             }
             if (m_deactivating) {
                 m_deactivating = false;
+                m_clearOnDeactivate = false; // 中断渐降时同步清 flag，避免残留误触发后续完成分支清空
                 Weight = m_originalWeight;
             }
         }
@@ -409,6 +411,53 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 清空层的动画内容（停止播放 + 清除动画引用 + 取消过渡 + 取消渐变）。
+        /// 用于状态规则停用：使层进入"空 active"态（Animation=null, IsPlaying=false）。
+        /// 注意 AnimationPlayer.Stop 只置 m_playing=false，不清 m_animation —— 此方法显式清空，
+        /// 这样下次 PlayAnimationWithTransition 会走权重渐入分支（Animation==null 判据），
+        /// 而非交叉淡入分支（Animation 非null + Weight 已恢复 → 硬切）。配合 Weight=0 使用。
+        /// </summary>
+        public void ClearAnimation() {
+            m_animationPlayer?.Stop();
+            if (m_animationPlayer != null) {
+                m_animationPlayer.m_animation = null;
+            }
+            m_transition?.CancelTransition();
+            CancelTransitioning();
+        }
+
+        /// <summary>
+        /// 状态规则停用：权重渐降平滑淡出，完成时清空动画并进入"空 active"态
+        ///（Animation=null, Weight=0, m_active=true），使下次播放走权重渐入分支（Animation==null 判据）实现重启平滑。
+        /// 区别于 DeactivateWithBlend（完成 m_active=false + 恢复 Weight，且不清 Animation → 下次播放硬切）。
+        /// 渐降期间保留动画采样，淡出可见；完成在 Update 的 m_deactivating 分支处理（m_clearOnDeactivate flag）。
+        /// </summary>
+        public void DeactivateAndClear(float blendDuration) {
+            if (blendDuration <= 0f
+                || !IsActive
+                || m_animationPlayer?.IsPlaying != true) {
+                // 无活动动画或无过渡时长：直接清空进入"空 active"态
+                m_deactivating = false;
+                ClearAnimation();
+                Weight = 0f;
+                m_active = true;
+                return;
+            }
+            // 取消进行中的激活渐入（激活渐入未完成即触发停用的边界场景），避免两套 Weight 渐变并行
+            if (m_activating) {
+                m_activating = false;
+                if (m_activateSourceTransforms != null) {
+                    Array.Clear(m_activateSourceTransforms, 0, m_activateSourceTransforms.Length);
+                }
+            }
+            m_originalWeight = Weight;
+            m_deactivating = true;
+            m_deactivateElapsed = 0f;
+            m_deactivateDuration = blendDuration;
+            m_clearOnDeactivate = true;
+        }
+
+        /// <summary>
         /// 更新层状态
         /// </summary>
         public void Update(float deltaTime, AnimationParameters parameters) {
@@ -436,10 +485,21 @@ namespace Engine.Animation {
                 m_deactivateElapsed += deltaTime;
                 float progress = m_deactivateDuration > 0 ? AnimationTransition.ApplyCurve(m_deactivateElapsed / m_deactivateDuration, Curve) : 1f;
                 if (progress >= 1f) {
-                    // 过渡完成，停用层并恢复原始权重
-                    Weight = m_originalWeight;
                     m_deactivating = false;
-                    m_active = false;
+                    if (m_clearOnDeactivate) {
+                        // 状态规则停用：渐降完成 → 清空动画 + 保持 active + Weight=0，
+                        // 使下次播放走权重渐入（Animation==null）实现平滑重启。
+                        // m_deactivating 先置 false，避免 ClearAnimation→CancelTransitioning 把 Weight 恢复成 m_originalWeight。
+                        m_clearOnDeactivate = false;
+                        ClearAnimation();
+                        Weight = 0f;
+                        m_active = true;
+                    }
+                    else {
+                        // 普通停用：恢复原始权重 + m_active=false
+                        Weight = m_originalWeight;
+                        m_active = false;
+                    }
                 }
                 else {
                     // 渐变权重：从原始权重渐变到 0

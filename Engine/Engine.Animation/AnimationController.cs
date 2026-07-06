@@ -825,24 +825,21 @@ namespace Engine.Animation {
                 // 更新匹配记录
                 m_lastMatchedRuleIndex[trackName] = path.ToArray();
 
-                // 切换动画
-                if (matchedRule.Animation != null) {
+                // 切换动画。
+                // Source 为空（含 {"source":null} 与整个 animation:null）= 该层无内容 → 停用，让下层输出可见。
+                // 不能直接调 ApplyAnimationToLayer：它对空 Source early-return（944-947），既不播新也不停旧，
+                // 旧动画会滞留（条件不再满足时该层动画继续播放，无法停止）。
+                if (matchedRule.Animation != null
+                    && !string.IsNullOrEmpty(matchedRule.Animation.Source)) {
                     ApplyAnimationToLayer(trackConfig.Layer, matchedRule.Animation);
                 }
                 else {
-                    // animation: null 表示该层不激活，让下层输出可见
+                    // animation:null 或 source:null → 停用层：渐降平滑淡出，完成时清空动画并保持 active。
+                    // 渐降期间保留动画采样（层动画淡出可见）；完成清空 Animation=null → 下次播放走权重渐入
+                    //（PlayAnimationWithTransition 的 Animation==null 分支）实现重启平滑。详见 DeactivateAndClear。
                     AnimationLayer layer = m_layers.FirstOrDefault(l => l.Name == trackConfig.Layer);
                     if (layer != null) {
-                        // 检查层是否正在播放动画，如果是则使用过渡停用
-                        if (layer.IsActive
-                            && layer.AnimationPlayer?.IsPlaying == true) {
-                            // 使用过渡停用，实现平滑淡出
-                            layer.DeactivateWithBlend(0.2f);
-                        }
-                        else {
-                            // 没有活动动画，直接停用
-                            layer.Deactivate();
-                        }
+                        layer.DeactivateAndClear(0.2f);
                     }
 
                     // Base 层停用时清除根运动配置，根骨骼变换回退顶层

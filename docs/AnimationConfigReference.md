@@ -221,6 +221,7 @@
 | `blendMode` | string | `"Override"`（覆盖）或 `"Additive"`（叠加） |
 | `boneMask` | string[] | 骨骼过滤列表。列出的骨 + 其全部后代 |
 | `boneMaskExclude` | string[] | 排除骨骼（同子树语义，从结果集扣除） |
+| `weight` | float? | 层权重（0-1）。null/<=0 回退默认 1。Override 控制覆盖强度，Additive 控制叠加强度 |
 
 ### 状态轨道类型
 
@@ -268,6 +269,7 @@
 |------|------|------|
 | `bones` | string[] | 骨骼过滤列表，按子树展开。**省略则保留模板 `boneMask`**；设为非空数组则覆盖 |
 | `bonesExclude` | string[] | 排除骨骼（同子树语义）。**省略则保留模板 `boneMaskExclude`**；设为 `[]`（空数组）清除 |
+| `weight` | float? | 层权重（0-1）。**省略则保留模板 `weight`**；<=0 视为 1 |
 | `driver` | object | 驱动器配置（详见[驱动器章节](#6-驱动器drivers)） |
 | `blendMode` | string | 混合模式：`"override"` 或 `"additive"` |
 | `blendCurve` | string | 混合曲线：`"linear"` 或 `"smoothstep"` |

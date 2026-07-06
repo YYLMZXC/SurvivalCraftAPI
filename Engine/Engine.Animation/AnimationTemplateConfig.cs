@@ -47,6 +47,12 @@ namespace Engine.Animation {
         /// 骨骼遮罩排除（同子树语义，从结果集中扣除）
         /// </summary>
         public List<string> BoneMaskExclude { get; set; }
+
+        /// <summary>
+        /// 层权重（0-1）。null 或 ≤0 表示未设，回退默认 1。
+        /// Override 层控制对下层的覆盖强度；Additive 层控制叠加强度。
+        /// </summary>
+        public float? Weight { get; set; }
     }
 
     /// <summary>

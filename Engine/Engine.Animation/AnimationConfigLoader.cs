@@ -370,6 +370,12 @@ namespace Engine.Animation {
                     if (layerConfig?.BonesExclude != null) {
                         layer.BoneMaskExclude = layerConfig.BonesExclude.Length > 0 ? layerConfig.BonesExclude : null;
                     }
+                    // 应用层权重（覆盖模板值；<=0 视为 1）
+                    if (layerConfig?.Weight.HasValue == true) {
+                        float w = layerConfig.Weight.Value > 0 ? layerConfig.Weight.Value : 1f;
+                        layer.Weight = w;
+                        layer.m_configuredWeight = w; // 同步配置权重（权重渐入/中断恢复目标）
+                    }
                     // 应用过渡曲线
                     if (!string.IsNullOrEmpty(layerConfig.BlendCurve)) {
                         BlendCurve curve = layerConfig.BlendCurve.Equals("smoothstep", StringComparison.OrdinalIgnoreCase)

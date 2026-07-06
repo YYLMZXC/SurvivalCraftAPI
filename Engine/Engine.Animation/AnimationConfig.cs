@@ -157,6 +157,11 @@ namespace Engine.Animation {
         public string[] BonesExclude { get; set; }
 
         /// <summary>
+        /// 层权重（0-1）。null 表示未设，保留模板值；≤0 视为 1。
+        /// </summary>
+        public float? Weight { get; set; }
+
+        /// <summary>
         /// 层驱动器配置
         /// </summary>
         public DriverConfig Driver { get; set; }

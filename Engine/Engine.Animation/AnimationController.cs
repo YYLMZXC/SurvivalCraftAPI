@@ -178,6 +178,8 @@ namespace Engine.Animation {
             int layerIndex = 0;
             foreach ((string name, LayerDefinition layerDef) in m_template.Layers.OrderBy(kvp => kvp.Value.Index)) {
                 m_layers[layerIndex] = new AnimationLayer(name, layerDef.Index, layerDef.BlendMode, layerDef.BoneMask, layerDef.BoneMaskExclude);
+                m_layers[layerIndex].Weight = layerDef.Weight; // 应用配置权重（默认 1）
+                m_layers[layerIndex].m_configuredWeight = layerDef.Weight; // 同步配置权重（权重渐入/中断恢复目标）
 
                 // 订阅层的动画事件（通过层的事件接口，统一处理主播放器和过渡播放器）
                 m_layers[layerIndex].OnAnimationEvent += ForwardAnimationEvent;

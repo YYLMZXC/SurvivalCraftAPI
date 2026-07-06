@@ -17,12 +17,14 @@ namespace Engine.Animation {
         public float m_deactivateDuration;
         public float m_originalWeight;
         public bool m_clearOnDeactivate; // 渐降完成时清空动画（状态规则停用），区别于普通停用（恢复 Weight + m_active=false）
+        public float m_configuredWeight = 1f; // 配置权重（层初始化写入），权重渐入与中断恢复的目标值，独立于过渡中的 Weight（解耦避免 m_originalWeight 残留污染）
 
         // 激活渐变过渡状态（Override 层的权重渐入）
         public bool m_activating;
         public float m_activateElapsed;
         public float m_activateDuration;
         public float m_targetWeight;
+        public float m_activateFromWeight; // 激活/恢复渐入起点（首播 0；中断恢复用当前 Weight）
         public Matrix?[] m_activateSourceTransforms; // 激活过渡时的源姿态
 
         // 骨骼遮罩展开集缓存（include 子树 − exclude 子树），按需重建
@@ -240,9 +242,26 @@ namespace Engine.Animation {
                 }
             }
             if (m_deactivating) {
+                bool wasClearOnDeactivate = m_clearOnDeactivate;
                 m_deactivating = false;
                 m_clearOnDeactivate = false; // 中断渐降时同步清 flag，避免残留误触发后续完成分支清空
-                Weight = m_originalWeight;
+                if (!wasClearOnDeactivate) {
+                    // 普通 DeactivateWithBlend 取消：恢复原权重
+                    Weight = m_originalWeight;
+                }
+                else {
+                    // 状态规则停用被中断（条件快速反复）：不瞬间恢复 Weight（避免 pop），
+                    // 改启动权重恢复子过渡，从当前渐降 Weight 渐回配置权重（I-2）。
+                    // 姿态由调用方后续的交叉淡入过渡采样，此处仅渐权重（sourceTransforms=null）。
+                    if (m_configuredWeight > 0f && Weight < m_configuredWeight) {
+                        m_activateFromWeight = Weight;
+                        m_targetWeight = m_configuredWeight;
+                        m_activateSourceTransforms = null;
+                        m_activating = true;
+                        m_activateElapsed = 0f;
+                        m_activateDuration = m_deactivateDuration > 0f ? m_deactivateDuration : 0.2f;
+                    }
+                }
             }
         }
 
@@ -271,6 +290,7 @@ namespace Engine.Animation {
                 m_deactivateElapsed = 0f;
                 m_deactivateDuration = blendDuration;
                 m_originalWeight = Weight;
+                m_clearOnDeactivate = false; // DeactivateWithBlend 是普通停用，确保不继承先前 DeactivateAndClear 的 flag（I-1）
                 return true;
             }
 
@@ -329,8 +349,9 @@ namespace Engine.Animation {
             if (BlendMode == AnimationBlendMode.Override
                 && m_animationPlayer.Animation == null
                 && transitionDuration > 0f) {
-                // 保存目标权重（当前设置的权重）
-                m_targetWeight = Weight > 0 ? Weight : 1f;
+                // 目标权重：配置权重（层初始化写入，独立于过渡中的 Weight）。
+                // 用 m_configuredWeight 而非 m_originalWeight：后者停用完成后不重置会残留，污染下次渐入目标（I-3）。
+                m_targetWeight = m_configuredWeight > 0 ? m_configuredWeight : 1f;
 
                 // 采样当前姿态作为源姿态（用于平滑过渡）
                 if (m_animationPlayer.Animation != null
@@ -352,6 +373,7 @@ namespace Engine.Animation {
 
                 // 启动权重渐入
                 Weight = 0f;
+                m_activateFromWeight = 0f;
                 m_activating = true;
                 m_activateElapsed = 0f;
                 m_activateDuration = transitionDuration;
@@ -431,8 +453,15 @@ namespace Engine.Animation {
         ///（Animation=null, Weight=0, m_active=true），使下次播放走权重渐入分支（Animation==null 判据）实现重启平滑。
         /// 区别于 DeactivateWithBlend（完成 m_active=false + 恢复 Weight，且不清 Animation → 下次播放硬切）。
         /// 渐降期间保留动画采样，淡出可见；完成在 Update 的 m_deactivating 分支处理（m_clearOnDeactivate flag）。
+        /// Additive 层例外：委托 DeactivateWithBlend（交叉淡出到 Identity，不清空 —— 其重启走交叉淡入，不依赖 Animation==null）。
         /// </summary>
         public void DeactivateAndClear(float blendDuration) {
+            if (BlendMode == AnimationBlendMode.Additive) {
+                // Additive 层不清空 Animation：重启走交叉淡入（PlayAnimationWithTransition 的 m_transition 分支），
+                // 不依赖 Animation==null 的权重渐入判据（Override 专属）；清空反而会使交叉淡入 source 为空。
+                DeactivateWithBlend(blendDuration);
+                return;
+            }
             if (blendDuration <= 0f
                 || !IsActive
                 || m_animationPlayer?.IsPlaying != true) {
@@ -475,8 +504,8 @@ namespace Engine.Animation {
                     }
                 }
                 else {
-                    // 渐变权重：从 0 渐变到目标权重
-                    Weight = m_targetWeight * progress;
+                    // 渐变权重：从起点（首播 0 / 中断恢复为当前 Weight）渐变到目标权重
+                    Weight = m_activateFromWeight + (m_targetWeight - m_activateFromWeight) * progress;
                 }
             }
 

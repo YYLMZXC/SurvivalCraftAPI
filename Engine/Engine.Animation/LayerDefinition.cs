@@ -7,13 +7,15 @@ namespace Engine.Animation {
         public AnimationBlendMode BlendMode { get; }
         public string[] BoneMask { get; }
         public string[] BoneMaskExclude { get; }
+        public float Weight { get; }
 
         public LayerDefinition(int index, AnimationBlendMode blendMode,
-            string[] boneMask = null, string[] boneMaskExclude = null) {
+            string[] boneMask = null, string[] boneMaskExclude = null, float weight = 1f) {
             Index = index;
             BlendMode = blendMode;
             BoneMask = boneMask;
             BoneMaskExclude = boneMaskExclude;
+            Weight = weight;
         }
     }
 }

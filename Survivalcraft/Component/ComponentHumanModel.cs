@@ -504,10 +504,19 @@ namespace Game {
                 m.Up = Vector3.Normalize(m.Up);
                 m.Forward = Vector3.Normalize(m.Forward);
                 Vector3 InhandRotation = block.GetInHandRotation(m_componentMiner.ActiveBlockValue);
+                // 偏移经基础旋转对齐手骨朝向：旋转部分由 baseInhandItemRotation 修正几何朝向（在 R_total 内），
+                // 但偏移在 R_total 之后、手骨变换之前应用，不经 baseInhandItemRotation，仅经手骨旋转。
+                // 当模型手骨朝向与默认人体模型（Hand2）不同时，偏移方向会随手骨局部坐标偏（如 +Y 由握柄方向变为四指方向）。
+                // 预乘 baseRotation 使偏移与几何朝向一样对齐。base=0 时 baseRotation=Identity，行为同原版。
+                Matrix baseRotation = Matrix.CreateRotationY(MathUtils.DegToRad(m_baseInhandItemRotation.Y))
+                    * Matrix.CreateRotationZ(MathUtils.DegToRad(m_baseInhandItemRotation.Z))
+                    * Matrix.CreateRotationX(MathUtils.DegToRad(m_baseInhandItemRotation.X));
+                Vector3 alignedOffset = Vector3.Transform(
+                    block.GetInHandOffset(m_componentMiner.ActiveBlockValue) + m_inHandItemOffset, baseRotation);
                 Matrix matrix = Matrix.CreateRotationY(MathUtils.DegToRad(InhandRotation.Y) + m_inHandItemRotation.Y + MathUtils.DegToRad(m_baseInhandItemRotation.Y))
                     * Matrix.CreateRotationZ(MathUtils.DegToRad(InhandRotation.Z) + m_inHandItemRotation.Z + MathUtils.DegToRad(m_baseInhandItemRotation.Z))
                     * Matrix.CreateRotationX(MathUtils.DegToRad(InhandRotation.X) + m_inHandItemRotation.X + MathUtils.DegToRad(m_baseInhandItemRotation.X))
-                    * Matrix.CreateTranslation(block.GetInHandOffset(m_componentMiner.ActiveBlockValue) + m_inHandItemOffset)
+                    * Matrix.CreateTranslation(alignedOffset)
                     * Matrix.CreateTranslation(m_baseInhandItemOffset * (m_componentCreature.ComponentBody.BoxSize.Y / 1.77f))
                     * m;
                 int x = Terrain.ToCell(matrix.Translation.X);

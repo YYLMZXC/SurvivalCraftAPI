@@ -167,7 +167,12 @@ namespace Engine.Animation {
                 && config.BoneMask.Count > 0) {
                 boneMask = config.BoneMask.ToArray();
             }
-            return new LayerDefinition(config.Index, blendMode, boneMask);
+            string[] boneMaskExclude = null;
+            if (config.BoneMaskExclude != null
+                && config.BoneMaskExclude.Count > 0) {
+                boneMaskExclude = config.BoneMaskExclude.ToArray();
+            }
+            return new LayerDefinition(config.Index, blendMode, boneMask, boneMaskExclude);
         }
 
         public static StateTrackDefinition CreateStateTrackFromConfig(TemplateStateTrackConfig config) {

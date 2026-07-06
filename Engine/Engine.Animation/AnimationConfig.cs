@@ -147,9 +147,14 @@ namespace Engine.Animation {
         public string BlendMode { get; set; } = "override";
 
         /// <summary>
-        /// 影响的骨骼名称列表
+        /// 影响的骨骼名称列表（按子树展开：含该骨 + 全部后代）
         /// </summary>
         public string[] Bones { get; set; }
+
+        /// <summary>
+        /// 排除的骨骼名称列表（同子树语义，从结果集中扣除）
+        /// </summary>
+        public string[] BonesExclude { get; set; }
 
         /// <summary>
         /// 层驱动器配置

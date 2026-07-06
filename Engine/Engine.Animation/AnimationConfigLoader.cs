@@ -367,6 +367,9 @@ namespace Engine.Animation {
                     if (layerConfig?.Bones != null) {
                         layer.BoneMask = layerConfig.Bones.Length > 0 ? layerConfig.Bones : null;
                     }
+                    if (layerConfig?.BonesExclude != null) {
+                        layer.BoneMaskExclude = layerConfig.BonesExclude.Length > 0 ? layerConfig.BonesExclude : null;
+                    }
                     // 应用过渡曲线
                     if (!string.IsNullOrEmpty(layerConfig.BlendCurve)) {
                         BlendCurve curve = layerConfig.BlendCurve.Equals("smoothstep", StringComparison.OrdinalIgnoreCase)

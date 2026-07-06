@@ -177,7 +177,7 @@ namespace Engine.Animation {
             m_layers = new AnimationLayer[m_template.Layers.Count];
             int layerIndex = 0;
             foreach ((string name, LayerDefinition layerDef) in m_template.Layers.OrderBy(kvp => kvp.Value.Index)) {
-                m_layers[layerIndex] = new AnimationLayer(name, layerDef.Index, layerDef.BlendMode, layerDef.BoneMask);
+                m_layers[layerIndex] = new AnimationLayer(name, layerDef.Index, layerDef.BlendMode, layerDef.BoneMask, layerDef.BoneMaskExclude);
 
                 // 订阅层的动画事件（通过层的事件接口，统一处理主播放器和过渡播放器）
                 m_layers[layerIndex].OnAnimationEvent += ForwardAnimationEvent;

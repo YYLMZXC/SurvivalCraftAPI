@@ -39,9 +39,14 @@ namespace Engine.Animation {
         public string BlendMode { get; set; } = "Override";
 
         /// <summary>
-        /// 骨骼遮罩（仅影响指定的骨骼）
+        /// 骨骼遮罩（按子树展开：含该骨 + 全部后代）
         /// </summary>
         public List<string> BoneMask { get; set; }
+
+        /// <summary>
+        /// 骨骼遮罩排除（同子树语义，从结果集中扣除）
+        /// </summary>
+        public List<string> BoneMaskExclude { get; set; }
     }
 
     /// <summary>

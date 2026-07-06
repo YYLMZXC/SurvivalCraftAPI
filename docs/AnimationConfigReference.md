@@ -219,7 +219,8 @@
 |------|------|------|
 | `index` | int | 层级索引，决定混合顺序（从小到大） |
 | `blendMode` | string | `"Override"`（覆盖）或 `"Additive"`（叠加） |
-| `boneMask` | string[] | 骨骼过滤列表。仅影响指定骨骼 |
+| `boneMask` | string[] | 骨骼过滤列表。列出的骨 + 其全部后代 |
+| `boneMaskExclude` | string[] | 排除骨骼（同子树语义，从结果集扣除） |
 
 ### 状态轨道类型
 
@@ -265,7 +266,8 @@
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `bones` | string[] | 骨骼过滤列表（覆盖模板中的 boneMask） |
+| `bones` | string[] | 骨骼过滤列表，按子树展开。**省略则保留模板 `boneMask`**；设为非空数组则覆盖 |
+| `bonesExclude` | string[] | 排除骨骼（同子树语义）。**省略则保留模板 `boneMaskExclude`**；设为 `[]`（空数组）清除 |
 | `driver` | object | 驱动器配置（详见[驱动器章节](#6-驱动器drivers)） |
 | `blendMode` | string | 混合模式：`"override"` 或 `"additive"` |
 | `blendCurve` | string | 混合曲线：`"linear"` 或 `"smoothstep"` |
@@ -278,6 +280,28 @@
 ### 混合规则
 
 层级按 `index` 从小到大处理。每一层的结果与前一层的输出按混合模式和权重混合。最终的骨骼变换用于渲染。
+
+### 骨骼遮罩（子树展开）
+
+`boneMask`/`bones` 与 `boneMaskExclude`/`bonesExclude` 按**子树**展开：列出一个骨 = 该骨 + 它的全部后代。最终影响范围 = include 子树并集 − exclude 子树并集。
+
+- 两者皆空 = 影响全部骨骼。
+- include 空 + exclude 非空 = 除 exclude 子树外的全部骨骼。
+- 未知骨名忽略（无匹配则 no-op）。
+
+> **⚠ 行为变更（相对旧版本）**：`boneMask`/`bones` 此前为**精确名匹配**（仅列出的骨骼受影响，不含后代），现为**子树匹配**。若模板列出的骨骼带有需独立动画的后代（例如 SC Human 模板配 `Hand1/Hand2` 且装备带手指骨骼），这些后代会一并纳入该层。内置模板的蒙版骨骼多为叶节点，不受影响；第三方模板如出现非预期骨骼被纳入，请复核此点。
+
+示例（人形上下半身分层）：
+
+````json
+{
+  "Activity": { "boneMask": [ "spine_01" ] },
+  "Ride": { "boneMask": [ "pelvis" ], "boneMaskExclude": [ "spine_01" ] }
+}
+````
+
+- `spine_01` 子树 = 整个上半身（躯干/颈/头/双臂/手指）。
+- `pelvis` 子树 − `spine_01` 子树 = pelvis + 双腿（pelvis 是 spine_01 的父，扣掉 spine_01 即移除上半身，剩下下半身）。
 
 ---
 

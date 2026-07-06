@@ -24,6 +24,13 @@ namespace Engine.Animation {
         public float m_targetWeight;
         public Matrix?[] m_activateSourceTransforms; // 激活过渡时的源姿态
 
+        // 骨骼遮罩展开集缓存（include 子树 − exclude 子树），按需重建
+        HashSet<int> m_boneMaskSet;
+        string[] m_maskRef;      // 上次展开时的 BoneMask 引用
+        string[] m_excludeRef;   // 上次展开时的 BoneMaskExclude 引用
+        Model m_maskModel;        // 上次展开时的 Model 引用
+        int m_maskBoneCount = -1;
+
         /// <summary>
         /// 层名称
         /// </summary>
@@ -45,9 +52,16 @@ namespace Engine.Animation {
         public AnimationBlendMode BlendMode { get; }
 
         /// <summary>
-        /// 骨骼遮罩（null 表示影响所有骨骼）
+        /// 骨骼遮罩（null 表示影响所有骨骼）。
+        /// 列出的骨名按子树展开：包含该骨 + 其全部后代。
         /// </summary>
         public string[] BoneMask { get; set; }
+
+        /// <summary>
+        /// 骨骼遮罩排除（同子树语义，从结果集中扣除）。
+        /// 当 <see cref="BoneMask"/> 为空时，种子为全部骨骼，再扣除此处子树（即"除 X 外全部"）。
+        /// </summary>
+        public string[] BoneMaskExclude { get; set; }
 
         /// <summary>
         /// 混合权重 (0-1)
@@ -92,11 +106,13 @@ namespace Engine.Animation {
         /// <summary>
         /// 创建动画层
         /// </summary>
-        public AnimationLayer(string name, int index, AnimationBlendMode blendMode, string[] boneMask = null) {
+        public AnimationLayer(string name, int index, AnimationBlendMode blendMode,
+            string[] boneMask = null, string[] boneMaskExclude = null) {
             Name = name;
             Index = index;
             BlendMode = blendMode;
             BoneMask = boneMask;
+            BoneMaskExclude = boneMaskExclude;
             m_animationPlayer = new AnimationPlayer();
             m_transition = new AnimationTransition();
 
@@ -105,6 +121,79 @@ namespace Engine.Animation {
 
             // 订阅过渡的 TargetPlayer 事件，转发到层的事件
             m_transition.TargetPlayerEvent += evt => OnAnimationEvent?.Invoke(evt);
+        }
+
+        /// <summary>
+        /// 检查指定骨骼是否在该层的遮罩中（include 子树 − exclude 子树）。
+        /// 首次调用或遮罩/骨数变化时按需展开并缓存。
+        /// </summary>
+        public bool IsBoneInMask(int boneIndex, Model model) {
+            bool noInclude = BoneMask == null || BoneMask.Length == 0;
+            bool noExclude = BoneMaskExclude == null || BoneMaskExclude.Length == 0;
+            if (noInclude && noExclude) {
+                return true; // 无遮罩 = 全部骨骼
+            }
+            EnsureBoneMaskSet(model, noInclude);
+            return m_boneMaskSet.Contains(boneIndex);
+        }
+
+        /// <summary>
+        /// 按需重建骨骼遮罩展开集。
+        /// 失效判据：mask/exclude 数组引用变化、Model 引用变化或模型骨数变化。
+        /// 假设：BoneMask/BoneMaskExclude 仅整体替换（重新赋值属性），不在原地修改数组元素
+        /// （原地改 BoneMask[i] 不改变数组引用，缓存不会失效）。当前所有配置加载路径
+        /// 仅整体赋值数组一次，满足该假设；若未来引入运行时原地修改，需改用内容指纹或显式失效。
+        /// </summary>
+        void EnsureBoneMaskSet(Model model, bool noInclude) {
+            int boneCount = model.Bones.Count;
+            if (m_boneMaskSet != null
+                && ReferenceEquals(m_maskRef, BoneMask)
+                && ReferenceEquals(m_excludeRef, BoneMaskExclude)
+                && ReferenceEquals(m_maskModel, model)
+                && m_maskBoneCount == boneCount) {
+                return; // mask/exclude 数组引用 + 模型 + 骨数均未变 → 复用
+            }
+            HashSet<int> set = new();
+            if (noInclude) {
+                for (int i = 0; i < boneCount; i++) {
+                    set.Add(i); // 种子 = 全部骨骼
+                }
+            }
+            else {
+                foreach (string name in BoneMask) {
+                    ModelBone b = model.FindBone(name, false);
+                    if (b != null) {
+                        AddSubtree(b, set);
+                    }
+                }
+            }
+            if (BoneMaskExclude != null) {
+                foreach (string name in BoneMaskExclude) {
+                    ModelBone b = model.FindBone(name, false);
+                    if (b != null) {
+                        RemoveSubtree(b, set);
+                    }
+                }
+            }
+            m_boneMaskSet = set;
+            m_maskRef = BoneMask;
+            m_excludeRef = BoneMaskExclude;
+            m_maskModel = model;
+            m_maskBoneCount = boneCount;
+        }
+
+        static void AddSubtree(ModelBone bone, HashSet<int> set) {
+            set.Add(bone.Index);
+            foreach (ModelBone c in bone.ChildBones) {
+                AddSubtree(c, set);
+            }
+        }
+
+        static void RemoveSubtree(ModelBone bone, HashSet<int> set) {
+            set.Remove(bone.Index);
+            foreach (ModelBone c in bone.ChildBones) {
+                RemoveSubtree(c, set);
+            }
         }
 
         /// <summary>

@@ -35,8 +35,8 @@ namespace Engine.Animation {
                 Array.Clear(m_layerTransformsBuffer, 0, boneCount);
                 layer.SampleTransforms(m_layerTransformsBuffer, model);
                 for (int i = 0; i < boneCount; i++) {
-                    // 检查骨骼是否在该层的遮罩中
-                    if (!IsBoneInMask(i, layer.BoneMask, model)) {
+                    // 检查骨骼是否在该层的遮罩中（子树展开 + exclude，逻辑在 AnimationLayer）
+                    if (!layer.IsBoneInMask(i, model)) {
                         continue;
                     }
                     if (!m_layerTransformsBuffer[i].HasValue) {
@@ -68,20 +68,6 @@ namespace Engine.Animation {
                 m_bufferSize = Math.Max(requiredSize, 64); // 最小 64 个骨骼
                 m_layerTransformsBuffer = new Matrix?[m_bufferSize];
             }
-        }
-
-        bool IsBoneInMask(int boneIndex, string[] boneMask, Model model) {
-            if (boneMask == null
-                || boneMask.Length == 0) {
-                return true; // null 表示所有骨骼
-            }
-            ModelBone bone = model.Bones[boneIndex];
-            foreach (string maskName in boneMask) {
-                if (bone.Name == maskName) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         Matrix BlendTransforms(Matrix existing, Matrix incoming, AnimationBlendMode mode, float weight) {

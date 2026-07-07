@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using Engine;
 using Engine.Animation;
@@ -19,6 +20,11 @@ namespace Game {
         public Model m_model;
 
         public Matrix?[] m_boneTransforms;
+
+        /// <summary>
+        /// 同实体上的动画参与者组件（OnEntityAdded 收集）。
+        /// </summary>
+        public List<ComponentAnimationParticipant> m_animationParticipants;
 
         public float m_boundingSphereRadius;
 
@@ -155,6 +161,9 @@ namespace Game {
         }
 
         public virtual void Animate() {
+            // 同步参数（自身 + 参与者），须在 controller.Update 之前，确保状态规则评估时有正确参数
+            SyncAnimationParameters();
+            SyncParticipants();
             Animated = false;
             ModsManager.HookAction(
                 "OnAnimateModel",
@@ -261,6 +270,10 @@ namespace Game {
             if (IsSet) {
                 return;
             }
+            // 取消旧控制器订阅（在下方重建 controller 之前；mod 通过 OnSetModel 接管时保持原订阅）
+            if (AnimationController != null) {
+                AnimationController.OnAnimationEvent -= HandleAnimationEvent;
+            }
             m_model = model;
             if (m_model != null) {
                 m_boneTransforms = new Matrix?[m_model.Bones.Count];
@@ -293,6 +306,13 @@ namespace Game {
                     m_animationPlayer.SetAnimation(m_model, m_model.Animations[0]);
                     m_animationPlayer.Play(loop: true);
                 }*/
+
+                // 订阅新控制器事件 + 通知参与者控制器已就绪
+                if (AnimationController != null) {
+                    AnimationController.OnAnimationEvent += HandleAnimationEvent;
+                    SetupDefaultAnimationEvents();
+                    NotifyControllerCreated();
+                }
             }
             else {
                 m_boneTransforms = null;
@@ -300,6 +320,58 @@ namespace Game {
                 MeshDrawOrders = null;
                 m_animationPlayer = null;
                 AnimationController = null;
+            }
+        }
+
+        /// <summary>
+        /// 同步动画参数到控制器（在 Animate 中、controller.Update 之前调用）。
+        /// 生物模型子类覆盖此方法同步生物参数；非生物模型默认空。
+        /// </summary>
+        public virtual void SyncAnimationParameters() { }
+
+        /// <summary>
+        /// 处理动画事件。默认转发给同实体的动画参与者；生物模型子类覆盖以处理内置事件（Footstep/Attack 等）。
+        /// </summary>
+        public virtual void HandleAnimationEvent(AnimationEvent animationEvent) {
+            if (animationEvent == null) return;
+            if (m_animationParticipants != null && AnimationController != null) {
+                foreach (ComponentAnimationParticipant participant in m_animationParticipants) {
+                    participant.HandleAnimationEvent(AnimationController, animationEvent);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 设置默认动画事件订阅。子类可覆盖以注册特定事件。
+        /// </summary>
+        public virtual void SetupDefaultAnimationEvents() { }
+
+        public override void OnEntityAdded() {
+            base.OnEntityAdded();
+            // 收集同实体的动画参与者（此时所有组件已 Load 完成），按 ShouldApplyTo 过滤
+            m_animationParticipants = Entity.FindComponents<ComponentAnimationParticipant>()
+                .Where(p => p.ShouldApplyTo(this)).ToList();
+            // 首次 SetModel 在 Load 内发生时参与者尚未收集，此处补发 OnControllerCreated
+            NotifyControllerCreated();
+        }
+
+        /// <summary>
+        /// 通知所有参与者控制器已就绪（首次 OnEntityAdded + 每次换模型 SetModel 触发）。
+        /// </summary>
+        private void NotifyControllerCreated() {
+            if (m_animationParticipants == null || AnimationController == null) return;
+            foreach (ComponentAnimationParticipant participant in m_animationParticipants) {
+                participant.OnControllerCreated(AnimationController);
+            }
+        }
+
+        /// <summary>
+        /// 转发参数同步给所有参与者（每帧 Animate 中、controller.Update 之前）。
+        /// </summary>
+        private void SyncParticipants() {
+            if (m_animationParticipants == null || AnimationController == null) return;
+            foreach (ComponentAnimationParticipant participant in m_animationParticipants) {
+                participant.SyncAnimationParameters(AnimationController);
             }
         }
 

@@ -96,9 +96,7 @@ namespace Game {
         }
 
         public override void Animate() {
-            // 在动画更新前同步参数，确保状态规则评估时有正确的参数值
-            SyncAnimationParameters();
-
+            // SyncAnimationParameters + 参与者转发已由 base.Animate() 在 controller.Update 之前完成
             base.Animate();
 
             // glTF 模型（有动画或有蒙皮）需要将实体变换应用到根骨骼
@@ -196,32 +194,11 @@ namespace Game {
             };
         }
 
-        public override void SetModel(Model model) {
-            // 取消旧控制器的订阅
-            if (AnimationController != null) {
-                AnimationController.OnAnimationEvent -= HandleAnimationEvent;
-            }
-
-            base.SetModel(model);
-
-            // 订阅新控制器的事件
-            if (AnimationController != null) {
-                AnimationController.OnAnimationEvent += HandleAnimationEvent;
-                SetupDefaultAnimationEvents();
-            }
-        }
-
         /// <summary>
-        /// 设置默认动画事件
+        /// 处理动画事件：转发给参与者后处理内置事件（Footstep/Attack 等）。
         /// </summary>
-        public virtual void SetupDefaultAnimationEvents() {
-            // 子类可以覆盖此方法来添加特定事件
-        }
-
-        /// <summary>
-        /// 处理动画事件
-        /// </summary>
-        public virtual void HandleAnimationEvent(AnimationEvent animationEvent) {
+        public override void HandleAnimationEvent(AnimationEvent animationEvent) {
+            base.HandleAnimationEvent(animationEvent);
             if (animationEvent == null) return;
 
             switch (animationEvent.Name) {
@@ -309,6 +286,7 @@ namespace Game {
         }
 
         public override void OnEntityAdded() {
+            base.OnEntityAdded();
             m_componentCreature.ComponentBody.PositionChanged += delegate { m_eyePosition = null; };
             m_componentCreature.ComponentBody.RotationChanged += delegate { m_eyeRotation = null; };
         }
@@ -364,7 +342,8 @@ namespace Game {
         /// <summary>
         /// 同步动画参数到动画控制器
         /// </summary>
-        public virtual void SyncAnimationParameters() {
+        public override void SyncAnimationParameters() {
+            base.SyncAnimationParameters();
             var ctrl = AnimationController;
             if (ctrl == null) return;
 

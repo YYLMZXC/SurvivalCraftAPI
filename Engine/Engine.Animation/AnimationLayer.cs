@@ -1,3 +1,4 @@
+using Engine.Animation.RootMotion;
 using Engine.Graphics;
 
 namespace Engine.Animation {
@@ -26,6 +27,11 @@ namespace Engine.Animation {
         public float m_targetWeight;
         public float m_activateFromWeight; // 激活/恢复渐入起点（首播 0；中断恢复用当前 Weight）
         public Matrix?[] m_activateSourceTransforms; // 激活过渡时的源姿态
+
+        public RootMotionConfig m_rootMotionConfig;          // 当前/目标 config（Base 专属；非 Base 恒 null）
+        RootStripInfo m_activateSourceStripInfo;             // Override 渐入冻结源剥离需求
+        RootStripInfo m_deactivateStripInfo;                 // Override 权重渐降 live 源剥离需求
+        string m_rootBoneName;                               // 控制器 RootBoneName（SetRootMotionConfig 时缓存）
 
         // 骨骼遮罩展开集缓存（include 子树 − exclude 子树），按需重建
         HashSet<int> m_boneMaskSet;
@@ -230,6 +236,30 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 设置层的根运动配置；config 切换时把 old/new 剥离需求盖戳到运行中的 blend 状态。
+        /// info 寿命 == blend 状态寿命，状态完成/取消时清除 → 剥离覆盖期 == blend 期，无需计时器。
+        /// </summary>
+        public void SetRootMotionConfig(RootMotionConfig newConfig, Model model, string rootBoneName) {
+            m_rootBoneName = rootBoneName;
+            RootStripInfo oldInfo = RootStripInfo.From(m_rootMotionConfig, rootBoneName);
+            RootStripInfo newInfo = RootStripInfo.From(newConfig, rootBoneName);
+
+            if (m_transition?.IsActive == true) {
+                // crossfade：源=old，目标=new；deactivate 变体目标不剥
+                m_transition.SetStripInfo(oldInfo, m_transition.IsDeactivateTransition ? default : newInfo);
+            }
+            else if (m_activating) {
+                m_activateSourceStripInfo = oldInfo;   // 目标(主player)用 new(=更新后 m_rootMotionConfig)
+            }
+            else if (m_deactivating) {
+                m_deactivateStripInfo = oldInfo;       // 渐降 live 源用旧 config
+            }
+            // else 稳态：活动 player 采样按 new(=更新后 m_rootMotionConfig)剥
+
+            m_rootMotionConfig = newConfig;
+        }
+
+        /// <summary>
         /// 取消所有渐变过渡状态，恢复权重
         /// </summary>
         public void CancelTransitioning() {
@@ -240,11 +270,13 @@ namespace Engine.Animation {
                 if (m_activateSourceTransforms != null) {
                     Array.Clear(m_activateSourceTransforms, 0, m_activateSourceTransforms.Length);
                 }
+                m_activateSourceStripInfo = default;
             }
             if (m_deactivating) {
                 bool wasClearOnDeactivate = m_clearOnDeactivate;
                 m_deactivating = false;
                 m_clearOnDeactivate = false; // 中断渐降时同步清 flag，避免残留误触发后续完成分支清空
+                m_deactivateStripInfo = default;
                 if (!wasClearOnDeactivate) {
                     // 普通 DeactivateWithBlend 取消：恢复原权重
                     Weight = m_originalWeight;
@@ -502,6 +534,7 @@ namespace Engine.Animation {
                     if (m_activateSourceTransforms != null) {
                         Array.Clear(m_activateSourceTransforms, 0, m_activateSourceTransforms.Length);
                     }
+                    m_activateSourceStripInfo = default;
                 }
                 else {
                     // 渐变权重：从起点（首播 0 / 中断恢复为当前 Weight）渐变到目标权重
@@ -515,6 +548,7 @@ namespace Engine.Animation {
                 float progress = m_deactivateDuration > 0 ? AnimationTransition.ApplyCurve(m_deactivateElapsed / m_deactivateDuration, Curve) : 1f;
                 if (progress >= 1f) {
                     m_deactivating = false;
+                    m_deactivateStripInfo = default;
                     if (m_clearOnDeactivate) {
                         // 状态规则停用：渐降完成 → 清空动画 + 保持 active + Weight=0，
                         // 使下次播放走权重渐入（Animation==null）实现平滑重启。
@@ -578,6 +612,10 @@ namespace Engine.Animation {
                 // 采样目标动画
                 m_animationPlayer?.SampleBoneTransforms(boneTransforms);
 
+                // 源/目标各按自身 info 剥根（幂等，可原地改写）
+                RootMotionStrip.StripRootTranslation(boneTransforms, model, RootStripInfo.From(m_rootMotionConfig, m_rootBoneName));
+                RootMotionStrip.StripRootTranslation(m_activateSourceTransforms, model, m_activateSourceStripInfo);
+
                 // 混合源姿态和目标姿态
                 int boneCount = Math.Min(boneTransforms.Length, m_activateSourceTransforms.Length);
                 for (int i = 0; i < boneCount; i++) {
@@ -603,18 +641,23 @@ namespace Engine.Animation {
             else if (m_animationPlayer != null
                 && m_animationPlayer.IsPlaying) {
                 m_animationPlayer.SampleBoneTransforms(boneTransforms);
+                RootStripInfo info = m_deactivating ? m_deactivateStripInfo
+                                                    : RootStripInfo.From(m_rootMotionConfig, m_rootBoneName);
+                RootMotionStrip.StripRootTranslation(boneTransforms, model, info);
             }
             // preservePose: 非循环动画结束后持续保持最终帧
             else if (m_animationPlayer != null
                 && m_animationPlayer.PreservePose
                 && m_animationPlayer.HasValidAnimation) {
                 m_animationPlayer.SampleBoneTransformsAtPhase(m_animationPlayer.EndPhase, boneTransforms);
+                RootMotionStrip.StripRootTranslation(boneTransforms, model, RootStripInfo.From(m_rootMotionConfig, m_rootBoneName));
             }
             // holdPose: 手动控制期间非循环动画结束后保持当前姿态
             else if (m_holdPose
                 && m_animationPlayer != null
                 && m_animationPlayer.HasValidAnimation) {
                 m_animationPlayer.SampleBoneTransforms(boneTransforms);
+                RootMotionStrip.StripRootTranslation(boneTransforms, model, RootStripInfo.From(m_rootMotionConfig, m_rootBoneName));
             }
             // 最后尝试驱动器
             else if (m_driver != null) {

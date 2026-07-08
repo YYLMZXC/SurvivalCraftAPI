@@ -26,9 +26,13 @@ namespace Engine.Animation {
         public readonly Dictionary<string, RootMotionCache> m_rootMotionCaches = new();
         public readonly Dictionary<string, RootScaleCache> m_rootScaleCaches = new();
 
-        // 当前 Base 层的动画名称和根运动配置
+        // 当前 Base 层的动画名称
         public string m_currentAnimationName;
-        public RootMotionConfig m_currentRootMotionConfig;
+
+        /// <summary>Base 层访问器（root motion 仅 Base 层参与）</summary>
+        AnimationLayer BaseLayer => m_layers?.FirstOrDefault(layer => layer.Index == 0);
+        /// <summary>当前 Base 层根运动配置（读点：ApplyRootMotion/HasRootMotion；写须走 SetRootMotionConfig）</summary>
+        public RootMotionConfig m_currentRootMotionConfig => BaseLayer?.m_rootMotionConfig;
 
         /// <summary>
         /// 是否有活动的根运动配置
@@ -492,7 +496,9 @@ namespace Engine.Animation {
         /// 设置当前根运动配置
         /// </summary>
         public void SetRootMotionConfig(RootMotionConfig config) {
-            m_currentRootMotionConfig = config;
+            if (BaseLayer != null) {
+                BaseLayer.SetRootMotionConfig(config, m_model, RootBoneName);
+            }
             m_currentAnimationName = null; // 重置动画名称，触发缓存更新
             m_parentChainRotation = Quaternion.Identity;
             m_translationApplier.Reset();
@@ -1145,54 +1151,24 @@ namespace Engine.Animation {
         /// 计算最终骨骼变换
         /// </summary>
         public void ComputeBoneTransforms(Matrix?[] boneTransforms) {
-            // 1. 层混合
+            // 1. 层混合（各层在采样点已按 RootStripInfo 剥根，无需全局后处理）
             m_blender.BlendLayers(m_layers, boneTransforms, m_model);
 
-            // 2. 根运动位移剥离
-            // AddImpulse 模式：不剥离。冲量将动画峰值速度转为实体速度，
-            // 动画和物理轨迹接近，剥离反而阻止自然动画姿态（如收腿）。
-            // Blend/Override 模式：仍需剥离，防止动画位移叠加物理位移。
-            bool isAddImpulse = m_currentRootMotionConfig != null
-                && m_currentRootMotionConfig.Translation.Mode == TranslationMode.AddImpulse;
-            if (m_currentRootMotionConfig != null
-                && m_currentRootMotionConfig.Translation.Mode != TranslationMode.None
-                && !isAddImpulse) {
-                string sourceBoneName = !string.IsNullOrEmpty(m_currentRootMotionConfig.SourceBone)
-                    ? m_currentRootMotionConfig.SourceBone
-                    : RootBoneName;
-                ModelBone foundBone = !string.IsNullOrEmpty(sourceBoneName)
-                    ? m_model.FindBone(sourceBoneName, throwIfNotFound: false)
-                    : null;
-                ModelBone sourceBone = foundBone ?? m_model.RootBone;
-
-                ModelBone cur = sourceBone;
-                while (cur != null) {
-                    if (boneTransforms[cur.Index].HasValue) {
-                        Matrix t = boneTransforms[cur.Index].Value;
-                        t.Decompose(out _, out Quaternion rot, out _);
-                        Vector3 restTrans = cur.Transform.Translation;
-                        boneTransforms[cur.Index] = Matrix.CreateFromQuaternion(rot) * Matrix.CreateTranslation(restTrans);
-                    }
-                    if (cur == m_model.RootBone) break;
-                    cur = cur.ParentBone;
-                }
-            }
-
-            // 3. KHR_animation_pointer 采样（材质/纹理属性动画）
+            // 2. KHR_animation_pointer 采样（材质/纹理属性动画）
             for (int i = 0; i < m_layers.Length; i++) {
                 if (m_layers[i].IsActive) {
                     m_layers[i].AnimationPlayer?.SamplePointerTargets(m_model);
                 }
             }
 
-            // 4. Morph target 权重采样
+            // 3. Morph target 权重采样
             for (int i = 0; i < m_layers.Length; i++) {
                 if (m_layers[i].IsActive) {
                     m_layers[i].AnimationPlayer?.SampleMorphWeights(m_model);
                 }
             }
 
-            // 5. IK 后处理（在层混合后应用）
+            // 4. IK 后处理（在层混合后应用）
             m_ikSolver?.Solve(boneTransforms, m_model);
         }
 

@@ -900,6 +900,10 @@ namespace Engine.Animation {
 
                 // 激活层
                 layer.Activate();
+                // 恢复 Weight 到配置权重 m_configuredWeight（与渐入/中断恢复目标一致，非硬编码 1）。
+                // 被状态规则停用过的层（Death/Activity，活著时 condition:true→animation:null 停用清零）
+                // 切回 driver 时若不恢复，Weight 残留 0 → 按 0 混合动画不显示。
+                layer.Weight = layer.m_configuredWeight;
 
                 // 检查层是否有预配置的驱动器，且类型匹配
                 if (layer.Driver != null

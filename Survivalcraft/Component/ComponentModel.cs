@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using Engine;
 using Engine.Animation;
+using Engine.Animation.RootMotion;
 using Engine.Graphics;
 using Engine.Serialization;
 using GameEntitySystem;
@@ -27,6 +28,22 @@ namespace Game {
         public List<ComponentAnimationParticipant> m_animationParticipants;
 
         public float m_boundingSphereRadius;
+
+        /// <summary>
+        /// 上一帧生效的 root motion 物理副作用配置（用于 enter/exit 状态机）。
+        /// null 表示当前未应用任何 RM 物理副作用。
+        /// </summary>
+        PhysicsConfig m_prevRootMotionPhysics;
+
+        /// <summary>
+        /// 缓存同实体物理体（Animate body 桥 + ApplyRootMotionPhysics 用），避免每帧 FindComponent。
+        /// </summary>
+        ComponentBody m_componentBody;
+
+        /// <summary>
+        /// 缓存同实体移动组件（ApplyRootMotionPhysics 用），避免每帧 FindComponent。
+        /// </summary>
+        ComponentLocomotion m_componentLocomotion;
 
         public AnimationPlayer m_animationPlayer;
 
@@ -186,7 +203,7 @@ namespace Game {
 
                 // RootMotion: 同步物理体速度和旋转
                 ComponentBody body = AnimationController.HasRootMotion
-                    ? Entity.FindComponent<ComponentBody>() : null;
+                    ? m_componentBody : null;
                 if (body != null) {
                     AnimationController.Velocity = body.Velocity;
                     AnimationController.EntityRotation = body.Rotation;
@@ -200,6 +217,9 @@ namespace Game {
                     if (body != null && AnimationController.Velocity.HasValue) {
                         body.Velocity = AnimationController.Velocity.Value;
                     }
+
+                    // RootMotion 物理副作用：进入/切出 RM config 时应用/恢复（滞后一帧生效）
+                    ApplyRootMotionPhysics();
                 }
 
                 Animated = true;
@@ -223,6 +243,78 @@ namespace Game {
             }
         }
 
+        /// <summary>
+        /// 应用/恢复 root motion 物理副作用（在 Animate 内 body.Velocity 写回后调用）。
+        /// 读 AnimationController.m_currentRootMotionConfig.Physics，按 enter/exit 状态机管理：
+        /// - 进入新 Physics（非 null 且 != prev）：apply 禁用 flags
+        /// - 保持（== prev）：无操作（flag/bool/TerrainCollidable 均不被 NormalMovement 重置，无需续期）
+        /// - 切出（null 且 prev 非 null）：ClearVelocityOnExit 清速 + 恢复物理
+        /// - 从一 RM config 切另一 RM config（非 null→非 null）：按旧 config 的 ClearVelocityOnExit 清速 + Restore + apply 新 flags
+        /// 用缓存 m_componentBody（独立于 Animate 内 HasRootMotion body 局部变量），因切出帧 config=null → HasRootMotion=false → 那个 body=null，exit 仍须执行。
+        /// 注：本方法在 Animate 的 if(!DisableAnimation) 块内调用。若该帧走 Animated 提前返回（mod 经 OnAnimateModel 接管）
+        /// 或 DisableAnimation=true，本方法不执行——此时 controller.Update 不跑、config 不自然切换，RM 物理状态冻结。
+        /// 正常退出 RM 依赖 controller.Update 推进规则/事件切 config=null，故接管/停动画期间 RM 状态机暂停。
+        /// </summary>
+        void ApplyRootMotionPhysics() {
+            ComponentBody body = m_componentBody;
+            if (body == null) {
+                return;
+            }
+            PhysicsConfig phys = AnimationController?.m_currentRootMotionConfig?.Physics;
+            ComponentLocomotion loc = m_componentLocomotion;
+
+            if (phys != null) {
+                if (!ReferenceEquals(phys, m_prevRootMotionPhysics)) {
+                    // 进入新 RM 物理副作用（从另一 RM 切换时先按旧 config 清速 + 恢复旧的）
+                    if (m_prevRootMotionPhysics != null) {
+                        if (m_prevRootMotionPhysics.ClearVelocityOnExit) {
+                            body.Velocity = Vector3.Zero;
+                        }
+                        RestoreRootMotionPhysics(body, loc);
+                    }
+                    if (phys.DisableGravity) {
+                        body.DisabledPhysicalEffects |= PhysicalEffects.Gravity;
+                    }
+                    if (phys.DisableTerrainCollision) {
+                        body.TerrainCollidable = false;
+                    }
+                    if (phys.DisableInputMovement && loc != null) {
+                        loc.DisableInputMovement = true;
+                    }
+                    if (phys.DisableAirDrag) {
+                        body.DisabledPhysicalEffects |= PhysicalEffects.AirDrag;
+                    }
+                    if (phys.DisableWaterDrag) {
+                        body.DisabledPhysicalEffects |= PhysicalEffects.WaterDrag;
+                    }
+                    if (phys.DisableGroundDrag) {
+                        body.DisabledPhysicalEffects |= PhysicalEffects.GroundDrag;
+                    }
+                    m_prevRootMotionPhysics = phys;
+                }
+                // 保持：无需续期（flag/bool/TerrainCollidable 不被 NormalMovement 重置）
+            }
+            else if (m_prevRootMotionPhysics != null) {
+                // 切出 RM：清速 + 恢复物理
+                if (m_prevRootMotionPhysics.ClearVelocityOnExit) {
+                    body.Velocity = Vector3.Zero;
+                }
+                RestoreRootMotionPhysics(body, loc);
+                m_prevRootMotionPhysics = null;
+            }
+        }
+
+        /// <summary>
+        /// 恢复 root motion 物理副作用（切出时调用）。
+        /// </summary>
+        void RestoreRootMotionPhysics(ComponentBody body, ComponentLocomotion loc) {
+            body.DisabledPhysicalEffects &= ~(PhysicalEffects.Gravity | PhysicalEffects.AirDrag | PhysicalEffects.WaterDrag | PhysicalEffects.GroundDrag);
+            body.TerrainCollidable = true;
+            if (loc != null) {
+                loc.DisableInputMovement = false;
+            }
+        }
+
         public virtual void DrawExtras(Camera camera) {
             IsExtrasDrawn = false;
             ModsManager.HookAction(
@@ -238,6 +330,8 @@ namespace Game {
         public override void Load(ValuesDictionary valuesDictionary, IdToEntityMap idToEntityMap) {
             m_subsystemSky = Project.FindSubsystem<SubsystemSky>(true);
             m_componentFrame = Entity.FindComponent<ComponentFrame>(true);
+            m_componentBody = Entity.FindComponent<ComponentBody>();
+            m_componentLocomotion = Entity.FindComponent<ComponentLocomotion>();
             ModelRoute = valuesDictionary.GetValue("ModelName", "");
             string modeltype = valuesDictionary.GetValue("ModelType", "Engine.Graphics.Model");
             CastsShadow = valuesDictionary.GetValue<bool>("CastsShadow");

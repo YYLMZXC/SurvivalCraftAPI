@@ -206,6 +206,76 @@ namespace Engine.Animation.RootMotion {
     }
 
     /// <summary>
+    /// 根运动期间的物理副作用配置。由 ComponentModel.ApplyRootMotionPhysics 自动应用：
+    /// 进入该 root motion 配置时生效，切出（config 变 null）时恢复。
+    /// 副作用在 Animate（绘制阶段）应用，对下一帧 Locomotion/Body 生效（滞后一帧）。
+    /// 注：物理副作用以实体为单位作用于 ComponentBody。同一实体多 ComponentModel（身体+服装层）共享同一 body，
+    /// 仅应由一个 model 的 RM config 配 Physics，否则多 model 的 ApplyRootMotionPhysics 会在同一 body 上相互踩踏。
+    /// </summary>
+    public class PhysicsConfig {
+        /// <summary>
+        /// 禁用重力：在 ComponentBody 重力应用点查 PhysicalEffects.Gravity flag，
+        /// 不被 NormalMovement 每帧 IsGravityEnabled=true 重置。
+        /// </summary>
+        public bool DisableGravity { get; set; }
+
+        /// <summary>
+        /// 禁用地形碰撞：设 ComponentBody.TerrainCollidable=false。依赖 TerrainCollidable 字段语义，
+        /// 同时禁用移动方块碰撞箱收集（FindMovingBlocksCollisionBoxes 亦由 TerrainCollidable 门控）。
+        /// NormalMovement 不重置此字段，设一次即稳定。
+        /// </summary>
+        public bool DisableTerrainCollision { get; set; }
+
+        /// <summary>
+        /// 禁用输入移动：设 ComponentLocomotion.DisableInputMovement=true，
+        /// 跳过 NormalMovement（走路/飞行/跳跃/游泳），避免覆盖 root motion 速度。
+        /// </summary>
+        public bool DisableInputMovement { get; set; }
+
+        /// <summary>
+        /// 切出该 root motion 配置时清零物理体速度（消除末速惯性，防甩飞悬空）。
+        /// </summary>
+        public bool ClearVelocityOnExit { get; set; }
+
+        /// <summary>
+        /// 禁用空气阻力：在 ComponentBody 空气阻力应用点查 PhysicalEffects.AirDrag flag。
+        /// </summary>
+        public bool DisableAirDrag { get; set; }
+
+        /// <summary>
+        /// 禁用水阻力：在 ComponentBody 水阻力应用点查 PhysicalEffects.WaterDrag flag。
+        /// </summary>
+        public bool DisableWaterDrag { get; set; }
+
+        /// <summary>
+        /// 禁用地面阻力：在 ComponentBody 地面阻力应用点查 PhysicalEffects.GroundDrag flag。
+        /// </summary>
+        public bool DisableGroundDrag { get; set; }
+
+        /// <summary>
+        /// 一键开关全部物理副作用（含 ClearVelocityOnExit）。
+        /// 设 true 时全部开启，false 时全部关闭；读取时返回是否全部开启。
+        /// JSON 中用 "disableAll": true 替代逐一列举。单独使用，勿与其他 disable*/clearVelocityOnExit 混用
+        /// （System.Text.Json 按属性在 JSON 文档中的出现顺序逐个 set，混用时后出现的覆盖先出现的；
+        /// 若需单字段覆盖 disableAll，该字段必须在 JSON 中排在 "disableAll" 之后）。
+        /// 运行时 ApplyRootMotionPhysics 仍读各具体字段，本属性仅供配置便捷。
+        /// </summary>
+        public bool DisableAll {
+            get => DisableGravity && DisableTerrainCollision && DisableInputMovement
+                && ClearVelocityOnExit && DisableAirDrag && DisableWaterDrag && DisableGroundDrag;
+            set {
+                DisableGravity = value;
+                DisableTerrainCollision = value;
+                DisableInputMovement = value;
+                ClearVelocityOnExit = value;
+                DisableAirDrag = value;
+                DisableWaterDrag = value;
+                DisableGroundDrag = value;
+            }
+        }
+    }
+
+    /// <summary>
     /// 根运动配置
     /// </summary>
     public class RootMotionConfig {
@@ -223,5 +293,10 @@ namespace Engine.Animation.RootMotion {
         /// 缩放应用配置
         /// </summary>
         public ScaleConfig Scale { get; set; } = new();
+
+        /// <summary>
+        /// 物理副作用配置。null 表示该 root motion 不产生物理副作用。
+        /// </summary>
+        public PhysicsConfig Physics { get; set; }
     }
 }

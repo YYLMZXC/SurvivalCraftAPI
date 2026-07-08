@@ -507,6 +507,7 @@ namespace Engine.Animation {
             // 取消进行中的激活渐入（激活渐入未完成即触发停用的边界场景），避免两套 Weight 渐变并行
             if (m_activating) {
                 m_activating = false;
+                m_activateSourceStripInfo = default; // 对称清除（与 CancelTransitioning/Update 完成分支一致），防陈旧 info 跨动画泄漏
                 if (m_activateSourceTransforms != null) {
                     Array.Clear(m_activateSourceTransforms, 0, m_activateSourceTransforms.Length);
                 }
@@ -650,14 +651,19 @@ namespace Engine.Animation {
                 && m_animationPlayer.PreservePose
                 && m_animationPlayer.HasValidAnimation) {
                 m_animationPlayer.SampleBoneTransformsAtPhase(m_animationPlayer.EndPhase, boneTransforms);
-                RootMotionStrip.StripRootTranslation(boneTransforms, model, RootStripInfo.From(m_rootMotionConfig, m_rootBoneName));
+                // 与 IsPlaying 分支同：deactivating 时按旧 config(=m_deactivateStripInfo)剥，防尾段根位移泄漏
+                RootStripInfo info = m_deactivating ? m_deactivateStripInfo
+                                                    : RootStripInfo.From(m_rootMotionConfig, m_rootBoneName);
+                RootMotionStrip.StripRootTranslation(boneTransforms, model, info);
             }
             // holdPose: 手动控制期间非循环动画结束后保持当前姿态
             else if (m_holdPose
                 && m_animationPlayer != null
                 && m_animationPlayer.HasValidAnimation) {
                 m_animationPlayer.SampleBoneTransforms(boneTransforms);
-                RootMotionStrip.StripRootTranslation(boneTransforms, model, RootStripInfo.From(m_rootMotionConfig, m_rootBoneName));
+                RootStripInfo info = m_deactivating ? m_deactivateStripInfo
+                                                    : RootStripInfo.From(m_rootMotionConfig, m_rootBoneName);
+                RootMotionStrip.StripRootTranslation(boneTransforms, model, info);
             }
             // 最后尝试驱动器
             else if (m_driver != null) {

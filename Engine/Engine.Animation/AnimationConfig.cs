@@ -89,6 +89,12 @@ namespace Engine.Animation {
         public OnCompleteAction OnComplete { get; set; }
 
         /// <summary>
+        /// 动画被打断时执行的动作（非循环动画播放中被规则切换或层停用，即未自然播完即被切走）。
+        /// null 表示该动画不关心打断。触发由 AnimationController.TriggerOnInterruptIfActive 检测。
+        /// </summary>
+        public OnCompleteAction OnInterrupt { get; set; }
+
+        /// <summary>
         /// 根运动配置
         /// </summary>
         public RootMotionConfig RootMotion { get; set; }

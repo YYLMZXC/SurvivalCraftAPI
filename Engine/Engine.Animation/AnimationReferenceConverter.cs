@@ -45,6 +45,7 @@ namespace Engine.Animation {
                     case "driverargs": reference.DriverArgs = ReadDriverArgs(ref reader, options); break;
                     case "events": reference.Events = JsonSerializer.Deserialize<List<AnimationEventConfig>>(ref reader, options); break;
                     case "oncomplete": reference.OnComplete = JsonSerializer.Deserialize<OnCompleteAction>(ref reader, options); break;
+                    case "oninterrupt": reference.OnInterrupt = JsonSerializer.Deserialize<OnCompleteAction>(ref reader, options); break;
                     case "rootmotion":
                         try {
                             reference.RootMotion = JsonSerializer.Deserialize<RootMotionConfig>(ref reader, options);
@@ -101,6 +102,10 @@ namespace Engine.Animation {
             if (value.OnComplete != null) {
                 writer.WritePropertyName("onComplete");
                 JsonSerializer.Serialize(writer, value.OnComplete, options);
+            }
+            if (value.OnInterrupt != null) {
+                writer.WritePropertyName("onInterrupt");
+                JsonSerializer.Serialize(writer, value.OnInterrupt, options);
             }
             if (value.RootMotion != null) {
                 writer.WritePropertyName("rootMotion");

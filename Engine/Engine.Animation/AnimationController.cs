@@ -684,6 +684,31 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 检测层的当前动画是否被打断（非循环动画仍在播放即被切换/停用），是则触发其 OnInterrupt trigger。
+        /// 在 ApplyAnimationToLayer 开头（切到新动画前）和 EvaluateStateRules 停用分支（DeactivateAndClear 前）调用。
+        /// 判据与 CheckAnimationCompletion 的完成判据互补：
+        /// - 完成（OnComplete）：wasPlaying 且 !isPlaying 且 !isLooping（自然播到末尾停止）
+        /// - 打断（OnInterrupt）：wasPlaying 且 isPlaying 且 !isLooping（仍在播放即被切走，未到末尾）
+        /// 两者互斥：自然播完 isPlaying=false 走完成；被切走 isPlaying=true 走打断。
+        /// 复用 ExecuteOnCompleteAction 触发 trigger（type=trigger 语义通用）。
+        /// </summary>
+        void TriggerOnInterruptIfActive(AnimationLayer layer, string layerName) {
+            if (layer == null) {
+                return;
+            }
+            if (!m_layerAnimationRef.TryGetValue(layerName, out AnimationReference oldRef)
+                || oldRef?.OnInterrupt == null) {
+                return;
+            }
+            bool isLooping = m_layerLooping.GetValueOrDefault(layerName, true);
+            bool wasPlaying = m_layerWasPlaying.GetValueOrDefault(layerName, false);
+            bool isPlaying = layer.AnimationPlayer?.IsPlaying ?? false;
+            if (wasPlaying && isPlaying && !isLooping) {
+                ExecuteOnCompleteAction(oldRef.OnInterrupt);
+            }
+        }
+
+        /// <summary>
         /// 执行动画完成动作
         /// </summary>
         public void ExecuteOnCompleteAction(OnCompleteAction action) {
@@ -774,6 +799,15 @@ namespace Engine.Animation {
                     //（PlayAnimationWithTransition 的 Animation==null 分支）实现重启平滑。详见 DeactivateAndClear。
                     AnimationLayer layer = m_layers.FirstOrDefault(l => l.Name == layerConfig.Layer);
                     if (layer != null) {
+                        // 停用前：若旧动画是非循环且仍在播放，视为被打断 → 触发 OnInterrupt。
+                        TriggerOnInterruptIfActive(layer, layerConfig.Layer);
+                        // 清该层动画跟踪：DeactivateAndClear 渐降期保留采样（IsPlaying 仍 true），渐降完 ClearAnimation
+                        // 使 IsPlaying=false，此时 CheckAnimationCompletion 读残留 oldRef（wasPlaying=true、!isLooping）
+                        // 会误触发 OnComplete——与上面 OnInterrupt 冲突破坏互斥；未配 OnInterrupt 的非循环动画
+                        // 被停用同样误触发。重置为"无活跃非循环动画"态：OnComplete 三判据全失效。
+                        m_layerAnimationRef[layerConfig.Layer] = null;
+                        m_layerLooping[layerConfig.Layer] = true;
+                        m_layerWasPlaying[layerConfig.Layer] = false;
                         layer.DeactivateAndClear(0.2f);
                     }
 
@@ -840,6 +874,7 @@ namespace Engine.Animation {
                 DriverArgs = caller.DriverArgs ?? alias.DriverArgs,
                 Events = caller.Events ?? alias.Events,
                 OnComplete = caller.OnComplete ?? alias.OnComplete,
+                OnInterrupt = caller.OnInterrupt ?? alias.OnInterrupt,
                 RootBoneRotationValue = caller.HasRootBoneRotation ? caller.RootBoneRotationValue : alias.RootBoneRotationValue,
                 RootBoneTranslation = caller.HasRootBoneTranslation ? caller.RootBoneTranslation : alias.RootBoneTranslation,
                 HasRootBoneRotation = caller.HasRootBoneRotation || alias.HasRootBoneRotation,
@@ -873,6 +908,9 @@ namespace Engine.Animation {
             if (layer == null) {
                 return false;
             }
+            // 切到新动画前：若旧动画是非循环且仍在播放（未自然播完），视为被打断 → 触发其 OnInterrupt。
+            // 须在下方覆盖 m_layerAnimationRef[layerName] = 新 animRef 之前检测。
+            TriggerOnInterruptIfActive(layer, layerName);
             string source = animRef?.Source;
             if (string.IsNullOrEmpty(source)) {
                 return false;

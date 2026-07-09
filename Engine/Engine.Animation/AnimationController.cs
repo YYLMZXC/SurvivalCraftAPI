@@ -667,8 +667,16 @@ namespace Engine.Animation {
                 bool wasPlaying = m_layerWasPlaying.GetValueOrDefault(layerName, false);
                 bool isLooping = m_layerLooping.GetValueOrDefault(layerName, true);
 
+                // 过渡/权重渐入期不判完成：blend 期层未真正接管目标动画，
+                // endPhase≤startPhase 的姿势动画（如 attacked 仅取首帧后倾）目标 player 首帧即 IsPlaying=false，
+                // 若不跳过会在此 blend 期误触发 OnComplete，动画刚切入就被切回。
+                // 正常非循环动画（jump/climbup/wakeup/pickup）过渡/渐入期 IsPlaying=true，跳过无副作用；
+                // 仅姿势动画受益——blend 完成后才判完成。
+                bool blending = layer.Transition != null || layer.m_activating;
+
                 // 检测非循环动画完成：之前在播放，现在停止了，且不是循环动画
-                if (wasPlaying
+                if (!blending
+                    && wasPlaying
                     && !isPlaying
                     && !isLooping) {
                     // 动画完成，执行 OnComplete 动作
@@ -678,8 +686,10 @@ namespace Engine.Animation {
                     }
                 }
 
-                // 更新播放状态记录
-                m_layerWasPlaying[layerName] = isPlaying;
+                // 更新播放状态记录（blend 期保持 wasPlaying=true，让 blend 完成后下帧仍能检测到完成）
+                if (!blending) {
+                    m_layerWasPlaying[layerName] = isPlaying;
+                }
             }
         }
 

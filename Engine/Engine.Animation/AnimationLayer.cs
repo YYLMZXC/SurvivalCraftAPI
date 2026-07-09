@@ -494,9 +494,13 @@ namespace Engine.Animation {
                 DeactivateWithBlend(blendDuration);
                 return;
             }
+            // preservePose 保持的非循环动画末态（IsPlaying=false 但 PreservePose+HasValidAnimation）
+            // 也算"有内容"可渐降淡出——如 attacked 仅取首帧后倾（endPhase=0），停用时应平滑淡出而非瞬间消失 pop。
+            bool hasBlendableContent = m_animationPlayer?.IsPlaying == true
+                || (m_animationPlayer?.PreservePose == true && m_animationPlayer?.HasValidAnimation == true);
             if (blendDuration <= 0f
                 || !IsActive
-                || m_animationPlayer?.IsPlaying != true) {
+                || !hasBlendableContent) {
                 // 无活动动画或无过渡时长：直接清空进入"空 active"态
                 m_deactivating = false;
                 ClearAnimation();

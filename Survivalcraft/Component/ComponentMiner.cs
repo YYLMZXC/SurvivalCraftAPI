@@ -607,7 +607,7 @@ namespace Game {
             Vector3 creaturePosition = ComponentCreature.ComponentCreatureModel.EyePosition;
             Vector3 start = ray.Position;
             Vector3 direction = Vector3.Normalize(ray.Direction);
-            Vector3 end = ray.Position + direction * (reach + 1f);
+            Vector3 end = ray.Position + direction * Math.Max(reach + 1f, 15f);
             Point3 startCell = Terrain.ToCell(start);
             BodyRaycastResult? bodyRaycastResult = null;
             if (raycastBodies) {

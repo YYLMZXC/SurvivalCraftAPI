@@ -342,6 +342,18 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 仅摘除目标播放器的事件 relay（不动 m_targetPlayer/m_isActive）。
+        /// promote target→主播放器时调用：摘 relay 防双触发，由 AnimationLayer 接管事件订阅。
+        /// </summary>
+        public void DetachTargetRelay() {
+            if (m_targetPlayer != null
+                && m_targetPlayerEventHandler != null) {
+                m_targetPlayer.OnAnimationEvent -= m_targetPlayerEventHandler;
+            }
+            m_targetPlayerEventHandler = null;
+        }
+
+        /// <summary>
         /// 开始停用过渡（淡出到无）
         /// </summary>
         /// <param name="sourcePlayer">源动画播放器</param>

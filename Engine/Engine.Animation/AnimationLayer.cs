@@ -112,6 +112,9 @@ namespace Engine.Animation {
         /// </summary>
         public event AnimationEventHandler OnAnimationEvent;
 
+        // 主播放器事件转发委托（构造器订阅原始 player；promote target→主 player 时迁移订阅）。
+        AnimationEventHandler m_playerEventHandler;
+
         /// <summary>
         /// 创建动画层
         /// </summary>
@@ -125,8 +128,9 @@ namespace Engine.Animation {
             m_animationPlayer = new AnimationPlayer();
             m_transition = new AnimationTransition();
 
-            // 订阅主播放器的事件，转发到层的事件
-            m_animationPlayer.OnAnimationEvent += evt => OnAnimationEvent?.Invoke(evt);
+            // 订阅主播放器的事件，转发到层的事件（持有委托引用，promote 时迁移到新主 player）
+            m_playerEventHandler = evt => OnAnimationEvent?.Invoke(evt);
+            m_animationPlayer.OnAnimationEvent += m_playerEventHandler;
 
             // 订阅过渡的 TargetPlayer 事件，转发到层的事件
             m_transition.TargetPlayerEvent += evt => OnAnimationEvent?.Invoke(evt);
@@ -587,8 +591,15 @@ namespace Engine.Animation {
                         m_active = false;
                     }
                     else if (m_transition.TargetPlayer != null) {
-                        // 过渡完成，切换到目标动画
-                        m_animationPlayer = m_transition.TargetPlayer;
+                        // 过渡完成，切换到目标动画。
+                        // promote target→主播放器：迁移层事件订阅。构造器只订阅了原始 player，
+                        // target 仅靠 transition relay 转发；relay 在后续 CancelTransition(ClearAnimation) 被摘，
+                        // 会使复用该 player 的 FADEIN 事件全哑（CheckEvents 守卫 OnAnimationEvent==null 早退）。
+                        AnimationPlayer promoted = m_transition.TargetPlayer;
+                        m_transition.DetachTargetRelay();                            // 摘 relay，防换后 relay+handler 双触发
+                        m_animationPlayer.OnAnimationEvent -= m_playerEventHandler;  // 摘旧主订阅
+                        m_animationPlayer = promoted;
+                        m_animationPlayer.OnAnimationEvent += m_playerEventHandler;  // 焊新主订阅
                         m_transition.CompleteTransition();
                     }
                 }

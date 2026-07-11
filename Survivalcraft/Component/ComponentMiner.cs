@@ -33,6 +33,11 @@ namespace Game {
 
         public double m_lastHitTime;
 
+        // Attack pending 存原目标：Hit 入口存（pending 模式），ExecuteHit(Pending) 消费；ExecuteHit(Reraycast) 不用（重射线）。
+        ComponentBody m_attackPendingBody;
+        Vector3 m_attackPendingHitPoint;
+        Vector3 m_attackPendingHitDir;
+
         public static string fName = "ComponentMiner";
 
         public int m_lastDigFrameIndex;
@@ -95,6 +100,53 @@ namespace Game {
 
         public float PokingPhase { get; set; }
 
+        /// <summary>近战伤害目标来源（pending 模式下由 ExecuteHit 调用方按触发时机选择）。</summary>
+        public enum TargetMode {
+            /// <summary>用 Hit 入口存下的原目标（按下手时命中体）。</summary>
+            Pending,
+            /// <summary>impact 时刻从眼位重新射线取当前命中体（目标移动后真实落空/命中）。</summary>
+            Reraycast
+        }
+
+        /// <summary>动作 pending 标志（全动作 Pending 支持）。当前仅 Attack 接入；余 flag 预留扩展。</summary>
+        [Flags]
+        public enum PendingAction {
+            None = 0,
+            Attack = 1,
+            Dig = 2,
+            Poke = 4,
+            Place = 8,
+            Use = 16,
+            Interact = 32,
+        }
+
+        // 配置：哪些动作走 pending（延迟到事件/回调触发，不立即执行）。吞并原 UseAnimationDrivenAttack
+        // （其语义 = Attack requires pending）。由需延迟执行的使用方 OnControllerCreated 用 SetRequiresPending 设。
+        PendingAction m_requiresPending = PendingAction.None;
+
+        // 运行时状态：当前 pending 中的动作。入口排他锁读此（AnyIsPending）；ExecuteHit/controller 兜底清。
+        PendingAction m_isPending = PendingAction.None;
+
+        // --- requires（配置）：哪些动作走 pending（延迟到事件/回调触发，不立即执行）。由使用方设，miner 不自改。---
+        /// <summary>查询某动作是否配置为走 pending（延迟执行，不立即生效）。</summary>
+        public bool RequiresPending(PendingAction action) => (m_requiresPending & action) != PendingAction.None;
+        /// <summary>标记某动作走 pending（延迟执行）。幂等：重复设同一 flag 无副作用。</summary>
+        public void SetRequiresPending(PendingAction action) => m_requiresPending |= action;
+        /// <summary>取消某动作的 pending 配置（恢复原版立即执行）。</summary>
+        public void ClearRequiresPending(PendingAction action) => m_requiresPending &= ~action;
+
+        // --- is（运行时状态）：当前 pending 中的动作。入口排他锁读；触发方消费后清，使用方兜底清。---
+        /// <summary>查询某动作当前是否处于 pending（已请求待执行）。</summary>
+        public bool IsPending(PendingAction action) => (m_isPending & action) != PendingAction.None;
+        /// <summary>是否有任意动作处于 pending（入口排他锁判据：pending 期丢弃其他动作请求）。</summary>
+        public bool AnyIsPending => m_isPending != PendingAction.None;
+        /// <summary>标记某动作 pending（仅 miner 动作入口自设，外部勿调）。</summary>
+        void SetIsPending(PendingAction action) => m_isPending |= action;
+        /// <summary>清除某动作的 pending 标志（触发方消费后清，或使用方兜底防 pending 卡死）。</summary>
+        public void ClearIsPending(PendingAction action) => m_isPending &= ~action;
+        /// <summary>清除全部 pending 标志（兜底：触发链异常中断时复位，防入口排他锁永久卡死后续动作）。</summary>
+        public void ClearAllIsPending() => m_isPending = PendingAction.None;
+
         public CellFace? DigCellFace { get; set; }
 
         public float DigTime {
@@ -122,10 +174,16 @@ namespace Game {
         public UpdateOrder UpdateOrder => UpdateOrder.Default;
 
         public virtual void Poke(bool forceRestart) {
+            if (AnyIsPending) {
+                return;
+            }
             PokingPhase = forceRestart ? 0.0001f : MathUtils.Max(0.0001f, PokingPhase);
         }
 
         public bool Dig(TerrainRaycastResult raycastResult) {
+            if (AnyIsPending) {
+                return false;
+            }
             bool result = false;
             m_lastDigFrameIndex = Time.FrameIndex;
             CellFace cellFace = raycastResult.CellFace;
@@ -259,6 +317,9 @@ namespace Game {
         }
 
         public bool Place(TerrainRaycastResult raycastResult, int value) {
+            if (AnyIsPending) {
+                return false;
+            }
             int num = Terrain.ExtractContents(value);
             if (BlocksManager.Blocks[num].IsPlaceable_(value)) {
                 Block block = BlocksManager.Blocks[num];
@@ -391,6 +452,9 @@ namespace Game {
         }
 
         public bool Use(Ray3 ray) {
+            if (AnyIsPending) {
+                return false;
+            }
             int num = Terrain.ExtractContents(ActiveBlockValue);
             Block block = BlocksManager.Blocks[num];
             if (!IsLevelSufficientForTool(ActiveBlockValue)) {
@@ -418,6 +482,9 @@ namespace Game {
         }
 
         public bool Interact(TerrainRaycastResult raycastResult) {
+            if (AnyIsPending) {
+                return false;
+            }
             SubsystemBlockBehavior[] blockBehaviors = m_subsystemBlockBehaviors.GetBlockBehaviors(Terrain.ExtractContents(raycastResult.Value));
             for (int i = 0; i < blockBehaviors.Length; i++) {
                 if (blockBehaviors[i].OnInteract(raycastResult, this)) {
@@ -432,6 +499,9 @@ namespace Game {
         }
 
         public bool Interact(MovingBlocksRaycastResult raycastResult) {
+            if (AnyIsPending) {
+                return false;
+            }
             if (raycastResult.MovingBlock == null) {
                 return false;
             }
@@ -451,6 +521,9 @@ namespace Game {
         }
 
         public void Hit(ComponentBody componentBody, Vector3 hitPoint, Vector3 hitDirection) {
+            if (AnyIsPending) {
+                return;
+            }
             double hitInterval = HitInterval;
             ModsManager.HookAction(
                 "SetHitInterval",
@@ -478,6 +551,28 @@ namespace Game {
                 Poke(false);
                 return;
             }
+            if (RequiresPending(PendingAction.Attack)) {
+                // pending 模式：存原目标，延迟到使用方在 impact 时机调 ExecuteHit。
+                // 不立即伤害、不 Poke（pending 路径由触发方驱动伤害，chop 留给 dig）。
+                m_attackPendingBody = componentBody;
+                m_attackPendingHitPoint = hitPoint;
+                m_attackPendingHitDir = hitDirection;
+                SetIsPending(PendingAction.Attack);
+                return;
+            }
+            // 原版立即伤害（dae/AI）
+            DoMeleeHit(componentBody, hitPoint, hitDirection, pokeAfter: true);
+        }
+
+        /// <summary>
+        /// 近战伤害主体（原 Hit :481-555 逻辑）。由 Hit（原版立即）或 ExecuteHit（pending 模式 impact）调用。
+        /// </summary>
+        /// <param name="componentBody">被攻击的命中体。</param>
+        /// <param name="hitPoint">命中点（世界坐标）。</param>
+        /// <param name="hitDirection">命中方向（已归一）。</param>
+        /// <param name="pokeAfter">true=末尾 Poke(false)（原版立即路径，驱动 chop loop）；false=不 Poke（pending 路径）。</param>
+        void DoMeleeHit(ComponentBody componentBody, Vector3 hitPoint, Vector3 hitDirection, bool pokeAfter) {
+            Block block = BlocksManager.Blocks[Terrain.ExtractContents(ActiveBlockValue)];
             float num; //伤害
             float num2; //玩家命中率
             float num3 = 1f; //生物命中率
@@ -552,7 +647,57 @@ namespace Game {
                     ComponentCreature.PlayerStats.MeleeHits++;
                 }
             }
-            Poke(false);
+            if (pokeAfter) {
+                Poke(false);
+            }
+        }
+
+        /// <summary>
+        /// Attack pending 执行（由使用方在 impact 时机触发）。按 targetMode 解目标后跑 DoMeleeHit。
+        /// </summary>
+        /// <param name="mode">Pending=Hit 入口存的原目标；Reraycast=impact 时刻眼位重射线取当前命中体。</param>
+        public virtual void ExecuteHit(TargetMode mode) {
+            ComponentBody componentBody;
+            Vector3 hitPoint;
+            Vector3 hitDirection;
+            if (mode == TargetMode.Reraycast) {
+                // 从眼位重射线取当前命中体（仿 Raycast body 射线）；无命中 no-op（真实落空）。
+                ComponentCreatureModel componentCreatureModel = ComponentCreature.ComponentCreatureModel;
+                Vector3 start = componentCreatureModel.EyePosition;
+                Vector3 direction = Vector3.Normalize(componentCreatureModel.EyeRotation.GetForwardVector());
+                float reach = m_subsystemGameInfo.WorldSettings.GameMode == GameMode.Creative
+                    ? SettingsManager.CreativeReach
+                    : 5f;
+                reach = Math.Min(reach, SettingsManager.VisibilityRange);
+                BodyRaycastResult? bodyRaycastResult = m_subsystemBodies.Raycast(
+                    start,
+                    start + direction * (reach + 1f),
+                    0.35f,
+                    (body, distance) => Vector3.DistanceSquared(start + distance * direction, start) <= reach * reach
+                        && body.Entity != Entity
+                        && !body.IsChildOfBody(ComponentCreature.ComponentBody)
+                        && !ComponentCreature.ComponentBody.IsChildOfBody(body)
+                        && Vector3.Dot(Vector3.Normalize(body.BoundingBox.Center() - start), direction) > 0.7f
+                );
+                if (!bodyRaycastResult.HasValue) {
+                    ClearIsPending(PendingAction.Attack);
+                    return;
+                }
+                componentBody = bodyRaycastResult.Value.ComponentBody;
+                hitPoint = bodyRaycastResult.Value.HitPoint();
+                hitDirection = direction;
+            }
+            else {
+                componentBody = m_attackPendingBody;
+                hitPoint = m_attackPendingHitPoint;
+                hitDirection = m_attackPendingHitDir;
+            }
+            ClearIsPending(PendingAction.Attack);
+            // 目标失效（pending 模式存体已无效）→ no-op
+            if (componentBody == null || !componentBody.Entity.IsAddedToProject) {
+                return;
+            }
+            DoMeleeHit(componentBody, hitPoint, hitDirection, pokeAfter: false);
         }
 
         public bool Aim(Ray3 aim, AimState state) {

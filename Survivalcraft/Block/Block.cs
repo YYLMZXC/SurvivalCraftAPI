@@ -58,6 +58,8 @@ namespace Game {
 
         public bool DefaultIsInteractive;
 
+        public bool DefaultIsUseable;
+
         public bool IsEditable;
 
         public bool IsNonDuplicable;
@@ -277,6 +279,8 @@ namespace Game {
         public virtual bool IsNonDuplicable_(int value) => IsNonDuplicable;
 
         public virtual bool IsPlaceable_(int value) => IsPlaceable;
+
+        public virtual bool IsUseable_(int value) => DefaultIsUseable;
 
         public virtual bool IsPlacementTransparent_(int value) => IsPlacementTransparent;
 
@@ -570,7 +574,7 @@ namespace Game {
 
         public virtual bool CanBlockBeBuiltIntoFurniture(int value) => CanBeBuiltIntoFurniture;
 
-        public virtual int GetPriorityUse(int value, ComponentMiner componentMiner) => PriorityUse;
+        public virtual int GetPriorityUse(int value, ComponentMiner componentMiner) => IsUseable_(value) ? PriorityUse : 0;
 
         public virtual int GetPriorityInteract(int value, ComponentMiner componentMiner) {
             if (componentMiner.m_subsystemTerrain != null

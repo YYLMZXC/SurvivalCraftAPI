@@ -45,6 +45,8 @@ namespace Game {
         TerrainRaycastResult m_interactPendingTerrain;
         MovingBlocksRaycastResult m_interactPendingMoving;
         bool m_interactPendingIsMoving;
+        // Aim pending：投掷物松手时存的 ray（Pending 模式 ExecuteAim 消费）。仅投掷物（弓/弩/火枪立即抛不存）。
+        Ray3? m_aimPendingRay;
 
         public static string fName = "ComponentMiner";
 
@@ -121,11 +123,10 @@ namespace Game {
         public enum PendingAction {
             None = 0,
             Attack = 1,
-            Dig = 2,
-            Poke = 4,
-            Place = 8,
-            Use = 16,
-            Interact = 32,
+            Place = 4,
+            Use = 8,
+            Interact = 16,
+            Aim = 32
         }
 
         // 配置：哪些动作走 pending（延迟到事件/回调触发，不立即执行）。吞并原 UseAnimationDrivenAttack
@@ -833,6 +834,28 @@ namespace Game {
         }
 
         /// <summary>
+        /// Aim pending 执行（投掷物，由外部动画 25%/打断触发）。Pending=松手存的 ray；Reraycast=触发时刻 GetTargetingRay。
+        /// 边界：DoAim 用触发时刻 ActiveBlockValue——pending 期若从投掷物切到弓/弩等 aimable 物品，会触发其 OnAim(Completed)
+        /// （如射箭，方向用存的松手 ray）。设计选择（pending 期背包可变，仿 ExecutePlace）；切到非 aimable 方块则 DoAim 返 false 无副作用。
+        /// </summary>
+        /// <param name="mode">Pending=入口存的松手 ray（与 vanilla Completed 一致）；Reraycast=触发时刻重射线。仅投掷物 pending。</param>
+        public virtual bool ExecuteAim(TargetMode mode) {
+            Ray3 aim;
+            if (mode == TargetMode.Reraycast) {
+                aim = GetTargetingRay();
+            }
+            else {
+                if (!m_aimPendingRay.HasValue) {
+                    return false;  // 已消费（25% event + onInterrupt/兜底防双抛）
+                }
+                aim = m_aimPendingRay.Value;
+            }
+            ClearIsPending(PendingAction.Aim);
+            m_aimPendingRay = null;
+            return DoAim(aim, AimState.Completed);  // 调主体（绕过 Aim 拦截）
+        }
+
+        /// <summary>
         /// Use pending 执行（由使用方在触发时机调用）。按 mode 解射线后跑 DoUse。
         /// </summary>
         /// <param name="mode">Pending=入口存的射线；Reraycast=触发时刻眼位重射线（Use 不做地形射线，仅转发行为 OnUse）。</param>
@@ -904,6 +927,24 @@ namespace Game {
         }
 
         public bool Aim(Ray3 aim, AimState state) {
+            // pending 拦截：投掷物松手（Completed）不立即抛，存 pending 等外部动画（投掷动作播 25%/被打断）触发 ExecuteAim。
+            // 仅投掷物（blockBehaviors 含 ThrowableBlockBehavior）；弓/弩/火枪无此 behavior 立即抛。InProgress/Cancelled 不拦。
+            // AnyIsPending 排他（与 Place/Use/Interact/Dig 入口一致）：他 pending 占用时不创建第二个 pending，回落 DoAim 立即抛。
+            if (state == AimState.Completed && !AnyIsPending && RequiresPending(PendingAction.Aim)) {
+                SubsystemBlockBehavior[] pendingBehaviors = m_subsystemBlockBehaviors.GetBlockBehaviors(Terrain.ExtractContents(ActiveBlockValue));
+                foreach (SubsystemBlockBehavior b in pendingBehaviors) {
+                    if (b is SubsystemThrowableBlockBehavior) {
+                        m_aimPendingRay = aim;
+                        SetIsPending(PendingAction.Aim);
+                        return true;  // 存 pending 不抛
+                    }
+                }
+            }
+            return DoAim(aim, state);
+        }
+
+        /// <summary>Aim 主体（原 Aim body）：IsAimable_ + 等级 + 遍历 OnAim。由 Aim（立即/非投掷）或 ExecuteAim（pending 消费）调用。</summary>
+        bool DoAim(Ray3 aim, AimState state) {
             int num = Terrain.ExtractContents(ActiveBlockValue);
             Block block = BlocksManager.Blocks[num];
             if (block.IsAimable_(ActiveBlockValue)) {
@@ -921,7 +962,7 @@ namespace Game {
                     Poke(false);
                     return true;
                 }
-                SubsystemBlockBehavior[] blockBehaviors = m_subsystemBlockBehaviors.GetBlockBehaviors(Terrain.ExtractContents(ActiveBlockValue));
+                SubsystemBlockBehavior[] blockBehaviors = m_subsystemBlockBehaviors.GetBlockBehaviors(num);
                 for (int i = 0; i < blockBehaviors.Length; i++) {
                     if (blockBehaviors[i].OnAim(aim, this, state)) {
                         return true;

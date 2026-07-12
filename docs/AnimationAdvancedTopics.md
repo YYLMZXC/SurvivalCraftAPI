@@ -134,6 +134,25 @@ p.SetDirty();    // 强制标记为脏
 
 参数名没有硬编码限制——配置文件和 C# 代码使用相同的参数名即可通信。
 
+### 参数驱动的 source（动态切换动画）
+
+状态规则的 `source` 支持 `[paramName]` 形式——从 string 参数取值作为实际 source（格式与行为见[动画配置 JSON 参考 · 参数插值](AnimationConfigReference.md#参数插值)）。让你用一条规则 + 一个参数播放任意多个动画，无需为每个动画单独写规则。
+
+典型用途：随机待机动作池——参数存当前选中的 clip 名，规则 `"source": "[RandomIdleEvent]"` 即播放该 clip。
+
+```csharp
+// C# 侧按状态机逻辑设参数
+controller.Parameters.SetString("RandomIdleEvent", selectedClip);  // 播 selectedClip
+controller.Parameters.SetString("RandomIdleEvent", "");            // 清空 → 回 idle
+```
+
+机制：引擎每帧解析 `[param]` source 取参数值。规则匹配路径不变时本会跳过重切（去重优化），但 `[param]` source 解析后的实际动画名变了会打破去重、强制层重新切换并从起始相位播放。因此改参数值即换动画。
+
+注意：
+
+- 仅 string 参数，用 `SetString` 设值，`parameters` 默认值声明为字符串。
+- 参数为空串时规则不停用层（维持上一帧输出），靠 `condition` 判空控制是否进入该规则。
+
 ---
 
 ## 3. 手动动画控制

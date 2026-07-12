@@ -304,6 +304,31 @@
 | animation:// 协议 | `"animation://Walk"` | 显式指定动画片段（与裸名等效） |
 | driver: 协议 | `"driver:LookAt"` | 使用驱动器替代动画片段 |
 | 外部文件 | `"file:path/to/file.glb#AnimName"` | 从外部 GLB 文件加载动画 |
+| 参数插值 | `"[GaitState]"` | 从 string 参数取值作为 source（见[参数插值](#参数插值)） |
+
+#### 参数插值
+
+`source` 形如 `"[paramName]"`（整体用方括号包裹）时，引擎从 `Parameters` 取名为 `paramName` 的 **string** 参数值作为实际 source。纯字符串取值，**不走表达式计算**（不支持算术/函数）。
+
+```json
+{
+  "condition": "[RandomIdleEvent] != ''",
+  "animation": {
+    "source": "[RandomIdleEvent]",
+    "loop": false,
+    "onComplete": { "type": "trigger", "name": "RandomIdleComplete" }
+  }
+}
+```
+
+C# 侧 `p.SetString("RandomIdleEvent", "Dance_Loop")` 即让该规则播放 `Dance_Loop`，改值即换动画。
+
+行为要点：
+
+- **参数须为 string 类型**。配置方负责保证：`parameters` 中默认值声明为字符串（如 `"RandomIdleEvent": ""`），C# 用 `SetString` 设值。非 string 参数取值行为未定义。
+- **空字符串**：参数为 `""` 时解析后 source 为空 → 该规则不播新动画也**不停旧**，层维持上一帧输出（非停用）。配合 `condition` 判空（如 `[RandomIdleEvent] != ''`）控制是否进入。
+- **换值触发重切**：字面量 source 规则在匹配路径不变时跳过重切（去重优化）；`[param]` source 解析后的实际动画名随参数值变化，名变即打破去重、强制层重新从起始相位播放——这是改参数值就能换动画的底层机制。
+- **未注册参数**：参数名未声明时取值返回空串（不报错），效果同空字符串。
 
 ### 相位裁剪（startPhase / endPhase）
 

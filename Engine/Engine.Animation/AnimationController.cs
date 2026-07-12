@@ -49,6 +49,10 @@ namespace Engine.Animation {
         // 记录每个状态层当前匹配的规则索引（用于避免重复切换）
         public readonly Dictionary<string, int[]> m_lastMatchedRuleIndex = new();
 
+        // 记录每个状态层当前规则解析后的 source 名（[param] 插值后）。path 相同时比较 source 名变 → 重切，
+        // 支持 source: "[param]" 动态换动画（字面量 source 恒同 → 天然不重切）。
+        readonly Dictionary<string, string> m_lastResolvedSource = new();
+
         // 动画引用配置（用于获取 OnComplete 动作）
         public Dictionary<string, AnimationReference> m_animationReferences = new();
 
@@ -786,14 +790,22 @@ namespace Engine.Animation {
                     continue; // 无匹配，保持当前状态
                 }
 
-                // 路径未变则跳过（路径 = 外层 idx → 内层 idx → ...）
-                if (m_lastMatchedRuleIndex.TryGetValue(stateName, out int[] lastPath)
-                    && lastPath != null && lastPath.SequenceEqual(path)) {
-                    continue;
+                // path 变化检测（路径 = 外层 idx → 内层 idx → ...）
+                bool pathChanged = !m_lastMatchedRuleIndex.TryGetValue(stateName, out int[] lastPath)
+                                || lastPath == null || !lastPath.SequenceEqual(path);
+                // source 名变化检测（支持 source: "[param]" 动态换动画）：path 相同时比较解析后 source 名。
+                // 字面量 source 恒同 → 不重切；[param] source 随参数值变 → 重切播新动画。
+                string resolvedSource = ResolveSource(matchedRule.Animation) ?? string.Empty;
+                if (!pathChanged) {
+                    if (m_lastResolvedSource.TryGetValue(stateName, out string lastSrc)
+                        && lastSrc == resolvedSource) {
+                        continue;  // path + source 都同 → 跳过
+                    }
                 }
-
-                // 更新匹配记录
-                m_lastMatchedRuleIndex[stateName] = path.ToArray();
+                else {
+                    m_lastMatchedRuleIndex[stateName] = path.ToArray();
+                }
+                m_lastResolvedSource[stateName] = resolvedSource;
 
                 // 切换动画。
                 // Source 为空（含 {"source":null} 与整个 animation:null）= 该层无内容 → 停用，让下层输出可见。
@@ -910,6 +922,19 @@ namespace Engine.Animation {
         }
 
         /// <summary>
+        /// 解析动画 source：source 形如 "[paramName]" 时从 Parameters 取 string 值（配置方须保证该 param 为 string），
+        /// 支持规则 source 由参数动态驱动（如 "[RandomIdleEvent]"）；否则原样返回字面量。纯字符串取值，不走表达式计算。
+        /// </summary>
+        string ResolveSource(AnimationReference animRef) {
+            string source = animRef?.Source;
+            if (!string.IsNullOrEmpty(source) && source.Length > 2
+                && source[0] == '[' && source[source.Length - 1] == ']') {
+                return m_parameters.GetString(source.Substring(1, source.Length - 2));
+            }
+            return source;
+        }
+
+        /// <summary>
         /// 应用动画配置到指定层
         /// </summary>
         /// <returns>是否成功应用动画</returns>
@@ -921,7 +946,11 @@ namespace Engine.Animation {
             // 切到新动画前：若旧动画是非循环且仍在播放（未自然播完），视为被打断 → 触发其 OnInterrupt。
             // 须在下方覆盖 m_layerAnimationRef[layerName] = 新 animRef 之前检测。
             TriggerOnInterruptIfActive(layer, layerName);
-            string source = animRef?.Source;
+            string source = ResolveSource(animRef);
+            // source 解析为空（含 {"source":null}、整个 animation:null、"[param]" 参数未注册或被设空）：
+            // early-return false —— 不播新动画也不停旧，该层维持上一帧输出。设计：source 空=该规则"无内容"，
+            // 参数空（如 [RandomIdleEvent] 事件未激活）= 维持现状而非停用。停用语义由 EvaluateStateRules 的空 Source
+            // 分支（DeactivateAndClear）处理，不走这里。
             if (string.IsNullOrEmpty(source)) {
                 return false;
             }
@@ -1390,6 +1419,7 @@ namespace Engine.Animation {
                 m_manualOverrideLayers.Clear();
                 // 清除所有规则匹配缓存，强制重新评估
                 m_lastMatchedRuleIndex.Clear();
+                m_lastResolvedSource.Clear();
             }
             else {
                 // 清除指定层的保持姿态状态
@@ -1403,6 +1433,7 @@ namespace Engine.Animation {
                     foreach ((string stateName, StateLayerConfig layerConfig) in m_stateConfigs) {
                         if (layerConfig.Layer == layerName) {
                             m_lastMatchedRuleIndex.Remove(stateName);
+                            m_lastResolvedSource.Remove(stateName);
                         }
                     }
                 }

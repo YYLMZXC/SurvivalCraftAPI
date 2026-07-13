@@ -423,7 +423,7 @@ public virtual void Animate() {
 
     // 2. AnimationController（新系统，glTF 配置驱动）
     if (AnimationController != null) {
-        // 清上帧骨骼变换；HasRootMotion 时关联 body.Velocity/Rotation，Update 后写回（详见 Root Motion）
+        // 清上帧骨骼变换；Update 前无条件关联 body.Velocity/Rotation，Update 后仅 HasRootMotion 时写回（详见 Root Motion）
         AnimationController.Update(Time.FrameDuration);
         AnimationController.ComputeBoneTransforms(m_boneTransforms);
         Animated = true;

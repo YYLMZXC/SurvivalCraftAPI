@@ -777,8 +777,10 @@ Root Motion 允许动画驱动生物的实际移动。最常见的用途是实�
 | `impulseMethod` | `"Average"` | 脉冲计算方法：`"Average"`、`"Peak"`、`"Weighted"` |
 | `impulseScale` | `1.0` | 脉冲缩放因子 |
 | `velocityMask` | `[1, 1, 1]` | 各轴是否受影响（0 = 不受影响，1 = 受影响） |
+| `impulseOverride` | `null` | AddImpulse：直接指定脉冲向量（body-local，覆盖动画位移计算）。设此项后忽略 `impulseMethod`/`impulseScale` |
+| `impulseSpeedOverride` | `null` | AddImpulse：脉冲速度向量（m/s，body-local，由物理体旋转转世界）。覆盖动画位移，可组合方向如 `[0, 2, -6]`（前 6 + 上 2，上扬轻微浮空减地面阻力） |
 | `maxSpeed` | `20` | 最大速度限制 |
-| `maxImpulse` | `10` | 最大脉冲限制 |
+| `maxImpulse` | `50` | 最大脉冲限制（脉冲速度模长上限） |
 
 详细的 Root Motion 用法参见 [AnimationAdvancedTopics.md](AnimationAdvancedTopics.md)。
 

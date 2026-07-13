@@ -523,13 +523,12 @@ Root Motion 允许动画中的根骨骼运动驱动生物的实际物理移动�
 
 ### C# 中使用 Root Motion
 
-每帧 `ComponentModel.Animate` 在 `controller.Update` 之前自动关联速度/旋转（仅当 `HasRootMotion`），更新后写回物理体——mod 无需手动关联这两项：
+每帧 `ComponentModel.Animate` 在 `controller.Update` 之前**无条件**关联物理体速度/旋转到控制器，更新后**仅当 `HasRootMotion`** 才把冲量/速度写回物理体——mod 无需手动关联这两项。馈送之所以不依赖 `HasRootMotion`：`controller.Update` 内状态规则可能切换 RootMotion 配置（如剑击突进切到 AddImpulse），切换帧 `HasRootMotion` 仍读旧值（false），若馈送受其控制则首帧冲量会丢失：
 
 ```csharp
 // 引擎内部已做（无需 mod 手动关联）：
-//   AnimationController.Velocity = body.Velocity;
-//   AnimationController.EntityRotation = body.Rotation;
-// 更新后若 Velocity 有值再写回 body.Velocity（Root Motion 驱动位移）
+//   更新前无条件：AnimationController.Velocity = body.Velocity; EntityRotation = body.Rotation;
+//   更新后仅当 HasRootMotion && Velocity.HasValue：body.Velocity = AnimationController.Velocity;
 ```
 
 碰撞盒动态调整（如蹲下/起身缩放碰撞盒）需 mod 手动配置回调，在 `OnControllerCreated` 中设置：
@@ -553,6 +552,19 @@ AddImpulse 模式在动画的指定相位点提取速度并作为脉冲施加：
 2. 系统计算该点附近的峰值/平均速度
 3. 速度乘以 `impulseScale` 并通过 `velocityMask` 过滤
 4. 结果脉冲施加到生物的速度向量
+
+**手动覆盖脉冲**：若不想从动画位移推导（无位移数据，或需精确方向控制），可直接指定脉冲向量（body-local，由物理体旋转转世界），跳过上述 2-3 步：
+
+```json
+"translation": {
+  "mode": "AddImpulse",
+  "impulsePhase": 0.02,
+  "impulseSpeedOverride": [0, 2, -6]
+}
+```
+
+- `impulseOverride` / `impulseSpeedOverride` 二者同为 body-local 向量，区别仅在语义命名；优先级 `impulseOverride` > `impulseSpeedOverride` > 动画数据计算。
+- 上例 `[0, 2, -6]` = 前 6 + 上 2：前向突进 + 上扬分量令本体瞬时轻微浮空，缩短地面阻力作用时间（剑击突进常用）。
 
 ```json
 "jump": {

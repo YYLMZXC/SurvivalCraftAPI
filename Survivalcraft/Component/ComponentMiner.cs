@@ -762,10 +762,12 @@ namespace Game {
             Vector3 hitPoint;
             Vector3 hitDirection;
             if (mode == TargetMode.Reraycast) {
-                // 从眼位重射线取当前命中体（仿 Raycast body 射线）；无命中 no-op（真实落空）。
-                ComponentCreatureModel componentCreatureModel = ComponentCreature.ComponentCreatureModel;
-                Vector3 start = componentCreatureModel.EyePosition;
-                Vector3 direction = Vector3.Normalize(componentCreatureModel.EyeRotation.GetForwardVector());
+                // 从目标射线重射线取当前命中体（无命中 no-op=真实落空）。用 GetTargetingRay（player=相机 ViewPosition/Direction，
+                // 与 playerInput 同源；非 player 回退眼位）——自定义玩家模型 EyeRotation 可能与相机不同步致系统性 miss。
+                // ExecutePlace/Use/Interact 均用 GetTargetingRay，此处对齐（原误用 EyePosition/EyeRotation）。
+                Ray3 targetingRay = GetTargetingRay();
+                Vector3 start = targetingRay.Position;
+                Vector3 direction = targetingRay.Direction;
                 float reach = m_subsystemGameInfo.WorldSettings.GameMode == GameMode.Creative
                     ? SettingsManager.CreativeReach
                     : 5f;

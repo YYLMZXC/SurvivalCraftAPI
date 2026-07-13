@@ -821,9 +821,7 @@ namespace Engine.Animation {
                     ApplyAnimationToLayer(layerConfig.Layer, matchedRule.Animation);
                 }
                 else {
-                    // animation:null 或 source:null → 停用层：渐降平滑淡出，完成时清空动画并保持 active。
-                    // 渐降期间保留动画采样（层动画淡出可见）；完成清空 Animation=null → 下次播放走权重渐入
-                    //（PlayAnimationWithTransition 的 Animation==null 分支）实现重启平滑。详见 DeactivateAndClear。
+                    // animation:null 或 source:null → 停用层。
                     AnimationLayer layer = m_layers.FirstOrDefault(l => l.Name == layerConfig.Layer);
                     if (layer != null) {
                         // 停用前：若旧动画是非循环且仍在播放，视为被打断 → 触发 OnInterrupt。
@@ -835,7 +833,18 @@ namespace Engine.Animation {
                         m_layerAnimationRef[layerConfig.Layer] = null;
                         m_layerLooping[layerConfig.Layer] = true;
                         m_layerWasPlaying[layerConfig.Layer] = false;
-                        layer.DeactivateAndClear(0.2f);
+                        // driver 层（如鱼 Head/FishAttack）用旧 Deactivate：保留 Weight、置 m_active=false。
+                        // driver 再激活走 Activate()+SetDriver()，不走 PlayAnimationWithTransition 权重渐入，
+                        // 不会恢复 Weight。若改用 DeactivateAndClear（清 Weight=0 + 保持 active），driver 层会卡在
+                        // Weight=0：AnimationBlender 首骨骼在 Weight<1 分支写入 rest（非 null），非蒙皮模型
+                        // ProcessBoneHierarchy 的旋转叠加分支会损坏该骨骼（鱼下颚前移错位），且咬合动画不可见。
+                        // 片段层（无 driver）保留 DeactivateAndClear，修复其重启硬切（见该提交说明）。
+                        if (layer.Driver != null) {
+                            layer.Deactivate();
+                        }
+                        else {
+                            layer.DeactivateAndClear(0.2f);
+                        }
                     }
 
                     // Base 层停用时清除根运动配置，根骨骼变换回退顶层

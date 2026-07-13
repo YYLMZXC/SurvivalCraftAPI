@@ -201,21 +201,23 @@ namespace Game {
                     m_boneTransforms[i] = null;
                 }
 
-                // RootMotion: 同步物理体速度和旋转
-                ComponentBody body = AnimationController.HasRootMotion
-                    ? m_componentBody : null;
-                if (body != null) {
-                    AnimationController.Velocity = body.Velocity;
-                    AnimationController.EntityRotation = body.Rotation;
+                // RootMotion: 同步物理体速度和旋转。
+                // 须在 Update 前无条件喂 body 速度：Update 内状态规则可能切到新 RM config（如剑击 AddImpulse），
+                // 切换帧 HasRootMotion 仍读旧 config=false → ApplyRootMotion 拿不到 Velocity，首帧冲量被丢弃。
+                if (m_componentBody != null) {
+                    AnimationController.Velocity = m_componentBody.Velocity;
+                    AnimationController.EntityRotation = m_componentBody.Rotation;
                 }
 
                 if (!DisableAnimation) {
                     AnimationController.Update(Time.FrameDuration);
                     AnimationController.ComputeBoneTransforms(m_boneTransforms);
 
-                    // RootMotion: 将冲量/速度写回物理体
-                    if (body != null && AnimationController.Velocity.HasValue) {
-                        body.Velocity = AnimationController.Velocity.Value;
+                    // RootMotion: 将冲量/速度写回物理体（Update 后读 HasRootMotion，覆盖 config 切换帧）
+                    if (m_componentBody != null
+                        && AnimationController.HasRootMotion
+                        && AnimationController.Velocity.HasValue) {
+                        m_componentBody.Velocity = AnimationController.Velocity.Value;
                     }
 
                     // RootMotion 物理副作用：进入/切出 RM config 时应用/恢复（滞后一帧生效）

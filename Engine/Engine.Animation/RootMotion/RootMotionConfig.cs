@@ -155,6 +155,13 @@ namespace Engine.Animation.RootMotion {
         /// </summary>
         public Vector3? ImpulseOverride { get; set; }
 
+        /// <summary>
+        /// 冲量速度向量（m/s，body-local 空间：由 TranslationApplier 经 body.Rotation 转世界）。
+        /// AddImpulse 模式下若设置，冲量 = value，覆盖动画位移数据。
+        /// 可组合方向，如剑击 [0, 2, -6] = 前 6 + 上 2（上扬轻微浮空，减地面阻力作用时间）。
+        /// </summary>
+        public Vector3? ImpulseSpeedOverride { get; set; }
+
         // 速度控制
 
         /// <summary>
@@ -172,7 +179,7 @@ namespace Engine.Animation.RootMotion {
         /// <summary>
         /// 最大冲量限制（米/秒），仅 AddImpulse 模式
         /// </summary>
-        public float MaxImpulse { get; set; } = 10f;
+        public float MaxImpulse { get; set; } = 50f;
     }
 
     /// <summary>

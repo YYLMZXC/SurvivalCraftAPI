@@ -365,8 +365,9 @@ namespace Engine.Animation {
             TranslationConfig translationConfig = rootMotionConfig.Translation;
             if (translationConfig.Mode != TranslationMode.None) {
                 if (translationConfig.Mode == TranslationMode.AddImpulse) {
-                    // ImpulseOverride 不依赖动画位移数据
+                    // ImpulseOverride / ImpulseSpeedOverride 不依赖动画位移数据
                     bool hasData = translationConfig.ImpulseOverride.HasValue
+                        || translationConfig.ImpulseSpeedOverride.HasValue
                         || rootMotionCache.HasTranslationData;
                     if (hasData) {
                         // ImpulsePhase: 绝对动画相位，-1 表示自动（正播用 endPhase，反播用 startPhase）
@@ -461,6 +462,10 @@ namespace Engine.Animation {
             // 优先使用配置覆盖值（已在实体空间，不需要变换）
             if (config.ImpulseOverride.HasValue) {
                 return config.ImpulseOverride.Value;
+            }
+            // 冲量速度向量：body-local，由 TranslationApplier 经 body.Rotation 转世界
+            if (config.ImpulseSpeedOverride.HasValue) {
+                return config.ImpulseSpeedOverride.Value;
             }
             // 从动画数据计算：使用 impulsePhase → endPhase 范围
             float measureStart = impulsePhase > startPhase ? impulsePhase : startPhase;

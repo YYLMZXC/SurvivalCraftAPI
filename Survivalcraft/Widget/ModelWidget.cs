@@ -209,12 +209,8 @@ namespace Game {
                 m_boneTransforms.Remove(value);
                 m_absoluteBoneTransforms.Remove(value);
                 Textures.Remove(value);
-                // 注：不在此移除 m_animationControllers / m_animationPlayers 条目。
-                // 动画状态（时间/层）绑定 Model 实例，其生命周期应独立于瞬态 bone buffer。
-                // PlayerModelWidget.MeasureOverride 每帧 RemoveModel+AddModel 重建 buffer（同 Model 实例），
-                // 若此处清条目，player/controller 会被每帧销毁 → 时间归零、无法持续播放。
-                // 真正移除的模型：其 player/controller 留为 stale，Update 内 m_boneTransforms.TryGetValue
-                // 守卫会跳过（无 buffer），不会被采样——harmless。模型实例集合有界（缓存），无泄漏增长。
+                m_animationControllers.Remove(value);
+                m_animationPlayers.Remove(value);
                 return true;
             }
             return false;

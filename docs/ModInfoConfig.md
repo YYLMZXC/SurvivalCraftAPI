@@ -137,7 +137,7 @@
                 }
             ]
         },
-        // 支持添加多个入口按钮
+        // 支持添加多个入口按钮，但因为 Items 为空，不会显示
         {
             "Id": "TemplateModSettingsGroup2",
             // 省略

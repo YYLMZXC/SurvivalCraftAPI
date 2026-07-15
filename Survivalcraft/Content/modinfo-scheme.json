@@ -39,7 +39,7 @@
           "description": "Extra properties read by the Widget, e.g. MinValue/MaxValue/Granularity for NumberSliderSettingWidget. \n供 Widget 读取的附加属性，如 NumberSliderSettingWidget 的 MinValue/MaxValue/Granularity"
         }
       },
-      "required": ["Id", "Type", "Widget"]
+      "required": ["Id", "Type"]
     },
     "settingContainer": {
       "type": "object",

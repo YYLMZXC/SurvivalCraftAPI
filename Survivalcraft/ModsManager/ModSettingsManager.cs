@@ -280,7 +280,7 @@ namespace Game {
         }
 
         /// <summary>Widget 写回值。更新字典 + 精准分发 OnSettingChanged。</summary>
-        internal static void Set(string[] path, object value) {
+        public static void Set(string[] path, object value) {
             if (path == null || path.Length == 0) return;
             string key = string.Join("/", path);
             m_dataDrivenValues[key] = value;

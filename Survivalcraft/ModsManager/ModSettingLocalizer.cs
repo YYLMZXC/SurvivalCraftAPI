@@ -50,5 +50,13 @@ namespace Game {
         public static string ExtractPackageName(ModSettingItem d) => d.CachedPath != null && d.CachedPath.Contains('/')
             ? d.CachedPath.Substring(0, d.CachedPath.IndexOf('/'))
             : null;
+
+        /// <summary>从描述符 CachedPath 取 idChain（去 packageName 前缀，按 '/' 拆分），用于 ResolveText 的 idChain 参数。</summary>
+        public static string[] ExtractIdChain(ModSettingItem d) {
+            if (d.CachedPath == null) return Array.Empty<string>();
+            int slash = d.CachedPath.IndexOf('/');
+            string rest = slash >= 0 ? d.CachedPath.Substring(slash + 1) : d.CachedPath;
+            return string.IsNullOrEmpty(rest) ? Array.Empty<string>() : rest.Split('/');
+        }
     }
 }

@@ -99,8 +99,12 @@ namespace Game {
             m_textTrue = LanguageControl.Yes;
             m_textFalse = LanguageControl.No;
             if (descriptor.WidgetProperties is JsonElement props) {
-                if (props.TryGetProperty("TextTrue", out JsonElement tt) && tt.ValueKind == JsonValueKind.String) m_textTrue = tt.GetString();
-                if (props.TryGetProperty("TextFalse", out JsonElement tf) && tf.ValueKind == JsonValueKind.String) m_textFalse = tf.GetString();
+                string packageName = ModSettingLocalizer.ExtractPackageName(descriptor);
+                string[] idChain = ModSettingLocalizer.ExtractIdChain(descriptor);
+                if (props.TryGetProperty("TextTrue", out JsonElement tt) && tt.ValueKind == JsonValueKind.String)
+                    m_textTrue = ModSettingLocalizer.ResolveText(packageName, idChain, "TextTrue", tt.GetString(), useIdFallback: false);
+                if (props.TryGetProperty("TextFalse", out JsonElement tf) && tf.ValueKind == JsonValueKind.String)
+                    m_textFalse = ModSettingLocalizer.ResolveText(packageName, idChain, "TextFalse", tf.GetString(), useIdFallback: false);
             }
             m_button = new BevelledButtonWidget {
                 Style = ContentManager.Get<XElement>("Styles/ButtonStyle_310x60"),

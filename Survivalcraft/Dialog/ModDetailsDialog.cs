@@ -116,6 +116,13 @@ namespace Game {
                                 )) {
                                 valid = false;
                                 sb.AppendLine($"      {LanguageControl.Get(fName, "15")}");
+                                ModEntity[] entities = ModsManager.ModListAll
+                                    .Where(px => px.modInfo != null && px.modInfo.PackageName == dependency.Key)
+                                    .ToArray();
+                                if (entities.Length > 0) {
+                                    sb.Append($"      {LanguageControl.Get(fName, "16")}");
+                                    sb.AppendJoin(',', entities.Select(e => e.modInfo.Version));
+                                }
                             }
                         }
                         m_contentPanel.Children.Add(new LabelWidget { Text = sb.ToString(), Color = valid ? Color.White : Color.Red });

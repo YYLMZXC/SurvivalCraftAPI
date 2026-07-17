@@ -119,7 +119,8 @@ namespace Game {
 
         public override void Update() {
             base.Update();
-            if (m_button.IsClicked) {
+            IsOperating = m_button.IsClicked;
+            if (IsOperating) {
                 CommitValue(!(bool)Value);
                 m_button.Text = (bool)Value ? m_textTrue : m_textFalse;
             }
@@ -151,7 +152,8 @@ namespace Game {
 
         public override void Update() {
             base.Update();
-            if (m_button.IsClicked) {
+            IsOperating = m_button.IsClicked;
+            if (IsOperating) {
                 DialogsManager.ShowDialog(null, new ListSelectionDialog(
                     NameLabelText, m_members, 60f,
                     MemberText,
@@ -277,6 +279,7 @@ namespace Game {
 
         public override void Update() {
             base.Update();
+            IsOperating = m_textBox.HasFocus;
             string current = Value as string;
             if (m_textBox.Text != current) CommitValue(m_textBox.Text);
         }

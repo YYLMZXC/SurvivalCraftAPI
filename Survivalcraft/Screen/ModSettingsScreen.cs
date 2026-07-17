@@ -14,6 +14,7 @@ namespace Game {
         string m_packageName;
         string[] m_pageIds;
         ModSettingPage m_currentPage;
+        string m_descriptionText;
 
         // 栈空 = root；非空 peek 为当前页
         readonly Stack<(string PackageName, string[] PageIds, string Title)> m_pageStack = new();
@@ -36,6 +37,7 @@ namespace Game {
         }
 
         void NavigateCurrent() {
+            m_descriptionText = null;
             m_contentStack.Children.Clear();
             m_navButtons.Clear();
             m_itemWidgets.Clear();
@@ -213,16 +215,16 @@ namespace Game {
                     return;
                 }
             }
-            // 共享 Description：激活项（如滑块滑动）显示其说明，否则页面默认
-            bool anyPressed = false;
+            // 共享 Description：激活项（如滑块滑动）显示其说明；一旦显示即保持，不再回归页面默认
             foreach (IModSettingItemWidget w in m_itemWidgets) {
                 if (w.IsOperating) {
-                    m_descriptionLabel.Text = w.DescriptionText;
-                    anyPressed = true;
+                    if (m_descriptionText != w.DescriptionText) {
+                        m_descriptionText = w.DescriptionText;
+                        m_descriptionLabel.Text = m_descriptionText;
+                    }
+                    break;
                 }
             }
-            if (!anyPressed && m_currentPage != null)
-                m_descriptionLabel.Text = ModSettingLocalizer.ResolveText(m_packageName, m_pageIds, "Description", m_currentPage.Description, false);
 
             if (Input.Back || Input.Cancel || Children.Find<ButtonWidget>("TopBar.Back").IsClicked) {
                 if (m_pageStack.Count > 0) {

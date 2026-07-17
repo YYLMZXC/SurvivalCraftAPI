@@ -170,7 +170,7 @@ namespace Game {
                     default: throw new InvalidOperationException("Unknown player class.");
                 }
                 humanModelValueDictionary = playerValuesDictionary.GetValue<ValuesDictionary>("HumanModel");
-                string modelNameForClothing = humanModelValueDictionary.GetValue<string>("ModelNameForClothing");
+                string modelNameForClothing = humanModelValueDictionary.GetValue<string>("ModelNameForClothing", null);
                 if (!string.IsNullOrEmpty(modelNameForClothing)) {
                     modelForClothing = ContentManager.Get<Model>(modelNameForClothing);
                     m_playerModelsForClothing.Add(playerClass, modelForClothing);

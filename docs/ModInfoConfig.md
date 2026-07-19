@@ -124,7 +124,8 @@
                     "WidgetProperties": {
                         "MinValue": -10,
                         "MaxValue": 10,
-                        "Granularity": 1
+                        "Granularity": 1,
+                        "DecimalPlaces": 0
                     }
                 },
                 {
@@ -145,6 +146,7 @@
     ]
 }
 ```
+> 也可以另起一个文件 `modsettings.json`，直接写 `[{ "Id": "TemplateModSettingsGroup1", ...}, ...]`，注意，这样做会覆盖 `modinfo.json` 中配置的设置项
 
 有两种方式获取设置值：
 

@@ -210,9 +210,21 @@ namespace Game {
         }
     }
 
-    /// <summary>数值滑块（int/float 等）。需 WidgetProperties.MinValue/MaxValue，缺则降级 0~1。</summary>
+    /// <summary>数值滑块（int/float 等）。需 WidgetProperties.MinValue/MaxValue，缺则降级 0~1。
+    /// DecimalPlaces 控制显示小数位数（默认 3，即 0.###）；0=整数显示。</summary>
     public class NumberSliderSettingWidget : UniformSpacingPanelSettingWidget {
         SliderWidget m_slider;
+        int m_decimalPlaces = 3;
+        string m_textFormat = "0.###";
+
+        /// <summary>显示保留的小数位数。负值视为 0。改动后立即重建格式串。</summary>
+        public int DecimalPlaces {
+            get => m_decimalPlaces;
+            set {
+                m_decimalPlaces = Math.Max(0, value);
+                m_textFormat = m_decimalPlaces > 0 ? $"0.{new string('#', m_decimalPlaces)}" : "0";
+            }
+        }
 
         public override void Initialize(ModSettingItem descriptor, object currentValue, string name, string description) {
             base.Initialize(descriptor, currentValue, name, description);
@@ -232,6 +244,7 @@ namespace Game {
                 if (props.TryGetProperty("MinValue", out JsonElement min) && min.ValueKind == JsonValueKind.Number) m_slider.MinValue = min.GetSingle();
                 if (props.TryGetProperty("MaxValue", out JsonElement max) && max.ValueKind == JsonValueKind.Number) m_slider.MaxValue = max.GetSingle();
                 if (props.TryGetProperty("Granularity", out JsonElement g) && g.ValueKind == JsonValueKind.Number) m_slider.Granularity = g.GetSingle();
+                if (props.TryGetProperty("DecimalPlaces", out JsonElement dp) && dp.ValueKind == JsonValueKind.Number) DecimalPlaces = dp.GetInt32();
             }
             UpdateText();
             Assemble(m_slider);
@@ -245,12 +258,12 @@ namespace Game {
             || t == typeof(float) || t == typeof(double) || t == typeof(decimal);
 
         static float ToFloat(object v) => Convert.ToSingle(v, CultureInfo.InvariantCulture);
-        void UpdateText() => m_slider.Text = Value?.ToString() ?? "";
+        void UpdateText() => m_slider.Text = (Value as IFormattable)?.ToString(m_textFormat, CultureInfo.InvariantCulture) ?? Value?.ToString() ?? "";
 
         public override void Update() {
             base.Update();
             IsOperating = m_slider.IsSliding;
-            if (m_slider.IsSliding) m_slider.Text = m_slider.Value.ToString("0.###", CultureInfo.InvariantCulture);
+            if (m_slider.IsSliding) m_slider.Text = m_slider.Value.ToString(m_textFormat, CultureInfo.InvariantCulture);
             if (m_slider.SlidingCompleted) {
                 object newVal = Convert.ChangeType(m_slider.Value, Descriptor.Type, CultureInfo.InvariantCulture);
                 CommitValue(newVal);

@@ -324,7 +324,17 @@ public static class ModsManager {
     }
 
     /// <summary>
-    /// dll 加载完成后解析所有启用模组的 Settings（DeserializeJson 阶段仅 Clone 原始 JSON，因类型解析依赖模组 dll）。
+    /// 解析 modsettings.json：仅当根节点为数组时返回 Clone（脱离 JsonDocument 生命周期），否则返回 default。
+    /// 设置项较多时可将 Settings 抽到独立的 modsettings.json，避免 modinfo.json 膨胀；其优先级高于 modinfo.json 的 Settings 字段。
+    /// </summary>
+    public static JsonElement TryDeserializeSettingsArray(string json) {
+        JsonElement root = JsonDocument.Parse(json, JsonDocumentReader.DefaultJsonOptions).RootElement;
+        return root.ValueKind == JsonValueKind.Array ? root.Clone() : default;
+    }
+
+    /// <summary>
+    /// dll 加载完成后解析所有启用模组的 Settings（DeserializeJson/InitResources 阶段仅 Clone 原始 JSON 到 RawSettings，因类型解析依赖模组 dll）。
+    /// RawSettings 来源优先级：modsettings.json &gt; modinfo.json 的 Settings 字段。
     /// </summary>
     public static void ParseAllModSettings() {
         foreach (ModEntity modEntity in ModList) {

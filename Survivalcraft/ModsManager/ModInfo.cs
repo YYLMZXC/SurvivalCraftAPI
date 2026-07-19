@@ -58,12 +58,13 @@ namespace Game {
         public GameplayImpactLevel GameplayImpactLevel = GameplayImpactLevel.Cosmetic;
 
         /// <summary>
-        ///     数据驱动设置页面树，由 ModsManager.ParseAllModSettings 在模组 dll 加载后解析 modinfo.json 的 Settings 字段填充
+        ///     数据驱动设置页面树，由 ModsManager.ParseAllModSettings 在模组 dll 加载后解析 RawSettings 填充
         /// </summary>
         public List<ModSettingPage> Settings;
 
         /// <summary>
-        ///     modinfo.json Settings 字段的原始 JSON（Clone 脱离 JsonDocument 生命周期），延迟到 dll 加载后由 ParseAllModSettings 解析为 Settings。<br/>
+        ///     设置项的原始 JSON（Clone 脱离 JsonDocument 生命周期），延迟到 dll 加载后由 ParseAllModSettings 解析为 Settings。<br/>
+        ///     来源优先级：modsettings.json &gt; modinfo.json 的 Settings 字段。<br/>
         ///     延迟原因：ParseSettings 的 ResolveType/ResolveWidget 依赖模组类型，而 DeserializeJson 阶段模组 dll 尚未加载。
         /// </summary>
         public JsonElement RawSettings;

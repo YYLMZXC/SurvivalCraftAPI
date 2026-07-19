@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using System.Xml.Linq;
 using Engine;
 using Engine.Graphics;
@@ -172,6 +173,20 @@ namespace Game {
                     }
                     catch (Exception e) {
                         Log.Error($"Deserialize modinfo.json from [{Storage.GetFileName(ModFilePath)}] failed: {e}");
+                    }
+                });
+            // modsettings.json 优先级高于 modinfo.json 的 Settings 字段；不存在或不合法时沿用 modinfo.json 的 RawSettings。
+            // 必须在 SafeMode 释放 ModArchive 之前读取（ParseAllModSettings 阶段归档可能已释放）。
+            GetFile("modsettings.json",
+                stream => {
+                    try {
+                        JsonElement settings = ModsManager.TryDeserializeSettingsArray(ModsManager.StreamToString(stream));
+                        if (settings.ValueKind == JsonValueKind.Array) {
+                            modInfo.RawSettings = settings;
+                        }
+                    }
+                    catch (Exception e) {
+                        Log.Error($"Deserialize modsettings.json from [{Storage.GetFileName(ModFilePath)}] failed: {e}");
                     }
                 });
             if (SettingsManager.SafeMode && this is not SurvivalCraftModEntity) {

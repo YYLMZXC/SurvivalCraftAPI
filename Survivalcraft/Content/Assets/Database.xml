@@ -4298,6 +4298,7 @@
           <Parameter Name="AnimationConfigPath" Guid="5c28f597-d678-47bc-b0a8-9fecf4736177" Value="" Type="string" />
           <Parameter Name="DisableAnimation" Guid="f8201a75-a1d4-46a0-857c-ad86dfb8bd98" Value="False" Type="bool" />
           <Parameter Name="DisableDrawing" Guid="ee7cb5a0-58d0-4f72-bd97-e64a94016041" Value="False" Type="bool" />
+          <Parameter Name="VisibleInFppCamera" Guid="ac0039f5-2498-45db-ae2a-975ac9fbc48b" Value="False" Type="bool" />
         </ComponentTemplate>
         <ComponentTemplate Name="DiggingCracks" Description="[DescriptionAttribute:353]" Guid="7ea6062c-28be-4e76-8765-39b7a1f5be9b" InheritanceParent="b05700ed-7e4e-4679-98f5-b597f421496b">
           <Parameter Name="Class" Guid="239a3460-544e-49d1-832b-364f1fe2799c" Value="Game.ComponentDiggingCracks" Type="string" />

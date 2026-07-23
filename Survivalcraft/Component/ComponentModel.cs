@@ -120,6 +120,8 @@ namespace Game {
 
         public Matrix[] AbsoluteBoneTransformsForCamera { get; set; }
 
+        public bool VisibleInFppCamera { get; set; }
+
         public virtual Matrix? GetBoneTransform(int boneIndex) => m_boneTransforms[boneIndex];
 
         public virtual void SetBoneTransform(int boneIndex, Matrix? transformation) {
@@ -161,7 +163,7 @@ namespace Game {
             if (flag || DisableDrawing) {
                 return;
             }
-            if (camera.GameWidget.IsEntityFirstPersonTarget(Entity)) {
+            if (!VisibleInFppCamera && camera.GameWidget.IsEntityFirstPersonTarget(Entity)) {
                 IsVisibleForCamera = false;
                 return;
             }
@@ -350,6 +352,7 @@ namespace Game {
             }
             DisableAnimation = valuesDictionary.GetValue<bool>("DisableAnimation", false);
             DisableDrawing = valuesDictionary.GetValue<bool>("DisableDrawing", false);
+            VisibleInFppCamera = valuesDictionary.GetValue<bool>("VisibleInFppCamera", false);
             Type type = TypeCache.FindType(modeltype, true, true);
             Model = (Model)ContentManager.Get(type, ModelRoute);
         }

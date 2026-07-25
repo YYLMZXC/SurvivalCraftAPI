@@ -297,7 +297,7 @@ namespace Game {
                 CustomShader.Transforms.Projection = projectionMatrix;
                 foreach (Model model in Models) {
                     foreach (ModelMesh mesh in model.Meshes) {
-                        CustomShader.Transforms.World[0] = m_absoluteBoneTransforms[model][mesh.ParentBone.Index] * ModelMatrix * autoRotation;
+                        CustomShader.Transforms.World[0] = GetMeshTransform(model, mesh) * ModelMatrix * autoRotation;
                         OnSetupShaderParameters?.Invoke(this, CustomShader, model, mesh);
                         foreach (ModelMeshPart meshPart in mesh.MeshParts) {
                             if (meshPart.IndicesCount == 0) continue;
@@ -357,7 +357,13 @@ namespace Game {
             Display.DepthStencilState = DepthStencilState.Default;
 
             // Calculate joint matrices with ModelMatrix and autoRotation applied
-            CalculateJointMatrices(model, ModelMatrix * autoRotation);
+            if (s_jointMatricesBuffer == null || s_jointMatricesBuffer.Length < SubsystemModelsRenderer.MaxJointsCount) {
+                s_jointMatricesBuffer = new Matrix[SubsystemModelsRenderer.MaxJointsCount];
+            }
+            int jointCount = CalculateJointMatrices(model, ModelMatrix * autoRotation, s_jointMatricesBuffer);
+            for (int i = jointCount; i < s_jointMatricesBuffer.Length; i++) {
+                s_jointMatricesBuffer[i] = Matrix.Identity;
+            }
 
             // Use Widget's projection matrix with proper view
             // The key is to use view/projection matrices that match how non-skinned models work
@@ -407,15 +413,15 @@ namespace Game {
             }
         }
 
-        private void CalculateJointMatrices(Model model, Matrix modelTransform) {
+        internal int CalculateJointMatrices(Model model, Matrix modelTransform, Matrix[] destination) {
             ModelSkin skin = model.Skin;
-            if (skin == null) return;
+            if (skin == null) return 0;
 
-            if (s_jointMatricesBuffer == null || s_jointMatricesBuffer.Length < SubsystemModelsRenderer.MaxJointsCount) {
-                s_jointMatricesBuffer = new Matrix[SubsystemModelsRenderer.MaxJointsCount];
+            if (destination == null) {
+                throw new ArgumentNullException(nameof(destination));
             }
 
-            int jointCount = Math.Min(skin.JointCount, SubsystemModelsRenderer.MaxJointsCount);
+            int jointCount = Math.Min(skin.JointCount, destination.Length);
 
             // Get root bone transform for coordinate conversion
             Matrix rootBoneTransform = model.RootBone.Transform;
@@ -439,24 +445,21 @@ namespace Game {
                     // Calculate joint matrix:
                     // jointMatrix = inverseBind * jointGlTF * rootBoneTransform * modelTransform
                     // This transforms: vertex(bind) -> glTF model space -> game world space
-                    s_jointMatricesBuffer[i] = inverseBind * jointGlTF * rootBoneTransform * modelTransform;
+                    destination[i] = inverseBind * jointGlTF * rootBoneTransform * modelTransform;
                 }
                 else {
-                    s_jointMatricesBuffer[i] = Matrix.Identity;
+                    destination[i] = Matrix.Identity;
                 }
             }
 
-            // Clear remaining buffer
-            for (int i = jointCount; i < SubsystemModelsRenderer.MaxJointsCount; i++) {
-                s_jointMatricesBuffer[i] = Matrix.Identity;
-            }
+            return jointCount;
         }
 
         private void DrawModelMeshesLit(LitShader shader, Model model, Matrix autoRotation) {
             shader.InstancesCount = 1;
 
             foreach (ModelMesh mesh in model.Meshes) {
-                shader.Transforms.World[0] = m_absoluteBoneTransforms[model][mesh.ParentBone.Index] * ModelMatrix * autoRotation;
+                shader.Transforms.World[0] = GetMeshTransform(model, mesh) * ModelMatrix * autoRotation;
 
                 OnSetupShaderParameters?.Invoke(this, shader, model, mesh);
 
@@ -479,7 +482,11 @@ namespace Game {
             }
         }
 
-        private Texture2D GetTexture(Model model, ModelMeshPart meshPart) {
+        internal Matrix GetMeshTransform(Model model, ModelMesh mesh) {
+            return m_absoluteBoneTransforms[model][mesh.ParentBone.Index];
+        }
+
+        internal Texture2D GetTexture(Model model, ModelMeshPart meshPart) {
             // First check if there's an override texture
             if (Textures.TryGetValue(model, out Texture2D overrideTexture) && overrideTexture != null) {
                 return overrideTexture;

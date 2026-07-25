@@ -488,7 +488,8 @@ namespace Game {
 
         internal Texture2D GetTexture(Model model, ModelMeshPart meshPart) {
             // First check if there's an override texture
-            if (Textures.TryGetValue(model, out Texture2D overrideTexture) && overrideTexture != null) {
+            Texture2D overrideTexture = GetTextureOverride(model);
+            if (overrideTexture != null) {
                 return overrideTexture;
             }
 
@@ -507,6 +508,10 @@ namespace Game {
 
             // Fallback to default white texture
             return Model.DefaultTransparentTexture;
+        }
+
+        internal Texture2D GetTextureOverride(Model model) {
+            return Textures.TryGetValue(model, out Texture2D overrideTexture) ? overrideTexture : null;
         }
 
         public override void Update() {

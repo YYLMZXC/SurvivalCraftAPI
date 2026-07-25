@@ -3,7 +3,7 @@ using Engine.Graphics;
 
 namespace Game {
     public sealed class ModelWidgetRenderContext {
-        public ModelWidget Widget { get; }
+        private readonly ModelWidget m_widget;
 
         public IReadOnlyList<Model> Models { get; }
 
@@ -22,8 +22,8 @@ namespace Game {
             Matrix modelTransform,
             Color color
         ) {
-            Widget = widget;
-            Models = widget.Models;
+            m_widget = widget;
+            Models = Array.AsReadOnly(widget.Models.ToArray());
             ViewMatrix = viewMatrix;
             ProjectionMatrix = projectionMatrix;
             ModelTransform = modelTransform;
@@ -31,15 +31,19 @@ namespace Game {
         }
 
         public Matrix GetMeshTransform(Model model, ModelMesh mesh) {
-            return Widget.GetMeshTransform(model, mesh);
+            return m_widget.GetMeshTransform(model, mesh);
+        }
+
+        public Texture2D GetTextureOverride(Model model) {
+            return m_widget.GetTextureOverride(model);
         }
 
         public Texture2D GetTexture(Model model, ModelMeshPart meshPart) {
-            return Widget.GetTexture(model, meshPart);
+            return m_widget.GetTexture(model, meshPart);
         }
 
         public int CalculateJointMatrices(Model model, Matrix[] destination) {
-            return Widget.CalculateJointMatrices(model, ModelTransform, destination);
+            return m_widget.CalculateJointMatrices(model, ModelTransform, destination);
         }
     }
 }

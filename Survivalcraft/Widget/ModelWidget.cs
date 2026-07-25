@@ -131,6 +131,8 @@ namespace Game {
         /// </summary>
         public TransformedShader CustomShader { get; set; }
 
+        public static ICustomModelWidgetRenderer CustomRenderer { get; set; }
+
         public void AddModel(Model value) => AddModel(value, null, null);
 
         public void AddModel(Model value, string animationConfigPath = null, string animationTemplateName = null) {
@@ -245,10 +247,6 @@ namespace Game {
                 return;
             }
 
-            // Separate skinned and non-skinned models
-            List<Model> skinnedModels = Models.Where(m => m.HasSkin).ToList();
-            List<Model> nonSkinnedModels = Models.Where(m => !m.HasSkin).ToList();
-
             // Setup view and projection matrices
             Matrix viewMatrix = Matrix.CreateLookAt(ViewPosition, ViewTarget, Vector3.UnitY);
             Viewport viewport = Display.Viewport;
@@ -316,6 +314,20 @@ namespace Game {
                 }
                 return;
             }
+
+            if (CustomRenderer != null) {
+                CustomRenderer.Render(new ModelWidgetRenderContext(
+                    this,
+                    viewMatrix,
+                    projectionMatrix,
+                    ModelMatrix * autoRotation,
+                    Color * GlobalColorTransform));
+                return;
+            }
+
+            // Separate skinned and non-skinned models
+            List<Model> skinnedModels = Models.Where(m => m.HasSkin).ToList();
+            List<Model> nonSkinnedModels = Models.Where(m => !m.HasSkin).ToList();
 
             // Draw non-skinned models with LitShader
             if (nonSkinnedModels.Count > 0) {

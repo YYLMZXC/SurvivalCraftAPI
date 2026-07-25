@@ -321,7 +321,8 @@ namespace Game {
                     viewMatrix,
                     projectionMatrix,
                     ModelMatrix * autoRotation,
-                    Color * GlobalColorTransform));
+                    Color * GlobalColorTransform,
+                    UseAlphaThreshold));
                 return;
             }
 

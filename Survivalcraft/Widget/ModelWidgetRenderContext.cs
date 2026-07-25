@@ -15,12 +15,15 @@ namespace Game {
 
         public Color Color { get; }
 
+        public bool UseAlphaThreshold { get; }
+
         internal ModelWidgetRenderContext(
             ModelWidget widget,
             Matrix viewMatrix,
             Matrix projectionMatrix,
             Matrix modelTransform,
-            Color color
+            Color color,
+            bool useAlphaThreshold
         ) {
             m_widget = widget;
             Models = Array.AsReadOnly(widget.Models.ToArray());
@@ -28,6 +31,7 @@ namespace Game {
             ProjectionMatrix = projectionMatrix;
             ModelTransform = modelTransform;
             Color = color;
+            UseAlphaThreshold = useAlphaThreshold;
         }
 
         public Matrix GetMeshTransform(Model model, ModelMesh mesh) {
@@ -44,6 +48,10 @@ namespace Game {
 
         public int CalculateJointMatrices(Model model, Matrix[] destination) {
             return m_widget.CalculateJointMatrices(model, ModelTransform, destination);
+        }
+
+        public void SetupShaderParameters(Shader shader, Model model, ModelMesh mesh) {
+            m_widget.OnSetupShaderParameters?.Invoke(m_widget, shader, model, mesh);
         }
     }
 }

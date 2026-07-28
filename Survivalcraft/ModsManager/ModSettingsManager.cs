@@ -279,11 +279,15 @@ namespace Game {
             return item;
         }
 
+        /// <summary>值变更事件：Set 写完字典后触发，参数 (key, value)，key = string.Join("/", path) 与 ModSettingItem.CachedPath 同形。供 UI 层订阅以刷新显示。</summary>
+        public static event Action<string, object> SettingChanged;
+
         /// <summary>Widget 写回值。更新字典 + 精准分发 OnSettingChanged。</summary>
         public static void Set(string[] path, object value) {
             if (path == null || path.Length == 0) return;
             string key = string.Join("/", path);
             m_dataDrivenValues[key] = value;
+            SettingChanged?.Invoke(key, value);
             string packageName = path[0];
             string[] subPath = path[1..];
             // 精准分发到目标模组 loaders：复用 HookAction 会广播所有注册 loader 且 subPath 不含 packageName，

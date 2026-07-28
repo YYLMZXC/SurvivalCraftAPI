@@ -147,6 +147,10 @@ namespace Game {
                 m_button.Text = (bool)Value ? m_textTrue : m_textFalse;
             }
         }
+
+        protected override void ApplyToControl(object newValue) {
+            if (newValue is bool b) m_button.Text = b ? m_textTrue : m_textFalse;
+        }
     }
 
     /// <summary>enum 多项选择对话框（项数多时默认）。点按钮弹 ListSelectionDialog。</summary>
@@ -182,6 +186,10 @@ namespace Game {
                     item => { CommitValue(item); m_button.Text = MemberText(item); }
                 ));
             }
+        }
+
+        protected override void ApplyToControl(object newValue) {
+            if (newValue is Enum) m_button.Text = MemberText(newValue);
         }
     }
 
@@ -229,6 +237,14 @@ namespace Game {
                 m_slider.Text = MemberText(current);
                 if (m_slider.SlidingCompleted) CommitValue(current);
             }
+        }
+
+        protected override void ApplyToControl(object newValue) {
+            if (newValue is not Enum) return;
+            int idx = Array.IndexOf(m_members, newValue);
+            if (idx < 0) return;
+            m_slider.Value = Math.Clamp(idx, 0, m_members.Length - 1);
+            m_slider.Text = MemberText(newValue);
         }
     }
 
@@ -292,6 +308,12 @@ namespace Game {
                 UpdateText();
             }
         }
+
+        protected override void ApplyToControl(object newValue) {
+            if (newValue == null || !IsNumeric(newValue.GetType())) return;
+            m_slider.Value = ToFloat(newValue);
+            UpdateText();
+        }
     }
 
     /// <summary>文本输入（TextBoxWidget）。</summary>
@@ -317,6 +339,10 @@ namespace Game {
             IsOperating = m_textBox.HasFocus;
             string current = Value as string;
             if (m_textBox.Text != current) CommitValue(m_textBox.Text);
+        }
+
+        protected override void ApplyToControl(object newValue) {
+            if (newValue is string s) m_textBox.Text = s;
         }
     }
 }

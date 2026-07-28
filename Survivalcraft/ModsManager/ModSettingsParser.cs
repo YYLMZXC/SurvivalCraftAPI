@@ -40,7 +40,10 @@ namespace Game {
             if (hasItems) return ParsePage(obj, itemsEl, packageName);
             if (hasType) return ParseItem(obj, typeEl);
             // Label：Text 在则取字面量/token（向后兼容）；Id-only（无 Type/Items/Text）→ 文案走 id链.Id.Name 自动键（ResolveText 第2档）
-            if (hasText) return new ModSettingLabel { Id = GetString(obj, "Id"), Text = textEl.GetString() };
+            if (hasText) {
+                string textId = GetString(obj, "Id");
+                return new ModSettingLabel { Id = IsValidId(textId) ? textId : null, Text = textEl.GetString() };
+            }
             if (hasId) {
                 string id = idEl.GetString();
                 if (!IsValidId(id)) { Log.Error("[ModSettings] " + L("LabelInvalidId", "Mod setting label missing valid Id or contains '/', skipped")); return null; }

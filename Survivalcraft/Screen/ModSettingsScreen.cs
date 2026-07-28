@@ -45,8 +45,10 @@ namespace Game {
         /// <summary>Manager 值变更：按 CachedPath 命中当前页 Widget 并刷新控件显示。逐项 try/catch 隔离，单项失败不影响其它。</summary>
         void OnSettingChanged(string path, object value) {
             foreach (IModSettingItemWidget w in m_itemWidgets) {
-                if (w.Descriptor.CachedPath != path) continue;
-                try { w.ApplyExternalValue(value); }
+                try {
+                    if (w.Descriptor?.CachedPath != path) continue;
+                    w.ApplyExternalValue(value);
+                }
                 catch (Exception e) {
                     if (!LanguageControl.TryGet(out string msg, fName, "11")) msg = "ApplyExternalValue error, item={0}: {1}";
                     Log.Error("[ModSettings] " + string.Format(msg, w.Descriptor?.Id, e.Message));

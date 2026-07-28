@@ -95,6 +95,8 @@ namespace Game {
         public virtual void ApplyExternalValue(object newValue) => ApplyExternalValueCore(newValue);
 
         protected void ApplyExternalValueCore(object newValue) {
+            // 入口处类型预检（Supports 契约）：脏值静默忽略，不污染 Value（否则 TextBox 下帧 Update 会误触发回写，BoolButton 下次点击会 InvalidCastException）。
+            if (newValue != null && !Supports(newValue.GetType())) return;
             m_applyingExternalValue = true;
             try {
                 Value = newValue;

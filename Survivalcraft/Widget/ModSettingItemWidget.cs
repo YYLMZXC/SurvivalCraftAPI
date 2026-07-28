@@ -85,7 +85,7 @@ namespace Game {
             if (valueWidget != null) Children.Add(valueWidget);
         }
 
-        /// <summary>子类检测到值变化时调用：更新 Value 并触发 ValueChanged（→ Manager.Set）。外部推值期间（m_applyingExternalValue）跳过回写，防 widget→Set→event→同 widget 循环。</summary>
+        /// <summary>子类检测到值变化时调用：更新 Value 并触发 ValueChanged（→ Manager.Set）。外部推值期间（m_applyingExternalValue）跳过回写，防 widget→Set→event→同 widget 循环。第三方重写本方法时须同样检查 m_applyingExternalValue，否则外部推值会被回写成循环。</summary>
         protected virtual void CommitValue(object newValue) {
             Value = newValue;
             if (!m_applyingExternalValue) ValueChanged?.Invoke(newValue);
@@ -213,8 +213,7 @@ namespace Game {
                 Margin = new Vector2(20, 0),
                 MinValue = lo,
                 MaxValue = hi,
-                Granularity = 1,
-                Value = Math.Clamp(Array.IndexOf(m_members, Value), lo, hi)
+                Granularity = 1
             };
             if (descriptor.WidgetProperties is JsonElement props) {
                 // 用户配的 Min/Max 钳到下标域 [lo, hi]，防止滑块越界选不中末项
@@ -222,6 +221,8 @@ namespace Game {
                 if (props.TryGetProperty("MaxValue", out JsonElement max) && max.ValueKind == JsonValueKind.Number) m_slider.MaxValue = Math.Clamp(max.GetSingle(), lo, hi);
                 if (props.TryGetProperty("Granularity", out JsonElement g) && g.ValueKind == JsonValueKind.Number) m_slider.Granularity = g.GetSingle();
             }
+            // Value 须在 Min/Max/Granularity 全部就位后再设：否则按默认区间+粒度钳/round，后续改 Granularity 不重 round（与 NumberSlider 同款 bug）。
+            m_slider.Value = Math.Clamp(Array.IndexOf(m_members, Value), lo, hi);
             m_slider.Text = MemberText(Value);
             Assemble(m_slider);
         }
@@ -277,8 +278,7 @@ namespace Game {
                 Margin = new Vector2(20, 0),
                 MinValue = 0,
                 MaxValue = 1,
-                Granularity = 0.1f,
-                Value = ToFloat(Value)
+                Granularity = 0.1f
             };
             if (descriptor.WidgetProperties is JsonElement props) {
                 if (props.TryGetProperty("MinValue", out JsonElement min) && min.ValueKind == JsonValueKind.Number) m_slider.MinValue = min.GetSingle();
@@ -286,6 +286,7 @@ namespace Game {
                 if (props.TryGetProperty("Granularity", out JsonElement g) && g.ValueKind == JsonValueKind.Number) m_slider.Granularity = g.GetSingle();
                 if (props.TryGetProperty("DecimalPlaces", out JsonElement dp) && dp.ValueKind == JsonValueKind.Number) DecimalPlaces = dp.GetInt32();
             }
+            m_slider.Value = ToFloat(Value);
             UpdateText();
             Assemble(m_slider);
         }

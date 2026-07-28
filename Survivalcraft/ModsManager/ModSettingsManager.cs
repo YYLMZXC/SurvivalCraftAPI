@@ -279,15 +279,27 @@ namespace Game {
             return item;
         }
 
-        /// <summary>值变更事件：Set 写完字典后触发，参数 (key, value)，key = string.Join("/", path) 与 ModSettingItem.CachedPath 同形。供 UI 层订阅以刷新显示。</summary>
+        /// <summary>值变更事件：Set 写完字典后触发，参数 (key, value)，key = string.Join("/", path) 与 ModSettingItem.CachedPath 同形。供 UI 层订阅以刷新显示。订阅者抛异常不影响其它订阅者（逐委托 try/catch）。</summary>
         public static event Action<string, object> SettingChanged;
+
+        /// <summary>逐订阅者触发 SettingChanged，单个订阅者抛异常不影响其它（与下方 loader 分发同风格）。订阅者约定不抛异常，但此处仍兜底以防第三方 mod 订阅者故障阻断 UI 刷新。</summary>
+        static void RaiseSettingChanged(string key, object value) {
+            if (SettingChanged == null) return;
+            foreach (Delegate d in SettingChanged.GetInvocationList()) {
+                try { ((Action<string, object>)d)(key, value); }
+                catch (Exception e) {
+                    if (!LanguageControl.TryGet(out string msg, fName, "12")) msg = "SettingChanged subscriber error: {0}";
+                    Log.Error("[ModSettings] " + string.Format(msg, e.Message));
+                }
+            }
+        }
 
         /// <summary>Widget 写回值。更新字典 + 精准分发 OnSettingChanged。</summary>
         public static void Set(string[] path, object value) {
             if (path == null || path.Length == 0) return;
             string key = string.Join("/", path);
             m_dataDrivenValues[key] = value;
-            SettingChanged?.Invoke(key, value);
+            RaiseSettingChanged(key, value);
             string packageName = path[0];
             string[] subPath = path[1..];
             // 精准分发到目标模组 loaders：复用 HookAction 会广播所有注册 loader 且 subPath 不含 packageName，

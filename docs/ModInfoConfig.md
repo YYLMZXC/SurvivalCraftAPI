@@ -111,7 +111,9 @@
                     "Description": "[TemplateMod/Settings/Group1:2]",
                     "Type": "bool", // 基本类型、Game 命名空间之外的类型，需要写完整类名
                     "Default": false,
-                    "Widget": "BoolButtonSettingWidget" // 必须为实现了 IModSettingItemWidget 接口且继承自 Widget 类的类名
+                    "Widget": "BoolButtonSettingWidget" // 必须为实现了 IModSettingItemWidget 接口且继承自 Widget 类的类名。
+                    // 自定义 widget 默认不参与实时刷新；若要在模组调用 ModSettingsManager.Set 改值时自动更新显示，
+                    // 重写 IModSettingItemWidget.ApplyExternalValue（默认空实现）：在其中把新值写到内部控件即可。
                 },
                 {
                     "Id": "TemplateModSettingsItem2",

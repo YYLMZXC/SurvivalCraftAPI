@@ -25,6 +25,9 @@ namespace Game {
 
         /// <summary>页面轮询识别激活项（如滑块滑动中），用于更新共享 Description。默认 false。</summary>
         public bool IsOperating { get; set; }
+
+        /// <summary>外部（非用户操作）推送新值时由宿主调用：把新值同步到内部控件显示。默认空实现；内置 widget 经 UniformSpacingPanelSettingWidget 重写，第三方 widget 可按需重写以参与自动刷新。</summary>
+        public void ApplyExternalValue(object newValue) { }
     }
 
     /// <summary>
@@ -38,6 +41,8 @@ namespace Game {
         public object Value { get; protected set; }
         public string DescriptionText { get; set; }
         public Action<object> ValueChanged { get; set; }
+
+        protected bool m_applyingExternalValue;
 
         protected LabelWidget m_nameLabel;
         string m_nameLabelText;
@@ -80,11 +85,28 @@ namespace Game {
             if (valueWidget != null) Children.Add(valueWidget);
         }
 
-        /// <summary>子类检测到值变化时调用：更新 Value 并触发 ValueChanged（→ Manager.Set）。</summary>
+        /// <summary>子类检测到值变化时调用：更新 Value 并触发 ValueChanged（→ Manager.Set）。外部推值期间（m_applyingExternalValue）跳过回写，防 widget→Set→event→同 widget 循环。</summary>
         protected virtual void CommitValue(object newValue) {
             Value = newValue;
-            ValueChanged?.Invoke(newValue);
+            if (!m_applyingExternalValue) ValueChanged?.Invoke(newValue);
         }
+
+        /// <summary>宿主收到 SettingChanged 后调入口：设守卫 → 写 Value（不回写 Manager）→ 同步控件 → 清守卫。子类不重写本方法，重写 ApplyToControl。</summary>
+        public virtual void ApplyExternalValue(object newValue) => ApplyExternalValueCore(newValue);
+
+        protected void ApplyExternalValueCore(object newValue) {
+            m_applyingExternalValue = true;
+            try {
+                Value = newValue;
+                ApplyToControl(newValue);
+            }
+            finally {
+                m_applyingExternalValue = false;
+            }
+        }
+
+        /// <summary>把新值同步到内部控件显示。基类默认空；各子类重写以写自己的控件（按 Supports 已校验类型解引用，类型不符静默忽略）。</summary>
+        protected virtual void ApplyToControl(object newValue) { }
     }
 
     // ===== 内置子类 =====

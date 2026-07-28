@@ -130,6 +130,13 @@
                         "DecimalPlaces": 0
                     }
                 },
+                // 标签 Label 有两种写法：
+                // ① 字面量/token：直接写 Text 文案；或 "[包名/...]" 整体包裹走语言文件 token
+                { "Text": "这是一段说明文字" },
+                // ② 自动本地化：只写 Id，文案从语言文件键 ModSettings/包名/id链/{Id}/Name 取（与 Item 的 Name 同机制）；未命中则回退显示 Id
+                { "Id": "TemplateModSettingsLabel1" },
+                // 分隔线 Separator：
+                { "Separator": true },
                 {
                     "Id": "TemplateModSettingsSubgroup1",
                     "Name": "More Settings",

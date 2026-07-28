@@ -149,13 +149,17 @@ namespace Game {
 
         Widget CreateElementWidget(ModSettingElement el) {
             switch (el) {
-                case ModSettingLabel label:
+                case ModSettingLabel label: {
+                    bool hasId = label.Id != null;
+                    string[] idChain = hasId ? AppendId(m_pageIds, label.Id) : m_pageIds;
+                    string fieldName = hasId ? "Name" : "Text";
                     return new LabelWidget {
-                        Text = ModSettingLocalizer.ResolveText(m_packageName, m_pageIds, "Text", label.Text, true),
+                        Text = ModSettingLocalizer.ResolveText(m_packageName, idChain, fieldName, label.Text, true),
                         HorizontalAlignment = WidgetAlignment.Near,
                         Color = new Color(200, 200, 200),
-                        Margin = new Vector2(0f, 6f)
+                        Margin = new Vector2(20f, 6f)
                     };
+                }
                 case ModSettingSeparator:
                     return new RectangleWidget {
                         Size = new Vector2(float.PositiveInfinity, 2f),

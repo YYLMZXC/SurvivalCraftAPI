@@ -67,6 +67,20 @@
       },
       "required": ["Id", "Items"]
     },
+    "settingLabel": {
+      "type": "object",
+      "description": "Label (display-only text). Two forms: (1) Text — a literal, or a \"[pkg/...]\" i18n token; (2) Id only — text is resolved from language key ModSettings/PackageName/id-path/{Id}/Name, falling back to Id. \n标签（纯展示文本）。两种写法：① 写 Text（字面量，或 \"[包名/...]\" token 走语言文件）；② 只写 Id，文案从语言文件键 ModSettings/包名/id链/{Id}/Name 取，未命中回退显示 Id。",
+      "properties": {
+        "Id": {
+          "type": "string",
+          "description": "Label Id. When Text is omitted, the display text is resolved from ModSettings/PackageName/id-path/{Id}/Name. Must not contain '/'. \n标签 Id。省略 Text 时，文案从语言文件键 ModSettings/包名/id链/{Id}/Name 取；不得包含 '/'。"
+        },
+        "Text": {
+          "type": "string",
+          "description": "Literal text or \"[pkg/...]\" i18n token. When present, it takes precedence over the Id-based language key. \n字面量文案或 \"[包名/...]\" 国际化 token。存在时优先于基于 Id 的语言键。"
+        }
+      }
+    },
     "settingNode": {
       "oneOf": [
         {
@@ -74,6 +88,9 @@
         },
         {
           "$ref": "#/definitions/settingItem"
+        },
+        {
+          "$ref": "#/definitions/settingLabel"
         }
       ]
     }

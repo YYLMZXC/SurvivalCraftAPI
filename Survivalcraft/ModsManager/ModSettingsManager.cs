@@ -36,6 +36,9 @@ namespace Game {
 
         public const string fName = "ModSettingsManager";
 
+        /// <summary>LoadModSettings 是否已在本会话调用过。SaveModSettings 据此跳过启动竞态期（LoadModSettings 之前的 Window.Deactivated 等早触发）的空缓存覆写。</summary>
+        static bool s_loaded;
+
         public static Dictionary<string, object> CombinedKeyboardMappingSettings {
             get { //合并模组设置和原版设置
                 Dictionary<string, object> dictionary = new();
@@ -81,6 +84,7 @@ namespace Game {
         }
 
         public static void LoadModSettings() {
+            s_loaded = true;
             if (!Storage.FileExists(ModsManager.ModsSettingsPath)) {
                 RegisterAllDataDriven(); // 文件不存在：仍注册描述符 + Default
                 return;
@@ -101,7 +105,8 @@ namespace Game {
                     str = "Error serializing mod settings file:";
                 }
                 Log.Warning($"{str} {e.Message}");
-                return;
+                // 不 return：残缺/空文件时仍落入下方 RegisterAllDataDriven，按 ModList 注册描述符 + Default。
+                // 否则 m_dataDrivenPages 为空，下次 SaveModSettings 会把所有 <DataDrivenSettings> 剥掉写盘 → 设置永久丢失。
             }
 
             //遍历每个模组，加载设置项，如果设置项已加载，就从ModSettingsCache中删除
@@ -159,6 +164,9 @@ namespace Game {
         }
 
         public static void SaveModSettings() {
+            // 启动竞态保护：LoadModSettings 尚未首次运行时，ModSettingsCache/m_dataDrivenPages 为空，
+            // 此时写盘会用空内容覆写文件，永久丢失所有模组设置（Window.Deactivated 等可能在加载早期触发 SaveSettings）。
+            if (!s_loaded) return;
             foreach (ModEntity modEntity in ModsManager.ModList) {
                 string packageName = modEntity.modInfo.PackageName;
                 XElement settingsElement = new("Mod");

@@ -111,9 +111,7 @@
                     "Description": "[TemplateMod/Settings/Group1:2]",
                     "Type": "bool", // 基本类型、Game 命名空间之外的类型，需要写完整类名
                     "Default": false,
-                    "Widget": "BoolButtonSettingWidget" // 必须为实现了 IModSettingItemWidget 接口且继承自 Widget 类的类名。
-                    // 自定义 widget 默认不参与实时刷新；若要在模组调用 ModSettingsManager.Set 改值时自动更新显示，
-                    // 重写 IModSettingItemWidget.ApplyExternalValue（默认空实现）：在其中把新值写到内部控件即可。
+                    "Widget": "BoolButtonSettingWidget" // 必须为实现了 IModSettingItemWidget 接口且继承自 Widget 类的类名，内置组件详见 ModSettingItemWidget.cs。
                 },
                 {
                     "Id": "TemplateModSettingsItem2",
@@ -130,11 +128,10 @@
                         "DecimalPlaces": 0
                     }
                 },
-                // 标签 Label 有两种写法：
-                // ① 字面量/token：直接写 Text 文案；或 "[包名/...]" 整体包裹走语言文件 token
-                { "Text": "这是一段说明文字" },
-                // ② 自动本地化：只写 Id，文案从语言文件键 ModSettings/包名/id链/{Id}/Name 取（与 Item 的 Name 同机制）；未命中则回退显示 Id
-                { "Id": "TemplateModSettingsLabel1" },
+                // 小标题有两种写法，第一种如下，支持 "[TemplateMod/Settings/Label1]" 本地化
+                { "Text": "我是小标题" },
+                // 小标题第二种写法，会自动尝试从 LanguageControl.Get("ModSettings", PackageName, Id 链, "Name") 获取
+                { "Id": "TemplateModSettingsLabel2" },
                 // 分隔线 Separator：
                 { "Separator": true },
                 {
